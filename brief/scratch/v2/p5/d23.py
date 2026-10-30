@@ -251,7 +251,7 @@ L = {
         ],
         "hints": [
             "If Gradle cannot find plugin `hello.kotlin-jvm`, check the file name in `build-logic/src/main/kotlin` and that `includeBuild` sits inside `pluginManagement`.",
-            "The convention plugin applies the Kotlin plugin, so subprojects must not ask for `kotlin(\"jvm\")` again in their own plugins blocks.",
+            "The convention plugin already applies the Kotlin plugin, so each subproject's plugins block needs only `id(\"hello.kotlin-jvm\")` plus `application` or `java-library`.",
         ],
         "done_when": "`./gradlew build` passes and `curl -s localhost:8080 | python3 -m json.tool` prints valid JSON that contains your quoted greeting.",
     },
@@ -327,7 +327,7 @@ L = {
             "2. Add a dependency constraint, such as `constraints { implementation(\"group:name:1.4.2\") }`. It sets a version for a library you do not use directly, without adding it as a dependency. `gradle init` writes one of these in its generated builds.\n"
             "3. Use a platform for a whole family, as hello-jvm does for JUnit.\n"
             "4. As a last resort, use a strict version or `enforcedPlatform`, which can force a version downward. Check the graph afterwards, because you may have broken a library that needed the newer one.\n\n"
-            "There is also a switch for teams that want to decide every conflict by hand: `configurations.all { resolutionStrategy.failOnVersionConflict() }` fails the build whenever two versions meet. It is noisy in a big project, but it makes every version choice a reviewed decision.\n\n"
+            "There is also a switch for teams that want to decide every conflict by hand. With `configurations.runtimeClasspath { resolutionStrategy.failOnVersionConflict() }` in `app`, the dependency report marked both commons-lang3 entries `FAILED`. Put the same rule on every configuration with `configurations.all` and it fails first on the Kotlin compiler's own classpath, so keep it to the classpaths you care about.\n\n"
             "Day 24 adds two more tools that sit on top of all this: dependency locking, which records the exact result of resolution in a file, and dependency verification, which checks the bytes of every downloaded jar."
         ),
     },
