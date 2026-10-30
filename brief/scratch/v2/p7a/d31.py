@@ -359,7 +359,7 @@ The STATUS column is built from several fields, in roughly this order of priorit
 
 So STATUS is a summary for humans. Scripts and alerts should read the real fields: `status.phase`, `status.conditions` and `status.containerStatuses`. The `Ready` condition is what Services use to decide whether a Pod gets traffic (Day 33).
 
-One more current detail. Kubernetes 1.35 added finer restart rules as a beta feature. A single container can have its own `restartPolicy`, plus rules such as "restart only if the exit code is 42". You will not need it for hello-devops. It helps batch jobs where some exit codes mean "try again" and others mean "give up".
+One more current detail. Kubernetes 1.35 moved finer restart rules to beta. A single container can have its own `restartPolicy`, plus rules such as "restart only if the exit code is 42". You will not need it for hello-devops. It helps batch jobs where some exit codes mean "try again" and others mean "give up".
 
 To go further, read the [Pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) page. It is long, but it defines every word you see in the STATUS column.""",
     },

@@ -116,7 +116,7 @@ LESSON = {
              "The grep options from this lesson (`-i -n -c -v -w -r -l -A -B -C -o -E -F`) and tail's `-f` and `-F` exist on both. That is why the course runs everything in the container: what you practise there is what servers and CI runners have. When you copy a one-liner into a script for your Mac, test it there once."),
          "refs": [BSD_GNU]},
     ],
-    "analogy": "The grep command is a highlighter dragged down a printout: it keeps every line with the word you want and drops the rest. The find command is a filing clerk who walks the cabinets and pulls out every folder that fits a description (older than a week, bigger than a megabyte) without opening any of them. Where it breaks: a real clerk would ask before shredding a pile, but `find -delete` never asks.",
+    "analogy": "The grep command is a highlighter dragged down a printout: it keeps every line with the word you want and drops the rest. The find command is a filing clerk who pulls every folder that fits a description, such as \"older than a week\", without opening any of them. Where it breaks: a real clerk would ask before shredding a pile, but `find -delete` never asks.",
     "diagram": DIAGRAM,
     "diagram_caption": "find picks files by name, size or age; grep reads them and keeps the lines that match.",
     "worked": {
@@ -209,7 +209,7 @@ LESSON = {
         {"q": "How would you find all the errors for one request across several log files?",
          "a": "If the services log a request or trace ID, I search for it in all logs at once with `grep -r ID logdir`. Then I narrow it with a regex such as `ERROR .*ID`. With ISO timestamps, `grep -h ID ... | sort` gives a timeline across services. I read the earliest error with `-B` and `-A` context, because later errors are often reactions to the first one."},
         {"q": "What is the difference between `grep`, `grep -E` and `grep -F`?",
-         "a": "Plain grep uses basic regular expressions, where `+`, `?`, `|` and braces are ordinary characters unless you escape them. `grep -E` uses extended regular expressions, where those symbols work directly, which is easier to read. With `-F`, grep switches patterns off and searches for the exact text, which suits IP addresses and strings full of dots. All three exist on Linux and macOS, unlike `-P`, which is GNU only."},
+         "a": "Plain grep uses basic regular expressions. There, `+`, `?`, `|` and braces are ordinary characters unless you escape them. `grep -E` uses extended regular expressions, where those symbols work directly, which is easier to read. With `-F`, grep switches patterns off and searches for the exact text, which suits IP addresses and strings full of dots. All three exist on Linux and macOS, unlike `-P`, which is GNU only."},
         {"q": "A disk is filling up with old logs. How would you clean up safely with find?",
          "a": "First I list the candidates, for example `find /var/log -type f -name '*.log' -mtime +14 -size +100M`, with the pattern quoted. I read the list and check that no running program still writes to those files. Then I run the same command with `-delete`, or archive the files instead. Deleting a file that a process still holds open does not free the space until the process closes it. So for a live log I would rotate or empty it instead."},
     ],

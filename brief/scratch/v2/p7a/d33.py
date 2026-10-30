@@ -147,7 +147,7 @@ For HTTP traffic from users, teams rarely give every app its own load balancer. 
 
 Some network plugins, such as Cilium, replace kube-proxy and do the same job with eBPF programs in the kernel.
 
-Two consequences matter in practice:
+A few consequences matter in practice:
 - Balancing happens per connection, not per request. A client that keeps a connection open (HTTP keep-alive, gRPC) can talk to one Pod for a long time. A `curl` loop opens a new connection each time, so it spreads.
 - If one client must keep talking to the same Pod, set `sessionAffinity: ClientIP` on the Service. kube-proxy then pins each client IP to one Pod for a while.
 - `kubectl port-forward svc/hello-devops` skips all of it. kubectl picks one Pod and tunnels to it through the API server. Good for debugging, useless for testing balance.

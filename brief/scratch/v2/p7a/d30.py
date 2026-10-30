@@ -204,7 +204,7 @@ Creating the cluster takes a minute or two, and deleting it takes seconds. You c
         "title": "Watch one apply travel through a cluster",
         "steps": [
             {
-                "say": "Create a small throwaway cluster with one node, named `demo`. The first run downloads the node image, which can take a few minutes. kind then points kubectl at the new cluster.",
+                "say": "Create a small throwaway cluster with one node, named `demo`. The first run downloads the node image, which can take a few minutes. The output below is trimmed to its last line: kind points kubectl at the new cluster.",
                 "code": "$ kind create cluster --name demo\n...\nSet kubectl context to \"kind-demo\"\n$ kubectl get nodes\nNAME                 STATUS   ROLES           AGE   VERSION\ndemo-control-plane   Ready    control-plane   48s   v1.37.0",
                 "lang": "console",
             },
