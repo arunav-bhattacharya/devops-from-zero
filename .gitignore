@@ -7,3 +7,5 @@ brief/scratch/**/__pycache__/
 .terraform/
 *.tfstate
 *.tfstate.*
+brief/scratch/**/test/
+*.db
