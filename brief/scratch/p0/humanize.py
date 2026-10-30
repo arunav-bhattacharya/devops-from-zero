@@ -99,7 +99,7 @@ S[3]["body"] = """Tools change every few years, but the ideas behind them stay t
 - Ship small changes often: each one is easy to review, test and undo.
 - Get feedback fast: tests, deploys and alerts should answer within minutes.
 
-The ideas feed each other. Code that lives in git can be checked by machines. Those automated checks are what make small changes safe. And a small change gives clear feedback, because when it breaks something, you know where to look.
+The four ideas support each other. Code that lives in git can be checked by machines. Those automated checks are what make small changes safe. And a small change gives clear feedback, because when it breaks something, you know where to look.
 
 Infrastructure as code (IaC) is the second idea applied to servers and networks. You describe what you want in a file, and a tool such as Terraform creates it. You write your first one on Day 13."""
 
@@ -327,7 +327,7 @@ Activating a venv is even simpler. The command `source .venv/bin/activate` runs 
 
 That is why `which python` points into `.venv` after activation, and why `deactivate` can put PATH back. You can also skip activation and run `.venv/bin/python app.py` directly. The Dockerfile on Day 8 uses the PATH trick instead: it puts the venv's `bin` folder first on PATH.
 
-The shell always runs the first match it finds on PATH. The command `which -a python3` lists every `python3` on your PATH, in the order the shell tries them. When the wrong version of a tool runs, that is the first command I'd try."""
+The shell always runs the first match it finds on PATH. Run `which -a python3` to list every `python3` on your PATH, in the order the shell tries them. When the wrong version of a tool runs, that is the first command I'd try."""
 
 PATH.write_text(json.dumps(P, ensure_ascii=False, indent=1) + "\n")
 print("wrote", PATH)

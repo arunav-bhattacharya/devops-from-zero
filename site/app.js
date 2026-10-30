@@ -270,7 +270,7 @@ function viewHome() {
   <section class="hero">
     <span class="label">A ${tot}-day course · about 35 minutes a day</span>
     <h1>DevOps,<em>from zero</em></h1>
-    <p class="sub">Linux, Docker, GitHub Actions, Terraform, Kubernetes, and what teams use now: GitOps, observability and supply-chain security. You ship one small app, hello-devops, all the way from your laptop to a cluster.</p>
+    <p class="sub">Linux, Docker, GitHub Actions, Terraform, Kubernetes, and what teams use now: GitOps, observability and supply-chain security. You ship one small app, <span style="white-space:nowrap">hello-devops</span>, all the way from your laptop to a cluster.</p>
     <div class="meta"><span>7 parts</span><span>${tot} lessons</span><span>1 project</span><span>Free tools, runs on your laptop</span></div>
   </section>
   ${term}

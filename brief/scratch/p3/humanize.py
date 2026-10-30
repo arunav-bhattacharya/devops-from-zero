@@ -106,7 +106,7 @@ The everyday loop looks like this:
 3. Push the branch to GitHub.
 4. Merge it into `main` once it is reviewed and tested.
 
-A merge combines two lines of work, and most of the time git does it alone. It stops only when both branches changed the same lines. That is a merge conflict. Git marks the clash in the file with `<<<<<<<`, `=======` and `>>>>>>>`, and you edit the file until it says what it should. Then you add and commit it. The fewer lines a branch touches, the rarer conflicts get, which is one more reason to keep branches small and short.
+A merge combines two lines of work, and most of the time git does it alone. It stops only when both branches changed the same lines. That is a merge conflict. Git marks the clash in the file with `<<<<<<<`, `=======` and `>>>>>>>`, and you edit the file until it says what it should. Then you add and commit it. The fewer lines a branch touches, the rarer conflicts get.
 """,
 """
 A pull request (PR) is a GitHub page that asks to merge your branch into `main`. It shows the diff (the lines you changed), a conversation, and the results of automatic checks. Teams use it for:
@@ -148,7 +148,7 @@ The steps a change goes through are called a pipeline. A typical pipeline runs i
 3. Publish: build a container image and push it to a registry.
 4. Deploy: release that image to staging, then to production.
 
-Build the image one time and never again. This rule is called **build once, deploy many**: the very same image (same digest) moves from staging to production. If you rebuild for production, the build can pull newer packages, and what you ship is no longer what you tested.
+Build the image one time, at the publish step. This rule is called **build once, deploy many**: the very same image (same digest) moves from staging to production. If you rebuild for production, the build can pull newer packages, and what you ship is no longer what you tested.
 """,
 """
 Deploying means swapping the old version for the new one while users keep working. Four ways are common:
@@ -245,7 +245,7 @@ How does git merge text at all? It uses a three-way merge. First it finds the me
 2. If both sides made the same change, git takes it once.
 3. If both sides changed the same region in different ways, git marks a conflict.
 
-So the fewer lines each side changed since the merge base, the smaller the chance that both touch the same region. That is the mechanical reason short branches conflict less.
+So the fewer lines each side changed since the merge base, the smaller the chance that both touch the same region.
 
 The same rules hide a trap. Git can cleanly merge two changes that still break each other. Say one branch renames a function, and another branch adds a new call to the old name. No lines clash, so git is happy, and the code is broken anyway. Only tests catch this. That is why CI runs on the merged result of a pull request, which you will see in the `pull_request` event on Day 10.
 
@@ -415,7 +415,7 @@ Today you grow the Day 10 `ci.yml` into the lab's final version, one piece at a 
 
 Jobs run in parallel by default. The `needs` key makes a job wait. With `needs: test` on the `build` job, the build starts only after every test job succeeds. If a test fails, the build is skipped, and you get the bad news without paying for the slow part.
 
-The triggers change too. On Day 10, CI ran on every push. Now it runs on pull requests, which test the merged result, and on pushes to `main`. Running on pushes to every branch as well would test each PR commit twice. One more line, `permissions: contents: read`, makes the job's token read-only. Day 12 explains why that matters.
+The triggers change too. On Day 10, CI ran on every push. Now it runs on pull requests, which test the merged result, and on pushes to `main`. Running on pushes to every branch as well would test each PR commit twice. One more line, `permissions: contents: read`, makes the job's token read-only. You will see why on Day 12.
 """,
 """
 A linter reads your code without running it and flags problems such as unused imports or undefined names. This course uses ruff, which handles both lint and formatting:
@@ -476,9 +476,7 @@ Slow CI changes how people work. They stop waiting for it, or they bundle many c
 - `paths-ignore` on `push` skips runs when a push only changes Markdown files.
 - The pip and Docker layer caches keep installs and builds short.
 
-The lab makes one exception to the cancelling: on `main`, every run finishes, so each merge gets a full result.
-
-Never put path filters on `pull_request` when its checks are required. A workflow that is skipped never reports, so its checks stay Pending and block the merge.
+On `main` the lab lets every run finish, so each merge gets a full result. And never put path filters on `pull_request` when its checks are required. A workflow that is skipped never reports, so its checks stay Pending and block the merge.
 
 Two tools help before you push. [actionlint](https://github.com/rhysd/actionlint) checks workflow files for mistakes such as typos in keys or bad expressions. [act](https://github.com/nektos/act) runs workflows on your laptop in Docker containers. It is handy for quick tries, but it does not match GitHub's runners exactly, so the real test is still a push.
 """,
@@ -578,7 +576,7 @@ Variables hold settings that are not secret, such as a region or a bucket name. 
 GitHub hides known secret values in logs as `***`, but don't count on it. A secret that has been changed, for example base64 encoded, is not hidden. So never `echo` a secret, and never put a whole JSON file in one secret. If a secret leaks, rotate it. Pull requests from forks get no secrets at all.
 """,
 """
-Every job gets a token without asking: the `GITHUB_TOKEN`. GitHub creates it when the job starts, and it expires when the job ends. It only works on the current repository. Actions in the job can use it even if you never pass it to them, so how much it can do matters.
+Every job gets a token without asking: the `GITHUB_TOKEN`. GitHub creates it when the job starts, and it expires when the job ends. It only works on the current repository. Actions in the job can use it even if you never pass it to them. Whatever the token may do, every action in the job may do too.
 
 **Least privilege** means a token gets only the access its task needs. You control that with the `permissions` key:
 
@@ -610,7 +608,7 @@ An environment is a named deploy target, such as `staging` or `production`. A jo
 
 GitHub hands over environment secrets only after the rules pass, so the approval also guards your credentials.
 
-Whether you get required reviewers depends on your plan. On the Free, Pro and Team plans, they only work in public repositories. Private repositories need GitHub Enterprise for them. Watch out for one more thing: if a workflow names an environment that does not exist yet, GitHub creates it with no rules, and the job runs right away.
+Whether you get required reviewers depends on your plan. On the Free, Pro and Team plans, they only work in public repositories. Private repositories need GitHub Enterprise for them. And if a workflow names an environment that does not exist yet, GitHub creates it with no rules, and the job runs right away.
 """,
 """
 To deploy to a cloud such as AWS, a workflow needs credentials. The simple way is to store an access key as a secret. That key lives for months, works from anywhere, and is painful to rotate.
@@ -637,9 +635,7 @@ Every action you call is someone else's code, and it runs with your token and yo
 - Turn on Dependabot for `github-actions`, so it opens PRs that update versions and pins.
 - Avoid `pull_request_target` together with code from the pull request.
 
-Why a SHA? Anyone who controls an action's repository can move a tag such as `v4` to different code. A commit SHA always means the same code.
-
-`pull_request_target` is risky because it runs with secrets and a write token, even for pull requests from forks. If the job then runs the fork's build script, a stranger's code gets your secrets. GitHub is adding guard rails, but plain `pull_request` is the safe choice. Day 22 shows real attacks where these habits would have helped.
+Why a SHA? Anyone who controls an action's repository can move a tag such as `v4` to different code. A commit SHA always means the same code. And `pull_request_target` is risky because it runs with secrets and a write token, even for pull requests from forks. If the job then runs the fork's build script, a stranger's code gets your secrets. GitHub is adding guard rails, but plain `pull_request` is the safe choice. Day 22 shows real attacks where these habits would have helped.
 """,
 ])
 
