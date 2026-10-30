@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hello-devops
+description: The hello-devops web app from "DevOps, from zero"
+type: application
+version: 0.1.0      # the chart's own version: bump it when you change the chart
+appVersion: "1.0.0" # the app version (image tag) this chart deploys by default

@@ -1,3 +1,4 @@
+# Runs 3 copies (pods) of hello-devops and replaces any that die.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,15 +7,15 @@ metadata:
   labels:
     app: hello-devops
 spec:
-  replicas: 3
+  replicas: 3 # equal to minReplicas in hpa.yaml, so the two agree when the app is quiet
   selector:
     matchLabels:
-      app: hello-devops
+      app: hello-devops # must match the pod labels below
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+      maxUnavailable: 0 # never drop below 3 ready pods during an update
+      maxSurge: 1       # add at most 1 extra pod at a time
   template:
     metadata:
       labels:
@@ -23,18 +24,34 @@ spec:
       containers:
         - name: web
           image: hello-devops:1.0.0
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: IfNotPresent # use the image kind loaded; do not pull it
           ports:
-            - containerPort: 8000
+            - name: http
+              containerPort: 8000
           envFrom:
             - configMapRef:
-                name: hello-config
-          readinessProbe:
-            httpGet: { path: /readyz, port: 8000 }
-            periodSeconds: 5
-          livenessProbe:
-            httpGet: { path: /healthz, port: 8000 }
+                name: hello-config # every key in the ConfigMap becomes an env var
+          startupProbe: # gives a slow start up to 30 x 2s = 60s
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe: # fails 3 times in a row: restart the container
+            httpGet:
+              path: /healthz
+              port: http
             periodSeconds: 10
+          readinessProbe: # fails 2 times in a row: stop sending traffic to this pod
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
           resources:
-            requests: { cpu: 100m, memory: 128Mi }
-            limits: { memory: 256Mi }
+            requests: # what the scheduler reserves for this container
+              cpu: 100m
+              memory: 128Mi
+            limits: # the most it may use; over the memory limit it is killed
+              memory: 256Mi

@@ -1,36 +1,75 @@
 name: release
 
+# Runs when you push a version tag such as v1.2.0.
 on:
   push:
     tags: ["v*"]
 
+# Default for every job: the GITHUB_TOKEN can only read the repository.
 permissions:
   contents: read
-  packages: write   # lets GITHUB_TOKEN push to GitHub Container Registry
 
 jobs:
   image:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Approval gate: add required reviewers to "production" in
+    # Settings > Environments. Without rules, the job just runs.
     environment: production
+    # This job alone may also write packages (push images to GHCR).
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
+
+      # Third-party actions are pinned to a full commit SHA.
+      # The comment shows the version. Dependabot keeps both up to date.
+      - name: Set up QEMU (to build arm64 on an amd64 runner)
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - id: meta
-        uses: docker/metadata-action@v6
+
+      - name: Work out image tags and labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository }}
+          # Tag v1.2.0 gives 1.2.0, sha-<short commit> and latest.
           tags: |
             type=semver,pattern={{version}}
             type=sha
-      - uses: docker/build-push-action@v7
+
+      - name: Build and push (amd64 and arm64)
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: APP_VERSION=${{ github.ref_name }}
+          # The app reports this version at "/" (1.2.0 for tag v1.2.0).
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Show the image digest in the run summary
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          {
+            echo "### Pushed image"
+            echo "Digest: \`$DIGEST\`"
+            echo '```'
+            echo "$TAGS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

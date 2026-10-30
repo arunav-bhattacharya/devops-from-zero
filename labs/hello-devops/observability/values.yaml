@@ -1,0 +1,29 @@
+# Settings for the kube-prometheus-stack Helm chart on a laptop kind cluster.
+# It installs Prometheus, Grafana, Alertmanager and the Prometheus Operator.
+#
+# Install (check the chart's README for the current command):
+#   helm install monitoring oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace -f observability/values.yaml
+#
+# The release name "monitoring" matters. By default, this Prometheus only reads
+# ServiceMonitors that carry the label release: monitoring.
+
+# On kind, these control plane parts listen only on 127.0.0.1 inside their node,
+# so Prometheus cannot reach them. Skip them to avoid false "down" targets.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    # Keep one day of data. This is a lab, not production.
+    retention: 1d
+
+grafana:
+  # Show times in your browser's time zone.
+  defaultDashboardsTimezone: browser

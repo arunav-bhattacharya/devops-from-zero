@@ -1,0 +1,30 @@
+# Runs 3 copies (pods) of hello-devops and replaces any that die.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-devops
+  namespace: hello
+  labels:
+    app: hello-devops
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-devops # must match the pod labels below
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0 # never drop below 3 ready pods during an update
+      maxSurge: 1       # add at most 1 extra pod at a time
+  template:
+    metadata:
+      labels:
+        app: hello-devops
+    spec:
+      containers:
+        - name: web
+          image: hello-devops:1.0.0
+          imagePullPolicy: IfNotPresent # use the image kind loaded; do not pull it
+          ports:
+            - name: http
+              containerPort: 8000

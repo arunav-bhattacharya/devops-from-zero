@@ -1,0 +1,33 @@
+# Kyverno policy: every container image needs a fixed tag, and never :latest.
+# Apply: kubectl apply -f policy/disallow-latest-tag.yaml
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-latest-tag
+spec:
+  # Deny = block the request. Audit = allow it, but record a failure in a report.
+  validationActions:
+    - Deny
+  # Check Pods only in namespace hello, our app's namespace.
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: hello
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+  # Also check Deployments, so a bad Deployment fails at kubectl apply time.
+  autogen:
+    podControllers:
+      controllers:
+        - deployments
+  validations:
+    # The part after the last "/" must contain ":" (a tag) or the image uses "@" (a digest).
+    - expression: >-
+        object.spec.containers.all(c,
+        c.image.substring(c.image.lastIndexOf('/') + 1).contains(':') || c.image.contains('@'))
+      message: "Every image needs a tag, for example hello-devops:1.0.0."
+    - expression: "object.spec.containers.all(c, !c.image.endsWith(':latest'))"
+      message: "The :latest tag is not allowed. Use a fixed version tag."

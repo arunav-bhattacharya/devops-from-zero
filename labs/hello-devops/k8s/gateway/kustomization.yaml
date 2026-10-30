@@ -1,0 +1,8 @@
+# Gateway API example for Day 19. Apply with: kubectl apply -k k8s/gateway
+# First install Envoy Gateway, which brings the Gateway API types and the controller.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gatewayclass.yaml
+  - gateway.yaml
+  - httproute.yaml

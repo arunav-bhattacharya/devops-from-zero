@@ -1,0 +1,23 @@
+# A read-only identity for an AI agent (or any helper tool) in namespace hello.
+# It can look (get, list, watch) but not change anything, and it cannot read Secrets.
+# Apply:      kubectl apply -f policy/ai-agent-readonly.yaml
+# Get token:  kubectl -n hello create token ai-agent --duration=1h
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-agent
+  namespace: hello
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-agent-view
+  namespace: hello
+subjects:
+  - kind: ServiceAccount
+    name: ai-agent
+    namespace: hello
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view # built in: read most things in the namespace, but not Secrets

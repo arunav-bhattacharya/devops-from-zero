@@ -1,10 +1,11 @@
-# kind create cluster --name devops --config kind-config.yaml
+# A local cluster: 1 control-plane node and 2 worker nodes (each one is a Docker container).
+# Create it with: kind create cluster --name devops --config kind-config.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     extraPortMappings:
-      - containerPort: 30080   # a NodePort inside the cluster...
-        hostPort: 8081         # ...reachable on your laptop at localhost:8081
+      - containerPort: 30080 # the NodePort of the hello-devops Service (k8s/service.yaml)
+        hostPort: 8081       # reach it on your laptop at http://localhost:8081
   - role: worker
   - role: worker

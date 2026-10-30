@@ -1,0 +1,15 @@
+# pod.yaml: one Pod running hello-devops. A scratch file for Day 16 only.
+# From Day 17 on, a Deployment creates Pods for you.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello
+  labels:
+    app: hello
+spec:
+  containers:
+    - name: web
+      image: hello-devops:1.0.0
+      imagePullPolicy: IfNotPresent # use the image kind loaded; do not pull it
+      ports:
+        - containerPort: 8000

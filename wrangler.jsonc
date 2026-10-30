@@ -1,0 +1,6 @@
+{
+  "name": "devops-from-zero",
+  "compatibility_date": "2026-10-01",
+  // a static site: Cloudflare serves dist/ as it is (no worker code needed)
+  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" }
+}

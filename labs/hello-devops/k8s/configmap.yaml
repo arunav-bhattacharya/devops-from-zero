@@ -1,3 +1,4 @@
+# Settings for the app. Each key becomes an environment variable (see envFrom in deployment.yaml).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,4 +6,4 @@ metadata:
   namespace: hello
 data:
   GREETING: "Hello from Kubernetes!"
-  REDIS_HOST: "redis"
+  REDIS_HOST: "redis" # the name of the Redis Service in this namespace

@@ -1,0 +1,34 @@
+# Kyverno policy: Pods must promise to run as a non-root user.
+# It starts in Audit mode: nothing is blocked, failures show up in a PolicyReport.
+# Apply: kubectl apply -f policy/require-run-as-nonroot.yaml
+# Read:  kubectl get policyreport -n hello
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-run-as-nonroot
+spec:
+  validationActions:
+    - Audit
+  # Also check Pods that already exist, not only new ones.
+  evaluation:
+    background:
+      enabled: true
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: hello
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+  autogen:
+    podControllers:
+      controllers:
+        - deployments
+  validations:
+    # Pass when the Pod sets runAsNonRoot: true, or every container does.
+    - expression: >-
+        object.spec.?securityContext.?runAsNonRoot.orValue(false) ||
+        object.spec.containers.all(c, c.?securityContext.?runAsNonRoot.orValue(false))
+      message: "Set securityContext.runAsNonRoot: true on the Pod or on every container."

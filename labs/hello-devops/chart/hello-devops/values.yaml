@@ -1,0 +1,45 @@
+# Default settings for the chart.
+# Change them at install time with --set key=value or -f my-values.yaml.
+
+replicaCount: 2
+
+image:
+  repository: hello-devops
+  tag: "" # empty: use appVersion from Chart.yaml
+  pullPolicy: IfNotPresent
+
+# Settings the app reads from environment variables.
+greeting: "Hello from Helm!"
+redisHost: "" # empty: the app counts visits in memory
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+  periodSeconds: 5
+
+# Optional Gateway API route. Needs a Gateway (see k8s/gateway/ in the lab repo).
+httpRoute:
+  enabled: false
+  gateway:
+    name: hello-gateway
+    namespace: hello
+  hostname: "" # for example helm.local; empty: match any host name
+  path: /

@@ -1,0 +1,15 @@
+# The front door: Envoy Gateway starts a proxy that listens for HTTP on port 80.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: hello-gateway
+  namespace: hello
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All # routes from any namespace may attach (fine on a laptop; limit it at work)

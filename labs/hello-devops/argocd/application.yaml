@@ -1,0 +1,38 @@
+# An Argo CD Application: "keep the cluster equal to the k8s/ folder in git".
+# Apply it once:  kubectl apply -n argocd -f argocd/application.yaml
+# Replace <your-github-user> with your GitHub user name first.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello-devops
+  # Applications live in the namespace where Argo CD runs.
+  namespace: argocd
+  # When you delete this Application, also delete the things it created.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  # Where the desired state lives: your repo, branch main, folder k8s.
+  source:
+    repoURL: https://github.com/<your-github-user>/hello-devops
+    targetRevision: main
+    path: k8s
+  # Where to deploy: the same cluster Argo CD runs in, namespace hello.
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hello
+  # The autoscaler (k8s/hpa.yaml) changes the number of replicas while the app runs.
+  # Ignore that one field, so Argo CD and the autoscaler do not fight.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: hello-devops
+      jsonPointers:
+        - /spec/replicas
+  syncPolicy:
+    automated:
+      prune: true # delete things that you removed from git
+      selfHeal: true # undo changes made by hand in the cluster
+    syncOptions:
+      - CreateNamespace=true # create namespace hello if it is missing
+      - RespectIgnoreDifferences=true # also skip /spec/replicas when syncing

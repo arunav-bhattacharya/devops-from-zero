@@ -8,12 +8,13 @@ reference: every file the lessons build, already tested. Use it to check your wo
 | `app.py`, `test_app.py`, `requirements*.txt` | Day 2 (starter files) |
 | `Dockerfile`, `.dockerignore` | Days 6 and 8 |
 | `compose.yaml` | Day 7 |
+| `.github/pull_request_template.md` | Day 9 |
 | `.github/workflows/ci.yml` | Days 10 and 11 |
-| `.github/workflows/release.yml` | Days 12 and 22 |
+| `.github/workflows/release.yml`, `.github/dependabot.yml` | Days 12 and 22 |
 | `infra/local/` | Days 13 and 14 |
 | `infra/aws/`, `.github/workflows/terraform.yml` | Day 15 |
 | `kind-config.yaml`, `k8s/` | Days 16 to 18 |
-| `chart/hello-devops/` | Day 19 |
+| `chart/hello-devops/`, `chart/kind-values.yaml`, `k8s/gateway/` | Day 19 |
 | `argocd/` | Day 20 |
 
 Run it locally:

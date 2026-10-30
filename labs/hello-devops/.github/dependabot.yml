@@ -1,0 +1,8 @@
+# Dependabot opens pull requests when the actions in .github/workflows
+# have a newer version. It also updates SHA pins and their comments.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

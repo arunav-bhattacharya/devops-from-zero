@@ -1,8 +1,12 @@
+# Redis keeps the visit counter, shared by all app pods.
+# No disk here: the count resets if the Redis pod restarts (Day 19 covers storage).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
   namespace: hello
+  labels:
+    app: redis
 spec:
   replicas: 1
   selector:
@@ -18,17 +22,28 @@ spec:
           image: redis:8-alpine
           ports:
             - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 5
           resources:
-            requests: { cpu: 50m, memory: 64Mi }
-            limits: { memory: 128Mi }
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: redis
   namespace: hello
+  labels:
+    app: redis
 spec:
   selector:
     app: redis
   ports:
-    - port: 6379
+    - name: redis
+      port: 6379
+      targetPort: 6379

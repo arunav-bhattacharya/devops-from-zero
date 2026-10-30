@@ -1,0 +1,137 @@
+name: release
+
+# Runs when you push a version tag such as v1.2.0.
+on:
+  push:
+    tags: ["v*"]
+
+# Default for every job: the GITHUB_TOKEN can only read the repository.
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Approval gate: add required reviewers to "production" in
+    # Settings > Environments. Without rules, the job just runs.
+    environment: production
+    # This job alone gets more rights, and only the ones it needs.
+    permissions:
+      contents: read
+      packages: write # push images to GHCR
+      id-token: write # ask GitHub for an OIDC token, used for keyless signing (Day 22)
+      attestations: write # store provenance and SBOM attestations (Day 22)
+    steps:
+      - uses: actions/checkout@v7
+
+      # Third-party actions are pinned to a full commit SHA.
+      # The comment shows the version. Dependabot keeps both up to date.
+      - name: Set up QEMU (to build arm64 on an amd64 runner)
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Registries need lower case names, and a GitHub user name may have capitals.
+      - name: Set the image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Work out image tags and labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          # Tag v1.2.0 gives 1.2.0, sha-<short commit> and latest.
+          tags: |
+            type=semver,pattern={{version}}
+            type=sha
+
+      # Day 22, step 1: build for this runner only and load the image into
+      # the local Docker engine. Nothing is pushed yet.
+      - name: Build the image for scanning
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          tags: hello-devops:scan
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+
+      # Day 22, step 2: stop the release on HIGH or CRITICAL issues that have a fix.
+      - name: Scan the image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: hello-devops:scan
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Build and push (amd64 and arm64)
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # The app reports this version at "/" (1.2.0 for tag v1.2.0).
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Day 22, step 3: write the ingredient list (SBOM) of the pushed image.
+      - name: Create an SBOM (SPDX format)
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      # Day 22, step 4: sign the image by its digest. Keyless: no private key to
+      # store or leak. The signature is tied to this workflow's identity.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Sign the image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      # Day 22, step 5: record how the image was built (SLSA provenance) and
+      # attach the SBOM. Free for public repositories. Storage records only
+      # work for repositories owned by an organization, so they are off here.
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
+      - name: Attest the SBOM
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          sbom-path: sbom.spdx.json
+          push-to-registry: true
+          create-storage-record: false
+
+      - name: Show the image digest in the run summary
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          {
+            echo "### Pushed and signed image"
+            echo "Digest: \`$DIGEST\`"
+            echo '```'
+            echo "$TAGS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

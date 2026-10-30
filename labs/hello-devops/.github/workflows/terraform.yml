@@ -1,0 +1,86 @@
+name: terraform
+
+on:
+  pull_request:
+    paths: ["infra/aws/**", ".github/workflows/terraform.yml"]
+  push:
+    branches: [main]
+    paths: ["infra/aws/**", ".github/workflows/terraform.yml"]
+
+permissions:
+  contents: read
+  id-token: write # lets a job ask GitHub for an OIDC token
+
+# One Terraform run at a time. Never cancel a run halfway through an apply.
+concurrency:
+  group: terraform-aws
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1 # same Region as variables.tf and the backend block
+  TF_IN_AUTOMATION: "true"
+  # Values for variables.tf, taken from the github context.
+  TF_VAR_github_owner: ${{ github.repository_owner }}
+  TF_VAR_github_owner_id: ${{ github.repository_owner_id }}
+  TF_VAR_github_repo: ${{ github.event.repository.name }}
+  TF_VAR_github_repo_id: ${{ github.repository_id }}
+
+defaults:
+  run:
+    working-directory: infra/aws
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.17.1"
+          terraform_wrapper: false
+
+      # Fast checks first. They need no AWS login.
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+      - name: Scan for risky settings (trivy, pinned to a digest)
+        run: >-
+          docker run --rm -v "$PWD:/src:ro"
+          aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222
+          config --exit-code 1 --severity HIGH,CRITICAL /src
+
+      # Now log in to AWS with OIDC (no stored keys) and plan.
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: terraform init -input=false
+      - run: terraform plan -input=false -no-color -out=tfplan
+      - name: Show the plan on the run's summary page
+        run: |
+          {
+            echo '```'
+            terraform show -no-color tfplan
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production # waits here until a reviewer approves
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.17.1"
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: terraform init -input=false
+      - run: terraform plan -input=false -no-color -out=tfplan
+      - run: terraform apply -input=false -no-color tfplan
