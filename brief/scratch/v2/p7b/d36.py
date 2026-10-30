@@ -129,7 +129,7 @@ LESSON = {
                 "A kind cluster has no cloud, so the Service never gets one. "
                 "As a result, `kubectl get gateway -n hello` shows PROGRAMMED `False` with the message \"No addresses have been assigned to the Gateway\". "
                 "This is expected. The routing behind it works, and you reach the proxy with `kubectl port-forward`, as the [Envoy Gateway quickstart](https://gateway.envoyproxy.io/docs/tasks/quickstart/) does.\n\n"
-                "If you want a real address on kind, the kind project's [cloud-provider-kind](https://github.com/kubernetes-sigs/cloud-provider-kind) acts as a cloud load balancer for local clusters. "
+                "If you want a real address on kind, a small tool called [cloud-provider-kind](https://github.com/kubernetes-sigs/cloud-provider-kind) acts as a cloud load balancer for kind clusters. "
                 "On a Mac it exposes the address through a port on localhost. For one app on a laptop, port-forward is enough."
             ),
             "refs": [
@@ -375,7 +375,7 @@ LESSON = {
             "Check the pieces with `kubectl get pvc -n hello` and `kubectl get pv`. On kind the PV is a folder inside a node container, so deleting the cluster deletes the data. For practice that is fine.\n\n"
             "Things that surprise people:\n"
             "- Deleting a StatefulSet leaves its PVCs behind. You delete them yourself when you are sure.\n"
-            "- `ReadWriteOnce` means one node at a time. If `redis-0` moves to another node, a local-path volume cannot follow it, because the data lives on the old node. Cloud disks can move between nodes; local folders cannot.\n"
+            "- A local-path volume lives on one node, so `redis-0` can only ever be scheduled there. If that node goes away, the Pod stays `Pending`. A cloud disk can attach to another node; a local folder cannot.\n"
             "- A StatefulSet wants a headless Service (`clusterIP: None`) so each Pod gets its own DNS name. Your existing `redis` Service is a normal one; for one replica that still works.\n"
             "- Scaling down does not delete the PVCs of removed Pods, so scaling back up finds the old data.\n\n"
             "Kubernetes 1.37 also changed two StatefulSet details you may read about. The `maxUnavailable` setting for rolling updates is on by default again. A new `Recreate` update strategy exists as an alpha feature.\n\n"

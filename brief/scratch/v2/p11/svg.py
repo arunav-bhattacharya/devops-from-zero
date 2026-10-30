@@ -58,7 +58,7 @@ def d47():
         box(200, 146, 136, 44, "bxg", "Kibana"),
         arrow(338, 168, 396, 168), label(367, 160, "search"),
         label(80, 86, "one line per event"),
-        label(268, 86, "port 24224"),
+        label(268, 86, "fluentd driver"),
     ]
     return svg(224, "A log line goes from hello-devops through the Docker engine to Fluent Bit, "
                "then to Elasticsearch, and you search it with Kibana", p)
@@ -113,7 +113,6 @@ def d49():
         arrow(x0, 164, x0, 176, head=False),
         arrow(round(x0 + 400 * scale), 164, round(x0 + 400 * scale), 176, head=False),
         arrow(round(x0 + 800 * scale), 164, round(x0 + 800 * scale), 176, head=False),
-        label(16, 216, "parent and child share the trace ID; the child holds the parent's span ID", anchor="start"),
     ]
-    return svg(232, "A trace waterfall: the GET / server span lasts 835 ms and its child INCRBY "
+    return svg(204, "A trace waterfall: the GET / server span lasts 835 ms and its child INCRBY "
                "Redis span lasts 832 ms of that time", p)
