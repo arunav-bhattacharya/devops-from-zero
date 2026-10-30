@@ -1,0 +1,17 @@
+Detailed task information for build
+
+Paths
+     :app:build (registered by plugin class 'org.gradle.language.base.plugins.LifecycleBasePlugin')
+     :greeting:build (registered by plugin class 'org.gradle.language.base.plugins.LifecycleBasePlugin')
+
+Type
+     Task (org.gradle.api.Task)
+
+Options
+     --rerun     Causes the task to be re-run even if up-to-date.
+
+Description
+     Assembles and tests this project.
+
+Group
+     build

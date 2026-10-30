@@ -1,0 +1,15 @@
+
+[Incubating] Problems report is available at: file:///tmp/claude-0/-home-user/5a31be1b-d2d7-5096-8c55-314d3e3b0058/scratchpad/p5work/d22/hello-jvm/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Configuring project with invalid directory
+  Configuring project ':app' without an existing directory is not allowed. The configured projectDirectory '/tmp/claude-0/-home-user/5a31be1b-d2d7-5096-8c55-314d3e3b0058/scratchpad/p5work/d22/hello-jvm/app' does not exist, can't be written to or is not a directory.
+    For more information, please refer to https://docs.gradle.org/9.8.2/userguide/multi_project_builds.html#include_existing_projects_only.
+    Possible solution: Make sure the project directory exists and is writable.
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 1s

@@ -20,11 +20,12 @@ if per_day:
     total = per_day * days
     print(f"Failed requests allowed: {budget * total:,.0f} of {total:,.0f}")
 
-# Burn rate = how fast you spend the budget. 1 means "exactly on budget".
-# 14.4 and 6 are the usual "page" and "ticket" thresholds (Day 44).
-for burn, window_h in [(1, None), (6, 6), (14.4, 1)]:
-    line = f"Burn rate {burn:>4}: error ratio {burn * budget:.2%}, budget gone in {days / burn:.1f} days"
-    if window_h:
-        used = burn * window_h / (days * 24)
-        line += f" ({window_h} h at this rate uses {used:.0%} of it)"
-    print(line)
+# Burn rate = how fast you spend the budget. 1 means "used up exactly at the end".
+# The three rows are the starting points from Google's SRE Workbook (Day 44):
+# page at 14.4 over 1 hour or 6 over 6 hours, open a ticket at 1 over 3 days.
+for burn, window_h, action in [(14.4, 1, "page"), (6, 6, "page"), (1, 72, "ticket")]:
+    used = burn * window_h / (days * 24)
+    print(
+        f"Burn rate {burn:>4}: error ratio {burn * budget:.2%}, budget gone in {days / burn:.1f} days;"
+        f" {window_h} h of this uses {used:.0%} ({action})"
+    )

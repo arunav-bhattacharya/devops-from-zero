@@ -1,0 +1,13 @@
+Calculating task graph as no cached configuration is available for tasks: hello
+1. initialization: reading settings.gradle.kts
+
+> Configure project :
+2. configuration: running build.gradle.kts
+2b. configuration: setting up the hello task
+
+> Task :hello
+3. execution: hello runs its action
+
+BUILD SUCCESSFUL in 2s
+1 actionable task: 1 executed
+Configuration cache entry stored.

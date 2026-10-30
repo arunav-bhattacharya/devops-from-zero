@@ -1,0 +1,145 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.sandbox
+#1 transferring dockerfile: 2.03kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.1s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
+#3 CACHED
+
+#4 [internal] load metadata for mirror.gcr.io/library/eclipse-temurin:21-jre
+#4 DONE 0.7s
+
+#5 [internal] load metadata for mirror.gcr.io/library/eclipse-temurin:21-jdk
+#5 DONE 0.7s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 242B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 DONE 0.0s
+
+#8 [build  1/13] FROM mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a
+#8 resolve mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a
+#8 resolve mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a 0.0s done
+#8 DONE 0.0s
+
+#9 [stage-1 1/4] FROM mirror.gcr.io/library/eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a
+#9 resolve mirror.gcr.io/library/eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a 0.0s done
+#9 DONE 0.0s
+
+#10 [stage-1 2/4] WORKDIR /app
+#10 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 1.86kB done
+#7 DONE 0.0s
+
+#11 [build  3/13] RUN keytool -importcert -noprompt -cacerts -storepass changeit -alias sandbox -file /tmp/ca.crt
+#11 CACHED
+
+#12 [build  4/13] WORKDIR /src
+#12 CACHED
+
+#13 [build  5/13] COPY gradlew ./
+#13 CACHED
+
+#14 [build  6/13] COPY gradle/wrapper/ gradle/wrapper/
+#14 CACHED
+
+#15 [build  7/13] RUN ./gradlew --version --no-daemon
+#15 CACHED
+
+#16 [build  8/13] COPY settings.gradle.kts gradle.properties ./
+#16 CACHED
+
+#17 [build  9/13] COPY gradle/libs.versions.toml gradle/
+#17 CACHED
+
+#18 [build 11/13] COPY greeting/ greeting/
+#18 CACHED
+
+#19 [build  2/13] COPY sandbox-proxy-ca.crt /tmp/ca.crt
+#19 CACHED
+
+#20 [build 10/13] COPY build-logic/ build-logic/
+#20 CACHED
+
+#21 [build 12/13] COPY app/ app/
+#21 CACHED
+
+#22 [build 13/13] RUN --mount=type=cache,target=/root/.gradle/caches     ./gradlew --no-daemon --console=plain :app:installDist
+#22 0.115 Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=40805
+#22 1.002 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+#22 2.298 Daemon will be stopped at the end of the build 
+#22 4.209 Calculating task graph as no cached configuration is available for tasks: :app:installDist
+#22 13.70 > Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+#22 14.60 > Task :build-logic:generateExternalPluginSpecBuilders FROM-CACHE
+#22 14.60 > Task :build-logic:extractPrecompiledScriptPluginPlugins FROM-CACHE
+#22 14.80 > Task :build-logic:compilePluginsBlocks FROM-CACHE
+#22 15.00 > Task :build-logic:generatePrecompiledScriptPluginAccessors FROM-CACHE
+#22 15.00 > Task :build-logic:generateScriptPluginAdapters FROM-CACHE
+#22 18.70 > Task :build-logic:pluginDescriptors
+#22 18.70 > Task :build-logic:processResources
+#22 35.30 > Task :build-logic:compileKotlin
+#22 35.30 > Task :build-logic:compileJava NO-SOURCE
+#22 35.30 > Task :build-logic:classes
+#22 35.40 > Task :build-logic:jar
+#22 64.10 
+#22 64.10 1 problem was found storing the configuration cache.
+#22 64.10 - Task `:app:compileKotlin` of type `org.jetbrains.kotlin.gradle.tasks.KotlinCompile`: error writing value of type 'org.gradle.api.internal.provider.DefaultProvider'
+#22 64.10 
+#22 64.10 See the complete report at file:///src/build/reports/configuration-cache/4j6c1fzvca1peig9dupm7a0s0/5inxpy6stc7cummd0dvijmynf/configuration-cache-report.html
+#22 64.10 
+#22 64.10 [Incubating] Problems report is available at: file:///src/build/reports/problems/problems-report.html
+#22 64.10 
+#22 64.10 FAILURE: Build failed with an exception.
+#22 64.10 
+#22 64.10 * What went wrong:
+#22 64.10 Configuration cache state could not be cached: field `provider` of `org.gradle.internal.serialize.codecs.core.ProviderBackedFileCollectionSpec` bean found in field `element` of `java.util.Collections$SingletonList` bean found in field `elements` of `org.gradle.internal.serialize.codecs.core.ResolutionBackedFileCollectionSpec` bean found in field `__classpathSnapshot__` of `org.jetbrains.kotlin.gradle.tasks.KotlinCompile$ClasspathSnapshotProperties_Decorated` bean found in field `__classpathSnapshotProperties__` of task `:app:compileKotlin` of type `org.jetbrains.kotlin.gradle.tasks.KotlinCompile`: error writing value of type 'org.gradle.api.internal.provider.DefaultProvider'
+#22 64.10 > Could not resolve all files for configuration ':app:compileClasspath'.
+#22 64.10    > Could not resolve org.jetbrains.kotlin:kotlin-stdlib:2.4.21.
+#22 64.10      Required by:
+#22 64.10          project ':app'
+#22 64.10          project ':app' > project ':greeting'
+#22 64.10       > Could not resolve org.jetbrains.kotlin:kotlin-stdlib:2.4.21.
+#22 64.10          > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.4.21/kotlin-stdlib-2.4.21.pom'.
+#22 64.10             > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.4.21/kotlin-stdlib-2.4.21.pom'.
+#22 64.10                > Received status code 429 from server: Too Many Requests
+#22 64.10 
+#22 64.10 * Try:
+#22 64.10 > Run with --stacktrace option to get the stack trace.
+#22 64.10 > Run with --info or --debug option to get more log output.
+#22 64.10 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+#22 64.10 > Get more help at https://help.gradle.org.
+#22 64.10 
+#22 64.10 BUILD FAILED in 1m 3s
+#22 64.10 9 actionable tasks: 4 executed, 5 from cache
+#22 64.10 Configuration cache entry discarded due to serialization error.
+#22 ERROR: process "/bin/sh -c ./gradlew --no-daemon --console=plain :app:installDist" did not complete successfully: exit code: 1
+------
+ > [build 13/13] RUN --mount=type=cache,target=/root/.gradle/caches     ./gradlew --no-daemon --console=plain :app:installDist:
+64.10 
+64.10 * Try:
+64.10 > Run with --stacktrace option to get the stack trace.
+64.10 > Run with --info or --debug option to get more log output.
+64.10 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+64.10 > Get more help at https://help.gradle.org.
+64.10 
+64.10 BUILD FAILED in 1m 3s
+64.10 9 actionable tasks: 4 executed, 5 from cache
+64.10 Configuration cache entry discarded due to serialization error.
+------
+Dockerfile.sandbox:25
+--------------------
+  24 |     #    builds, even when the source code changed. Tests already ran in CI.
+  25 | >>> RUN --mount=type=cache,target=/root/.gradle/caches \
+  26 | >>>     ./gradlew --no-daemon --console=plain :app:installDist
+  27 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c ./gradlew --no-daemon --console=plain :app:installDist" did not complete successfully: exit code: 1

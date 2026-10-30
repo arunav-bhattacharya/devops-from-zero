@@ -1,0 +1,238 @@
+
+------------------------------------------------------------
+Project ':app'
+------------------------------------------------------------
+
+annotationProcessor - Annotation processors and their dependencies for source set 'main'.
+No dependencies
+
+api - API dependencies for 'main'. (n)
+No dependencies
+
+apiElements - API elements for the 'main' feature. (n)
+No dependencies
+
+apiElements-published (n)
+No dependencies
+
+compileClasspath - Compile classpath for 'main'.
++--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+|    \--- org.jetbrains:annotations:13.0
+\--- project ':greeting'
+     \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+
+compileOnly - Compile only dependencies for 'main'. (n)
+No dependencies
+
+default - Configuration for default artifacts. (n)
+No dependencies
+
+implementation - Implementation only dependencies for 'main'. (n)
+\--- project greeting (n)
+
+implementationDependenciesMetadata
+No dependencies
+
+kotlinAbiValidationCompatClasspath
++--- org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21
+|    \--- org.jetbrains.kotlin:kotlin-tooling-core:2.4.21
+\--- org.jetbrains.kotlin:kotlin-build-tools-impl:{strictly 2.4.0} -> 2.4.0 FAILED
+
+kotlinBuildToolsApiClasspath
++--- org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21
+|    \--- org.jetbrains.kotlin:kotlin-tooling-core:2.4.21
+\--- org.jetbrains.kotlin:kotlin-build-tools-impl:{strictly 2.4.21} -> 2.4.21
+     +--- org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21
+     +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+     |    \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-build-tools-cri-impl:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     +--- org.jetbrains.kotlin:kotlin-tooling-core:2.4.21
+     +--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-reflect:1.6.10
+     |    +--- org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.21
+     |    \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+     \--- org.jetbrains.kotlin:kotlin-compiler-runner:2.4.21
+          +--- org.jetbrains.kotlin:kotlin-daemon-client:2.4.21
+          |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.21 -> 2.4.21 (*)
+          +--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+          \--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21 (*)
+
+kotlinCompilerClasspath
++--- org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21
+|    \--- org.jetbrains.kotlin:kotlin-tooling-core:2.4.21
+\--- org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21
+     +--- org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21
+     +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+     |    \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-build-tools-cri-impl:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     +--- org.jetbrains.kotlin:kotlin-tooling-core:2.4.21
+     +--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-reflect:1.6.10
+     |    +--- org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.21
+     |    \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+     \--- org.jetbrains.kotlin:kotlin-compiler-runner:2.4.21
+          +--- org.jetbrains.kotlin:kotlin-daemon-client:2.4.21
+          |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.21 -> 2.4.21 (*)
+          +--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+          \--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21 (*)
+
+kotlinCompilerPluginClasspath
+No dependencies
+
+kotlinCompilerPluginClasspathMain - Kotlin compiler plugins for compilation
+\--- org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.21
+     +--- org.jetbrains.kotlin:kotlin-scripting-common:2.4.21
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+     |         \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-scripting-common:2.4.21 (*)
+     +--- org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-common:2.4.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.4.21 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+
+kotlinCompilerPluginClasspathTest - Kotlin compiler plugins for compilation
+\--- org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.21
+     +--- org.jetbrains.kotlin:kotlin-scripting-common:2.4.21
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+     |         \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-scripting-common:2.4.21 (*)
+     +--- org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:2.4.21
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-common:2.4.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.4.21 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+     \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+
+kotlinKlibCommonizerClasspath
+\--- org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.4.21 FAILED
+
+kotlinNativeCompilerPluginClasspath
+No dependencies
+
+kotlinScriptDef - Script filename extensions discovery classpath configuration (n)
+No dependencies
+
+kotlinScriptDefExtensions
+No dependencies
+
+mainSourceElements - List of source directories contained in the Main SourceSet. (n)
+No dependencies
+
+runtimeClasspath - Runtime classpath of 'main'.
++--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+|    \--- org.jetbrains:annotations:13.0
+\--- project ':greeting'
+     \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+
+runtimeElements - Runtime elements for the 'main' feature. (n)
+No dependencies
+
+runtimeElements-published (n)
+No dependencies
+
+runtimeOnly - Runtime only dependencies for 'main'. (n)
+No dependencies
+
+testAnnotationProcessor - Annotation processors and their dependencies for source set 'test'.
+No dependencies
+
+testApi - API dependencies for 'test'. (n)
+No dependencies
+
+testCompileClasspath - Compile classpath for 'test'.
++--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+|    \--- org.jetbrains:annotations:13.0
++--- project ':greeting'
+|    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
++--- org.jetbrains.kotlin:kotlin-test -> 2.4.21
+|    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+|    \--- org.jetbrains.kotlin:kotlin-test-junit5:2.4.21
+|         +--- org.jetbrains.kotlin:kotlin-test:2.4.21 (*)
+|         \--- org.junit.jupiter:junit-jupiter-api:5.10.1 -> 6.1.3
+|              +--- org.junit:junit-bom:6.1.3
+|              |    +--- org.junit.jupiter:junit-jupiter-api:6.1.3 (c)
+|              |    \--- org.junit.platform:junit-platform-commons:6.1.3 (c)
+|              +--- org.opentest4j:opentest4j:1.3.0
+|              +--- org.junit.platform:junit-platform-commons:6.1.3
+|              |    +--- org.junit:junit-bom:6.1.3 (*)
+|              |    +--- org.apiguardian:apiguardian-api:1.1.2
+|              |    \--- org.jspecify:jspecify:1.0.0
+|              +--- org.apiguardian:apiguardian-api:1.1.2
+|              \--- org.jspecify:jspecify:1.0.0
++--- org.junit:junit-bom:6.1.3 (*)
++--- org.jetbrains.kotlin:kotlin-test:2.4.21 (*)
+\--- org.jetbrains.kotlin:kotlin-test:2.4.21 (c)
+
+testCompileOnly - Compile only dependencies for 'test'. (n)
+No dependencies
+
+testImplementation - Implementation only dependencies for 'test'. (n)
++--- org.jetbrains.kotlin:kotlin-test (n)
+\--- org.junit:junit-bom:6.1.3 (n)
+
+testImplementationDependenciesMetadata
+No dependencies
+
+testKotlinScriptDef - Script filename extensions discovery classpath configuration (n)
+No dependencies
+
+testKotlinScriptDefExtensions
+No dependencies
+
+testRuntimeClasspath - Runtime classpath of 'test'.
++--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+|    \--- org.jetbrains:annotations:13.0
++--- project ':greeting'
+|    \--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
++--- org.jetbrains.kotlin:kotlin-test -> 2.4.21
+|    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+|    \--- org.jetbrains.kotlin:kotlin-test-junit5:2.4.21
+|         +--- org.jetbrains.kotlin:kotlin-test:2.4.21 (*)
+|         +--- org.junit.jupiter:junit-jupiter-engine:5.10.1 -> 6.1.3
+|         |    +--- org.junit:junit-bom:6.1.3
+|         |    |    +--- org.junit.jupiter:junit-jupiter-engine:6.1.3 (c)
+|         |    |    +--- org.junit.platform:junit-platform-launcher:6.1.3 (c)
+|         |    |    +--- org.junit.platform:junit-platform-engine:6.1.3 (c)
+|         |    |    +--- org.junit.jupiter:junit-jupiter-api:6.1.3 (c)
+|         |    |    \--- org.junit.platform:junit-platform-commons:6.1.3 (c)
+|         |    +--- org.junit.platform:junit-platform-engine:6.1.3
+|         |    |    +--- org.junit:junit-bom:6.1.3 (*)
+|         |    |    +--- org.opentest4j:opentest4j:1.3.0
+|         |    |    \--- org.junit.platform:junit-platform-commons:6.1.3
+|         |    |         \--- org.junit:junit-bom:6.1.3 (*)
+|         |    \--- org.junit.jupiter:junit-jupiter-api:6.1.3
+|         |         +--- org.junit:junit-bom:6.1.3 (*)
+|         |         +--- org.opentest4j:opentest4j:1.3.0
+|         |         \--- org.junit.platform:junit-platform-commons:6.1.3 (*)
+|         \--- org.junit.platform:junit-platform-launcher:1.10.1 -> 6.1.3
+|              +--- org.junit:junit-bom:6.1.3 (*)
+|              \--- org.junit.platform:junit-platform-engine:6.1.3 (*)
++--- org.junit:junit-bom:6.1.3 (*)
++--- org.jetbrains.kotlin:kotlin-test:2.4.21 (*)
+\--- org.jetbrains.kotlin:kotlin-test:2.4.21 (c)
+
+testRuntimeOnly - Runtime only dependencies for 'test'. (n)
+No dependencies
+
+(c) - A dependency constraint, not a dependency. The dependency affected by the constraint occurs elsewhere in the tree.
+(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.
+
+(n) - A dependency or dependency configuration that cannot be resolved.
+
+A web-based, searchable dependency report is available by adding the --scan option.

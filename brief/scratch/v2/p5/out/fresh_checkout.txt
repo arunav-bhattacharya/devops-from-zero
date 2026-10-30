@@ -1,0 +1,49 @@
+Starting a Gradle Daemon, 3 stopped Daemons could not be reused, use --status for details
+Calculating task graph as no cached configuration is available for tasks: build
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:generateExternalPluginSpecBuilders FROM-CACHE
+> Task :build-logic:extractPrecompiledScriptPluginPlugins FROM-CACHE
+> Task :build-logic:compilePluginsBlocks FROM-CACHE
+> Task :build-logic:generatePrecompiledScriptPluginAccessors FROM-CACHE
+> Task :build-logic:generateScriptPluginAdapters FROM-CACHE
+> Task :build-logic:compileKotlin FROM-CACHE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors
+> Task :build-logic:processResources
+> Task :build-logic:classes
+> Task :build-logic:jar
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :greeting:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:processTestResources NO-SOURCE
+> Task :app:processResources NO-SOURCE
+> Task :greeting:processResources NO-SOURCE
+> Task :greeting:processTestResources NO-SOURCE
+> Task :greeting:compileKotlin FROM-CACHE
+> Task :greeting:compileJava NO-SOURCE
+> Task :greeting:classes UP-TO-DATE
+> Task :app:compileKotlin FROM-CACHE
+> Task :app:compileJava NO-SOURCE
+> Task :app:classes UP-TO-DATE
+> Task :greeting:jar
+> Task :greeting:assemble
+> Task :app:jar
+> Task :greeting:compileTestKotlin FROM-CACHE
+> Task :app:compileTestKotlin FROM-CACHE
+> Task :greeting:compileTestJava NO-SOURCE
+> Task :greeting:testClasses UP-TO-DATE
+> Task :app:compileTestJava NO-SOURCE
+> Task :app:testClasses UP-TO-DATE
+> Task :greeting:test FROM-CACHE
+> Task :greeting:check UP-TO-DATE
+> Task :greeting:build
+> Task :app:test FROM-CACHE
+> Task :app:check UP-TO-DATE
+> Task :app:startScripts
+> Task :app:distTar
+> Task :app:distZip
+> Task :app:assemble
+> Task :app:build
+
+BUILD SUCCESSFUL in 24s
+20 actionable tasks: 8 executed, 12 from cache
+Configuration cache entry stored.

@@ -17,6 +17,7 @@ spec:
   sourceRepos:
     - https://github.com/<your-github-user>/hello-devops
   # They may only deploy to these namespaces of the cluster Argo CD runs in.
+  # (hello is for the Day 39 app, if you move it into this project.)
   destinations:
     - server: https://kubernetes.default.svc
       namespace: hello

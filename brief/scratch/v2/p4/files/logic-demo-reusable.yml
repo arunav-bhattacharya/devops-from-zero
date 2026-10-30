@@ -1,0 +1,42 @@
+name: logic-demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      break-build:
+        description: "Make the build job fail on purpose"
+        type: boolean
+        default: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    # Job output: copy the step output up to the job, so other jobs can read it.
+    outputs:
+      version: ${{ steps.make.outputs.version }}
+    steps:
+      - name: Make a version from the commit
+        id: make
+        run: |
+          VERSION="1.4.0-ci.${GITHUB_SHA::7}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Made version $VERSION"
+
+  build:
+    needs: version
+    # Call the reusable workflow, like calling a function with arguments.
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      break-build: ${{ inputs.break-build }}
+
+  report:
+    needs: [version, build]
+    # always(): run even when a job it needs has failed.
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print every job result
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: echo "Job results were $RESULTS"

@@ -1,0 +1,38 @@
+Reusing configuration cache.
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :greeting:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :greeting:clean
+> Task :greeting:processResources NO-SOURCE
+> Task :greeting:processTestResources NO-SOURCE
+> Task :greeting:compileKotlin FROM-CACHE
+> Task :greeting:compileJava NO-SOURCE
+> Task :greeting:classes UP-TO-DATE
+> Task :app:clean
+> Task :greeting:jar
+> Task :greeting:assemble
+> Task :app:processResources NO-SOURCE
+> Task :app:processTestResources NO-SOURCE
+> Task :greeting:compileTestKotlin FROM-CACHE
+> Task :greeting:compileTestJava NO-SOURCE
+> Task :greeting:testClasses UP-TO-DATE
+> Task :app:compileKotlin FROM-CACHE
+> Task :app:compileJava NO-SOURCE
+> Task :app:classes UP-TO-DATE
+> Task :greeting:test FROM-CACHE
+> Task :greeting:check UP-TO-DATE
+> Task :greeting:build
+> Task :app:jar
+> Task :app:compileTestKotlin FROM-CACHE
+> Task :app:compileTestJava NO-SOURCE
+> Task :app:testClasses UP-TO-DATE
+> Task :app:test FROM-CACHE
+> Task :app:check UP-TO-DATE
+> Task :app:startScripts
+> Task :app:distTar
+> Task :app:distZip
+> Task :app:assemble
+> Task :app:build
+
+BUILD SUCCESSFUL in 2s
+13 actionable tasks: 7 executed, 6 from cache
+Configuration cache entry reused.

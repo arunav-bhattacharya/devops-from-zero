@@ -1,0 +1,13 @@
+
+ + Options
+     | Auto-detection:     Enabled
+     | Auto-download:      Enabled
+
+ + Ubuntu JDK 21 (21.0.12.1+1-1-24.04.4-Ubuntu)
+     | Location:           /usr/lib/jvm/java-21-openjdk-amd64
+     | Language Version:   21
+     | Vendor:             Ubuntu
+     | Architecture:       amd64
+     | Is JDK:             true
+     | Detected by:        Current JVM
+

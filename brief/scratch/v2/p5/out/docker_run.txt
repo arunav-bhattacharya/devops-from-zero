@@ -1,0 +1,12 @@
+{"message":"Hello, JVM!","version":"1.0.0","host":"dd46ee0abe0f","visits":1}
+{"message":"Hello, JVM!","version":"1.0.0","host":"dd46ee0abe0f","visits":2}
+{"status":"ok"}
+hello-jvm 1.0.0 listening on port 8080
+uid=10001(appuser) gid=10001(appuser) groups=10001(appuser)
+    PID USER     COMMAND
+      1 appuser  /opt/java/openjdk/bin/java -XX:MaxRAMPercentage=75.0 -classpath /app/lib/app.jar:/app/lib/greeting.jar:
+p5-hello-jvm Up 36 seconds (healthy)
+/bin/bash: line 11: /usr/bin/time: No such file or directory
+exit code 0
+stop took .264286666 s
+exit code 143

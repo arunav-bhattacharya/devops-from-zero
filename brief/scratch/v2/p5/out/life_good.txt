@@ -1,0 +1,12 @@
+Calculating task graph as no cached configuration is available for tasks: good
+1. initialization: reading settings.gradle.kts
+
+> Configure project :
+2. configuration: running build.gradle.kts
+
+> Task :good
+version is unspecified
+
+BUILD SUCCESSFUL in 2s
+1 actionable task: 1 executed
+Configuration cache entry stored.

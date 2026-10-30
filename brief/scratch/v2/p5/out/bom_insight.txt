@@ -1,0 +1,47 @@
+org.junit.jupiter:junit-jupiter-engine:6.1.3
+  Variant runtimeElements:
+    | Attribute Name                     | Provided     | Requested    |
+    |------------------------------------|--------------|--------------|
+    | org.gradle.status                  | release      |              |
+    | org.gradle.category                | library      | library      |
+    | org.gradle.dependency.bundling     | external     | external     |
+    | org.gradle.jvm.version             | 17           | 21           |
+    | org.gradle.libraryelements         | jar          | jar          |
+    | org.gradle.usage                   | java-runtime | java-runtime |
+    | org.gradle.jvm.environment         |              | standard-jvm |
+    | org.jetbrains.kotlin.platform.type |              | jvm          |
+   Selection reasons:
+      - By constraint
+      - By conflict resolution: between versions 6.1.3 and 5.10.1
+
+org.junit.jupiter:junit-jupiter-engine:6.1.3
+\--- org.junit:junit-bom:6.1.3
+     +--- testRuntimeClasspath
+     +--- org.junit.jupiter:junit-jupiter-engine:6.1.3 (*)
+     +--- org.junit.platform:junit-platform-launcher:6.1.3
+     |    +--- org.jetbrains.kotlin:kotlin-test-junit5:2.4.21 (requested org.junit.platform:junit-platform-launcher:1.10.1)
+     |    |    \--- org.jetbrains.kotlin:kotlin-test:2.4.21
+     |    |         +--- testRuntimeClasspath (requested org.jetbrains.kotlin:kotlin-test)
+     |    |         \--- org.jetbrains.kotlin:kotlin-test-junit5:2.4.21 (*)
+     |    \--- org.junit:junit-bom:6.1.3 (*)
+     +--- org.junit.platform:junit-platform-engine:6.1.3
+     |    +--- org.junit.jupiter:junit-jupiter-engine:6.1.3 (*)
+     |    +--- org.junit.platform:junit-platform-launcher:6.1.3 (*)
+     |    \--- org.junit:junit-bom:6.1.3 (*)
+     +--- org.junit.jupiter:junit-jupiter-api:6.1.3
+     |    +--- org.junit.jupiter:junit-jupiter-engine:6.1.3 (*)
+     |    \--- org.junit:junit-bom:6.1.3 (*)
+     \--- org.junit.platform:junit-platform-commons:6.1.3
+          +--- org.junit.platform:junit-platform-engine:6.1.3 (*)
+          +--- org.junit.jupiter:junit-jupiter-api:6.1.3 (*)
+          \--- org.junit:junit-bom:6.1.3 (*)
+
+org.junit.jupiter:junit-jupiter-engine:5.10.1 -> 6.1.3
+\--- org.jetbrains.kotlin:kotlin-test-junit5:2.4.21
+     \--- org.jetbrains.kotlin:kotlin-test:2.4.21
+          +--- testRuntimeClasspath (requested org.jetbrains.kotlin:kotlin-test)
+          \--- org.jetbrains.kotlin:kotlin-test-junit5:2.4.21 (*)
+
+(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.
+
+A web-based, searchable dependency report is available by adding the --scan option.

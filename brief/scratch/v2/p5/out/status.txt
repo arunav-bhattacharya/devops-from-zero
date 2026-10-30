@@ -1,0 +1,7 @@
+   PID STATUS   INFO
+ 15522 IDLE     9.8.2
+ 25476 STOPPED  (stop command received)
+ 18289 STOPPED  (stop command received)
+ 31632 STOPPED  (stop command received)
+
+Only Daemons for the current Gradle version are displayed. For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/gradle_daemon.html#sec:status in the Gradle documentation.

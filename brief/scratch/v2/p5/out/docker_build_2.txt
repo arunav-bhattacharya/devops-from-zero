@@ -1,0 +1,126 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.sandbox
+#1 transferring dockerfile: 2.03kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.1s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
+#3 CACHED
+
+#4 [internal] load metadata for mirror.gcr.io/library/eclipse-temurin:21-jre
+#4 DONE 0.8s
+
+#5 [internal] load metadata for mirror.gcr.io/library/eclipse-temurin:21-jdk
+#5 DONE 0.8s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 242B done
+#6 DONE 0.0s
+
+#7 [build  1/13] FROM mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a
+#7 resolve mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 1/4] FROM mirror.gcr.io/library/eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a
+#8 resolve mirror.gcr.io/library/eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a 0.0s done
+#8 DONE 0.0s
+
+#9 [stage-1 2/4] WORKDIR /app
+#9 CACHED
+
+#10 [internal] load build context
+#10 transferring context: 1.86kB done
+#10 DONE 0.0s
+
+#11 [build  6/13] COPY gradle/wrapper/ gradle/wrapper/
+#11 CACHED
+
+#12 [build  3/13] RUN keytool -importcert -noprompt -cacerts -storepass changeit -alias sandbox -file /tmp/ca.crt
+#12 CACHED
+
+#13 [build 11/13] COPY greeting/ greeting/
+#13 CACHED
+
+#14 [build  9/13] COPY gradle/libs.versions.toml gradle/
+#14 CACHED
+
+#15 [build  2/13] COPY sandbox-proxy-ca.crt /tmp/ca.crt
+#15 CACHED
+
+#16 [build  5/13] COPY gradlew ./
+#16 CACHED
+
+#17 [build  7/13] RUN ./gradlew --version --no-daemon
+#17 CACHED
+
+#18 [build 10/13] COPY build-logic/ build-logic/
+#18 CACHED
+
+#19 [build  4/13] WORKDIR /src
+#19 CACHED
+
+#20 [build  8/13] COPY settings.gradle.kts gradle.properties ./
+#20 CACHED
+
+#21 [build 12/13] COPY app/ app/
+#21 CACHED
+
+#22 [build 13/13] RUN --mount=type=cache,target=/root/.gradle/caches     ./gradlew --no-daemon --console=plain :app:installDist
+#22 0.100 Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=40805
+#22 1.189 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+#22 2.388 Daemon will be stopped at the end of the build 
+#22 4.388 Calculating task graph as no cached configuration is available for tasks: :app:installDist
+#22 11.59 > Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+#22 17.99 > Task :build-logic:generateExternalPluginSpecBuilders FAILED
+#22 18.19 
+#22 18.19 FAILURE: Build failed with an exception.
+#22 18.19 
+#22 18.19 * What went wrong:
+#22 18.19 Execution failed for task ':build-logic:generateExternalPluginSpecBuilders' (registered by plugin class 'org.gradle.kotlin.dsl.plugins.precompiled.PrecompiledScriptPlugins').
+#22 18.19 > Error while evaluating property 'pluginEntries' of task ':build-logic:generateExternalPluginSpecBuilders'.
+#22 18.19    > Could not resolve all files for configuration ':build-logic:compileClasspath'.
+#22 18.19       > Could not resolve org.jetbrains.kotlin:kotlin-tooling-core:2.4.21.
+#22 18.19         Required by:
+#22 18.19             project ':build-logic' > org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21 > org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.4.21
+#22 18.19             project ':build-logic' > org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21 > org.jetbrains.kotlin:kotlin-gradle-plugins-bom:2.4.21
+#22 18.19          > Could not resolve org.jetbrains.kotlin:kotlin-tooling-core:2.4.21.
+#22 18.19             > Could not get resource 'https://plugins.gradle.org/m2/org/jetbrains/kotlin/kotlin-tooling-core/2.4.21/kotlin-tooling-core-2.4.21.pom'.
+#22 18.20                > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-tooling-core/2.4.21/kotlin-tooling-core-2.4.21.pom'.
+#22 18.20                   > Received status code 429 from server: Too Many Requests
+#22 18.20 > There is 1 more failure with an identical cause.
+#22 18.20 
+#22 18.20 * Try:
+#22 18.20 > Run with --stacktrace option to get the stack trace.
+#22 18.20 > Run with --info or --debug option to get more log output.
+#22 18.20 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+#22 18.21 > Get more help at https://help.gradle.org.
+#22 18.21 1 actionable task: 1 executed
+#22 18.21 Configuration cache entry stored.
+#22 18.21 
+#22 18.21 BUILD FAILED in 17s
+#22 ERROR: process "/bin/sh -c ./gradlew --no-daemon --console=plain :app:installDist" did not complete successfully: exit code: 1
+------
+ > [build 13/13] RUN --mount=type=cache,target=/root/.gradle/caches     ./gradlew --no-daemon --console=plain :app:installDist:
+18.20 
+18.20 * Try:
+18.20 > Run with --stacktrace option to get the stack trace.
+18.20 > Run with --info or --debug option to get more log output.
+18.20 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+18.21 > Get more help at https://help.gradle.org.
+18.21 1 actionable task: 1 executed
+18.21 Configuration cache entry stored.
+18.21 
+18.21 BUILD FAILED in 17s
+------
+Dockerfile.sandbox:25
+--------------------
+  24 |     #    builds, even when the source code changed. Tests already ran in CI.
+  25 | >>> RUN --mount=type=cache,target=/root/.gradle/caches \
+  26 | >>>     ./gradlew --no-daemon --console=plain :app:installDist
+  27 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c ./gradlew --no-daemon --console=plain :app:installDist" did not complete successfully: exit code: 1

@@ -1,0 +1,9 @@
+{"message":"Hello, JVM!","version":"dev","host":"vm","visits":1}
+{"message":"Hello, JVM!","version":"dev","host":"vm","visits":2}
+{"status":"ok"}
+HTTP/1.1 404 Not Found
+Date: Fri, 30 Oct 2026 05:06:56 GMT
+Content-type: application/json
+Content-length: 21
+
+{"error":"not found"}

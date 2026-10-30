@@ -1,0 +1,35 @@
+Reusing configuration cache.
+:app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:greeting:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:greeting:compileKotlin SKIPPED
+:greeting:compileJava SKIPPED
+:app:compileKotlin SKIPPED
+:app:compileJava SKIPPED
+:app:processResources SKIPPED
+:app:classes SKIPPED
+:app:jar SKIPPED
+:greeting:processResources SKIPPED
+:greeting:classes SKIPPED
+:greeting:jar SKIPPED
+:app:startScripts SKIPPED
+:app:distTar SKIPPED
+:app:distZip SKIPPED
+:app:assemble SKIPPED
+:app:compileTestKotlin SKIPPED
+:app:compileTestJava SKIPPED
+:app:processTestResources SKIPPED
+:app:testClasses SKIPPED
+:app:test SKIPPED
+:app:check SKIPPED
+:app:build SKIPPED
+:greeting:assemble SKIPPED
+:greeting:compileTestKotlin SKIPPED
+:greeting:compileTestJava SKIPPED
+:greeting:processTestResources SKIPPED
+:greeting:testClasses SKIPPED
+:greeting:test SKIPPED
+:greeting:check SKIPPED
+:greeting:build SKIPPED
+
+BUILD SUCCESSFUL in 1s
+Configuration cache entry reused.

@@ -1,0 +1,31 @@
+Calculating task graph as no cached configuration is available for tasks: bad
+1. initialization: reading settings.gradle.kts
+
+> Configure project :
+2. configuration: running build.gradle.kts
+
+> Task :bad FAILED
+
+1 problem was found storing the configuration cache.
+- Task `:bad` of type `org.gradle.api.DefaultTask`: invocation of 'Task.project' at execution time is unsupported with the configuration cache.
+  See https://docs.gradle.org/9.8.2/userguide/configuration_cache_requirements.html#config_cache:requirements:use_project_during_execution
+
+See the complete report at file:///tmp/claude-0/-home-user/5a31be1b-d2d7-5096-8c55-314d3e3b0058/scratchpad/p5work/lifecycle-demo/build/reports/configuration-cache/adzigjwdtxxw90f3qz80tcbkl/5w04wedns6wgzyoffolt3r0nw/configuration-cache-report.html
+
+[Incubating] Problems report is available at: file:///tmp/claude-0/-home-user/5a31be1b-d2d7-5096-8c55-314d3e3b0058/scratchpad/p5work/lifecycle-demo/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':bad' (registered in build file 'build.gradle.kts').
+> Invocation of 'Task.project' by task ':bad' at execution time is unsupported with the configuration cache.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s
+1 actionable task: 1 executed
+Configuration cache entry discarded with 1 problem.

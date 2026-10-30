@@ -1,0 +1,50 @@
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :build-logic:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :build-logic:compilePluginsBlocks UP-TO-DATE
+> Task :build-logic:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :build-logic:generateScriptPluginAdapters UP-TO-DATE
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :greeting:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:processResources NO-SOURCE
+> Task :greeting:processResources NO-SOURCE
+> Task :greeting:compileKotlin
+> Task :greeting:compileJava NO-SOURCE
+> Task :greeting:classes UP-TO-DATE
+> Task :greeting:jar UP-TO-DATE
+> Task :app:compileKotlin
+> Task :app:compileJava NO-SOURCE
+> Task :app:classes UP-TO-DATE
+
+> Task :app:jibDockerBuild
+
+Containerizing application to Docker daemon as hello-jvm:jib...
+Base image 'mirror.gcr.io/library/eclipse-temurin:21-jre' does not use a specific image digest - build may not be reproducible
+Getting manifest for base image mirror.gcr.io/library/eclipse-temurin:21-jre...
+Building dependencies layer...
+Building project dependencies layer...
+Building classes layer...
+Building jvm arg files layer...
+Using base image with digest: sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a
+
+Container entrypoint set to [java, -XX:MaxRAMPercentage=75.0, -cp, @/app/jib-classpath-file, hello.app.MainKt]
+Loading to Docker daemon...
+
+Built image to Docker daemon as hello-jvm:jib
+
+[Incubating] Problems report is available at: file:///tmp/claude-0/-home-user/5a31be1b-d2d7-5096-8c55-314d3e3b0058/scratchpad/p5work/hello-jvm/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 21s
+13 actionable tasks: 3 executed, 10 up-to-date

@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      # Inputs go through env variables, never straight into a script (Day 21).
+      # Inputs go through env variables, never straight into a script.
       ENVIRONMENT: ${{ inputs.environment }}
       VERSION: ${{ inputs.version }}
       FILE: overlays/${{ inputs.environment }}/kustomization.yaml

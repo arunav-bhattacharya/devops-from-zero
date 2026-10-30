@@ -1,0 +1,6 @@
+[logic-demo/version]   | Made version 1.4.0-ci.3d170d0
+[build/build/build]   | Building hello-devops:1.4.0-ci.3d170d0
+[logic-demo/report ]   | Job results were [
+[logic-demo/report ]   |   "success",
+[logic-demo/report ]   |   "success"
+[logic-demo/report ]   | ]

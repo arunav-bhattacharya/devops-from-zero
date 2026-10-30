@@ -1,0 +1,24 @@
+org.apache.commons:commons-lang3:3.18.0
+  Variant runtime:
+    | Attribute Name                     | Provided     | Requested    |
+    |------------------------------------|--------------|--------------|
+    | org.gradle.status                  | release      |              |
+    | org.gradle.category                | library      | library      |
+    | org.gradle.libraryelements         | jar          | jar          |
+    | org.gradle.usage                   | java-runtime | java-runtime |
+    | org.gradle.dependency.bundling     |              | external     |
+    | org.gradle.jvm.environment         |              | standard-jvm |
+    | org.gradle.jvm.version             |              | 21           |
+    | org.jetbrains.kotlin.platform.type |              | jvm          |
+   Selection reasons:
+      - By conflict resolution: between versions 3.18.0 and 3.17.0
+
+org.apache.commons:commons-lang3:3.18.0
+\--- org.apache.commons:commons-text:1.14.0
+     \--- project ':greeting'
+          \--- runtimeClasspath
+
+org.apache.commons:commons-lang3:3.17.0 -> 3.18.0
+\--- runtimeClasspath
+
+A web-based, searchable dependency report is available by adding the --scan option.

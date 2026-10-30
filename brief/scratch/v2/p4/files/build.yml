@@ -1,0 +1,32 @@
+name: build
+
+# A reusable workflow: other workflows call it like a function.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to build"
+        type: string
+        required: true
+      break-build:
+        description: "Make the build fail on purpose"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Save the image name for later steps
+        run: echo "IMAGE=hello-devops:$VERSION" >> "$GITHUB_ENV"
+      - name: Pretend to build
+        run: echo "Building $IMAGE"
+      - name: Fail on purpose
+        if: ${{ inputs.break-build }}
+        run: |
+          echo "Breaking the build, as you asked"
+          exit 1
+      - name: Write the summary
+        run: echo "Built \`$IMAGE\`" >> "$GITHUB_STEP_SUMMARY"

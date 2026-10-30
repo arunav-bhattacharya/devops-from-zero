@@ -83,7 +83,7 @@ D39_SECTIONS = [
     {
         "h": "Why applying from a laptop stops working",
         "body": t("""
-            Since Day 30 you have deployed with `kubectl apply -k k8s` from your laptop. For one person and one cluster, that is fine. Add a few colleagues and it breaks in quiet ways:
+            All through Part 7 you deployed with `kubectl apply -k k8s` from your laptop. For one person and one cluster, that is fine. Add a few colleagues and it breaks in quiet ways:
             - Someone fixes a Deployment by hand at night and never tells git.
             - Two people apply from two branches, and the last one wins.
             - Nobody can say which commit is running right now.
@@ -156,11 +156,11 @@ D39_SECTIONS = [
     {
         "h": "Installing Argo CD on kind",
         "body": t("""
-            The install is one long YAML file from the Argo CD project. The Commands list below has the exact command. Its flags look odd, so here is why.
+            The install is one long YAML file from the Argo CD project. The exact command is in the Commands list below, and two of its flags need explaining.
 
             `kubectl apply --server-side` lets the API server work out the changes. You need it because one of Argo CD's custom resource definitions, the one for ApplicationSets, is too big for normal apply. Normal (client-side) apply stores a full copy of each object in an annotation, and annotations are limited to 262 KB in total. Server-side apply keeps no such copy. `--force-conflicts` lets the install take over fields that an earlier apply set, which matters when you upgrade.
 
-            This trips up many people who follow older videos. They show a plain `kubectl apply -n argocd -f install.yaml`, and on Argo CD 3.x that fails with an error about annotations that are too long.
+            Older videos are a common trap here. They show a plain `kubectl apply -n argocd -f install.yaml`, and on Argo CD 3.x that fails with an error about annotations that are too long.
 
             The install URL points at the `stable` branch, which is fine on a laptop. At work you pin a version, with a tag such as `v3.5.6` in the URL instead of `stable`. Then an install today and an install next month give the same result.
 
@@ -451,7 +451,7 @@ D39 = {
             On Day 30 you saw that a controller has to know which objects are its own. A ReplicaSet uses labels and owner references. Argo CD has the same problem on a bigger scale: one cluster can hold objects from many Applications, plus objects that other controllers create.
 
             Since 3.0, Argo CD tracks objects with the annotation `argocd.argoproj.io/tracking-id`, in the form `app:group/Kind:namespace/name`. Before 3.0 the default was the label `app.kubernetes.io/instance`. That label caused two kinds of trouble:
-            - Other tools copy labels, for example from a Deployment onto the Pods it makes, so a copied label could confuse Argo CD about what it owned.
+            - Other tools copy labels, for example an operator that copies its labels onto the objects it creates. A copied label could make Argo CD think it owned those objects.
             - Label values may be at most 63 characters, so long app names were cut short.
 
             The annotation names the exact object it sits on. If a tool copies it onto a different object, the name inside no longer matches, and Argo CD ignores the copy. You can still switch to label tracking in the `argocd-cm` ConfigMap, but there is rarely a reason to.
@@ -476,13 +476,6 @@ D39 = {
 # ======================================================================
 # Day 40
 # ======================================================================
-# Real output captured with kustomize v5.8.3 against the lab overlays
-# (see check_outputs.sh in this folder).
-OVERLAY = {
-    "dev_ns": "hello-dev",
-    "prod_ns": "hello-prod",
-}
-
 D40_SECTIONS = [
     {
         "h": "Where the deployment files live",
@@ -501,7 +494,7 @@ D40_SECTIONS = [
 
             That last point needs care in GitHub Actions. A push made with the workflow's own `GITHUB_TOKEN` does not start new workflow runs, which stops most loops. A push made with a personal token does start them.
 
-            For one person and a laptop cluster, one repo is fine, and this lesson keeps it. The cost is small: a commit that changes only `k8s/` still runs `ci.yml` on main. If that bothers you, add `k8s/**` to the `paths-ignore` list of its push trigger.
+            For one person and a laptop cluster, one repo is fine, and this lesson keeps it. The cost is small: a commit that changes only `overlays/` still runs `ci.yml` on main. If that bothers you, add `overlays/**` to the `paths-ignore` list of its push trigger.
         """),
         "refs": [
             ref("Argo CD docs: best practices (config repo vs code repo)", L["best"], "docs"),
@@ -513,7 +506,7 @@ D40_SECTIONS = [
         "body": t("""
             An environment is one running copy of the app with one purpose. Dev is where new versions land first, and prod is what users see. Real teams usually give prod its own cluster. Here both live in your kind cluster, in the namespaces `hello-dev` and `hello-prod`.
 
-            On Day 37 you met Kustomize overlays, and the lab has two: `k8s/overlays/dev` and `k8s/overlays/prod`. Each one takes the shared files and changes a few things, such as the namespace, the replica count or the image tag. `kubectl kustomize k8s/overlays/prod` prints exactly what prod gets.
+            On Day 37 you built two Kustomize overlays, `overlays/dev` and `overlays/prod`. Each one takes the shared files in `k8s/` and changes a few things. Dev runs one Pod and answers "Hello from dev!". Prod runs four, with more memory and a PodDisruptionBudget. Both turn the Service into a ClusterIP, so they do not fight the Day 39 app over NodePort 30080. `kubectl kustomize overlays/prod` prints exactly what prod gets.
 
             Argo CD needs one Application per environment. You could copy `application.yaml` twice and change three lines in each copy. An **ApplicationSet** writes those copies for you. It has two parts:
             - Generators produce a list of values. The lab uses the list generator with two entries, `env: dev` and `env: prod`.
@@ -538,11 +531,11 @@ D40_SECTIONS = [
             3. You test dev.
             4. A second pull request sets the prod overlay to the same `1.2.0`. Someone reviews and merges it, and Argo CD deploys prod.
 
-            The image never gets rebuilt. Prod runs the exact bytes that dev ran, which is the build once, deploy many idea from Day 17. The pull request gives you a review, a record of who approved it, and a clean undo: the Revert button on a merged pull request opens a new one that puts the old tag back.
+            The image never gets rebuilt. Prod runs the exact bytes that dev ran, which is the build once, deploy many idea from Day 17. The pull request gives you a review and a record of who approved it. It also gives you a clean undo: the Revert button on a merged pull request opens a new one that puts the old tag back.
 
             This only works if a tag always means the same image. Never deploy `latest`. It points at different images over time, so git no longer tells you what runs, and a revert cannot bring the old version back. That breaks the "versioned and immutable" principle from Day 39. A version tag such as `1.2.0` is good. A digest such as `@sha256:...` is stronger, because nobody can move it, and the `images` field in a kustomization accepts a `digest` too.
 
-            Some teams want reviewers to see the final YAML, not just a changed tag. Argo CD's Source Hydrator renders each environment and commits the plain YAML to git before it syncs. It is a Beta feature since Argo CD 3.5 and off by default. Tools such as [Kargo](https://github.com/akuity/kargo) and [GitOps Promoter](https://github.com/argoproj-labs/gitops-promoter) go further and automate the promotion steps themselves.
+            Some teams want reviewers to read the full rendered YAML of each environment. Argo CD's Source Hydrator renders each environment and commits the plain YAML to git before it syncs. It is a Beta feature since Argo CD 3.5 and off by default. Tools such as [Kargo](https://github.com/akuity/kargo) and [GitOps Promoter](https://github.com/argoproj-labs/gitops-promoter) go further and automate the promotion steps themselves.
         """),
         "refs": [
             ref("GitHub docs: reverting a pull request", L["gh_revert_pr"], "docs"),
@@ -555,12 +548,12 @@ D40_SECTIONS = [
         "body": t("""
             Argo CD deploys only what git says, so something has to write each new tag into a file. Teams use two common ways.
 
-            The first is a CI job that edits the file and opens a pull request. The lab's `bump-image.yml` workflow does this. You give it an environment and a version, and it:
-            1. Checks out the repo.
-            2. Runs `kustomize edit set image hello-devops=ghcr.io/<you>/hello-devops:1.2.0` inside that environment's overlay.
+            The first is a CI job that edits the file and opens a pull request. The classic tool for the edit is `kustomize edit set image`, run inside an overlay folder. It works, but it rewrites the whole file in its own style. On the lab's prod overlay it changed 80 lines to set one tag, because it drops comments at line ends and re-indents lists. So the lab's `bump-image.yml` workflow uses `yq`, a command line tool for YAML, which changes only the fields you name. You give the workflow an environment and a version, and it:
+            1. Checks that the version looks like `1.2.0`.
+            2. Sets `newName` and `newTag` of the `hello-devops` image in that environment's overlay.
             3. Pushes a branch and opens a pull request with the `gh` CLI.
 
-            New personal repos do not let workflows open pull requests. You allow it once, under Settings, Actions, General, Workflow permissions. Also know that `kustomize edit` rewrites the whole file in its own style. It drops comments at the end of lines and changes how lists are indented. Keep comments at the top of the file, and the first bump will not surprise you.
+            New personal repos do not let workflows open pull requests. You allow it once, under Settings, Actions, General, Workflow permissions.
 
             The second way is [Argo CD Image Updater](https://github.com/argoproj-labs/argocd-image-updater), a separate add-on. It watches your registry, and when a version that matches your rule appears, it writes the new tag for you. Since its 1.0 release you configure it with its own custom resource, `ImageUpdater`; the lab's optional `argocd/image-updater.yaml` is one. With the `git` write-back method it commits straight to the branch, with no pull request. Its README says it is under active development and not yet recommended for critical production workloads.
 
@@ -626,9 +619,9 @@ D40_SECTIONS = [
             [Flux](https://github.com/fluxcd/flux2) is the other big GitOps tool. Like Argo CD it is a graduated CNCF project, and the ideas from these two days carry over. The differences are mostly about style:
             - Flux is a set of small controllers that you drive with YAML and the `flux` CLI. Its core has no web UI; the separate [Flux Operator](https://fluxoperator.dev/web-ui/) adds one.
             - Flux usually runs inside every cluster it manages, while one Argo CD often manages many clusters from one place.
-            - Flux has image automation and SOPS decryption built in; Argo CD uses Image Updater and plugins.
+            - Flux ships its own image automation controllers and can decrypt SOPS files itself; Argo CD uses Image Updater and plugins.
 
-            Choose Argo CD when people want a UI to see and sync apps. Choose Flux when the team wants everything as YAML and no central server. Both are sound choices.
+            Choose Argo CD when people want a UI to see and sync apps. Choose Flux when the team wants everything as YAML and no central server.
         """),
         "refs": [
             ref("Argo CD docs: projects", L["projects"], "docs"),
@@ -721,7 +714,7 @@ D40 = {
             "lang": "yaml",
             "title": "gitops/smoke-test.yaml",
             "src": lab("gitops/smoke-test.yaml"),
-            "run": "cp gitops/smoke-test.yaml k8s/overlays/dev/",
+            "run": "cp gitops/smoke-test.yaml overlays/dev/",
         },
         {
             "lang": "yaml",
@@ -731,41 +724,43 @@ D40 = {
         },
     ],
     "commands": [
-        {"cmd": "kubectl -n argocd delete application hello-devops", "what": "Remove the Day 39 app and everything it deployed, before dev and prod take over."},
         {"cmd": "kubectl apply -n argocd -f argocd/project.yaml -f argocd/applicationset.yaml", "what": "Create the project, then the ApplicationSet that makes the dev and prod apps."},
         {"cmd": "kubectl -n argocd get applicationsets", "what": "List ApplicationSets."},
         {"cmd": "kubectl -n argocd get applications -L env", "what": "List Applications with an extra column for their env label."},
         {"cmd": "argocd proj get hello", "what": "Show the project's allowed repos, destinations and roles."},
-        {"cmd": "kubectl kustomize k8s/overlays/prod", "what": "Print the exact YAML that prod gets, without touching the cluster."},
-        {"cmd": "brew install kustomize", "what": "Install the standalone kustomize tool, which has the edit commands."},
-        {"cmd": "kustomize edit set image hello-devops=ghcr.io/<your-github-user>/hello-devops:1.2.0", "what": "Run inside an overlay folder. Writes the image name and tag into its kustomization.yaml."},
+        {"cmd": "kubectl kustomize overlays/prod", "what": "Print the exact YAML that prod gets, without touching the cluster."},
+        {"cmd": "kubectl -n hello-dev port-forward svc/hello-devops 8082:80", "what": "Reach the dev app at http://localhost:8082 (its Service is ClusterIP)."},
+        {"cmd": "brew install kustomize yq", "what": "Install the standalone kustomize tool and yq, a command line editor for YAML."},
+        {"cmd": "kustomize edit set image hello-devops=ghcr.io/<your-github-user>/hello-devops:1.2.0", "what": "Run inside an overlay folder. Sets the image name and tag, but rewrites the whole file."},
+        {"cmd": "yq -i '(.images[] | select(.name == \"hello-devops\")).newTag = \"1.2.0\"' overlays/prod/kustomization.yaml", "what": "Change only the image tag in that file and keep everything else, comments included."},
         {"cmd": "gh workflow run bump-image.yml -f environment=dev -f version=1.2.0", "what": "Start the bump workflow from your terminal with its two inputs."},
         {"cmd": "gh run watch", "what": "Follow a workflow run live until it finishes."},
         {"cmd": "gh pr list", "what": "List open pull requests, including the ones the workflow opened."},
         {"cmd": "gh pr merge <number> --squash --delete-branch", "what": "Merge a pull request as one commit and delete its branch."},
         {"cmd": "kubectl -n hello-prod get deployment hello-devops -o jsonpath='{.spec.template.spec.containers[0].image}'", "what": "Print the image that prod runs right now."},
+        {"cmd": "kubectl -n argocd delete applicationset hello-devops", "what": "Delete the ApplicationSet, its two Applications and everything they deployed."},
     ],
     "mistake": "Deploying `latest` and expecting GitOps to handle versions. If an overlay says `latest`, git does not change when the image does, so Argo CD sees nothing to sync and a revert brings nothing back. Give every release its own version tag (or pin a digest), and promote by changing that tag in git.",
     "real_world": "A payments team might run dev, staging and prod clusters from one config repo, with one ApplicationSet per app that uses the cluster generator. CI opens the dev pull request after every release and merges it once checks pass. Prod needs a second pull request, approved by someone on the on-call rotation, and a PostSync smoke test fails the sync if checkout stops answering.",
     "task": {
         "title": "Run dev and prod from one ApplicationSet",
         "steps": [
-            "Make sure at least one release exists in GHCR from Day 21, for example `1.0.0`. Open the package settings on GitHub and make it public, so kind can pull it without a password.",
-            "Delete the Day 39 Application, so its NodePort and namespace do not clash with the new apps.",
-            "Add `argocd/project.yaml` and `argocd/applicationset.yaml` with your GitHub user name. Commit, push, and apply both.",
-            "Check that two Applications appear and both turn Synced and Healthy.",
+            "Add `argocd/project.yaml` and `argocd/applicationset.yaml` with your GitHub user name. Commit, push, and apply both. The Day 39 app can stay, because the overlays use ClusterIP Services.",
+            "Check that `hello-devops-dev` and `hello-devops-prod` appear and both turn Synced and Healthy. Dev uses the local image `hello-devops:1.1.0`; if kind lacks it, run `kind load docker-image hello-devops:1.1.0 --name devops`.",
+            "Port-forward to the dev and the prod Service in turn, and check with curl that each one greets you differently.",
             "Add `.github/workflows/bump-image.yml`, push it, and allow workflows to create pull requests in the repo settings.",
-            "Tag and push a new release (for example `v1.1.0`), wait for `release.yml` to finish, then run the bump workflow for dev with that version.",
-            "Review and merge the pull request. Confirm that dev runs the new tag and prod still runs the old one.",
-            "Promote: run the bump workflow again for prod with the same version, merge, and confirm both environments now match.",
+            "Push a new release tag, for example `v1.2.0`, and wait for `release.yml` to finish. Make the GHCR package public, so kind can pull it without a password.",
+            "Run the bump workflow for dev with version `1.2.0`. Read the pull request: it should change two lines in `overlays/dev/kustomization.yaml`. Merge it.",
+            "Confirm that dev now runs `ghcr.io/<you>/hello-devops:1.2.0` while prod still runs its old tag.",
+            "Promote: run the workflow again for prod with the same version, merge, and confirm that both environments match.",
             "Optional: add the smoke-test hook to the dev overlay, then break its URL and watch the dev sync fail.",
         ],
         "hints": [
-            "The workflow opens the pull request with `GITHUB_TOKEN`, so `ci.yml` waits for you to approve its run on that pull request. Look for the banner in the merge box.",
-            "If a new Pod shows ImagePullBackOff, check the image name in `kubectl kustomize k8s/overlays/dev` and that the GHCR package is public.",
-            "Not sure what changed? `kubectl kustomize k8s/overlays/dev > /tmp/dev.yaml` before and after the bump, then `diff` the two files.",
+            "Checks may not start on their own for a pull request that the workflow opened with `GITHUB_TOKEN`; GitHub does this to stop workflow loops. If the merge box asks you to approve the workflow runs, approve them.",
+            "ImagePullBackOff after a bump usually means the GHCR package is still private, or the tag does not exist. `kubectl -n hello-dev describe pod` names the exact image it tried.",
+            "Unsure what a bump will change? Save the output of `kubectl kustomize overlays/dev` to a file before and after, then compare the two with `diff`.",
         ],
-        "done_when": "You are done when the jsonpath command from the Commands list prints the same new tag for `hello-dev` and `hello-prod`, and both apps show Synced and Healthy.",
+        "done_when": "You are done when the jsonpath command from the Commands list prints the same `ghcr.io/.../hello-devops:1.2.0` image for `hello-dev` and `hello-prod`, and both apps are Synced and Healthy.",
     },
     "explain_back": {
         "prompt": "Explain to a teammate, in 3 to 4 sentences, how version 1.3.0 travels from a git tag to prod in this setup. Mention who builds the image, what changes in git, and what Argo CD does.",
@@ -775,13 +770,13 @@ D40 = {
         "Deployment YAML lives in git, in the app repo or a separate config repo with cleaner history and access.",
         "Each environment gets one overlay and one Application; an ApplicationSet writes the Applications from one template.",
         "Promotion is a pull request that copies a tested, immutable tag to the next overlay. Never deploy latest.",
-        "CI writes new tags with kustomize edit set image and a pull request; Image Updater can do it for dev.",
+        "CI writes the new tag with a small edit (yq or kustomize edit set image) and opens a pull request; Image Updater can do it for dev.",
         "Sync waves order objects, hooks run Jobs before or after a sync, and secrets stay out of git as Sealed or External Secrets.",
         "AppProjects limit repos, namespaces and kinds. Flux is the main alternative to Argo CD.",
     ],
     "check": [
         {
-            "q": "You add `env: staging, namespace: hello-staging` to the list generator and create `k8s/overlays/staging`. The new app appears but never syncs. Why?",
+            "q": "You add `env: staging, namespace: hello-staging` to the list generator and create `overlays/staging`. The new app appears but never syncs. Why?",
             "options": [
                 "The hello project does not allow the hello-staging namespace",
                 "An ApplicationSet can make at most two Applications",
@@ -821,7 +816,7 @@ D40 = {
         },
         {
             "q": "How do you handle secrets when everything lives in git?",
-            "a": "I never commit plain Secrets, because base64 is not encryption and git keeps history forever. I either commit encrypted SealedSecrets that only the in-cluster controller can decrypt, or I commit ExternalSecret references and let the External Secrets Operator fetch the values from a store such as Vault or AWS Secrets Manager. Argo CD recommends these destination-cluster styles. I avoid plugins that inject secrets while Argo CD renders manifests, because those values land in its cache.",
+            "a": "I never commit plain Secrets, because base64 is not encryption and git keeps history forever. One option is to commit encrypted SealedSecrets that only the in-cluster controller can decrypt. The other is to commit ExternalSecret references and let the External Secrets Operator fetch the values from a store such as Vault or AWS Secrets Manager. Argo CD recommends these destination-cluster styles. I avoid plugins that inject secrets while Argo CD renders manifests, because those values land in its cache.",
         },
         {
             "q": "When would you choose Flux over Argo CD?",
@@ -843,7 +838,7 @@ D40 = {
 
             Last, the rendered manifests pattern. With overlays and charts, a one-line change in a base can change the YAML of every environment, and the pull request does not show it. The Source Hydrator (Beta since Argo CD 3.5, off by default) renders each environment, commits the plain YAML to a separate branch, and syncs from there. Reviewers then read the exact YAML that will run, and `git diff` between two commits shows exactly what changed in prod.
 
-            You can get a cheap version of this today. In a pull request check, run `kubectl kustomize` for each overlay on both the main branch and the pull request branch, and post the diff as a comment. A reviewer who sees "prod: replicas 3 to 6" catches mistakes that "base/deployment.yaml: one line changed" hides.
+            You can get a cheap version of this today. In a pull request check, run `kubectl kustomize` for each overlay on both the main branch and the pull request branch, and post the diff as a comment. A reviewer who sees "prod: replicas 3 to 6" catches mistakes that "k8s/deployment.yaml: one line changed" hides.
         """),
     },
     "sources": [
@@ -866,32 +861,34 @@ def out(name):
 
 D40["worked"]["steps"] = [
     {
-        "say": "Ask git, not the cluster, what each environment should run. `kubectl kustomize` renders an overlay on your laptop and never touches the cluster. Here dev and prod still run the same release.",
+        "say": "Ask git, not the cluster, what each environment should run. `kubectl kustomize` renders an overlay on your laptop and never touches the cluster. Dev already runs 1.1.0, and prod still runs 1.0.0. Both are local images in your kind cluster.",
         "code": out("01-images-before.txt"),
         "lang": "console",
     },
     {
-        "say": "Bump dev. Run kustomize inside the dev overlay; it edits only that folder's `kustomization.yaml`. Read the diff before you commit: one line changes.",
-        "code": out("02-bump-dev.txt"),
+        "say": "Try the classic tool first. The `kustomize edit set image` command sets the tag, but look at the size of the change: it rewrote the whole file, dropping comments at line ends and re-indenting lists. A reviewer would have to hunt for the one line that matters, so throw that edit away.",
+        "code": out("02-kustomize-edit.txt"),
         "lang": "console",
     },
     {
-        "say": "Ship it like any other change: a branch, a commit and a pull request. Argo CD watches only `main`, so nothing deploys until you merge.",
-        "code": "$ git switch -c bump/dev-1.1.0\n$ git commit -am \"Deploy hello-devops 1.1.0 to dev\"\n$ git push -u origin bump/dev-1.1.0\n$ gh pr create --fill\n$ gh pr merge --squash --delete-branch",
+        "say": "`yq` changes only the field you name and keeps everything else, comments included. Now the diff is one line, and the review takes seconds. (`-U1` shows one line of context instead of three.)",
+        "code": out("03-yq-edit.txt"),
         "lang": "console",
     },
     {
-        "say": "Within about three minutes Argo CD picks up the merge. Only the dev app syncs, because only the dev folder changed. Prod keeps the old tag.",
-        "code": "$ kubectl -n hello-dev get deployment hello-devops \\\n    -o jsonpath='{.spec.template.spec.containers[0].image}'\nghcr.io/<you>/hello-devops:1.1.0\n$ kubectl -n hello-prod get deployment hello-devops \\\n    -o jsonpath='{.spec.template.spec.containers[0].image}'\nghcr.io/<you>/hello-devops:1.0.0",
+        "say": "Check the result before you commit: render prod again and confirm the new tag. This catches a typo in the file before Argo CD ever sees it.",
+        "code": out("04-images-after.txt"),
         "lang": "console",
     },
     {
-        "say": "Test dev. When you trust 1.1.0, make the same edit in the prod overlay. The diff is again one line, which makes the prod review quick. Open the pull request, get it approved, and merge.",
-        "code": out("03-promote-prod.txt"),
+        "say": "Ship it like any other change: a branch, a commit and a pull request. Argo CD watches only `main`, so nothing deploys until someone reviews and merges.",
+        "code": "$ git switch -c promote/prod-1.1.0\n$ git commit -am \"Promote hello-devops 1.1.0 to prod\"\n$ git push -u origin promote/prod-1.1.0\n$ gh pr create --fill\n$ gh pr merge --squash --delete-branch",
         "lang": "console",
     },
     {
-        "say": "If prod misbehaves after the merge, press Revert on the merged pull request and merge the revert. Argo CD puts the old tag back in prod, and dev keeps 1.1.0 for more testing.",
+        "say": "Within about three minutes Argo CD syncs `hello-devops-prod`, and the rollout replaces the four prod Pods one at a time. Dev was not touched, because its folder did not change. If prod misbehaves, press Revert on the merged pull request and merge the revert: Argo CD puts 1.0.0 back.",
+        "code": "$ kubectl -n hello-prod get deployment hello-devops \\\n    -o jsonpath='{.spec.template.spec.containers[0].image}'\nhello-devops:1.1.0",
+        "lang": "console",
     },
 ]
 
@@ -928,7 +925,7 @@ PART = {
         {"front": "What is an ApplicationSet?", "back": "A template plus generators that create many Applications, for example one per environment."},
         {"front": "What is promotion in GitOps?", "back": "A pull request that copies a tested image tag from one environment's folder to the next."},
         {"front": "Why never deploy the latest tag with GitOps?", "back": "Git does not change when the image does, so you cannot see or revert what runs."},
-        {"front": "What does kustomize edit set image do?", "back": "It writes a new image name and tag into the kustomization.yaml of the current folder."},
+        {"front": "What does kustomize edit set image do, and what is the catch?", "back": "It sets an image name and tag in the kustomization.yaml of the current folder, but rewrites the whole file and drops comments at line ends."},
         {"front": "When does a PostSync hook run?", "back": "After all objects are applied and Healthy. A smoke test is a typical use."},
         {"front": "Which secret styles does Argo CD recommend?", "back": "Ones that create the Secret in the cluster, such as Sealed Secrets or External Secrets Operator."},
         {"front": "What does an AppProject limit?", "back": "Which repos, clusters, namespaces and kinds of objects its apps may use."},

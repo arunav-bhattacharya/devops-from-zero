@@ -1,0 +1,18 @@
+Fetching distribution.
+Downloading https://services.gradle.org/distributions/gradle-9.8.2-bin.zip
+..............10%..............20%...............30%..............40%...............50%..............60%...............70%..............80%...............90%..............100%
+Exception in thread "main" java.lang.RuntimeException: Verification of Gradle distribution failed!
+
+Your Gradle distribution may have been tampered with.
+Confirm that the 'distributionSha256Sum' property in your gradle-wrapper.properties file is correct and you are downloading the wrapper from a trusted source.
+
+Distribution Url: https://services.gradle.org/distributions/gradle-9.8.2-bin.zip
+Download Location: /tmp/claude-0/-home-user/5a31be1b-d2d7-5096-8c55-314d3e3b0058/scratchpad/p5work/shatest/guh/wrapper/dists/gradle-9.8.2-bin/8wepis63pzuhrlfaiy04bagwu/gradle-9.8.2-bin.zip
+Expected checksum: '00bd5da2de49b642904077f38c0efdc7778e92b3ed0889392dca61b97e389607'
+Actual checksum:   '21bd5da2de49b642904077f38c0efdc7778e92b3ed0889392dca61b97e389607'
+Visit https://gradle.org/release-checksums/ to verify the checksums of official distributions. If your build uses a custom distribution, see with its provider.
+	at org.gradle.wrapper.Install.verifyDownloadChecksum(SourceFile:2)
+	at org.gradle.wrapper.Install.lambda$createDist$0(SourceFile:12)
+	at org.gradle.wrapper.Install.createDist(SourceFile:24)
+	at org.gradle.wrapper.GradleWrapperMain.lambda$prepareWrapper$0(SourceFile:2)
+	at org.gradle.wrapper.GradleWrapperMain.main(SourceFile:2)

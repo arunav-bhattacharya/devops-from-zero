@@ -1,0 +1,22 @@
+Reusing configuration cache.
+> Task :app:processTestResources NO-SOURCE
+> Task :app:processResources NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:compileKotlin UP-TO-DATE
+> Task :app:compileJava NO-SOURCE
+> Task :app:classes UP-TO-DATE
+> Task :app:jar UP-TO-DATE
+> Task :app:startScripts UP-TO-DATE
+> Task :app:distZip UP-TO-DATE
+> Task :app:distTar UP-TO-DATE
+> Task :app:assemble UP-TO-DATE
+> Task :app:compileTestKotlin UP-TO-DATE
+> Task :app:compileTestJava NO-SOURCE
+> Task :app:testClasses UP-TO-DATE
+> Task :app:test UP-TO-DATE
+> Task :app:check UP-TO-DATE
+> Task :app:build UP-TO-DATE
+
+BUILD SUCCESSFUL in 1s
+7 actionable tasks: 7 up-to-date
+Configuration cache entry reused.

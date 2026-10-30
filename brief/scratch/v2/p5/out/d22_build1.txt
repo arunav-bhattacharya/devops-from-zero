@@ -1,0 +1,24 @@
+Calculating task graph as no cached configuration is available for tasks: build
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:processResources NO-SOURCE
+> Task :app:processTestResources NO-SOURCE
+> Task :app:compileKotlin
+> Task :app:compileJava NO-SOURCE
+> Task :app:classes UP-TO-DATE
+> Task :app:jar
+> Task :app:startScripts
+> Task :app:distTar
+> Task :app:distZip
+> Task :app:assemble
+> Task :app:compileTestKotlin
+> Task :app:compileTestJava NO-SOURCE
+> Task :app:testClasses UP-TO-DATE
+
+> Task :app:test
+
+> Task :app:check
+> Task :app:build
+
+BUILD SUCCESSFUL in 7s
+7 actionable tasks: 7 executed
+Configuration cache entry stored.

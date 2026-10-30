@@ -1,0 +1,6 @@
+[logic-demo/version]   | Made version 1.4.0-ci.cdae07f
+[logic-demo/build  ]   | Building hello-devops:1.4.0-ci.cdae07f
+[logic-demo/report ]   | Job results were [
+[logic-demo/report ]   |   "success",
+[logic-demo/report ]   |   "success"
+[logic-demo/report ]   | ]

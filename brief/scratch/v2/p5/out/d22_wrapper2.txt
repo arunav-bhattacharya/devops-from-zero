@@ -1,0 +1,6 @@
+Calculating task graph as no cached configuration is available for tasks: wrapper --gradle-version 9.8.2 --gradle-distribution-sha256-sum 21bd5da2de49b642904077f38c0efdc7778e92b3ed0889392dca61b97e389607
+> Task :wrapper
+
+BUILD SUCCESSFUL in 3s
+1 actionable task: 1 executed
+Configuration cache entry stored.

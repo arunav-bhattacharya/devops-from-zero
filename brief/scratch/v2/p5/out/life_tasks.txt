@@ -1,0 +1,24 @@
+Calculating task graph as no cached configuration is available for tasks: tasks --group demo
+1. initialization: reading settings.gradle.kts
+
+> Configure project :
+2. configuration: running build.gradle.kts
+2b. configuration: setting up the hello task
+
+> Task :tasks
+
+------------------------------------------------------------
+Tasks runnable from root project 'lifecycle-demo'
+------------------------------------------------------------
+
+Demo tasks
+----------
+hello - Prints a greeting
+
+To see all tasks and more detail, run gradlew tasks --all
+
+To see more detail about a task, run gradlew help --task <task>
+
+BUILD SUCCESSFUL in 1s
+1 actionable task: 1 executed
+Configuration cache entry stored.

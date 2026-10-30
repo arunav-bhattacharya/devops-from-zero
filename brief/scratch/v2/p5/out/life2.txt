@@ -1,0 +1,8 @@
+Reusing configuration cache.
+
+> Task :hello
+3. execution: hello runs its action
+
+BUILD SUCCESSFUL in 838ms
+1 actionable task: 1 executed
+Configuration cache entry reused.

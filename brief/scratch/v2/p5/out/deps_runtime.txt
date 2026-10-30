@@ -1,0 +1,17 @@
+
+------------------------------------------------------------
+Project ':app'
+------------------------------------------------------------
+
+runtimeClasspath - Runtime classpath of 'main'.
++--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21
+|    \--- org.jetbrains:annotations:13.0
++--- project ':greeting'
+|    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)
+|    \--- org.apache.commons:commons-text:1.14.0
+|         \--- org.apache.commons:commons-lang3:3.18.0
+\--- org.apache.commons:commons-lang3:3.17.0 -> 3.18.0
+
+(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.
+
+A web-based, searchable dependency report is available by adding the --scan option.

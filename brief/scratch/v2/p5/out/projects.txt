@@ -1,0 +1,45 @@
+Calculating task graph as no cached configuration is available for tasks: projects
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :build-logic:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :build-logic:compilePluginsBlocks UP-TO-DATE
+> Task :build-logic:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :build-logic:generateScriptPluginAdapters UP-TO-DATE
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+
+> Task :projects
+
+Projects:
+
+------------------------------------------------------------
+Root project 'hello-jvm'
+------------------------------------------------------------
+
+Location: /home/user/devops-from-zero/labs/hello-jvm
+
+Project hierarchy:
+
+Root project 'hello-jvm'
++--- Project ':app'
+\--- Project ':greeting'
+
+Project locations:
+
+project ':app' - /app
+project ':greeting' - /greeting
+
+Included builds:
+
+\--- Included build ':build-logic'
+
+To see a list of the tasks of a project, run gradlew <project-path>:tasks
+For example, try running gradlew :app:tasks
+
+BUILD SUCCESSFUL in 1s
+10 actionable tasks: 1 executed, 9 up-to-date
+Configuration cache entry stored.

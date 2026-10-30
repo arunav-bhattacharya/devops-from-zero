@@ -1,0 +1,21 @@
+$ docker run --rm -m 512m eclipse-temurin:21-jre java -XX:+PrintFlagsFinal -version | grep -E " MaxHeapSize| MaxRAMPercentage"
+   size_t MaxHeapSize                              = 134217728                                 {product} {ergonomic}
+   double MaxRAMPercentage                         = 25.000000                                 {product} {default}
+$ docker run --rm -m 512m eclipse-temurin:21-jre java -XX:MaxRAMPercentage=75.0 -XX:+PrintFlagsFinal -version | grep -E " MaxHeapSize| MaxRAMPercentage"
+   size_t MaxHeapSize                              = 402653184                                 {product} {ergonomic}
+   double MaxRAMPercentage                         = 75.000000                                 {product} {command line}
+$ docker run --rm -m 512m eclipse-temurin:21-jre java -XshowSettings:system -version
+Operating System Metrics:
+    Provider: cgroupv1
+    Effective CPU Count: 4
+    CPU Period: 100000us
+    CPU Quota: -1
+    CPU Shares: -1
+    List of Processors, 4 total: 
+    0 1 2 3 
+    List of Effective Processors, 4 total: 
+    0 1 2 3 
+    List of Memory Nodes, 1 total: 
+    0 
+    List of Available Memory Nodes, 1 total: 
+    0 

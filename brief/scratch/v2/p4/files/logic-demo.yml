@@ -1,0 +1,52 @@
+name: logic-demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      break-build:
+        description: "Make the build job fail on purpose"
+        type: boolean
+        default: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    # Job output: copy the step output up to the job, so other jobs can read it.
+    outputs:
+      version: ${{ steps.make.outputs.version }}
+    steps:
+      - name: Make a version from the commit
+        id: make
+        run: |
+          VERSION="1.4.0-ci.${GITHUB_SHA::7}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Made version $VERSION"
+
+  build:
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Save the image name for later steps
+        run: echo "IMAGE=hello-devops:$VERSION" >> "$GITHUB_ENV"
+      - name: Pretend to build
+        run: echo "Building $IMAGE"
+      - name: Fail on purpose
+        if: ${{ inputs.break-build }}
+        run: |
+          echo "Breaking the build, as you asked"
+          exit 1
+      - name: Write the summary
+        run: echo "Built \`$IMAGE\`" >> "$GITHUB_STEP_SUMMARY"
+
+  report:
+    needs: [version, build]
+    # always(): run even when a job it needs has failed.
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print every job result
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: echo "Job results were $RESULTS"

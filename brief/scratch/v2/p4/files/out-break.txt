@@ -1,0 +1,9 @@
+[logic-demo/version]   | Made version 1.4.0-ci.cdae07f
+[logic-demo/build  ]   | Building hello-devops:1.4.0-ci.cdae07f
+[logic-demo/build  ]   | Breaking the build, as you asked
+[logic-demo/build  ] exitcode '1': failure
+[logic-demo/report ]   | Job results were [
+[logic-demo/report ]   |   "success",
+[logic-demo/report ]   |   "failure"
+[logic-demo/report ]   | ]
+Error: Job 'build' failed

@@ -1,7 +1,8 @@
 # A PostSync hook (Day 40): after every sync, once all resources are Healthy,
 # Argo CD runs this Job. If curl fails, Argo CD marks the sync as failed.
-# To try it, copy this file into k8s/overlays/dev/ and add
+# To try it, copy this file into overlays/dev/ and add
 # "- smoke-test.yaml" to the resources list in that kustomization.yaml.
+# The overlay moves it into namespace hello-dev, next to the hello-devops Service.
 apiVersion: batch/v1
 kind: Job
 metadata:

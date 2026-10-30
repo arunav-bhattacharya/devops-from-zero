@@ -8,7 +8,7 @@ groups:
       - record: job:hello_responses:rate5m
         expr: sum by (job) (rate(hello_responses_total[5m]))
 
-      # Errors: the share of responses with a 5xx status, over four windows.
+      # Errors: the share of responses with a 5xx status, over five windows.
       # The SLO alerts in alerts.yml compare a long and a short window.
       - record: job:hello_responses_errors:ratio_rate5m
         expr: |
@@ -30,6 +30,11 @@ groups:
           sum by (job) (rate(hello_responses_total{status=~"5.."}[6h]))
           /
           sum by (job) (rate(hello_responses_total[6h]))
+      - record: job:hello_responses_errors:ratio_rate3d
+        expr: |
+          sum by (job) (rate(hello_responses_total{status=~"5.."}[3d]))
+          /
+          sum by (job) (rate(hello_responses_total[3d]))
 
       # Duration: the 95th percentile latency in seconds, per job.
       - record: job:hello_request_duration_seconds:p95_5m

@@ -47,4 +47,26 @@ tests:
               job: hello-devops
             exp_annotations:
               summary: "4.762% of hello-devops requests fail (fast burn)"
-              description: "At this rate the 30-day error budget is gone in about 2 days."
+              description: "At this rate the 30-day error budget is gone in less than a week."
+
+  # A slow leak: 5 good requests per second and 1 failure per minute (0.33%).
+  # That is over the budget (0.1%) but far from a fast burn: a ticket, no page.
+  - interval: 1m
+    input_series:
+      - series: 'hello_responses_total{job="hello-devops", instance="web:8000", path="/", status="200"}'
+        values: "0+300x60"
+      - series: 'hello_responses_total{job="hello-devops", instance="web:8000", path="/", status="500"}'
+        values: "0+1x60"
+    alert_rule_test:
+      - eval_time: 60m
+        alertname: HelloErrorBudgetFastBurn
+        exp_alerts: []
+      - eval_time: 60m
+        alertname: HelloErrorBudgetSlowBurn
+        exp_alerts:
+          - exp_labels:
+              severity: ticket
+              job: hello-devops
+            exp_annotations:
+              summary: "0.3322% of hello-devops requests fail (slow burn)"
+              description: "At this rate the 30-day error budget runs out before the month ends."

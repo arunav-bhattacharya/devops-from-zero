@@ -96,7 +96,7 @@ SECTIONS = [
             "Your next run then executes the new code, and nothing in your own repository changed.\n\n"
             "A commit SHA is different. It is a 40-character hash of the commit's content: its files, its parent commit, its author and its message. "
             "Change one byte and you get a different SHA. So `uses: some-org/action@<full-sha>` always means the same code. "
-            "In March 2026 the attacker could move every `trivy-action` tag, but could not change what an old SHA points to.\n\n"
+            "In March 2026 the attacker moved 76 `trivy-action` tags, but could not change what an old SHA points to.\n\n"
             "Look at the scan step in the lab's `release.yml`:\n"
             "`uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0`\n\n"
             "The SHA is what runs. The comment is only for humans, and Dependabot (Day 21) updates both when a new release appears. "
