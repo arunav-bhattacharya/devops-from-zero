@@ -22,4 +22,5 @@ RUN useradd --uid 10001 --no-create-home appuser
 USER 10001
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "app:app"]
+# --no-control-socket: Gunicorn 26 would otherwise try to open a socket in a home folder this user does not have.
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--no-control-socket", "app:app"]

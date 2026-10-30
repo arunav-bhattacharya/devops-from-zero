@@ -94,7 +94,7 @@ SVG_D05 = (
     '<text class="ts" x="200" y="164" font-size="11" text-anchor="middle">curl</text>'
     '<line class="ln" x1="360" y1="173" x2="474" y2="173"/>'
     '<line class="ln" x1="474" y1="173" x2="474" y2="80" marker-end="url(#ar)"/>'
-    '<text class="ts" x="484" y="130" font-size="11" text-anchor="start">port 80</text>'
+    '<text class="ts" x="486" y="130" font-size="11" text-anchor="start">port 80</text>'
     '</svg>'
 )
 
@@ -1133,7 +1133,8 @@ D07 = {
         "Use plain `down` day to day, and `down -v` only when you want a clean start."
     ),
     "real_world": (
-        "At PayFlow, a fake payments company, every service repo has a compose.yaml, so a new engineer can run the service with its Postgres and Redis using one command. "
+        "At PayFlow, a fake payments company, every service repo has a compose.yaml. "
+        "A new engineer can start the service with its Postgres and Redis using one command. "
         "CI often uses the same file to start real dependencies for integration tests. "
         "In production the same images usually run on Kubernetes (Day 16), and the databases are managed services instead of containers."
     ),
@@ -1236,22 +1237,24 @@ D07 = {
         "body": (
             "Why did the count survive when you replaced Redis? And when would it not?\n\n"
             "Redis keeps its data in memory. It writes a snapshot file, `dump.rdb`, to `/data` from time to time, and again when it shuts down cleanly. "
+            "To see this, set up the worked example again up to step 5, so Redis has had one clean stop. "
             "Run `docker exec redis redis-cli CONFIG GET save` and you see the snapshot rules: `3600 1 300 100 60 10000`. "
             "Read them in pairs:\n\n"
             "- after 3600 seconds, if at least 1 key changed\n"
             "- after 300 seconds, if at least 100 keys changed\n"
             "- after 60 seconds, if at least 10000 keys changed\n\n"
-            "In the worked example you used `docker stop`. That sends SIGTERM, Redis saves a final snapshot, and nothing is lost. "
+            "In step 4 you used `docker stop`. That sends SIGTERM, Redis saves a final snapshot, and nothing is lost. "
             "Now try the rough way. Call the app a few more times, then run `docker rm -f redis`. "
             "The `-f` flag sends SIGKILL at once, so Redis has no chance to save. "
+            "Start a fresh Redis on the same volume, as in step 5, and call the app again. "
             "When we tried it, the count was 9 before the kill. "
-            "A fresh Redis on the same volume read the last snapshot and reported 5, the value saved at the last clean stop. "
-            "The four visits in between were lost.\n\n"
+            "The new Redis read the last snapshot, which said 5, so the four visits after the clean stop were lost.\n\n"
             "This is the Day 3 lesson about signals, with real data at stake. A few practical rules follow:\n\n"
             "- Stop stateful containers with `docker stop` or `docker compose down`, both of which send SIGTERM first.\n"
             "- For data you cannot lose, turn on Redis's append-only file with `--appendonly yes`, which logs every write.\n"
             "- In production, consider a managed database service, where backups and failover are someone's full-time job.\n\n"
-            "Also notice where the data really sits. `docker volume inspect redis-data` shows a mount point under `/var/lib/docker/volumes`. "
+            "Also notice where the data really sits. Run `docker volume inspect redis-data` (with Compose, the name is `hello-devops_redis-data`). "
+            "It shows a mount point under `/var/lib/docker/volumes`. "
             "On a Mac, that path is inside Docker Desktop's Linux VM, so you will not find it in Finder. "
             "If you reset Docker Desktop to factory defaults, your volumes go with it."
         ),
@@ -1310,7 +1313,7 @@ D08 = {
                 "Fewer packages means less to download and less to patch. The common choices for Python:\n\n"
                 "- `python:3.14` is full Debian with compilers, about 1.6 GB on disk.\n"
                 "- `python:3.14-slim` is Debian with the minimum, about 180 MB. A good default.\n"
-                "- `python:3.14-alpine` is about 75 MB, but its C library (musl) differs, so some packages misbehave.\n"
+                "- `python:3.14-alpine` is about 75 MB. Its different C library (musl) means some packages must compile.\n"
                 "- Distroless images hold only a runtime and your app, with no shell, so debugging is harder.\n"
                 "- Docker Hardened Images are minimal and run as non-root by default. They are free (Apache 2.0) from `dhi.io`.\n\n"
                 "The sizes come from `docker images` on an amd64 machine in October 2026. "
@@ -1373,7 +1376,7 @@ D08 = {
                 "The fix is a multi-platform image: one name, with one variant per CPU type.\n\n"
                 "`docker buildx build --platform linux/amd64,linux/arm64 -t <name> --push .` builds both and pushes them together. "
                 "Docker Desktop builds the amd64 half through emulation, so it takes longer. "
-                "When a server pulls the image, the registry hands it the variant for its CPU.\n\n"
+                "When a server pulls the image, Docker picks the variant for its CPU.\n\n"
                 "One last rule: never bake secrets into an image. "
                 "Every layer ships with the image, so a key you `COPY` in and later delete still sits in an earlier layer. "
                 "Values from `ARG` and `ENV` show up in the image history, as you saw on Day 6. "
@@ -1387,7 +1390,7 @@ D08 = {
         "A multi-stage build is like a restaurant kitchen and its dining room. "
         "The kitchen is full of knives, flour and hot ovens, but the plate that reaches the guest carries only the finished dish. "
         "You cook in one place and serve only what the guest needs. "
-        "Where it breaks: in a restaurant, leftover tools are only untidy, while in an image every extra tool is something an attacker could use and a scanner must check."
+        "Where it breaks: leftover tools in a restaurant are only untidy, but in an image every extra tool is something an attacker could use."
     ),
     "diagram": SVG_D08,
     "diagram_caption": "The build stage installs packages; only the run stage ships, for both CPU types.",
@@ -1497,7 +1500,8 @@ D08 = {
         "Pass secrets at run time, or use a build secret mount when a build step needs one."
     ),
     "real_world": (
-        "At PayFlow, a fake payments company, CI builds each service image once, scans it, and pushes it to a private registry with the version and git commit as tags. "
+        "At PayFlow, a fake payments company, CI builds each service image once and scans it. "
+        "Then it pushes the image to a private registry, tagged with the version and the git commit. "
         "Deploy files reference the image by digest, so production runs exactly what was tested. "
         "A scheduled job rebuilds images every week to pick up base image fixes, and the build fails on fixable critical findings."
     ),
@@ -1524,7 +1528,7 @@ D08 = {
     "explain_back": {
         "prompt": "Explain in 3 to 4 sentences what makes the final hello-devops image more production-ready than the Day 6 one. Mention the stages, the user, the health check and how you ship it.",
         "answer": (
-            "The build has two stages: the first creates a venv and installs the packages, and the second copies only that venv and app.py onto a fresh slim base. "
+            "The build has two stages. The first creates a venv and installs the packages, and the second copies only that venv and app.py onto a fresh slim base. "
             "The app runs as user 10001 instead of root, so a bug in the app gives an attacker fewer rights. "
             "A HEALTHCHECK lets Docker mark the container healthy or unhealthy. "
             "I scan it, push it to GHCR for amd64 and arm64, and deploy it by digest, so the exact tested image runs."
@@ -1614,8 +1618,9 @@ D08 = {
             "If you want to try a hardened base, Docker's docs show the flow. "
             "Run `docker login dhi.io` with your Docker account, then pull an image from the [Docker Hardened Images catalog](https://docs.docker.com/dhi/). "
             "Runtime variants have no shell and run as non-root. "
-            "So you build in a `-dev` variant, which has a shell and pip, and copy the venv into the runtime variant: the same two-stage pattern you used today. "
-            "Two lines of our Dockerfile would change. `RUN useradd` needs a shell, so you would rely on the image's own non-root user. "
+            "So you build in a `-dev` variant, which has a shell and build tools. "
+            "Then you copy the venv into the runtime variant: the same two-stage pattern you used today. "
+            "Two lines of our Dockerfile would change. The `RUN useradd` line needs tools the runtime image lacks, so you would rely on the image's own non-root user. "
             "And the HEALTHCHECK would need the exec form, a JSON list, because its current form runs through a shell."
         ),
     },

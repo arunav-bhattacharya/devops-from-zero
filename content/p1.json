@@ -1,0 +1,845 @@
+{
+ "part": 1,
+ "title": "Linux and networking basics",
+ "intro": "Part 1 teaches the ground that every DevOps tool stands on. Servers and containers run Linux, and every deploy is a network request, so these two days help in every later lesson. You need no cloud account.",
+ "lessons": [
+  {
+   "id": "d03",
+   "title": "The terminal and Linux you need",
+   "minutes": 40,
+   "goal": "By the end you can move around a shell, read and change permissions, find and stop processes, chain commands with pipes, and write a small bash script that fails safely.",
+   "guess": {
+    "q": "You run `docker stop` on a container. What does Docker send to the app first?",
+    "options": [
+     "SIGKILL, which ends it at once",
+     "SIGTERM, a polite request to stop",
+     "A Ctrl+C keypress",
+     "Nothing, Docker just deletes the container"
+    ],
+    "answer": 1,
+    "why": "Docker first sends SIGTERM so the app can finish its work and exit cleanly. Only if the app is still running after a grace period (10 seconds by default) does Docker send SIGKILL."
+   },
+   "terms": [
+    {
+     "term": "Shell",
+     "plain": "The program that reads the commands you type and runs them, such as zsh or bash."
+    },
+    {
+     "term": "Permissions",
+     "plain": "Rules that say who may read (r), write (w) or execute (x) a file."
+    },
+    {
+     "term": "Process",
+     "plain": "A running program, with its own ID number called a PID."
+    },
+    {
+     "term": "Signal",
+     "plain": "A short message to a process, such as SIGTERM (please stop) or SIGKILL (stop now)."
+    },
+    {
+     "term": "Environment variable",
+     "plain": "A named setting, such as PATH, that a program gets from the shell that started it."
+    },
+    {
+     "term": "Pipe",
+     "plain": "The `|` symbol, which sends one command's output into the next command's input."
+    },
+    {
+     "term": "Exit code",
+     "plain": "The number a command returns when it ends: 0 means success, anything else means failure."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Why Linux, and finding your way around",
+     "body": "Cloud servers usually run Linux, and every container in this course runs Linux inside. So when something breaks in production, you will type into a Linux shell. A shell is the program that reads your commands and runs them. Macs use zsh and most Linux servers use bash, but the commands here work in both.\n\nFiles live in a tree that starts at `/`, the top folder. Your home folder is `~`, which on a Mac means `/Users/you`. There are two ways to write a path:\n\n- An absolute path starts at `/`, such as `/etc/hosts`. It means the same thing from anywhere.\n- A relative path starts from where you are now, such as `code/hello-devops`.\n\nFour commands move you around:\n\n- `pwd` prints where you are.\n- `ls -la` lists everything here, including hidden files whose names start with a dot.\n- `cd code/hello-devops` moves into a folder; `cd ..` goes up one level and `cd ~` goes home.\n- `mkdir -p a/b/c` makes folders, including any missing parents.\n\nPress Tab while you type a name. The shell completes it, which saves typing and catches typos.",
+     "refs": [
+      {
+       "title": "The Linux Command Line, free book (William Shotts)",
+       "url": "https://www.linuxcommand.org/tlcl.php",
+       "kind": "read"
+      },
+      {
+       "title": "Linux in 100 Seconds (Fireship)",
+       "url": "https://www.youtube.com/watch?v=rrB13utjYV4",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Files and permissions",
+     "body": "A few everyday file commands:\n\n- `cat file` prints a whole file, and `less file` pages through a long one (press q to quit).\n- `head -n 20 file` and `tail -n 20 file` show the first or last 20 lines.\n- `tail -f app.log` keeps printing new lines as they arrive, so you can watch a live log.\n- `cp a b` copies, `mv a b` moves or renames, and `rm file` deletes. There is no trash can.\n\nEvery file has an owner and permissions. `ls -l` shows them as a code such as `-rwxr-xr--`. After the first character (the file type) come three groups of three letters: for the owner, the group and everyone else. In each group:\n\n- r means read, w means write, and x means execute (run).\n- A dash means that right is missing.\n\n`chmod +x smoke.sh` adds execute permission, and `chown` changes the owner.\n\nThe root user is the all-powerful admin, with user ID 0. `sudo` runs one command as root after asking your password. That power is why containers should not run as root. By default, root in a container is the same user ID 0 as root on the host. If an attacker breaks out of the container, they are root on the machine. On Day 8 your Dockerfile switches to a normal user.",
+     "refs": [
+      {
+       "title": "Learning the shell, lesson 9: Permissions (LinuxCommand.org)",
+       "url": "https://linuxcommand.org/lc3_lts0090.php",
+       "kind": "read"
+      },
+      {
+       "title": "Docker building best practices (see USER)",
+       "url": "https://docs.docker.com/build/building/best-practices/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Processes and signals",
+     "body": "A process is a running program. Each one has a number called a PID (process ID). These commands let you see and control processes:\n\n- `ps aux` lists every process, and `pgrep -f app.py` finds the PID of one by its command.\n- `top` shows a live view of the busiest processes (press q to quit).\n- `kill PID` sends a signal to a process.\n\nA **signal** is a short message from the operating system to a process. Two matter most:\n\n- SIGTERM (number 15) means \"please stop\". The app can finish its work and exit cleanly. A plain `kill` sends it.\n- SIGKILL (number 9) means \"stop now\". The process cannot catch or ignore it, so it gets no chance to clean up. `kill -9` sends it.\n\nYou will meet this pair all course. `docker stop` sends SIGTERM, waits 10 seconds, then sends SIGKILL. Kubernetes does the same when it removes a pod, with a 30 second default wait. An app that handles SIGTERM well can finish the requests it is serving before it exits.",
+     "refs": [
+      {
+       "title": "docker container stop (Docker docs)",
+       "url": "https://docs.docker.com/reference/cli/docker/container/stop/",
+       "kind": "docs"
+      },
+      {
+       "title": "Pod lifecycle: termination of pods (Kubernetes docs)",
+       "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+       "kind": "docs"
+      },
+      {
+       "title": "signal(7) Linux manual page",
+       "url": "https://man7.org/linux/man-pages/man7/signal.7.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Environment variables and PATH",
+     "body": "An environment variable is a named setting that a process gets from the shell that started it. Run `env` to see them all, or `echo $HOME` to print one. The `$` means \"the value of\". Three ways to work with them:\n\n- `export GREETING=\"Hi there\"` sets one for this shell and every program it starts.\n- `GREETING=\"Hi\" python app.py` sets one for a single command only.\n- `unset GREETING` removes one.\n\nYour app reads its settings this way. `APP_VERSION`, `GREETING`, `REDIS_HOST` and `PORT` all come from environment variables. So the same code runs on your laptop, in a container and in Kubernetes, each time with different settings.\n\nPATH is the most important variable. It holds a list of folders, separated by colons. When you type `kubectl`, the shell looks in each folder in order and runs the first `kubectl` it finds. `which kubectl` shows the one that won. Changes made with `export` vanish when you close the terminal. To keep one, add the line to `~/.zshrc` (zsh) or `~/.bashrc` (bash).",
+     "refs": [
+      {
+       "title": "Learning the shell (LinuxCommand.org)",
+       "url": "https://linuxcommand.org/lc3_learning_the_shell.php",
+       "kind": "read"
+      },
+      {
+       "title": "GNU Bash Reference Manual",
+       "url": "https://www.gnu.org/software/bash/manual/bash.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Pipes, redirection and exit codes",
+     "body": "Every process has three standard streams: input (stdin), output (stdout) and errors (stderr). You can connect and redirect them:\n\n- `|` (a pipe) sends one command's stdout into the next command's stdin.\n- `>` writes stdout to a file, replacing what was there, and `>>` adds to the end.\n- `2>&1` sends stderr to the same place as stdout, so errors land in your log too.\n\nFor example, `grep ERROR app.log | wc -l` counts error lines. `grep` keeps the lines that match, and `wc -l` counts lines. Small tools joined by pipes can answer many questions.\n\nEvery command also ends with an **exit code**: 0 means success, and any other number means failure. `echo $?` prints the exit code of the last command.\n\nFor DevOps, this is the most important idea on this page. CI systems such as GitHub Actions run your commands and check their exit codes. If `pytest` exits with 1 because a test failed, the step fails and the pipeline stops. A script that hides a failure and exits with 0 lets broken code through.",
+     "refs": [
+      {
+       "title": "Learning the shell, lesson 7: I/O redirection (LinuxCommand.org)",
+       "url": "https://linuxcommand.org/lc3_lts0070.php",
+       "kind": "read"
+      },
+      {
+       "title": "Setting exit codes for actions (GitHub docs)",
+       "url": "https://docs.github.com/en/actions/how-tos/create-and-publish-actions/set-exit-codes",
+       "kind": "docs"
+      },
+      {
+       "title": "Bite Size Command Line zine (Julia Evans)",
+       "url": "https://jvns.ca/blog/2018/08/05/new-zine--bite-size-command-line/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Scripts, package managers and SSH",
+     "body": "A bash script is a text file of commands. Its first line, `#!/usr/bin/env bash`, says which program runs the file. You make it executable with `chmod +x` and run it with `./name.sh`. The next line should almost always be `set -euo pipefail`:\n\n- `-e` stops the script at the first command that fails.\n- `-u` treats a variable that was never set as an error, which catches typos.\n- `-o pipefail` makes a pipe fail if any command in it fails, instead of only the last one.\n\nWithout these, bash keeps going after errors, and a script can report success after doing half its work.\n\nPackage managers install software. Macs use Homebrew (`brew install jq`). Ubuntu and Debian servers use apt: `sudo apt-get update`, then `sudo apt-get install -y jq`. You will see apt in many Dockerfiles.\n\nSSH opens a secure shell on another machine, as in `ssh you@server`. It uses a key pair. The private key never leaves your laptop, and you give the public key to the server or to GitHub. `ssh-keygen -t ed25519` creates a pair. In this course gh handles your GitHub login, so you need SSH only for real servers.",
+     "refs": [
+      {
+       "title": "The Set Builtin (Bash manual)",
+       "url": "https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Generating a new SSH key (GitHub docs)",
+       "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent",
+       "kind": "docs"
+      },
+      {
+       "title": "Bash in 100 Seconds (Fireship)",
+       "url": "https://www.youtube.com/watch?v=I4EWvMFj37g",
+       "kind": "watch"
+      }
+     ]
+    }
+   ],
+   "analogy": "Stopping a process is like closing a restaurant. SIGTERM is the manager saying \"we close in ten minutes\": cooks finish the plates already on the stove, and staff lock up properly. SIGKILL is a power cut: everything stops at once, mid-order, with nothing cleaned up. The analogy breaks because staff cannot ignore the manager, but a program can ignore SIGTERM, and only SIGKILL cannot be ignored.",
+   "diagram": "<svg viewBox=\"0 0 560 192\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"grep reads app.log, a pipe sends its output to wc -l, and a redirect saves the count to count.txt, while errors go to the terminal\"><text x=\"280\" y=\"22\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">grep ERROR app.log | wc -l &gt; count.txt</text><rect x=\"8\" y=\"40\" width=\"120\" height=\"48\" rx=\"10\" class=\"bx\"/><text x=\"68\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">app.log</text><rect x=\"156\" y=\"40\" width=\"120\" height=\"48\" rx=\"10\" class=\"bxo\"/><text x=\"216\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">grep ERROR</text><rect x=\"304\" y=\"40\" width=\"96\" height=\"48\" rx=\"10\" class=\"bxt\"/><text x=\"352\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">wc -l</text><rect x=\"428\" y=\"40\" width=\"124\" height=\"48\" rx=\"10\" class=\"bxg\"/><text x=\"490\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">count.txt</text><line x1=\"128\" y1=\"64\" x2=\"154\" y2=\"64\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"276\" y1=\"64\" x2=\"302\" y2=\"64\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"289\" y=\"56\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">|</text><line x1=\"400\" y1=\"64\" x2=\"426\" y2=\"64\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"413\" y=\"56\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">&gt;</text><text x=\"68\" y=\"106\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">file on disk</text><text x=\"352\" y=\"106\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">counts lines</text><text x=\"490\" y=\"106\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">saved to a file</text><line x1=\"216\" y1=\"88\" x2=\"216\" y2=\"138\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"226\" y=\"118\" font-size=\"11\" text-anchor=\"start\" class=\"ts\">stderr</text><rect x=\"156\" y=\"140\" width=\"120\" height=\"40\" rx=\"10\" class=\"bx\"/><text x=\"216\" y=\"165\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">Terminal</text></svg>",
+   "diagram_caption": "grep reads the file, the pipe feeds its output to wc, and > saves the result. Errors still go to your terminal.",
+   "worked": {
+    "title": "Find and stop a running app",
+    "steps": [
+     {
+      "say": "Start hello-devops in the background. The `&` at the end gives you the terminal back. `> app.log 2>&1` sends both normal output and errors into a log file instead of your screen.",
+      "code": "$ cd ~/code/hello-devops && source .venv/bin/activate\n$ python app.py > app.log 2>&1 &",
+      "lang": "console"
+     },
+     {
+      "say": "Find its process ID with `pgrep`, then ask `ps` for details. `S` in the STAT column means sleeping: the app is waiting for requests.",
+      "code": "$ pgrep -f app.py\n5125\n$ ps -o pid,stat,command -p 5125\n  PID STAT COMMAND\n 5125 S    python app.py",
+      "lang": "console"
+     },
+     {
+      "say": "Check that it answers. curl worked, so its exit code is 0.",
+      "code": "$ curl -s localhost:8000/healthz\n{\"status\":\"ok\"}\n$ echo $?\n0",
+      "lang": "console"
+     },
+     {
+      "say": "Send SIGTERM with a plain `kill`. The app gets the polite request and shuts down.",
+      "code": "$ kill 5125",
+      "lang": "console"
+     },
+     {
+      "say": "Prove it is gone. curl now fails with exit code 7, which means it could not connect. `ps` finds nothing and exits with 1. Any non-zero code means failure, which is the same rule CI uses.",
+      "code": "$ curl -s localhost:8000/healthz\n$ echo $?\n7\n$ ps -p 5125 > /dev/null; echo $?\n1",
+      "lang": "console"
+     },
+     {
+      "say": "Some programs ignore SIGTERM. Here `trap \"\" TERM` makes a test process ignore it on purpose, so `kill` does nothing. `kill -9` sends SIGKILL, which cannot be ignored. Exit status 137 is 128 + 9: killed by signal 9. You will see 137 again when Docker or Kubernetes kills a container.",
+      "code": "$ bash -c 'trap \"\" TERM; sleep 300' &\n$ echo $!\n8085\n$ kill 8085\n$ ps -o pid,command -p 8085\n  PID COMMAND\n 8085 sleep 300\n$ kill -9 8085\n$ wait 8085; echo \"exit status: $?\"\nexit status: 137",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "bash",
+     "title": "smoke.sh",
+     "src": "#!/usr/bin/env bash\n# smoke.sh: a tiny check that the hello-devops app is alive.\n# Usage: ./smoke.sh                        (checks http://localhost:8000)\n#        ./smoke.sh http://localhost:9000  (checks another address)\n\n# Stop at the first failing command (-e), treat unset variables as errors (-u),\n# and let a pipe fail if any command in it fails (-o pipefail).\nset -euo pipefail\n\n# Use the first argument if there is one, otherwise the default address.\nurl=\"${1:-http://localhost:8000}\"\n\necho \"Checking ${url}/healthz\"\n# -s: no progress bar. -f: fail on HTTP errors such as 404 or 503.\nif ! curl -sf \"${url}/healthz\" > /dev/null; then\n  echo \"FAIL: ${url} did not answer\" >&2 # >&2 writes the message to stderr\n  exit 1\nfi\n\n# Ask for the home page and cut the visit count out of the JSON.\nvisits=$(curl -sf \"${url}/\" | grep -o '\"visits\":[0-9]*' | cut -d: -f2)\necho \"OK: the app is up. Visits so far: ${visits}\"\n",
+     "run": "chmod +x smoke.sh && ./smoke.sh; echo \"exit code: $?\""
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "ls -la",
+     "what": "List everything in this folder, with permissions, owners and hidden files."
+    },
+    {
+     "cmd": "mkdir -p ~/code/playground",
+     "what": "Make a folder, and any missing parent folders."
+    },
+    {
+     "cmd": "tail -f app.log",
+     "what": "Keep printing new lines of a log as they arrive. Ctrl+C stops it."
+    },
+    {
+     "cmd": "chmod +x smoke.sh",
+     "what": "Add execute permission so you can run the script with ./smoke.sh."
+    },
+    {
+     "cmd": "pgrep -f app.py",
+     "what": "Find the PID of a process by its command line."
+    },
+    {
+     "cmd": "kill PID",
+     "what": "Send SIGTERM (please stop). Use kill -9 PID (SIGKILL) only as a last resort."
+    },
+    {
+     "cmd": "export GREETING=\"Hi there\"",
+     "what": "Set an environment variable for this shell and the programs it starts."
+    },
+    {
+     "cmd": "echo $PATH",
+     "what": "Show the folders the shell searches for commands, in order."
+    },
+    {
+     "cmd": "grep ERROR app.log | wc -l",
+     "what": "Count the lines in a file that contain ERROR."
+    },
+    {
+     "cmd": "python app.py > app.log 2>&1 &",
+     "what": "Run a program in the background, with output and errors going to a file."
+    },
+    {
+     "cmd": "echo $?",
+     "what": "Print the exit code of the last command: 0 is success."
+    },
+    {
+     "cmd": "sudo apt-get install -y jq",
+     "what": "Linux only (Ubuntu or Debian): install a package with apt."
+    }
+   ],
+   "mistake": "The classic mistake is reaching for `kill -9` first. SIGKILL gives the app no chance to finish requests, write its last log lines or close database connections, so you can lose data. Send a plain `kill` (SIGTERM), wait a few seconds, and use `kill -9` only if the process is still there.",
+   "real_world": "When checkout slows down at PayFlow, a made-up payments company, the on-call engineer opens a shell next to the app. They run `tail -f` and `grep` on its logs to find the failing requests. Their deploy scripts start with `set -euo pipefail`, so a failed step stops the deploy instead of shipping half a release. Their services handle SIGTERM, so Kubernetes can replace pods without cutting off payments in progress.",
+   "task": {
+    "title": "Write and break a smoke test",
+    "steps": [
+     "Create the folder `~/code/playground`, move into it, and confirm where you are.",
+     "Save `smoke.sh` from this lesson there. Look at its permissions with `ls -l`, then make it executable.",
+     "With the app stopped, run the script and print its exit code. Run it again with stderr thrown away, and notice which line disappears.",
+     "In a second terminal tab, start hello-devops. Run the script again and confirm the exit code is now 0.",
+     "Add a check of `/readyz` to the script, in the same style as the `/healthz` check, and run it.",
+     "Stop the app, then start it again with a different greeting set for that one command only. Confirm the new message with curl.",
+     "Find the app's PID and stop it with SIGTERM. Run the script one last time and read the exit code."
+    ],
+    "hints": [
+     "`2>/dev/null` sends stderr to a special file that throws away everything written to it.",
+     "To set a variable for one command only, put `NAME=value` before the command on the same line.",
+     "If `./smoke.sh` says \"permission denied\", the x permission is missing."
+    ],
+    "done_when": "You are done when `./smoke.sh; echo $?` prints 0 while the app runs and 1 after you stop it with `kill`."
+   },
+   "explain_back": {
+    "prompt": "Explain exit codes in 3 to 4 sentences. Mention `$?`, what 0 means, and why CI cares.",
+    "answer": "Every command ends with a number called its exit code. Zero means it worked, and any other number means it failed. In a shell, `echo $?` shows the exit code of the last command. CI tools run your commands and stop the pipeline when one exits with a non-zero code, so a failing test blocks the change. That only works if scripts pass failures on, which is why we start them with `set -euo pipefail`."
+   },
+   "recap": [
+    "Servers and containers run Linux, so the shell is where you fix production.",
+    "Paths are absolute (from `/`) or relative (from where you are), and `~` is your home folder.",
+    "Permissions are read, write and execute for owner, group and others; apps should not run as root.",
+    "`kill` sends SIGTERM (please stop) and `kill -9` sends SIGKILL (stop now); Docker and Kubernetes use both, in that order.",
+    "Pipes and redirection join small tools, and non-zero exit codes make CI fail.",
+    "Start every bash script with `set -euo pipefail`."
+   ],
+   "check": [
+    {
+     "q": "Every `docker stop` on one container takes 10 seconds, and the container exits with code 137. What is the most likely cause?",
+     "options": [
+      "The app ignores the SIGTERM signal",
+      "The image is too big for Docker to unload",
+      "The Docker network is too slow",
+      "The app writes its logs to stdout"
+     ],
+     "answer": 0,
+     "why": "Docker waits its 10 second grace period after SIGTERM, then sends SIGKILL, and 137 means killed by signal 9."
+    },
+    {
+     "q": "A deploy script runs `./build.sh | tee build.log` and then deploys. It deploys even when the build fails. Which line at the top stops at the failure?",
+     "options": [
+      "`set -u` on its own",
+      "`set -e` on its own",
+      "`set -eo pipefail`",
+      "`chmod +x build.sh`"
+     ],
+     "answer": 2,
+     "why": "With only -e, the pipe reports tee's exit code (0); pipefail makes the pipe fail when build.sh fails, and -e then stops the script."
+    },
+    {
+     "q": "A tool is installed in `/opt/tools/bin`, but typing its name gives 'command not found'. What fixes it in this terminal?",
+     "options": [
+      "`chmod 777 /opt/tools/bin`",
+      "Put `sudo` before the tool name",
+      "Run `cd /` first and then try the tool again",
+      "`export PATH=\"/opt/tools/bin:$PATH\"`"
+     ],
+     "answer": 3,
+     "why": "The shell only searches the folders in PATH, so adding the folder fixes it until you close the terminal."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the difference between SIGTERM and SIGKILL, and why does it matter for containers?",
+     "a": "SIGTERM asks a process to stop, and the process can catch it to finish its work and clean up. SIGKILL ends the process at once and cannot be caught or ignored. Docker and Kubernetes send SIGTERM first, wait a grace period (10 seconds for docker stop, 30 by default for a pod), then send SIGKILL. So an app should handle SIGTERM by finishing the requests it is serving and exiting quickly, or it gets killed mid-request."
+    },
+    {
+     "q": "Why should a container not run as root?",
+     "a": "By default, root inside a container is user ID 0, the same as root on the host. If an attacker gets in through the app and then escapes the container, they are root on the machine. Running as a normal user limits what they can do, both inside and after an escape. It also follows least privilege: the app gets only the rights it needs. In a Dockerfile you create a user and switch to it with USER."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Some containers take exactly 10 seconds to stop. That number is a clue: `docker stop` sent SIGTERM, nothing happened, and Docker sent SIGKILL when its 10 second grace period ran out. The container's exit code is then 137. Three things usually cause this.\n\nFirst, PID 1 is special. Inside a container, your app often runs as process ID 1. [Docker's run reference](https://docs.docker.com/reference/cli/docker/container/run/) notes that Linux treats PID 1 specially: it ignores any signal whose default action would end it. So unless your code handles SIGTERM, it does not stop on it. Most web servers, including gunicorn, handle it.\n\nSecond, the shell form of a Dockerfile command can hide your app. If you write `ENTRYPOINT python app.py` as a plain string, Docker starts it under `/bin/sh -c`. The shell becomes PID 1 and does not pass signals on, so your app never hears SIGTERM. The exec form, a JSON list such as `CMD [\"gunicorn\", \"app:app\"]`, runs your app directly. The lab's Dockerfile uses the exec form.\n\nThird, wrapper scripts. If an entrypoint script starts your app as a child process, the script receives SIGTERM, not your app. End such a script with `exec` followed by your command, which replaces the shell with your app.\n\nTwo tools help:\n\n- `docker run --init` adds a tiny init process (tini) as PID 1. It passes signals on and cleans up finished child processes.\n- `time docker stop` followed by the container name shows how long a stop takes. A second or two is normal; 10 seconds means the signal was lost.\n\nKubernetes works the same way with a longer default wait. It sends SIGTERM, waits 30 seconds (the pod's `terminationGracePeriodSeconds`), then sends SIGKILL. An app that exits cleanly on SIGTERM is replaced quickly during a rollout and can finish the requests it is serving. An app that ignores it adds 30 seconds to every pod replacement."
+   },
+   "sources": [
+    {
+     "title": "The Linux Command Line, free book (William Shotts)",
+     "url": "https://www.linuxcommand.org/tlcl.php"
+    },
+    {
+     "title": "The Set Builtin (Bash manual)",
+     "url": "https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html"
+    },
+    {
+     "title": "docker container stop (Docker docs)",
+     "url": "https://docs.docker.com/reference/cli/docker/container/stop/"
+    },
+    {
+     "title": "Pod lifecycle: termination of pods (Kubernetes docs)",
+     "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/"
+    }
+   ]
+  },
+  {
+   "id": "d04",
+   "title": "Networks and the cloud, explained simply",
+   "minutes": 40,
+   "goal": "By the end you can explain what happens when you curl a URL, read an HTTP response, and describe the cloud basics you need: regions, service types, VPCs, shared responsibility and cost safety.",
+   "guess": {
+    "q": "An app in a container listens on 127.0.0.1:8000. Docker maps port 8000, and you open localhost:8000 on your Mac. What happens?",
+    "options": [
+     "It works, since Docker forwards the port to the app",
+     "It fails: the app hears only its own container",
+     "It works, but only if you use HTTPS instead",
+     "Docker refuses to start a container like that"
+    ],
+    "answer": 1,
+    "why": "127.0.0.1 accepts connections only from the same machine, and a container has its own network. Apps in containers must listen on 0.0.0.0 so traffic from outside can reach them."
+   },
+   "terms": [
+    {
+     "term": "IP address",
+     "plain": "A number that identifies a machine on a network, such as 192.168.1.20."
+    },
+    {
+     "term": "Port",
+     "plain": "A number from 0 to 65535 that picks which program on a machine gets the traffic."
+    },
+    {
+     "term": "DNS",
+     "plain": "The internet's phone book: it turns names like github.com into IP addresses."
+    },
+    {
+     "term": "HTTP status code",
+     "plain": "A three-digit number in every HTTP response that says how the request went, such as 200 or 404."
+    },
+    {
+     "term": "TLS",
+     "plain": "The encryption under HTTPS; the server's certificate proves it really owns the name."
+    },
+    {
+     "term": "Load balancer",
+     "plain": "A server that spreads incoming requests across several copies of an app."
+    },
+    {
+     "term": "Availability zone (AZ)",
+     "plain": "One or more separate data centers inside a cloud region, with their own power and network."
+    }
+   ],
+   "sections": [
+    {
+     "h": "IP addresses and ports",
+     "body": "Every machine on a network has an IP address, like a street address. An IPv4 address is four numbers from 0 to 255, such as `192.168.1.20`. There are two kinds:\n\n- Public addresses are unique on the whole internet. Your home router has one.\n- Private addresses work only inside one network. Your laptop's address probably starts with `192.168.` or `10.`.\n\nOne address is special. `127.0.0.1`, also called localhost or loopback, always means \"this same machine\". Traffic to it never leaves the computer.\n\nA port picks which program on a machine gets the traffic, like an apartment number in a building. Ports run from 0 to 65535. Web servers use 80 for HTTP and 443 for HTTPS, and your app uses 8000.\n\nA server program **binds** to an address and a port, then listens there. This trips up most people:\n\n- Binding to `127.0.0.1:8000` accepts connections only from the same machine.\n- Binding to `0.0.0.0:8000` accepts connections on every network address the machine has.\n\nA container has its own network and its own localhost, like a small separate machine. So an app inside a container must bind to `0.0.0.0`, or nothing outside can reach it. That is why `app.py` runs with `host=\"0.0.0.0\"`.",
+     "refs": [
+      {
+       "title": "How the web works (MDN)",
+       "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works",
+       "kind": "read"
+      },
+      {
+       "title": "Computer Networking in 100 Seconds (Fireship)",
+       "url": "https://www.youtube.com/watch?v=keeqnciDVOo",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "DNS: from names to addresses",
+     "body": "People remember names, but computers connect to IP addresses. DNS (the Domain Name System) turns one into the other. When you visit `github.com`, this happens:\n\n1. Your computer asks a DNS resolver, a server usually run by your internet provider.\n2. If the resolver has no saved answer, it asks a chain of DNS servers until it reaches the one in charge of that name.\n3. The resolver returns the IP address and keeps it for a set time, called the TTL (time to live).\n4. Your computer connects to that address.\n\nA DNS record that maps a name to an IPv4 address is called an A record. You can look one up yourself with `dig +short github.com` or `nslookup github.com`.\n\nCaching explains a common surprise. After you change a DNS record, some users still reach the old address until their saved answer expires.",
+     "refs": [
+      {
+       "title": "What is DNS? (Cloudflare Learning)",
+       "url": "https://www.cloudflare.com/learning/dns/what-is-dns/",
+       "kind": "read"
+      },
+      {
+       "title": "Life of a DNS query, comic (Julia Evans)",
+       "url": "https://wizardzines.com/comics/life-of-a-dns-query/",
+       "kind": "read"
+      },
+      {
+       "title": "DNS Explained in 100 Seconds (Fireship)",
+       "url": "https://www.youtube.com/watch?v=UVR9lhUGAyU",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "HTTP and HTTPS",
+     "body": "HTTP is the language that browsers, curl and apps use to talk to web servers. The client sends a request, and the server sends back a response. A request has up to four parts:\n\n- a method, such as GET to read or POST to send data,\n- a path, such as `/healthz`,\n- headers, extra lines such as `Host: localhost:8000`,\n- sometimes a body, the data being sent.\n\nA response starts with a status code. Codes come in families:\n\n- 2xx: success, such as 200 OK.\n- 3xx: look somewhere else, such as 301 Moved Permanently.\n- 4xx: the client made a mistake, such as 404 Not Found.\n- 5xx: the server failed, such as 500 Internal Server Error or 503 Service Unavailable.\n\nYour app's `/readyz` returns 503 when Redis is down, and Kubernetes reads that code on Day 18. To see a whole conversation, use `curl -v`. Lines starting with `>` are what you sent, and lines starting with `<` came back.\n\nHTTPS is HTTP inside an encrypted TLS connection. The server presents a certificate, a signed file that proves it owns the name. A certificate authority, such as Let's Encrypt, signs it after checking that the server controls the domain.",
+     "refs": [
+      {
+       "title": "Overview of HTTP (MDN)",
+       "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview",
+       "kind": "docs"
+      },
+      {
+       "title": "HTTP response status codes (MDN)",
+       "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status",
+       "kind": "docs"
+      },
+      {
+       "title": "How Let's Encrypt works",
+       "url": "https://letsencrypt.org/how-it-works/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Load balancers, reverse proxies and firewalls",
+     "body": "One server is a single point of failure. So production apps run several copies behind a load balancer: a server that receives every request and passes it to a healthy copy. If one copy dies, the load balancer stops sending it traffic.\n\nA reverse proxy is a server that sits in front of your apps and forwards requests to them. Most load balancers are reverse proxies, and they often do more work:\n\n- end TLS, so the apps behind them can speak plain HTTP,\n- route by path or name, for example `/api` to one service and `/` to another,\n- add caching, compression or rate limits.\n\nKubernetes uses the same ideas with Services and the Gateway API on Days 17 and 19.\n\nA firewall decides which traffic may pass, by address and port. In AWS, the common firewall is a security group: a set of allow rules attached to a server. A new security group lets no incoming traffic in until you add a rule, such as \"allow port 443 from anywhere\". Open only the ports you need, and never open a database port to the whole internet.",
+     "refs": [
+      {
+       "title": "What is a reverse proxy? (Cloudflare Learning)",
+       "url": "https://www.cloudflare.com/learning/cdn/glossary/reverse-proxy/",
+       "kind": "read"
+      },
+      {
+       "title": "Security group rules (AWS VPC docs)",
+       "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "The cloud in one page",
+     "body": "The cloud means renting computers, storage and services from a provider. You create them in minutes through an API and pay by the second, minute or hour. You never touch the hardware.\n\nProviders group data centers into regions, such as Frankfurt. Each region has several availability zones (AZs): separate data centers with their own power and network. Running copies in two or more AZs keeps your app up when one data center fails.\n\nServices differ in how much you manage yourself:\n\n- IaaS (infrastructure as a service): you rent virtual machines and manage the OS and everything on it.\n- PaaS (platform as a service): you hand over your code, and the provider runs it.\n- SaaS (software as a service): you just use finished software, such as an email service.\n- Serverless: you give a function or container and pay only while it runs.\n\nThe big three providers use different names for the same things:\n\n- Virtual machines: EC2 (AWS), Azure Virtual Machines, Compute Engine (Google Cloud).\n- Object storage for files: S3 (AWS), Azure Blob Storage, Cloud Storage (Google Cloud).\n\nA VPC (virtual private cloud) is your own private network inside a provider, split into subnets. Public subnets can reach the internet directly and private ones cannot, so databases go in private subnets.\n\nSecurity is shared. The provider secures the cloud itself: buildings, hardware and the base software. You secure what you put in it: your data, who has access, your firewall rules and the OS on your VMs.",
+     "refs": [
+      {
+       "title": "The NIST Definition of Cloud Computing (SP 800-145)",
+       "url": "https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-145.pdf",
+       "kind": "read"
+      },
+      {
+       "title": "AWS Regions and Availability Zones",
+       "url": "https://aws.amazon.com/about-aws/global-infrastructure/regions_az/",
+       "kind": "docs"
+      },
+      {
+       "title": "Compare AWS and Azure services to Google Cloud",
+       "url": "https://cloud.google.com/docs/get-started/aws-azure-gcp-service-comparison",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Cost traps, and how to avoid bill shock",
+     "body": "Pay-as-you-go cuts both ways. A forgotten server keeps charging every hour, even when nobody uses it. Common traps:\n\n- resources left running after a tutorial,\n- services that charge by the hour just for existing, such as NAT gateways and load balancers,\n- data sent out to the internet, which is billed per gigabyte,\n- a large machine size picked by mistake,\n- leaked access keys that strangers use to run their own servers.\n\nFree tiers changed in 2025. New AWS accounts opened since 15 July 2025 choose a free plan or a paid plan. The free plan gives credits, lasts up to six months, and blocks some expensive services. The paid plan charges your card for anything beyond the credits. Rules change, so read the [AWS Free Tier page](https://aws.amazon.com/free/) before you sign up.\n\nThree habits keep you safe:\n\n1. Create a budget alert on day one. In AWS, open Billing and Cost Management, then Budgets, then Create budget, and pick the zero spend template.\n2. Destroy everything you create as soon as you finish. On Day 15, that is `terraform destroy`.\n3. Never put access keys in code or in git.\n\nA budget alert only sends an email. It does not stop anything, so habit 2 still matters. You need no cloud account today, and Day 15 is the only lesson that uses one.",
+     "refs": [
+      {
+       "title": "AWS Free Tier",
+       "url": "https://aws.amazon.com/free/",
+       "kind": "docs"
+      },
+      {
+       "title": "Using a budget template (AWS Cost Management)",
+       "url": "https://docs.aws.amazon.com/cost-management/latest/userguide/budget-templates.html",
+       "kind": "docs"
+      }
+     ]
+    }
+   ],
+   "analogy": "Sending a request is like posting a letter to a friend in a big apartment building. DNS is the address book that turns your friend's name into a street address (the IP). The port is the apartment number, so the letter reaches the right person (program) in the building. The load balancer is the front desk that hands each letter to whichever clerk is free, and the firewall is the guard who only lets in mail for certain apartments. The analogy breaks because a letter takes days, while all of this happens in a fraction of a second.",
+   "diagram": "<svg viewBox=\"0 0 560 212\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Your laptop asks a DNS resolver for the IP, then sends HTTPS to a load balancer on port 443, which forwards through a firewall to two app servers on port 8000\"><rect x=\"8\" y=\"12\" width=\"128\" height=\"40\" rx=\"10\" class=\"bxg\"/><text x=\"72\" y=\"37\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">DNS resolver</text><rect x=\"8\" y=\"88\" width=\"128\" height=\"52\" rx=\"10\" class=\"bx\"/><text x=\"72\" y=\"110\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">Your laptop</text><text x=\"72\" y=\"127\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">curl</text><line x1=\"52\" y1=\"86\" x2=\"52\" y2=\"54\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"30\" y=\"74\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">name</text><line x1=\"92\" y1=\"54\" x2=\"92\" y2=\"86\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"110\" y=\"74\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">IP</text><rect x=\"176\" y=\"88\" width=\"152\" height=\"52\" rx=\"10\" class=\"bxo\"/><text x=\"252\" y=\"110\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">Load balancer</text><text x=\"252\" y=\"127\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">HTTPS, port 443</text><line x1=\"136\" y1=\"114\" x2=\"174\" y2=\"114\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"348\" y1=\"28\" x2=\"348\" y2=\"200\" class=\"lnd\"/><text x=\"348\" y=\"20\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">firewall</text><rect x=\"372\" y=\"40\" width=\"180\" height=\"52\" rx=\"10\" class=\"bxt\"/><text x=\"462\" y=\"62\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">App server</text><text x=\"462\" y=\"79\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">port 8000</text><rect x=\"372\" y=\"128\" width=\"180\" height=\"52\" rx=\"10\" class=\"bxt\"/><text x=\"462\" y=\"150\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">App server</text><text x=\"462\" y=\"167\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">port 8000</text><line x1=\"328\" y1=\"104\" x2=\"370\" y2=\"70\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"328\" y1=\"124\" x2=\"370\" y2=\"152\" class=\"ln\" marker-end=\"url(#ar)\"/></svg>",
+   "diagram_caption": "DNS turns the name into an IP. HTTPS goes to the load balancer, which forwards through the firewall to a healthy app server.",
+   "worked": {
+    "title": "Trace one request to your own app",
+    "steps": [
+     {
+      "say": "Start hello-devops. Flask prints where it listens. \"All addresses (0.0.0.0)\" is the binding from `app.py`. The next line is loopback, and the last address is your machine's private IP (yours will differ). Leave it running and open a second terminal tab.",
+      "code": "$ cd ~/code/hello-devops && source .venv/bin/activate\n$ python app.py\n * Serving Flask app 'app'\n * Debug mode: off\nWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.\n * Running on all addresses (0.0.0.0)\n * Running on http://127.0.0.1:8000\n * Running on http://192.0.2.2:8000\nPress CTRL+C to quit",
+      "lang": "console"
+     },
+     {
+      "say": "Watch one HTTP conversation. `-s` hides the progress bar and `-v` shows details. Lines with `*` are curl's notes: it looked up localhost, got an IPv6 and an IPv4 address, and connected on port 8000. Lines with `>` are the request and lines with `<` are the response. The `host` field in the body is your computer's name.",
+      "code": "$ curl -sv localhost:8000/\n* Host localhost:8000 was resolved.\n* IPv6: ::1\n* IPv4: 127.0.0.1\n*   Trying 127.0.0.1:8000...\n* Connected to localhost (127.0.0.1) port 8000\n> GET / HTTP/1.1\n> Host: localhost:8000\n> User-Agent: curl/8.5.0\n> Accept: */*\n>\n< HTTP/1.1 200 OK\n< Server: Werkzeug/3.1.9 Python/3.14.10\n< Content-Type: application/json\n< Content-Length: 68\n<\n{\"host\":\"vm\",\"message\":\"Hello, DevOps!\",\"version\":\"dev\",\"visits\":3}",
+      "lang": "console"
+     },
+     {
+      "say": "Status codes tell you how it went. A path that does not exist gives 404, a client mistake. `-o /dev/null` throws the body away and `-w \"%{http_code}\\n\"` prints only the code, which is handy in scripts.",
+      "code": "$ curl -s -o /dev/null -w \"%{http_code}\\n\" localhost:8000/healthz\n200\n$ curl -s -o /dev/null -w \"%{http_code}\\n\" localhost:8000/nope\n404",
+      "lang": "console"
+     },
+     {
+      "say": "Now see binding in action. The app listens on 0.0.0.0, so it also answers on the private IP. A test server bound to 127.0.0.1 answers on loopback but refuses the private IP: curl exits with 7, could not connect. An app in a container bound to 127.0.0.1 fails in the same way.",
+      "code": "$ curl -s http://192.0.2.2:8000/healthz\n{\"status\":\"ok\"}\n$ python3 -m http.server 8001 --bind 127.0.0.1 &\n$ curl -s -o /dev/null -w \"%{http_code}\\n\" http://127.0.0.1:8001/\n200\n$ curl -s http://192.0.2.2:8001/; echo \"exit code: $?\"\nexit code: 7",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "text",
+     "title": "curl-timing.txt",
+     "src": "   DNS lookup: %{time_namelookup}s\\n\n  TCP connect: %{time_connect}s\\n\nTLS handshake: %{time_appconnect}s\\n\n   First byte: %{time_starttransfer}s\\n\n        Total: %{time_total}s\\n\n  HTTP status: %{http_code}\\n\n    Remote IP: %{remote_ip}\\n\n",
+     "run": "curl -s -o /dev/null -w \"@curl-timing.txt\" https://example.com"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "ipconfig getifaddr en0",
+     "what": "Mac only: print your private IP on the main network interface. On Linux use hostname -I."
+    },
+    {
+     "cmd": "dig +short github.com",
+     "what": "Ask DNS for the IP addresses behind a name."
+    },
+    {
+     "cmd": "nslookup github.com",
+     "what": "Another DNS lookup tool, which also works on Windows."
+    },
+    {
+     "cmd": "curl -sv -o /dev/null https://example.com",
+     "what": "Show the whole conversation, including TLS and headers, without the page body."
+    },
+    {
+     "cmd": "curl -s -o /dev/null -w \"%{http_code}\\n\" localhost:8000/healthz",
+     "what": "Print only the HTTP status code of a request."
+    },
+    {
+     "cmd": "curl -s -o /dev/null -w \"@curl-timing.txt\" https://example.com",
+     "what": "Time each step of a request (DNS, connect, TLS, first byte) with the format file."
+    },
+    {
+     "cmd": "lsof -nP -iTCP -sTCP:LISTEN",
+     "what": "List programs listening on TCP ports, and the address each one is bound to."
+    },
+    {
+     "cmd": "python3 -m http.server 8001 --bind 127.0.0.1",
+     "what": "Start a throwaway web server that listens on localhost only."
+    }
+   ],
+   "mistake": "A classic mistake is binding a server to 127.0.0.1 and then running it in a container or on a cloud server. It works on your laptop, but nothing outside can reach it, and the error looks like a network problem. Bind servers to 0.0.0.0, and control who can reach them with firewalls or security groups instead.",
+   "real_world": "At PayFlow, the checkout API runs as several copies in two availability zones, behind a load balancer that ends TLS. Only the load balancer accepts traffic from the internet. Security groups let the app servers accept traffic only from the load balancer, and the database only from the app servers. Every cloud account has budget alerts, and test environments are destroyed at the end of each day by a pipeline.",
+   "task": {
+    "title": "Take apart a real web request",
+    "steps": [
+     "Find your laptop's private IP address. Which private range from the lesson is it in?",
+     "Look up the IP addresses of `example.com` and `github.com` with `dig +short`. Run it twice: do the answers change?",
+     "Run `curl -sv -o /dev/null https://example.com`. Find the IP curl connected to, the TLS version, the certificate's issuer and the status code.",
+     "Save `curl-timing.txt` from this lesson in `~/code/playground`. Time a request to two different websites. Which step takes longest for each?",
+     "Start hello-devops and request a path that does not exist, then `/readyz`. Write down both status codes.",
+     "Start a test server bound to 127.0.0.1 on port 8001 and try to reach it on your private IP. Explain the result in one sentence.",
+     "Write down which ports a firewall in front of hello-devops should allow, and from where."
+    ],
+    "hints": [
+     "On a Mac, `ipconfig getifaddr en0` prints your private IP.",
+     "In the `curl -v` output, look for lines starting with `*` near the word certificate.",
+     "Each timing counts from the start of the request, so subtract the line above to get one step on its own."
+    ],
+    "done_when": "You are done when you can write down your private IP, the IP and status code of example.com, its certificate issuer, and which step of the request took longest."
+   },
+   "explain_back": {
+    "prompt": "Explain what happens when you run `curl https://example.com`, in 3 to 4 sentences. Mention DNS, the port, TLS and the status code.",
+    "answer": "First, my computer asks DNS for the IP address of example.com, unless it has a saved answer. Then curl opens a connection to that IP on port 443, the HTTPS port. TLS encrypts the connection, and the server's certificate proves it really is example.com. Finally curl sends a GET request, and the server answers with a status code such as 200, some headers and the page in the body."
+   },
+   "recap": [
+    "IP addresses find machines, ports find programs, and 127.0.0.1 means this machine only.",
+    "Apps in containers must bind to 0.0.0.0, or nothing outside can reach them.",
+    "DNS turns names into IPs, and caching explains why changes take time to reach everyone.",
+    "Status codes: 2xx success, 3xx look elsewhere, 4xx client mistake, 5xx server failure.",
+    "The cloud rents you machines by the minute in regions and zones, and you secure what you put in it.",
+    "Set a budget alert first, and destroy what you create."
+   ],
+   "check": [
+    {
+     "q": "A health check gets status 503 from `/readyz`. What does that tell you?",
+     "options": [
+      "The client sent a malformed request",
+      "The server is up but not ready to serve",
+      "The page has moved to a new address for good",
+      "The request worked and returned data"
+     ],
+     "answer": 1,
+     "why": "5xx codes mean the server side failed, and 503 says the app runs but cannot do real work yet, for example because Redis is down."
+    },
+    {
+     "q": "You point your domain's A record at a new server. An hour later, some users still reach the old server. Why?",
+     "options": [
+      "Their resolvers saved the old answer",
+      "The new server's firewall blocks them",
+      "Their browsers do not support TLS",
+      "The load balancer ran out of memory"
+     ],
+     "answer": 0,
+     "why": "Resolvers keep DNS answers until the TTL expires, so some users get the old IP for a while."
+    },
+    {
+     "q": "Your team runs a database on a cloud virtual machine (IaaS). Under shared responsibility, who installs the OS security patches?",
+     "options": [
+      "The cloud provider",
+      "The database vendor",
+      "Your team",
+      "Nobody, VMs patch themselves"
+     ],
+     "answer": 2,
+     "why": "With IaaS the provider secures the hardware and data centers, and you manage the OS and everything you install on it."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What happens when you type a URL into a browser and press Enter?",
+     "a": "The browser asks DNS to turn the host name into an IP address, using a saved answer if it has one. It opens a TCP connection to that IP on port 443, then does a TLS handshake in which the server proves who it is with a certificate. It sends an HTTP GET request, often to a load balancer or reverse proxy that forwards it to an app server. The server returns a status code, headers and a body, and the browser renders the page and fetches anything else it needs."
+    },
+    {
+     "q": "What is the shared responsibility model in the cloud?",
+     "a": "It splits security work between the provider and the customer. The provider secures the cloud itself: buildings, hardware, networks and the software that runs its services. The customer secures what they put in the cloud: data, identities and permissions, network rules, and the operating system on any VMs. The split moves with the service type: with IaaS you patch the OS, while with managed or serverless services the provider does more."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "On Day 15 you may build in a real cloud network, so here is a picture of one.\n\nA VPC gets a private address range written in CIDR notation, such as `10.0.0.0/16`. The number after the slash says how many leading bits are fixed. `/16` fixes the first two numbers (10.0), which leaves 65,536 addresses. A `/24` subnet, such as `10.0.1.0/24`, fixes three numbers and holds 256 addresses.\n\nYou split the VPC into subnets and place each subnet in one availability zone. A common layout uses two zones and three layers:\n\n1. Public subnets hold the load balancer. Their route table sends internet traffic to an internet gateway.\n2. Private subnets hold the app servers. Nothing on the internet can reach them directly.\n3. More private subnets hold the database.\n\nSecurity groups then chain the layers together:\n\n- The load balancer's group allows port 443 from anywhere.\n- The app's group allows port 8000 only from the load balancer's group.\n- The database's group allows its port only from the app's group.\n\nA rule can name another security group as its source, so you never have to list IP addresses by hand.\n\nPrivate servers still need to reach out sometimes, for example to download updates. A NAT gateway in a public subnet lets them start outgoing connections, while nothing outside can start one to them. NAT gateways are also a common cost trap, because they charge by the hour even when idle.\n\nNetwork ACLs are a second, optional firewall at the subnet level. For most setups, security groups are enough.\n\nKubernetes repeats this pattern inside a cluster. Pods get private addresses, Services act like internal load balancers, and network policies act like security groups. When you reach Day 17, this picture will look familiar."
+   },
+   "sources": [
+    {
+     "title": "Overview of HTTP (MDN)",
+     "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview"
+    },
+    {
+     "title": "What is DNS? (Cloudflare Learning)",
+     "url": "https://www.cloudflare.com/learning/dns/what-is-dns/"
+    },
+    {
+     "title": "The NIST Definition of Cloud Computing (SP 800-145)",
+     "url": "https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-145.pdf"
+    },
+    {
+     "title": "AWS Free Tier",
+     "url": "https://aws.amazon.com/free/"
+    }
+   ]
+  }
+ ],
+ "recap": [
+  "The shell runs your commands; paths are absolute from `/` or relative from where you are.",
+  "Permissions (rwx) control files, and containers should run as a normal user, not root.",
+  "SIGTERM asks a process to stop and SIGKILL forces it; Docker and Kubernetes send both, in that order.",
+  "Pipes and redirection join small tools, and a non-zero exit code makes CI fail.",
+  "`set -euo pipefail` makes bash scripts stop on errors.",
+  "IP addresses find machines, ports find programs, and DNS turns names into IPs.",
+  "Apps in containers bind to 0.0.0.0, and firewalls or security groups decide who gets in.",
+  "The cloud rents machines by the minute, so set budget alerts and destroy what you create."
+ ],
+ "flashcards": [
+  {
+   "front": "What does `chmod +x smoke.sh` do?",
+   "back": "It adds execute permission, so you can run the script with `./smoke.sh`."
+  },
+  {
+   "front": "What is the difference between `>` and `>>`?",
+   "back": "`>` replaces the file's contents; `>>` adds to the end."
+  },
+  {
+   "front": "What does `2>&1` mean?",
+   "back": "Send stderr (errors) to the same place as stdout."
+  },
+  {
+   "front": "Which signal does a plain `kill` send?",
+   "back": "SIGTERM (15), a polite request to stop."
+  },
+  {
+   "front": "What does exit code 137 usually mean?",
+   "back": "The process was killed by SIGKILL: 128 + 9."
+  },
+  {
+   "front": "What does `set -euo pipefail` do?",
+   "back": "Stops on errors, treats unset variables as errors, and fails a pipe if any part fails."
+  },
+  {
+   "front": "How long does `docker stop` wait before SIGKILL, and Kubernetes by default?",
+   "back": "10 seconds for docker stop; 30 seconds for a Kubernetes pod."
+  },
+  {
+   "front": "Why must a container app bind to 0.0.0.0?",
+   "back": "127.0.0.1 inside a container accepts only traffic from inside that container."
+  },
+  {
+   "front": "What does DNS do, and what is an A record?",
+   "back": "DNS turns names into IP addresses; an A record maps a name to an IPv4 address."
+  },
+  {
+   "front": "What do 4xx and 5xx status codes mean?",
+   "back": "4xx: the client made a mistake. 5xx: the server failed."
+  },
+  {
+   "front": "What is an availability zone?",
+   "back": "One or more separate data centers in a region, with their own power and network."
+  },
+  {
+   "front": "In IaaS, who patches the operating system?",
+   "back": "You do; the provider secures the hardware and data centers."
+  },
+  {
+   "front": "What should you set up first in a new cloud account to avoid bill shock?",
+   "back": "A budget with an email alert, such as AWS's zero spend budget."
+  }
+ ],
+ "quiz": [
+  {
+   "q": "`ls -l deploy.sh` shows `-rw-r--r--`. Why does `./deploy.sh` fail with 'permission denied'?",
+   "options": [
+    "The file is owned by the root user",
+    "Nobody has execute (x) permission",
+    "The script file is completely empty",
+    "The shell is zsh instead of bash"
+   ],
+   "answer": 1,
+   "why": "There is no x in any of the three groups, so nobody may run it; `chmod +x deploy.sh` fixes it."
+  },
+  {
+   "q": "Each time a pod is replaced, it takes 30 seconds to stop. What should you check first?",
+   "options": [
+    "Whether the app handles SIGTERM",
+    "Whether the image is too large",
+    "Whether DNS answers are cached",
+    "Whether the node has free disk"
+   ],
+   "answer": 0,
+   "why": "Kubernetes waits 30 seconds after SIGTERM before SIGKILL, so an app that ignores SIGTERM always takes the full wait."
+  },
+  {
+   "q": "Which command counts how many lines in app.log contain the word timeout?",
+   "options": [
+    "`cat app.log > grep timeout`",
+    "`wc -l app.log | grep timeout`",
+    "`grep timeout app.log | wc -l`",
+    "`tail -f app.log timeout`"
+   ],
+   "answer": 2,
+   "why": "grep keeps the matching lines, and the pipe hands them to `wc -l`, which counts them."
+  },
+  {
+   "q": "A CI step runs `pytest || true`. The tests fail, but the step shows green. Why?",
+   "options": [
+    "pytest found no tests to run",
+    "CI tools do not read exit codes",
+    "The runner ran out of memory",
+    "`|| true` makes the exit code 0"
+   ],
+   "answer": 3,
+   "why": "When pytest fails, `|| true` runs `true`, which exits with 0, so CI sees success."
+  },
+  {
+   "q": "Your app runs on a server at 10.0.3.15. Why can't a user on the internet reach that address directly?",
+   "options": [
+    "It is a private address",
+    "Port 10 is always blocked",
+    "Its DNS record is missing",
+    "It is an IPv6 address"
+   ],
+   "answer": 0,
+   "why": "Addresses starting with 10. are private and work only inside their own network."
+  },
+  {
+   "q": "`curl -v` shows `< HTTP/1.1 301 Moved Permanently`. What should a client do to reach the page?",
+   "options": [
+    "Retry the same URL later on",
+    "Follow the Location header",
+    "Send a POST request instead",
+    "Switch the request to port 80"
+   ],
+   "answer": 1,
+   "why": "3xx means look somewhere else, and the Location header gives the new address (`curl -L` follows it for you)."
+  },
+  {
+   "q": "Which pair names the same kind of cloud service?",
+   "options": [
+    "Amazon EC2 and Cloud Storage",
+    "Azure Virtual Machines and S3",
+    "Amazon S3 and Azure Blob Storage",
+    "Compute Engine and Blob Storage"
+   ],
+   "answer": 2,
+   "why": "S3 and Azure Blob Storage are both object storage for files; EC2, Azure Virtual Machines and Compute Engine are virtual machines."
+  },
+  {
+   "q": "You finished a cloud tutorial that created a load balancer and two VMs. What protects you best from a surprise bill?",
+   "options": [
+    "Leave them running, but small",
+    "Rely on the free tier to cover it",
+    "Turn off the budget emails",
+    "Destroy everything you created"
+   ],
+   "answer": 3,
+   "why": "Idle resources keep charging by the hour, and budget alerts only warn you, so delete what you no longer need."
+  }
+ ]
+}
