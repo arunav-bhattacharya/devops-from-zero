@@ -61,9 +61,9 @@ SECTIONS = [
             "Git never forgets. Commit a token, delete it in the next commit, and the token is still in history, in every clone and every fork. "
             "So deleting the file fixes nothing. The fix is to rotate: revoke the leaked value where it was issued and create a new one. "
             "Treat anything that reached a remote as public.\n\n"
-            "I tested this with gitleaks on a small repository. One commit added a GitHub token in `.env.local`, and the next commit deleted the file. "
-            "`gitleaks dir` looks only at the files as they are now, and it said `no leaks found`. "
-            "`gitleaks git` reads the whole history, and it said `leaks found: 1`, with the commit, the file and the line.\n\n"
+            "I tested this with gitleaks on a small repository. One commit added a GitHub token in `.env.local`. The next commit deleted the file. "
+            "A scan with `gitleaks dir` looks only at the files as they are now, and it said `no leaks found`. "
+            "A scan with `gitleaks git` reads the whole history, and it said `leaks found: 1`, with the commit, the file and the line.\n\n"
             "Catch secrets before they reach the remote, with two layers:\n"
             "- gitleaks on your laptop, ideally as a pre-commit hook, so the bad commit never happens. Run `gitleaks git -v` once on every old repository too.\n"
             "- GitHub push protection on the server. It blocks a push that contains a known secret format, such as cloud keys, tokens and private keys. "
@@ -152,8 +152,9 @@ SECTIONS = [
     {
         "h": "Policy as code with Kyverno",
         "body": (
-            "Pod Security Admission covers Pod hardening and nothing else. Your own rules, such as \"no `:latest` tags\" or \"every workload has a team label\", need a policy engine. "
-            "**Policy as code** means those rules are files in git: reviewed in pull requests, tested in CI, and enforced by an admission controller.\n\n"
+            "Pod Security Admission covers Pod hardening and nothing else. Your own rules need a policy engine. "
+            "Think of rules such as \"no `:latest` tags\" or \"every workload has a team label\". "
+            "With **policy as code**, those rules are files in git: reviewed in pull requests, tested in CI, and enforced by an admission controller.\n\n"
             "There are two common engines:\n"
             "- Kyverno. Policies are Kubernetes YAML, and the checks are written in CEL, the short expression language Kubernetes itself uses. Kyverno became a CNCF graduated project in March 2026.\n"
             "- OPA Gatekeeper. Policies are written in Rego, a general policy language, as ConstraintTemplates, and switched on as Constraints. A good fit where a company already uses OPA.\n\n"
@@ -307,11 +308,12 @@ COMMANDS = [
 
 DEEPER = (
     "Two tools from today deserve a closer look before you use them at work.\n\n"
-    "Kubernetes has its own CEL policies. Since Kubernetes 1.30, ValidatingAdmissionPolicy is built in: you write CEL validations in one object, "
-    "bind them to resources with a ValidatingAdmissionPolicyBinding, and the API server runs them itself, with no webhook. "
+    "Kubernetes has its own CEL policies. Since Kubernetes 1.30, ValidatingAdmissionPolicy is built in and stable. "
+    "You write CEL validations in one object and bind them to resources with a ValidatingAdmissionPolicyBinding. "
+    "The API server then runs them itself, with no webhook. "
     "Kyverno's ValidatingPolicy is a superset of it. It adds background scans of existing objects, PolicyReports, exceptions, a CLI for tests, and calls to outside data. "
     "Kyverno can even generate a built-in ValidatingAdmissionPolicy from a simple ValidatingPolicy, so the API server evaluates it. "
-    "I tested the CEL in the lab's two policies exactly that way: I copied the expressions into a built-in policy on a test API server and sent it 17 test objects. "
+    "I tested the CEL in the lab's two policies exactly that way. I copied the expressions into a built-in policy on a test API server and sent it 17 test objects. "
     "It denied `nginx:latest`, a bare `nginx`, `localhost:5000/hello-devops` with no tag, and a `:latest` init container. "
     "It allowed a digest, a registry port with a tag, and anything in other namespaces. "
     "That is a cheap habit worth copying: test a policy against good and bad examples before it guards a real cluster. "
@@ -359,7 +361,7 @@ lesson = {
         "Think of a club. RBAC is the guest list: it decides who gets in and which rooms each guest may enter. "
         "Admission control is the bouncer who also checks what you carry, such as no glass bottles, whoever you are. "
         "The secrets manager is the cloakroom, with a ticket for every coat and a log of who took what. "
-        "Where it breaks: a bouncer can make an exception for a friend, while an admission policy treats every request exactly the same, so one typo in a Deny policy can lock out everybody, you included."
+        "Where it breaks: a bouncer can make an exception for a friend. An admission policy treats every request exactly the same, so one typo in a Deny policy can lock out everybody, you included."
     ),
     "diagram": diagram(),
     "diagram_caption": "RBAC decides who may act; admission decides whether this object is acceptable.",

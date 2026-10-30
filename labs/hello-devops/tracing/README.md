@@ -57,8 +57,11 @@ are gone after a restart.
   stable attribute names (`http.request.method`, `http.response.status_code`,
   `client.address`, `db.system.name`). Without it you get the older names
   (`http.method`, `net.peer.ip`).
-- The app's own Jaeger API calls: `curl -s localhost:16686/api/v3/services` lists the
-  services, and `curl -s localhost:16686/api/v3/traces/<trace id>` returns one trace.
+- Jaeger's HTTP API: `curl -s localhost:16686/api/v3/services` lists the services, and
+  `curl -s localhost:16686/api/v3/traces/<trace id>` returns one trace as JSON.
+- Metrics are switched off (`OTEL_METRICS_EXPORTER=none`). The OpenTelemetry docs list
+  gunicorn with several workers as fine for traces but broken for metrics, and the course
+  gets metrics from Prometheus anyway.
 - Memory: the four containers used about 150 MB together on the test machine.
 - Tested with Docker Engine 29 and Compose v5. The test build added a proxy certificate
   for `pip`, which you do not need on your laptop.
