@@ -1,0 +1,47 @@
+# Day 31: one Pod with an init container, a sidecar and the main container.
+# Try it in a scratch namespace:
+#   kubectl create namespace scratch
+#   kubectl apply -n scratch -f k8s/examples/pod-sidecar.yaml
+#   kubectl get pod web -n scratch -w
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web
+  labels:
+    app: web # identifying: selectors find the Pod by this
+  annotations:
+    example.com/owner: "team-a" # a note for people and tools; selectors ignore it
+spec:
+  initContainers:
+    # 1. A normal init container: runs once and must exit 0 before the next one starts.
+    - name: write-page
+      image: busybox:1.37
+      command: ["sh", "-c", "echo 'hello from the init container' > /work/index.html"]
+      volumeMounts:
+        - name: work
+          mountPath: /work
+    # 2. A sidecar: an init container with restartPolicy Always.
+    #    It starts before nginx, keeps running, and stops after nginx stops.
+    - name: log-tailer
+      image: busybox:1.37
+      restartPolicy: Always
+      command: ["sh", "-c", "touch /logs/access.log && tail -F /logs/access.log"]
+      volumeMounts:
+        - name: logs
+          mountPath: /logs
+  containers:
+    # 3. The main container: serves the page that the init container wrote.
+    - name: nginx
+      image: nginx:1.28
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: work
+          mountPath: /usr/share/nginx/html
+        - name: logs
+          mountPath: /var/log/nginx # nginx writes access.log here, and the sidecar reads it
+  volumes:
+    - name: work
+      emptyDir: {} # an empty folder that lives as long as the Pod
+    - name: logs
+      emptyDir: {}

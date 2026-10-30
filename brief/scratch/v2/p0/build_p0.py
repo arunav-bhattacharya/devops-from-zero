@@ -1,0 +1,929 @@
+#!/usr/bin/env python3
+"""Build content/p0.json (Part 0, second edition): Day 1 and Day 2."""
+import json
+import pathlib
+
+ROOT = pathlib.Path("/home/user/devops-from-zero")
+LAB = ROOT / "labs/hello-devops"
+OUT = ROOT / "content/p0.json"
+
+
+def lab(name):
+    return (LAB / name).read_text()
+
+
+# ---------------------------------------------------------------- links
+NANA_DEVOPS = {"title": "What is DevOps? REALLY understand it (TechWorld with Nana)",
+               "url": "https://www.youtube.com/watch?v=0yWAtQ6wYNM", "kind": "watch"}
+DORA_GUIDE = {"title": "DORA's software delivery performance metrics", "url": "https://dora.dev/guides/dora-metrics/", "kind": "docs"}
+DORA_HISTORY = {"title": "A history of DORA's software delivery metrics", "url": "https://dora.dev/guides/dora-metrics/history/", "kind": "read"}
+DORA_SMALL = {"title": "Working in small batches (DORA)", "url": "https://dora.dev/capabilities/working-in-small-batches/", "kind": "read"}
+SRE_TOC = {"title": "Site Reliability Engineering, the free book (Google)", "url": "https://sre.google/sre-book/table-of-contents/", "kind": "read"}
+SRE_PART1 = {"title": "SRE book, Part I: Introduction (Google)", "url": "https://sre.google/sre-book/part-I-introduction/", "kind": "read"}
+CNCF_PLATFORMS = {"title": "CNCF Platforms white paper", "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/", "kind": "read"}
+MS_SHELL = {"title": "Course overview and the shell (MIT Missing Semester 2026)", "url": "https://www.youtube.com/watch?v=MSgoeuMqUmU", "kind": "watch"}
+MS_ENV = {"title": "Command-line environment (MIT Missing Semester 2026)", "url": "https://www.youtube.com/watch?v=ccBGsPedE9Q", "kind": "watch"}
+BREW = {"title": "Homebrew", "url": "https://brew.sh/", "kind": "docs"}
+BREW_INSTALL = {"title": "Homebrew installation docs", "url": "https://docs.brew.sh/Installation", "kind": "docs"}
+DOCKER_MAC = {"title": "Install Docker Desktop on Mac", "url": "https://docs.docker.com/desktop/setup/install/mac-install/", "kind": "docs"}
+DOCKER_LICENSE = {"title": "Docker Desktop license agreement", "url": "https://docs.docker.com/subscription-billing/desktop-license/", "kind": "docs"}
+DOCKER_SETTINGS = {"title": "Docker Desktop settings, including Advanced", "url": "https://docs.docker.com/desktop/settings-and-maintenance/settings/", "kind": "docs"}
+TF_INSTALL = {"title": "Install Terraform (HashiCorp)", "url": "https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli", "kind": "docs"}
+KUBECTL_MAC = {"title": "Install and set up kubectl on macOS", "url": "https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/", "kind": "docs"}
+KIND_QS = {"title": "kind quick start", "url": "https://kind.sigs.k8s.io/docs/user/quick-start/", "kind": "docs"}
+JDK21 = {"title": "openjdk@21 formula (Homebrew)", "url": "https://formulae.brew.sh/formula/openjdk@21", "kind": "docs"}
+SDKMAN = {"title": "Install SDKMAN!", "url": "https://sdkman.io/install/", "kind": "docs"}
+MULTIPASS = {"title": "Multipass README (Canonical)", "url": "https://github.com/canonical/multipass", "kind": "docs"}
+VENV = {"title": "Virtual environments and packages (Python tutorial)", "url": "https://docs.python.org/3/tutorial/venv.html", "kind": "docs"}
+GH_CREATE = {"title": "gh repo create (GitHub CLI manual)", "url": "https://cli.github.com/manual/gh_repo_create", "kind": "docs"}
+
+
+def src(d):
+    return {"title": d["title"], "url": d["url"]}
+
+
+# ---------------------------------------------------------------- SVG: Day 1
+D01_SVG = (
+    '<svg viewBox="0 0 560 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A change flows from Git '
+    'through GitHub Actions and Gradle, Docker and Argo CD to Kubernetes and users. Terraform creates the infrastructure, '
+    'DevSecOps checks before deploy, observability feeds the next change, and Linux and networking sit underneath.">'
+    # row 1
+    '<rect x="28" y="16" width="160" height="52" rx="10" class="bx"/>'
+    '<text x="108" y="38" font-size="13" text-anchor="middle" class="t">Code</text>'
+    '<text x="108" y="56" font-size="11" text-anchor="middle" class="ts">Git</text>'
+    '<rect x="208" y="16" width="160" height="52" rx="10" class="bxo"/>'
+    '<text x="288" y="38" font-size="13" text-anchor="middle" class="tk">Build and test</text>'
+    '<text x="288" y="56" font-size="11" text-anchor="middle" class="tk">Actions, Gradle</text>'
+    '<rect x="388" y="16" width="160" height="52" rx="10" class="bxt"/>'
+    '<text x="468" y="38" font-size="13" text-anchor="middle" class="tk">Package</text>'
+    '<text x="468" y="56" font-size="11" text-anchor="middle" class="tk">Docker</text>'
+    # row 2
+    '<rect x="388" y="112" width="160" height="52" rx="10" class="bxp"/>'
+    '<text x="468" y="134" font-size="13" text-anchor="middle" class="tk">Deploy</text>'
+    '<text x="468" y="152" font-size="11" text-anchor="middle" class="tk">Argo CD</text>'
+    '<rect x="208" y="112" width="160" height="52" rx="10" class="bxg"/>'
+    '<text x="288" y="134" font-size="13" text-anchor="middle" class="tk">Run</text>'
+    '<text x="288" y="152" font-size="11" text-anchor="middle" class="tk">Kubernetes</text>'
+    '<text x="108" y="142" font-size="13" text-anchor="middle" class="t">Users</text>'
+    # row 3
+    '<rect x="28" y="208" width="160" height="52" rx="10" class="bxo"/>'
+    '<text x="108" y="230" font-size="13" text-anchor="middle" class="tk">Observe</text>'
+    '<text x="108" y="248" font-size="11" text-anchor="middle" class="tk">Prometheus, EFK</text>'
+    '<rect x="208" y="208" width="160" height="52" rx="10" class="bx"/>'
+    '<text x="288" y="230" font-size="13" text-anchor="middle" class="t">Infrastructure</text>'
+    '<text x="288" y="248" font-size="11" text-anchor="middle" class="ts">Terraform</text>'
+    '<rect x="388" y="208" width="160" height="52" rx="10" class="bxt"/>'
+    '<text x="468" y="230" font-size="13" text-anchor="middle" class="tk">Protect</text>'
+    '<text x="468" y="248" font-size="11" text-anchor="middle" class="tk">DevSecOps</text>'
+    # base
+    '<rect x="28" y="284" width="520" height="40" rx="10" class="bx"/>'
+    '<text x="288" y="309" font-size="13" text-anchor="middle" class="t">Linux and networking underneath</text>'
+    # arrows
+    '<line x1="188" y1="42" x2="206" y2="42" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="368" y1="42" x2="386" y2="42" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="468" y1="68" x2="468" y2="110" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="388" y1="138" x2="370" y2="138" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="208" y1="138" x2="140" y2="138" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="288" y1="208" x2="288" y2="166" class="ln" marker-end="url(#ar)"/>'
+    '<text x="296" y="191" font-size="11" text-anchor="start" class="ts">creates</text>'
+    '<line x1="468" y1="208" x2="468" y2="166" class="lnd" marker-end="url(#ar)"/>'
+    '<text x="476" y="191" font-size="11" text-anchor="start" class="ts">checks</text>'
+    '<line x1="240" y1="164" x2="178" y2="206" class="lnd" marker-end="url(#ar)"/>'
+    '<line x1="28" y1="234" x2="14" y2="234" class="lnd"/>'
+    '<line x1="14" y1="234" x2="14" y2="42" class="lnd"/>'
+    '<line x1="14" y1="42" x2="26" y2="42" class="lnd" marker-end="url(#ar)"/>'
+    '<text x="22" y="100" font-size="11" text-anchor="start" class="ts">feedback</text>'
+    '</svg>'
+)
+
+# ---------------------------------------------------------------- SVG: Day 2
+D02_SVG = (
+    '<svg viewBox="0 0 560 236" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="From the terminal, git and gh '
+    'talk to GitHub, docker talks to the Linux VM inside Docker Desktop, and kubectl and helm talk to containers that run '
+    'inside that VM, such as the ubuntu practice box and the kind cluster nodes.">'
+    '<rect x="8" y="96" width="112" height="44" rx="10" class="bx"/>'
+    '<text x="64" y="114" font-size="13" text-anchor="middle" class="t">Terminal</text>'
+    '<text x="64" y="131" font-size="11" text-anchor="middle" class="ts">zsh</text>'
+    '<rect x="160" y="16" width="152" height="44" rx="10" class="bxo"/>'
+    '<text x="236" y="43" font-size="13" text-anchor="middle" class="tk">git, gh</text>'
+    '<rect x="160" y="96" width="152" height="44" rx="10" class="bxt"/>'
+    '<text x="236" y="123" font-size="13" text-anchor="middle" class="tk">docker, kind</text>'
+    '<rect x="160" y="176" width="152" height="44" rx="10" class="bxp"/>'
+    '<text x="236" y="203" font-size="13" text-anchor="middle" class="tk">kubectl, helm</text>'
+    '<rect x="352" y="16" width="196" height="44" rx="10" class="bx"/>'
+    '<text x="450" y="34" font-size="13" text-anchor="middle" class="t">GitHub</text>'
+    '<text x="450" y="51" font-size="11" text-anchor="middle" class="ts">hello-devops repo</text>'
+    '<rect x="352" y="96" width="196" height="44" rx="10" class="bx"/>'
+    '<text x="450" y="114" font-size="13" text-anchor="middle" class="t">Linux VM</text>'
+    '<text x="450" y="131" font-size="11" text-anchor="middle" class="ts">Docker Desktop</text>'
+    '<rect x="352" y="176" width="196" height="44" rx="10" class="bx"/>'
+    '<text x="450" y="194" font-size="13" text-anchor="middle" class="t">Containers</text>'
+    '<text x="450" y="211" font-size="11" text-anchor="middle" class="ts">ubuntu box, kind nodes</text>'
+    '<line x1="120" y1="108" x2="158" y2="46" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="120" y1="118" x2="158" y2="118" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="120" y1="128" x2="158" y2="190" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="312" y1="38" x2="350" y2="38" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="312" y1="118" x2="350" y2="118" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="312" y1="198" x2="350" y2="198" class="ln" marker-end="url(#ar)"/>'
+    '<line x1="450" y1="140" x2="450" y2="174" class="lnd" marker-end="url(#ar)"/>'
+    '<text x="458" y="161" font-size="11" text-anchor="start" class="ts">runs</text>'
+    '</svg>'
+)
+
+# ================================================================ Day 1
+d01 = {
+    "id": "d01",
+    "title": "The DevOps map",
+    "minutes": 45,
+    "goal": "By the end you can explain what DevOps is, follow one code change from your laptop to users, and say which part of this course covers each step.",
+    "guess": {
+        "q": "A company hires one 'DevOps engineer' and changes nothing else. Has it adopted DevOps?",
+        "options": [
+            "Yes, because DevOps is a job title",
+            "Yes, if that person buys the right tools",
+            "No, DevOps is how teams share running software",
+            "No, DevOps only applies to cloud companies",
+        ],
+        "answer": 2,
+        "why": "DevOps is a way of working where the people who build software also share the work of running it. One new hire cannot change how a whole team works.",
+    },
+    "terms": [
+        {"term": "DevOps", "plain": "A way of working where the people who build software also share the job of running it."},
+        {"term": "Production", "plain": "The real, live system that your users use."},
+        {"term": "Pipeline", "plain": "The automated series of steps that takes a code change from a commit to production."},
+        {"term": "Continuous integration (CI)", "plain": "Merging small changes into the main branch often, with an automatic build and test for each one."},
+        {"term": "Continuous delivery (CD)", "plain": "Keeping every change that passes the tests ready to release at any time."},
+        {"term": "Infrastructure as code (IaC)", "plain": "Describing servers, networks and storage in text files that a tool can create for you."},
+        {"term": "Observability", "plain": "Being able to see what a running system is doing from the outside, through metrics, logs and traces."},
+        {"term": "DORA metrics", "plain": "Five measures from the DORA research program that show how fast and how safely a team delivers software."},
+    ],
+    "sections": [
+        {
+            "h": "What DevOps is",
+            "body": (
+                "Picture the older way of shipping software. One team writes the code. A separate operations team (ops) installs it on servers and keeps it running. "
+                "When the app breaks at 2 a.m., ops gets the call, but only the developers understand the code. Each side blames the other. "
+                "Releases become rare, big and scary, because every release is a chance for the other team to cause trouble.\n\n"
+                "**DevOps** removes that split. It is a way of working where the people who build software also share the work of running it. It has three parts:\n\n"
+                "- Culture: dev and ops share goals, on-call duty and the review after an outage.\n"
+                "- Practices: small changes, automated tests, automated deploys and a close watch on the live system.\n"
+                "- Tools: the software that makes those practices cheap enough to do every day.\n\n"
+                "Production is the real system your users use. In a DevOps team, your work is not finished when your code is merged. "
+                "It is finished when the change runs well in production and you can see that it does.\n\n"
+                "This course teaches mostly tools, because tools are what you can practise alone on a laptop. Keep the culture in mind anyway. "
+                "A team that installs Kubernetes but keeps the wall between dev and ops ends up with the same wall, plus Kubernetes."
+            ),
+            "refs": [NANA_DEVOPS, SRE_TOC],
+        },
+        {
+            "h": "The path of one change",
+            "body": (
+                "Every change, big or small, takes the same road to your users. Engineers call this road the **pipeline**. These are its steps, in order:\n\n"
+                "1. Code: you change code on your laptop and commit it to git.\n"
+                "2. Build: a machine turns the source code into something that can run.\n"
+                "3. Test: automated tests check that the change works and broke nothing else.\n"
+                "4. Package: the app and everything it needs go into one bundle, a container image.\n"
+                "5. Release: the package gets a version number and goes to a shared store, called a registry.\n"
+                "6. Deploy: the new version replaces the old one on the servers.\n"
+                "7. Run: the platform keeps the app alive, restarts it if it crashes and adds copies under load.\n"
+                "8. Observe: graphs, logs and alerts show how the app behaves for real users.\n"
+                "9. Feedback: what you learn shapes the next change, and the loop starts again.\n\n"
+                "Here is a small example from this course. Tomorrow you create hello-devops, a tiny web app that answers with a greeting. "
+                "Say you change its default greeting from \"Hello, DevOps!\" to \"Hi there\" and push. "
+                "The test step fails at once, because one test still expects the old greeting. You learn this in two minutes on your branch, not from a user on Friday night. "
+                "That is the whole point of the pipeline: each step catches a different kind of mistake, as close as possible to where it was made.\n\n"
+                "CI/CD covers steps 2 to 6. Continuous integration (CI) means you merge small changes often, and a machine builds and tests each one. "
+                "Continuous delivery (CD) means every change that passes is ready to release at any time. You build both in Part 4.\n\n"
+                "Deciding what to change needs a person. Building, testing and shipping are the same every time, so hand them to a machine."
+            ),
+            "refs": [DORA_SMALL],
+        },
+        {
+            "h": "Where each part of this course sits",
+            "body": (
+                "The course has 55 lessons in 15 parts. Each part owns one piece of the path above. Here is the whole map, with the days:\n\n"
+                "- Part 0, Start here (Days 1 and 2): this map, and your laptop setup.\n"
+                "- Part 1, The Linux command line (Days 3 to 7): files, text tools, permissions, processes, SSH and scripts.\n"
+                "- Part 2, Networking and the cloud (Days 8 to 10): addresses, DNS, HTTP, TLS, load balancers and cloud basics.\n"
+                "- Part 3, Docker (Days 11 to 16): package the app into an image that runs the same everywhere.\n"
+                "- Part 4, CI/CD with GitHub Actions (Days 17 to 21): test, build and publish on every push.\n"
+                "- Part 5, Builds with Gradle (Days 22 to 24): build, test and package a Kotlin app, fast, in CI.\n"
+                "- Part 6, Terraform (Days 25 to 29): create infrastructure from code files.\n"
+                "- Part 7, Kubernetes (Days 30 to 38): run many containers across many machines and keep them healthy.\n"
+                "- Part 8, GitOps with Argo CD (Days 39 and 40): deploy by making the cluster match what git says.\n"
+                "- Part 9, Prometheus (Days 41 to 44): collect metrics and alert when something is wrong.\n"
+                "- Part 10, Grafana (Days 45 and 46): dashboards, plus alerts and logs in the same tool.\n"
+                "- Part 11, Logs and traces (Days 47 to 49): search all logs in one place, and follow one request across services.\n"
+                "- Part 12, Dynatrace (Days 50 and 51): a commercial platform that covers much of Parts 9 to 11 in one product.\n"
+                "- Part 13, DevSecOps (Days 52 and 53): security checks at every step, from dependencies to the cluster.\n"
+                "- Part 14, Platform engineering, AI and your capstone (Days 54 and 55): one project that touches every part.\n\n"
+                "Read it as layers. Linux and networking sit underneath everything, because every server, container and CI runner you touch runs Linux and talks over a network. "
+                "Docker, GitHub Actions and Gradle carry a change from your laptop to a package. Terraform builds the ground it runs on. Kubernetes and Argo CD run and deploy it. "
+                "Prometheus, Grafana, the EFK stack, OpenTelemetry and Dynatrace tell you how it behaves. DevSecOps checks each step.\n\n"
+                "Infrastructure means the machines, networks and storage your app runs on. A container image is your app plus everything it needs, packed so it runs the same anywhere. "
+                "You meet both properly later, so a rough idea is enough today.\n\n"
+                "Do not try to memorize the list. When a new tool appears, in this course or at work, come back here and ask which step it owns."
+            ),
+            "refs": [SRE_PART1],
+        },
+        {
+            "h": "Four ideas behind every tool",
+            "body": (
+                "Tools change every few years. The ideas behind them change much more slowly. Once you know these four, each new tool makes sense faster:\n\n"
+                "- Automate what repeats: if you do a task by hand twice, script it the third time.\n"
+                "- Keep everything as code: app, infrastructure, pipelines and settings live as text files in git.\n"
+                "- Ship small changes often: each one is easy to review, test and undo.\n"
+                "- Get feedback fast: tests, deploys and alerts should answer within minutes.\n\n"
+                "The four ideas support each other. Code that lives in git can be checked by machines. Those automated checks are what make small changes safe. "
+                "And a small change gives clear feedback, because when it breaks something, you know where to look. "
+                "A release with 300 changes in it fails in 300 possible places.\n\n"
+                "Infrastructure as code (IaC) is the second idea applied to servers and networks. You describe what you want in a file, and a tool such as Terraform creates it. "
+                "You write your first one on Day 25."
+            ),
+            "refs": [DORA_SMALL],
+        },
+        {
+            "h": "Measuring delivery: the DORA metrics",
+            "body": (
+                "To measure how well a team delivers, this course uses the metrics from DORA, a long-running research program that studies software teams. "
+                "Its [guide to the metrics](https://dora.dev/guides/dora-metrics/) names five measures in two groups.\n\n"
+                "Throughput shows how fast changes flow:\n\n"
+                "- Change lead time: the time from a commit to that change running in production.\n"
+                "- Deployment frequency: how often you deploy to production.\n"
+                "- Failed deployment recovery time: how long it takes to recover when a deployment fails.\n\n"
+                "Instability shows how often changes cause harm:\n\n"
+                "- Change fail rate: the share of deployments that need immediate action, such as a rollback.\n"
+                "- Deployment rework rate: the share of deployments that are unplanned fixes for a problem in production.\n\n"
+                "Older articles talk about the \"four keys\" and \"time to restore service\". DORA's current guide lists the five above, with rework rate as the newest.\n\n"
+                "You might expect fast teams to break more things. DORA's research finds the opposite: speed and stability tend to go together, and the best teams do well on both groups. "
+                "Just do not turn a metric into a target. A team told to \"deploy daily\" can hit that number with tiny, pointless deploys. "
+                "Use the numbers to start a conversation about where work gets stuck."
+            ),
+            "refs": [DORA_GUIDE, DORA_HISTORY],
+        },
+        {
+            "h": "Three roles you will see in job ads",
+            "body": (
+                "Three job titles grew out of these ideas. They overlap, and companies use them loosely, so read what a job involves before you trust its title:\n\n"
+                "- DevOps engineer: builds pipelines, infrastructure code and deploy tooling, usually with product teams.\n"
+                "- Site reliability engineer (SRE): keeps production reliable, and writes software to replace manual operations work.\n"
+                "- Platform engineer: builds an internal platform, a set of self-service tools so other teams ship without waiting for anyone.\n\n"
+                "The SRE role started at Google, and Google's engineers wrote [a free book about it](https://sre.google/sre-book/table-of-contents/). "
+                "Platform engineering is newer. It answers a scaling problem: when twenty product teams each build their own pipelines and clusters, the work repeats and the quality varies. "
+                "Day 54 comes back to it.\n\n"
+                "As a backend engineer, you already do part of this work. You write code that has to run somewhere. "
+                "This course adds the rest: how it gets there, what it runs on, and how you know it is healthy."
+            ),
+            "refs": [SRE_TOC, CNCF_PLATFORMS],
+        },
+        {
+            "h": "How this course works",
+            "body": (
+                "Each lesson takes 40 to 50 minutes, and you can split one over two sittings. Every lesson has the same shape:\n\n"
+                "1. Guess an answer before you read. Even a wrong guess makes the answer easier to remember.\n"
+                "2. Read the words you will meet, then the short sections, then study the diagram.\n"
+                "3. Follow the worked example, which shows real commands and their real output.\n"
+                "4. Do the hands-on task on your own laptop. It is similar to the example, but not the same.\n"
+                "5. Explain the idea back in your own words, then take the three check questions.\n\n"
+                "Two optional extras follow: an interview corner with common questions, and a \"go deeper\" box for days when you have more time. "
+                "Each part ends with flashcards and a short quiz. A few quiz questions come from earlier parts on purpose, because mixing old and new topics helps you remember both.\n\n"
+                "All course long you ship one small app: hello-devops, a Python web app that says hello and counts visits. You create its repo tomorrow. "
+                "By the capstone it is tested, packaged, deployed to Kubernetes by Argo CD and watched on dashboards. "
+                "Part 5 adds a second, small Kotlin app called hello-jvm, so you see the same ideas with Gradle and the JVM.\n\n"
+                "Everything runs on your Mac and costs nothing. You practise Linux in a throwaway Ubuntu container from Day 2, and in a small Ubuntu virtual machine from Day 6. "
+                "The only cloud steps are on Day 29, and they are optional."
+            ),
+            "refs": [MS_SHELL],
+        },
+    ],
+    "analogy": (
+        "A pipeline works like a modern car factory. Each station does one job, such as fitting the engine or testing the brakes. "
+        "Robots do the repeatable work, and every station runs checks, so a fault is caught close to where it started. "
+        "Sensors in cars already on the road report problems back to the designers, who improve the next model. "
+        "The picture breaks in one place: a factory builds the same car thousands of times, but every software change is new. So your tests have to grow with your code."
+    ),
+    "diagram": D01_SVG,
+    "diagram_caption": "One change flows from Git to users. Terraform creates what it runs on, DevSecOps checks it, and what you observe feeds the next change.",
+    "worked": {
+        "title": "Compute the DORA metrics for one week",
+        "steps": [
+            {
+                "say": "PayFlow is a made-up payments team. Below is one week of their production deploy log. Each line shows when a change was committed, when it reached production, and how it went.",
+                "code": (
+                    "#   committed   deployed    result\n"
+                    "1   Mon 09:00   Mon 11:00   ok\n"
+                    "2   Mon 13:00   Mon 16:00   ok\n"
+                    "3   Tue 10:00   Tue 13:00   ok\n"
+                    "4   Tue 14:00   Tue 18:00   failed, rolled back after 25 min\n"
+                    "5   Wed 09:00   Wed 14:00   ok\n"
+                    "6   Wed 10:00   Wed 15:00   ok\n"
+                    "7   Wed 15:00   Thu 09:00   ok\n"
+                    "8   Thu 10:00   Thu 16:00   failed, needed a hotfix\n"
+                    "9   Thu 16:30   Thu 17:35   ok (unplanned hotfix for #8)\n"
+                    "10  Fri 08:00   Fri 14:00   ok"
+                ),
+                "lang": "text",
+            },
+            {"say": "Start with deployment frequency, because you only have to count lines. Ten deployments in five working days is two per working day."},
+            {
+                "say": "For change lead time, subtract the commit time from the deploy time on each line. Then sort the results and take the middle value, the median. With ten numbers, two sit in the middle, so you average them. The median stops one slow change from hiding the normal case.",
+                "code": (
+                    "lead times in hours: 2, 3, 3, 4, 5, 5, 18, 6, 1, 6\n"
+                    "sorted:              1, 2, 3, 3, 4, 5, 5, 6, 6, 18\n"
+                    "median:              (4 + 5) / 2 = 4.5 hours"
+                ),
+                "lang": "text",
+            },
+            {"say": "Change fail rate counts deployments that needed immediate action. Number 4 was rolled back and number 8 needed a hotfix. That is 2 out of 10, or 20 percent."},
+            {"say": "For failed deployment recovery time, look at those two failures. Number 4 recovered in 25 minutes. Number 8 broke at 16:00, and its hotfix landed at 17:35, so 95 minutes. The average is 60 minutes."},
+            {"say": "Deployment rework rate counts unplanned fixes. Number 9 only happened because number 8 broke production. That is 1 out of 10, or 10 percent."},
+            {"say": "Now read the five numbers together. PayFlow deploys often and lead times are short, but one deploy in five fails. I would ask two things next: what did deployments 4 and 8 have in common, and why did change 7 wait overnight?"},
+        ],
+    },
+    "code": [],
+    "commands": [],
+    "mistake": (
+        "Many teams treat DevOps as a set of tools to install. They buy a CI server and set up Kubernetes, but keep big quarterly releases, "
+        "and a separate ops team still gets woken at night for code it never saw. Start with the habits (small changes, shared ownership, fast feedback), then pick tools that support them."
+    ),
+    "real_world": (
+        "At PayFlow, the made-up payments company from the worked example, one product team owns the checkout service from code to production. "
+        "Their pipeline tests and deploys changes many times a day, and when checkout errors rise, the same team is on call. "
+        "A platform team gives every product team shared pipelines, clusters and dashboards, so nobody builds those from scratch."
+    ),
+    "task": {
+        "title": "Map your own delivery path",
+        "steps": [
+            "Pick one service you worked on at your current or last job, or a side project.",
+            "On paper, write every step a change takes from your commit to real users, in order.",
+            "Mark each step as manual (a person does it) or automated (a machine does it).",
+            "Next to each step, write the tool used, if any, and the matching step name from today's map.",
+            "Next to each step, write which part of this course covers it.",
+            "Estimate the five DORA metrics for that service. Rough guesses are fine.",
+            "Circle the one step you would automate first, and write one sentence on why.",
+        ],
+        "hints": [
+            "To estimate lead time, think of your last change: when was it committed, and when did users get it?",
+            "Waiting counts too: a change that waits two days for review adds two days of lead time.",
+        ],
+        "done_when": "You are done when you have one page with every step marked manual or automated, a tool and a course part for each, and a guess for all five DORA metrics.",
+    },
+    "explain_back": {
+        "prompt": "Explain DevOps to a backend friend in 3 to 4 sentences. Mention shared ownership, the pipeline and one DORA metric.",
+        "answer": (
+            "DevOps is a way of working where the people who build a service also help run it in production. "
+            "A change travels a pipeline: code, build, test, package, release, deploy, run and observe, and we automate as many of those steps as we can. "
+            "Small, frequent changes keep each step safe and give fast feedback. "
+            "To check progress we use DORA metrics, such as change lead time: how long a commit takes to reach production."
+        ),
+    },
+    "recap": [
+        "DevOps is culture, practices and tools that let the people who build software also share running it.",
+        "A change flows through code, build, test, package, release, deploy, run, observe and feedback.",
+        "The course has 15 parts, and each one owns a piece of that path, with Linux and networking underneath.",
+        "Four ideas drive it all: automate repeats, everything as code, small changes, fast feedback.",
+        "DORA's five metrics measure throughput and instability, and the best teams do well on both.",
+        "DevOps engineer, SRE and platform engineer overlap, so read the job, not the title.",
+    ],
+    "check": [
+        {
+            "q": "Your team has a script that builds the app and runs the tests, but someone runs it by hand once a week. What is the best next step?",
+            "options": ["Keep the script in git", "Run it on every push", "Write more unit tests", "Hire a release manager"],
+            "answer": 1,
+            "why": "Running the checks on every push gives fast feedback, which a weekly manual run cannot.",
+        },
+        {
+            "q": "A team creates its cloud network and database by clicking in a web console. Which part of this course turns that into code?",
+            "options": ["Part 3, Docker", "Part 8, Argo CD", "Part 6, Terraform", "Part 9, Prometheus"],
+            "answer": 2,
+            "why": "Terraform creates infrastructure, such as networks and databases, from code files.",
+        },
+        {
+            "q": "A team deployed 40 times last month. Six of those deployments broke something and were rolled back at once. What is their change fail rate?",
+            "options": ["5 percent", "20 percent", "40 percent", "15 percent"],
+            "answer": 3,
+            "why": "Six out of forty deployments needed immediate action, and 6 divided by 40 is 15 percent.",
+        },
+    ],
+    "interview": [
+        {
+            "q": "What is DevOps, in your own words?",
+            "a": (
+                "It is a way of working where the team that builds a service also runs it. That team owns the service from commit to production, including being on call for it. "
+                "In practice that means small changes, automated pipelines for build, test and deploy, infrastructure as code and good monitoring. "
+                "A company can buy every DevOps tool and still not be doing DevOps if building and running stay with separate teams."
+            ),
+        },
+        {
+            "q": "How would you measure whether a team's software delivery is improving?",
+            "a": (
+                "I would start with DORA's five metrics. Change lead time, deployment frequency and failed deployment recovery time show throughput. "
+                "Change fail rate and deployment rework rate show instability. "
+                "I would track them for one service over time and read them together, because pushing one metric alone invites gaming. "
+                "Then I would pair the numbers with a conversation about where changes wait the longest."
+            ),
+        },
+        {
+            "q": "What is the difference between DevOps, SRE and platform engineering?",
+            "a": (
+                "DevOps is the broad idea: one team shares building and running software, with automation and fast feedback. "
+                "SRE is one concrete way to do the running part, started at Google, where engineers with software skills do operations work and use error budgets to balance speed and reliability. "
+                "Platform engineering builds shared, self-service tools, such as pipelines and clusters, so product teams do not each build their own. "
+                "In practice the titles overlap, so I look at what the role actually owns."
+            ),
+        },
+    ],
+    "deeper": {
+        "minutes": 12,
+        "body": (
+            "People often mix up DevOps, SRE and platform engineering. DevOps is the broad idea: one team shares building and running software, with automation and fast feedback. "
+            "It does not prescribe a job title or a tool.\n\n"
+            "SRE is one concrete way to do it. In the opening part of [Google's SRE book](https://sre.google/sre-book/part-I-introduction/), Ben Treynor Sloss describes SRE as operations work done by engineers with software skills. "
+            "Two ideas from the book matter for this course:\n\n"
+            "- The book describes a 50 percent cap on manual operations work for SREs. The rest of their time goes to engineering that removes manual work.\n"
+            "- 100 percent reliability is the wrong target, because users cannot tell 100 percent from 99.999 percent. The gap between the target and perfect becomes an error budget the team can spend on releases. You meet error budgets on Day 41.\n\n"
+            "Platform engineering answers a scaling problem. When every product team builds its own pipelines and clusters, the work repeats and quality varies. "
+            "So a platform team builds shared, self-service tools instead. "
+            "The [CNCF platforms white paper](https://tag-app-delivery.cncf.io/whitepapers/platforms/) argues that an internal platform should be run like a product, with the app teams as its users. You see this on Day 54.\n\n"
+            "DORA's guide also warns about pitfalls teams hit when they adopt the metrics:\n\n"
+            "- Turning a metric into a goal, which invites people to game it.\n"
+            "- Trusting one metric alone, instead of several that balance each other.\n"
+            "- Comparing very different apps, such as a mobile app and a mainframe system.\n"
+            "- Using the metrics to make teams compete, instead of to improve over time.\n\n"
+            "My advice: measure one service at a time, watch the trend, and ask the team what slows their changes down. "
+            "If you want to try it on real history, count deploys and failures from your team's last month of release notes. It takes about ten minutes and usually starts a good discussion."
+        ),
+    },
+    "sources": [src(DORA_GUIDE), src(SRE_TOC), src(CNCF_PLATFORMS), src(NANA_DEVOPS)],
+}
+
+# ================================================================ Day 2
+d02 = {
+    "id": "d02",
+    "title": "Set up your laptop",
+    "minutes": 60,
+    "goal": "By the end you can install and check every tool this course uses, open a Linux practice box, and push a tested hello-devops repo to your GitHub account.",
+    "guess": {
+        "q": "You install a tool with Homebrew, but the terminal says 'command not found'. What is the most likely cause?",
+        "options": [
+            "PATH does not include Homebrew's folder",
+            "The download was corrupted on the way",
+            "The tool needs a restart of the Mac",
+            "The tool only works on Intel Macs",
+        ],
+        "answer": 0,
+        "why": "The shell finds programs by searching the folders listed in PATH. On Apple Silicon, Homebrew lives in /opt/homebrew, and its installer tells you how to add that folder to PATH.",
+    },
+    "terms": [
+        {"term": "Homebrew", "plain": "A package manager for macOS that installs command-line tools and apps with one command, such as `brew install jq`."},
+        {"term": "PATH", "plain": "The list of folders your shell searches, in order, when you type a command name."},
+        {"term": "Docker Desktop", "plain": "A Mac app that runs a small Linux virtual machine in the background so you can run containers."},
+        {"term": "Container", "plain": "A program running in its own isolated corner of a Linux machine, started from an image."},
+        {"term": "Virtual environment (venv)", "plain": "A private folder of Python packages for one project, so projects cannot clash."},
+        {"term": "JDK", "plain": "The Java Development Kit: the compiler and runtime you need to build and run JVM apps such as Kotlin."},
+        {"term": "GitHub CLI (gh)", "plain": "A command-line tool for GitHub that logs you in, creates repos and opens pull requests."},
+        {"term": "Remote", "plain": "A named link from your local git repo to a copy on a server; the usual name is origin."},
+    ],
+    "sections": [
+        {
+            "h": "What you install today, and why",
+            "body": (
+                "Today takes longer than other days, but you only do it once. This is what you install, and when you first need it:\n\n"
+                "- Homebrew: the installer for almost everything else (today).\n"
+                "- git and the GitHub CLI (`gh`): version control and GitHub from the terminal (today).\n"
+                "- Python 3.14: runs the app and its tests, and matches the course's Docker image (today).\n"
+                "- jq, tree, watch and htop: small helpers for JSON, folder trees, repeating a command and watching processes (Part 1).\n"
+                "- VS Code with a few extensions: an editor that understands Dockerfiles, YAML, Terraform and Kubernetes files.\n"
+                "- Docker Desktop: runs containers, including your Linux practice box (today, and Part 3).\n"
+                "- Multipass: a tool that starts a full Ubuntu virtual machine (Day 6).\n"
+                "- A JDK 21: builds the Kotlin app in the Gradle part (Day 22).\n"
+                "- terraform: creates infrastructure from code (Day 25).\n"
+                "- kubectl, kind and helm: Kubernetes tools (Part 7).\n\n"
+                "After each install, run the tool's version check. If it prints a version, the tool works. "
+                "Install commands change over time, so if one fails, check the current docs linked in this lesson and follow those."
+            ),
+            "refs": [BREW, DOCKER_MAC],
+        },
+        {
+            "h": "Homebrew and your PATH",
+            "body": (
+                "Homebrew (the `brew` command) is a package manager for macOS. A package manager downloads a tool, puts it in the right folder, and later updates or removes it. "
+                "You install Homebrew itself with one command from [brew.sh](https://brew.sh/). It asks for your password, and it may also install Apple's Command Line Tools, which include git.\n\n"
+                "On Apple Silicon Macs, Homebrew lives in `/opt/homebrew`. When the installer finishes, it prints \"Next steps\" with two or three commands. "
+                "They add Homebrew to your **PATH**: the list of folders your shell searches when you type a command.\n\n"
+                "Most people get stuck right here. If you skip those commands, every `brew` command fails with \"command not found\". "
+                "Run exactly what the installer prints, open a new terminal tab, then run `brew --version`.\n\n"
+                "A note on Python. Homebrew's default Python is now newer than the one this course uses. "
+                "You install `python@3.14` and type `python3.14` when you create the project's virtual environment. After that, inside the venv, plain `python` is the right one."
+            ),
+            "refs": [BREW_INSTALL, MS_ENV],
+        },
+        {
+            "h": "Docker Desktop, and its licence",
+            "body": (
+                "Containers are a Linux feature, and macOS is not Linux. So Docker Desktop runs a small Linux virtual machine (VM) in the background. "
+                "A VM is a computer simulated in software. Your `docker` commands on the Mac talk to the Docker engine inside that VM.\n\n"
+                "Install it with `brew install --cask docker-desktop`, or from [Docker's install page](https://docs.docker.com/desktop/setup/install/mac-install/). "
+                "A cask is Homebrew's name for a Mac app with a window. Docker supports the current and the two previous major macOS versions, so update macOS first if yours is older. "
+                "Open Docker from Applications once and accept the terms.\n\n"
+                "Then change one setting. In Settings, Advanced, turn on \"Allow the default Docker socket to be used\" (it asks for your password). "
+                "This creates `/var/run/docker.sock`, the file other programs use to talk to Docker. New installs leave it off, but Terraform's Docker provider on Day 25 looks for it.\n\n"
+                "Docker Desktop is free for personal use, education and non-commercial open source. It is also free for small businesses: fewer than 250 employees and less than $10 million in yearly revenue. "
+                "Larger companies need a paid plan. Learning on your own laptop counts as personal use. On a work laptop, ask your employer first.\n\n"
+                "If you can't use Docker Desktop, Colima is a free, open-source alternative that runs the same `docker` commands. OrbStack is another fast option; check its licence before you use it for work."
+            ),
+            "refs": [DOCKER_MAC, DOCKER_LICENSE, DOCKER_SETTINGS],
+        },
+        {
+            "h": "Command-line tools and a JDK",
+            "body": (
+                "Homebrew installs the rest with one short command per group. The small helpers first:\n\n"
+                "- jq: reads and filters JSON. `curl ... | jq .message` pulls one field out of an API answer.\n"
+                "- tree: prints a folder and everything in it as a tree.\n"
+                "- watch: reruns a command every two seconds, so you can watch something change.\n"
+                "- htop: a live, colourful list of running processes, CPU and memory.\n\n"
+                "Then the bigger tools for later parts:\n\n"
+                "- kubectl: talks to any Kubernetes cluster.\n"
+                "- kind: creates a small Kubernetes cluster inside Docker containers (\"Kubernetes in Docker\").\n"
+                "- helm: installs packaged Kubernetes apps, called charts.\n"
+                "- terraform: creates infrastructure from code files.\n\n"
+                "Terraform needs one extra detail. After HashiCorp changed Terraform's licence in 2023, Homebrew's main collection stopped updating it. "
+                "So install it from HashiCorp's own tap: an extra collection of Homebrew packages. `brew install hashicorp/tap/terraform` names the tap and the package together.\n\n"
+                "The Gradle part needs a JDK 21. If you already have one from work, for example through SDKMAN, keep it and check it with `java -version`. "
+                "Otherwise, `brew install openjdk@21`. Homebrew keeps versioned JDKs out of your PATH on purpose (it calls them keg-only), so macOS cannot find this one yet. "
+                "The install prints a `sudo ln -sfn ...` command that links it into `/Library/Java/JavaVirtualMachines`. Run that line, then `java -version` should print 21.\n\n"
+                "VS Code is a cask too, and the cask also adds the `code` command to your terminal. You add extensions with `code --install-extension` and an extension ID."
+            ),
+            "refs": [TF_INSTALL, JDK21, SDKMAN],
+        },
+        {
+            "h": "Your Linux practice box",
+            "body": (
+                "Servers, containers and CI runners run Linux with the bash shell and the GNU versions of tools like `sed` and `grep`. "
+                "Your Mac runs zsh and the BSD versions, which differ in small, annoying ways. A flag that works on your Mac can fail on a server.\n\n"
+                "So Part 1 has you practise inside real Linux. The quickest way is a throwaway Ubuntu container:\n\n"
+                "`docker run -it --rm --hostname box -v \"$PWD\":/lab -w /lab ubuntu:24.04 bash`\n\n"
+                "Each flag has a job:\n\n"
+                "- `-it` gives you an interactive terminal.\n"
+                "- `--rm` deletes the container when you exit, so every session starts clean.\n"
+                "- `--hostname box` gives it a short name, which shows up in the prompt.\n"
+                "- `-v \"$PWD\":/lab` shares your current Mac folder into the container at `/lab`.\n"
+                "- `-w /lab` starts you in that folder.\n\n"
+                "Three surprises are normal. You are root, the all-powerful user, because the image has no other user yet. "
+                "The image is minimized, so tools like `less` are missing and `man` pages are stripped out; `apt install` adds what you need. "
+                "And anything you install is gone after you exit, because `--rm` throws the container away. Files in `/lab` survive, because they live on your Mac.\n\n"
+                "One thing a container cannot do is run systemd, the program that starts and supervises services on a real Linux machine. "
+                "Day 6 needs it, so it uses Multipass to start a small Ubuntu VM instead. Install Multipass today with `brew install --cask multipass` and check it with `multipass version`, or wait until Day 6."
+            ),
+            "refs": [MS_SHELL, MULTIPASS],
+        },
+        {
+            "h": "Your repo and a Python virtual environment",
+            "body": (
+                "The last part creates the project you ship all course. It starts as five files in `~/code/hello-devops`, given in full below:\n\n"
+                "- `app.py`: the Flask web app.\n"
+                "- `test_app.py`: three tests for pytest.\n"
+                "- `requirements.txt`: the packages the app needs to run.\n"
+                "- `requirements-dev.txt`: those packages plus pytest and ruff (a linter) for development.\n"
+                "- `.gitignore`: files git should never commit.\n\n"
+                "You install packages into a Python virtual environment (venv): a private folder of packages for one project. "
+                "When you activate it, `python` and `pip` point into that folder, so this project's Flask cannot clash with another project's. "
+                "You never commit the `.venv` folder, because anyone can rebuild it from the requirements files.\n\n"
+                "Then `gh repo create` makes the GitHub repo and pushes to it in one step. The flag `--source=.` means \"use this folder\", and `--push` sends your commits. "
+                "gh also adds the new repo as a remote called origin."
+            ),
+            "refs": [VENV, GH_CREATE],
+        },
+        {
+            "h": "When something goes wrong",
+            "body": (
+                "When setup fails, it is usually one of these:\n\n"
+                "- `brew: command not found`: run the installer's \"Next steps\" lines, then open a new terminal tab.\n"
+                "- \"Cannot connect to the Docker daemon\": open Docker Desktop and wait until it says it is running.\n"
+                "- `code: command not found`: in VS Code, press Cmd+Shift+P, type \"shell command\" and run the install command.\n"
+                "- \"Unable to locate a Java Runtime\": run the `sudo ln -sfn` line that `brew install openjdk@21` printed.\n"
+                "- \"externally-managed-environment\" from pip: your venv is not active, so run `source .venv/bin/activate`.\n"
+                "- `git push` asks for a password: run `gh auth setup-git`, so git uses your gh login.\n"
+                "- `multipass launch` hangs on Day 6: the Multipass README says you may need to turn off the macOS firewall while it starts.\n\n"
+                "On Windows, install WSL2 first: run `wsl --install` in PowerShell as administrator, then restart. It gives you Ubuntu, a Linux system inside Windows. "
+                "Install Docker Desktop for Windows with the WSL 2 engine, then run this course's commands inside Ubuntu.\n\n"
+                "On Linux, install Docker Engine and use your package manager for the rest. You are already in Linux, so your practice box is optional."
+            ),
+            "refs": [KUBECTL_MAC, KIND_QS],
+        },
+    ],
+    "analogy": (
+        "Setting up your laptop is like stocking a new kitchen before you cook. Homebrew is the delivery service that brings each tool and puts it on the right shelf. "
+        "PATH is the list of shelves you check when you reach for something. If a shelf is not on the list, you cannot find the tool, even though it is in the room. "
+        "The practice box is a camping stove you set up in the garden, use, and pack away each time. "
+        "The comparison fails on upkeep: kitchen knives do not need updates, but your tools do, so run `brew upgrade` now and then."
+    ),
+    "diagram": D02_SVG,
+    "diagram_caption": "Homebrew installs the tools. Each tool talks to a different place: GitHub, Docker's Linux VM, or the containers inside it.",
+    "worked": {
+        "title": "Your first visit to the Linux practice box",
+        "steps": [
+            {
+                "say": "Make a throwaway folder with one file in it, then start the box from there. The first run downloads the `ubuntu:24.04` image, which takes a few seconds. Your prompt changes: you are now root on a machine called box, in the folder /lab.",
+                "code": (
+                    "$ mkdir -p ~/code/box-demo && cd ~/code/box-demo\n"
+                    "$ echo \"hello from the Mac\" > note.txt\n"
+                    "$ docker run -it --rm --hostname box -v \"$PWD\":/lab -w /lab ubuntu:24.04 bash\n"
+                    "root@box:/lab#"
+                ),
+                "lang": "console",
+            },
+            {
+                "say": "Look around. This is real Ubuntu, you are the root user, and the file you made on your Mac is here, because `-v` shared the folder.",
+                "code": (
+                    "root@box:/lab# grep PRETTY /etc/os-release\n"
+                    "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\n"
+                    "root@box:/lab# whoami\n"
+                    "root\n"
+                    "root@box:/lab# cat note.txt\n"
+                    "hello from the Mac"
+                ),
+                "lang": "console",
+            },
+            {
+                "say": "Now the minimized image shows itself. `less` is not installed at all, and `man` exists but its pages were removed to keep the image small.",
+                "code": (
+                    "root@box:/lab# less note.txt\n"
+                    "bash: less: command not found\n"
+                    "root@box:/lab# man ls\n"
+                    "This system has been minimized by removing packages and content that are\n"
+                    "not required on a system that users do not log into."
+                ),
+                "lang": "console",
+            },
+            {
+                "say": "Install what you need with apt, Ubuntu's package manager. `apt update` refreshes the list of packages, and `apt install -y` installs without asking. The output is long; these are the last lines.",
+                "code": (
+                    "root@box:/lab# apt update && apt install -y less tree\n"
+                    "Setting up less (590-2ubuntu2.1) ...\n"
+                    "Setting up tree (2.1.1-2ubuntu3.24.04.2) ...\n"
+                    "root@box:/lab# tree\n"
+                    ".\n"
+                    "`-- note.txt\n\n"
+                    "1 directory, 1 file"
+                ),
+                "lang": "console",
+            },
+            {
+                "say": "Write a file from inside Linux, then leave with `exit`. Back on the Mac, the new file is there, because `/lab` is your Mac folder.",
+                "code": (
+                    "root@box:/lab# echo \"hello from Linux\" > from-box.txt\n"
+                    "root@box:/lab# exit\n"
+                    "$ cat from-box.txt\n"
+                    "hello from Linux"
+                ),
+                "lang": "console",
+            },
+            {
+                "say": "Start a new box and look for tree. It is gone. `--rm` deleted the old container, and every new one starts fresh from the image. That is the rule to remember for Part 1: the box is disposable, and your folder is not.",
+                "code": (
+                    "$ docker run -it --rm --hostname box ubuntu:24.04 bash\n"
+                    "root@box:/# command -v tree || echo \"tree is not installed\"\n"
+                    "tree is not installed\n"
+                    "root@box:/# exit\n"
+                    "$ rm -rf ~/code/box-demo"
+                ),
+                "lang": "console",
+            },
+        ],
+    },
+    "code": [
+        {"lang": "python", "title": "app.py", "src": lab("app.py"), "run": "python app.py"},
+        {"lang": "python", "title": "test_app.py", "src": lab("test_app.py"), "run": "pytest -q"},
+        {"lang": "text", "title": "requirements.txt", "src": lab("requirements.txt"), "run": "pip install -r requirements.txt"},
+        {"lang": "text", "title": "requirements-dev.txt", "src": lab("requirements-dev.txt"), "run": "pip install -r requirements-dev.txt"},
+        {"lang": "text", "title": ".gitignore", "src": lab(".gitignore"), "run": "git status --short"},
+    ],
+    "commands": [
+        {"cmd": "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"", "what": "Install Homebrew (Mac). Then run the 'Next steps' lines it prints."},
+        {"cmd": "brew install git gh python@3.14 jq tree watch htop", "what": "Install git, the GitHub CLI, Python 3.14 and four small command-line helpers."},
+        {"cmd": "brew install --cask docker-desktop visual-studio-code multipass", "what": "Install the Docker Desktop, VS Code and Multipass apps (Mac)."},
+        {"cmd": "brew install kubectl kind helm hashicorp/tap/terraform", "what": "Install the Kubernetes tools, and Terraform from HashiCorp's tap."},
+        {"cmd": "brew install openjdk@21", "what": "Install a JDK 21, then run the `sudo ln -sfn` line it prints so macOS can find it."},
+        {"cmd": "java -version", "what": "Check which JDK macOS finds; it should say 21."},
+        {"cmd": "code --install-extension hashicorp.terraform", "what": "Add a VS Code extension by its ID. Repeat for each extension."},
+        {"cmd": "gh auth login", "what": "Log in to GitHub from the terminal through your browser."},
+        {"cmd": "docker run --rm hello-world", "what": "Check that Docker can download and run a container. Day 11 explains what happens."},
+        {"cmd": "docker run -it --rm --hostname box -v \"$PWD\":/lab -w /lab ubuntu:24.04 bash", "what": "Open the Linux practice box, with the current folder shared at /lab. Type exit to leave."},
+        {"cmd": "multipass version", "what": "Check that Multipass is installed. Day 6 uses it to start an Ubuntu VM."},
+        {"cmd": "python3.14 -m venv .venv && source .venv/bin/activate", "what": "Create a virtual environment in this folder and turn it on."},
+        {"cmd": "pip install -r requirements-dev.txt", "what": "Install the app's packages and the dev tools into the active venv."},
+        {"cmd": "pytest -q", "what": "Run the tests and print a short summary."},
+        {"cmd": "gh repo create hello-devops --public --source=. --push", "what": "Create the GitHub repo from this folder, add it as origin, and push."},
+        {"cmd": "brew upgrade", "what": "Update everything Homebrew installed."},
+    ],
+    "mistake": (
+        "Don't install Python packages outside a venv, and never with `sudo pip`. Packages from different projects then fight over versions, "
+        "and Homebrew's Python refuses anyway with \"externally-managed-environment\". "
+        "Before any `pip install`, activate the project's `.venv` and check that your prompt starts with `(.venv)`."
+    ),
+    "real_world": (
+        "On their first day at PayFlow, a made-up payments company, new engineers run one setup script that installs the same tool versions everyone else uses. "
+        "Python packages are pinned in requirements files and the JDK version is pinned in the build. So a test that passes on one laptop also passes on the others and in CI. "
+        "Some teams go further with dev containers, where the whole toolbox runs inside a container."
+    ),
+    "task": {
+        "title": "Install your toolbox and ship hello-devops",
+        "steps": [
+            "Install Homebrew with the command from brew.sh. Run the \"Next steps\" lines it prints, open a new terminal tab, and check `brew --version`.",
+            "Install git, gh, Python 3.14 and the helpers with `brew install git gh python@3.14 jq tree watch htop`. Check a few with `--version` (use `python3.14 --version`).",
+            "Run `gh auth login`. Choose GitHub.com, HTTPS, yes to authenticating git, and logging in with a web browser. Confirm with `gh auth status`.",
+            "Install the apps with `brew install --cask docker-desktop visual-studio-code multipass`. Open Docker once, accept the terms, turn on the default Docker socket in Settings, Advanced, then run `docker run --rm hello-world`.",
+            "Add VS Code extensions with `code --install-extension`: `ms-azuretools.vscode-containers`, `redhat.vscode-yaml`, `hashicorp.terraform`, `ms-kubernetes-tools.vscode-kubernetes-tools` and `ms-python.python`.",
+            "Install `kubectl`, `kind`, `helm` and `hashicorp/tap/terraform` with brew, and a JDK 21 (unless you already have one). Check them with `kubectl version --client`, `kind version`, `helm version`, `terraform version` and `java -version`.",
+            "Open the practice box once from any folder, run `grep PRETTY /etc/os-release`, and exit.",
+            "Create `~/code/hello-devops`, run `git init -b main` inside it, and save the five starter files from this lesson there.",
+            "Create and activate a venv with Python 3.14, install `requirements-dev.txt`, and run the tests. Then start the app with `python app.py`, open http://localhost:8000, reload a few times, and stop it with Ctrl+C.",
+            "Commit the five files, then publish them with `gh repo create hello-devops --public --source=. --push`. Open the repo on GitHub to see them.",
+        ],
+        "hints": [
+            "If a version check fails right after an install, open a new terminal tab and try again.",
+            "Before you commit, `git status` should not list `.venv/` or `__pycache__/`; if it does, check the name of your `.gitignore` file.",
+            "If `java -version` says it cannot find a Java runtime, scroll up in the `brew install openjdk@21` output for the `sudo ln -sfn` line.",
+        ],
+        "done_when": "You are done when `pytest -q` shows 3 passed, the practice box prints Ubuntu 24.04, and your hello-devops repo with its five files is on GitHub.",
+    },
+    "explain_back": {
+        "prompt": "Explain in 3 to 4 sentences why this course installs tools on your Mac but has you practise Linux inside a container. Mention what is different about macOS and what `--rm` does.",
+        "answer": (
+            "Servers, containers and CI runners run Linux with bash and the GNU tools, while my Mac runs zsh and BSD tools whose flags differ. "
+            "If I practise on Linux, what I learn works the same on a real server. "
+            "The Ubuntu container starts in a second and `--rm` throws it away when I exit, so I can break things freely and start clean next time. "
+            "My files survive because the folder is shared from the Mac with `-v`."
+        ),
+    },
+    "recap": [
+        "Homebrew installs your tools; run its \"Next steps\" so `brew` is on your PATH.",
+        "Docker Desktop runs a small Linux VM for containers, and it is free for personal use.",
+        "Install Terraform from HashiCorp's tap, and link openjdk@21 so `java -version` finds it.",
+        "The ubuntu:24.04 practice box is real Linux, disposable with `--rm`, and Day 6 adds a Multipass VM.",
+        "A venv keeps the project's packages private, and `.venv` is never committed.",
+        "`gh repo create hello-devops --public --source=. --push` puts your repo on GitHub.",
+    ],
+    "check": [
+        {
+            "q": "A teammate runs `brew install terraform` and Homebrew says the formula is disabled. What should they run instead?",
+            "options": ["`brew install terraform --force`", "`brew install hashicorp/tap/terraform`", "`pip install terraform`", "`sudo brew install terraform`"],
+            "answer": 1,
+            "why": "Homebrew's main collection stopped updating Terraform after the 2023 licence change, so current versions come from HashiCorp's tap.",
+        },
+        {
+            "q": "In the practice box you install jq, exit, and start a new box the next day. jq is missing. Why?",
+            "options": [
+                "Ubuntu removes unused tools overnight",
+                "jq only installs for the root user",
+                "Docker Desktop updated the image",
+                "`--rm` threw away the old container",
+            ],
+            "answer": 3,
+            "why": "Each `docker run` starts a fresh container from the image, and `--rm` deleted the one where you installed jq.",
+        },
+        {
+            "q": "You open a new terminal, go to `~/code/hello-devops`, and `pytest` says 'command not found'. It worked yesterday. What is wrong?",
+            "options": [
+                "Your test files were deleted overnight",
+                "pytest only runs while Docker is open",
+                "This new terminal has no active venv",
+                "Your GitHub login token has expired",
+            ],
+            "answer": 2,
+            "why": "pytest lives inside `.venv`, and each new terminal starts without the venv active, so run `source .venv/bin/activate` first.",
+        },
+    ],
+    "interview": [
+        {
+            "q": "How do you make sure every developer and CI use the same tool and package versions?",
+            "a": (
+                "Pin versions in files that live in the repo, such as requirements files for Python packages and the Gradle wrapper for JVM builds. "
+                "Install them into an isolated environment, like a venv or a container, never globally. "
+                "CI uses the same files, so the pipeline builds exactly what laptops build. "
+                "For command-line tools, keep a setup script or a dev container in the repo, and change versions on purpose through pull requests."
+            ),
+        },
+        {
+            "q": "Why do container tools on a Mac need a virtual machine?",
+            "a": (
+                "Containers use features of the Linux kernel to isolate processes. macOS has a different kernel, so it cannot run Linux containers directly. "
+                "Docker Desktop, Colima and similar tools start a small Linux VM and run the containers inside it. "
+                "The `docker` command on the Mac only sends requests to the Docker engine in that VM."
+            ),
+        },
+    ],
+    "deeper": {
+        "minutes": 12,
+        "body": (
+            "When you run `brew install jq`, Homebrew does four things:\n\n"
+            "1. It reads the formula, a small Ruby file that describes the package and its versions.\n"
+            "2. It downloads a bottle, which is a prebuilt, compressed copy of the package for your Mac.\n"
+            "3. It unpacks the bottle into its own folder, such as `/opt/homebrew/Cellar/jq/` plus the version.\n"
+            "4. It links the command into `/opt/homebrew/bin`, a folder that is on your PATH.\n\n"
+            "That is why two versions can sit side by side in the Cellar while only the linked one runs. "
+            "Some formulae skip step 4 on purpose. Homebrew calls them keg-only: `openjdk@21` is one, because linking it could shadow a JDK you installed another way. "
+            "That is why it asks you to make the `/Library/Java/JavaVirtualMachines` link yourself. "
+            "Casks work differently again: they install an app into `/Applications`. A tap is an extra git repository of formulae, which is how `hashicorp/tap` works.\n\n"
+            "The \"Next steps\" lines from the Homebrew installer run `brew shellenv`. That command prints `export` lines for PATH and a few other variables, and `eval` runs them in your shell. "
+            "One of the lines also appends the same `eval` command to `~/.zprofile`, so every new terminal runs it.\n\n"
+            "Activating a venv is even simpler. The command `source .venv/bin/activate` runs a small script inside your current shell, and the script does three things:\n\n"
+            "- It sets `VIRTUAL_ENV` to the venv folder.\n"
+            "- It puts `.venv/bin` at the front of PATH.\n"
+            "- It adds `(.venv)` to your prompt.\n\n"
+            "That is why `which python` points into `.venv` after activation, and why `deactivate` can put PATH back. "
+            "You can also skip activation and run `.venv/bin/python app.py` directly. The final Dockerfile on Day 16 uses the PATH trick: it puts a venv's `bin` folder first on PATH.\n\n"
+            "The shell always runs the first match it finds on PATH. Run `which -a python3` to list every `python3` on your PATH, in the order the shell tries them. "
+            "When the wrong version of a tool runs, that is the first command I would try."
+        ),
+    },
+    "sources": [src(BREW), src(DOCKER_MAC), src(TF_INSTALL), src(GH_CREATE)],
+}
+
+part = {
+    "part": 0,
+    "title": "Start here",
+    "intro": (
+        "Part 0 is groundwork. Day 1 gives you a map of DevOps and of this 55-lesson course, so when a new tool shows up later, you already know which job it does. "
+        "Day 2 sets up your Mac, a Linux practice box, and hello-devops, the small app you ship for the rest of the course."
+    ),
+    "lessons": [d01, d02],
+    "recap": [
+        "In DevOps, the people who build software also share the work of running it.",
+        "Every change takes the same path: code, build, test, package, release, deploy, run, observe and feedback.",
+        "The 15 parts of this course each own a piece of that path, with Linux and networking underneath.",
+        "Automate what repeats, keep everything as code, ship small changes and get feedback fast.",
+        "DORA's five metrics measure speed and stability together, and the best teams do well on both.",
+        "Homebrew installs your tools, and Docker Desktop runs a small Linux VM for containers.",
+        "You practise Linux in a disposable ubuntu:24.04 container, and in a Multipass VM from Day 6.",
+        "Your hello-devops repo lives in `~/code/hello-devops` and on GitHub, with passing tests.",
+    ],
+    "flashcards": [
+        {"front": "What three things does DevOps combine?", "back": "Culture, practices and tools, so the people who build software also share running it."},
+        {"front": "List the steps a change passes through on its way to users.", "back": "Code, build, test, package, release, deploy, run, observe, feedback."},
+        {"front": "Which tool packages the app, and which runs it across many machines?", "back": "Docker packages it into an image. Kubernetes runs the containers across machines."},
+        {"front": "What does Argo CD do?", "back": "It watches a git repo and changes the cluster until it matches what the repo says."},
+        {"front": "Which DORA metrics measure throughput?", "back": "Change lead time, deployment frequency and failed deployment recovery time."},
+        {"front": "Which DORA metrics measure instability?", "back": "Change fail rate and deployment rework rate."},
+        {"front": "Why do small, frequent changes lower risk?", "back": "Each one is easy to review, test and undo. When one fails, you know which small change caused it."},
+        {"front": "Where do you install Terraform from with Homebrew, and why?", "back": "From HashiCorp's tap (`hashicorp/tap/terraform`), because Homebrew's main collection stopped updating it after the 2023 licence change."},
+        {"front": "What do `--rm` and `-v \"$PWD\":/lab` do in the practice box command?", "back": "`--rm` deletes the container when you exit; `-v` shares your current Mac folder into it at /lab."},
+        {"front": "Why does Day 6 use a Multipass VM instead of the container?", "back": "A plain container cannot run systemd, the service manager that Day 6 teaches."},
+        {"front": "What does activating a Python venv change?", "back": "It puts `.venv/bin` first on PATH, so `python` and `pip` use the project's private packages."},
+        {"front": "What does `gh repo create hello-devops --public --source=. --push` do?", "back": "Creates the GitHub repo from this folder, adds it as the origin remote, and pushes your commits."},
+    ],
+    "resources": [
+        {"title": NANA_DEVOPS["title"], "url": NANA_DEVOPS["url"], "kind": "watch", "why": "A friendly, visual explanation of what DevOps is and how it compares to SRE."},
+        {"title": DORA_GUIDE["title"], "url": DORA_GUIDE["url"], "kind": "docs", "why": "The official definitions of the five delivery metrics, straight from the research team."},
+        {"title": SRE_TOC["title"], "url": SRE_TOC["url"], "kind": "read", "why": "Google's free book on running production; read the first part to see where SRE came from."},
+        {"title": CNCF_PLATFORMS["title"], "url": CNCF_PLATFORMS["url"], "kind": "read", "why": "A short, vendor-neutral paper on why companies build internal platforms."},
+        {"title": MS_SHELL["title"], "url": MS_SHELL["url"], "kind": "watch", "why": "MIT's well-loved lecture on the shell, a good warm-up before Part 1."},
+        {"title": MS_ENV["title"], "url": MS_ENV["url"], "kind": "watch", "why": "Explains environment variables, PATH and dotfiles, which is what makes today's setup work."},
+        {"title": BREW_INSTALL["title"], "url": BREW_INSTALL["url"], "kind": "docs", "why": "What the Homebrew installer needs and what its 'Next steps' really do."},
+        {"title": DOCKER_MAC["title"], "url": DOCKER_MAC["url"], "kind": "docs", "why": "Docker's own install guide for Apple Silicon, with the system requirements."},
+        {"title": VENV["title"], "url": VENV["url"], "kind": "docs", "why": "The Python tutorial chapter on venvs and requirements files, short and clear."},
+        {"title": MULTIPASS["title"], "url": MULTIPASS["url"], "kind": "docs", "why": "The commands for launching, entering and deleting the Ubuntu VM you use on Day 6."},
+    ],
+    "quiz": [
+        {
+            "q": "A team ships one huge release every three months, and each one breaks something. Which idea from Day 1 helps most?",
+            "options": ["Add a manual approval step", "Ship smaller changes more often", "Hire a separate ops team", "Release only on Fridays"],
+            "answer": 1,
+            "why": "Small, frequent changes are easier to test and undo. When one breaks, you only have a small diff to search.",
+        },
+        {
+            "q": "Which part of this course teaches the tool that keeps a Kubernetes cluster in sync with what is in git?",
+            "options": ["Part 8, Argo CD", "Part 6, Terraform", "Part 3, Docker", "Part 10, Grafana"],
+            "answer": 0,
+            "why": "Argo CD watches a git repo and changes the cluster until it matches. That is how it deploys.",
+        },
+        {
+            "q": "A team made 20 deployments last week. Four of them needed a rollback right away. What is the change fail rate?",
+            "options": ["4 percent", "5 percent", "20 percent", "80 percent"],
+            "answer": 2,
+            "why": "Four out of twenty deployments needed immediate action, and 4 divided by 20 is 20 percent.",
+        },
+        {
+            "q": "Right after installing Homebrew, `brew --version` says 'command not found'. What do you do?",
+            "options": ["Reinstall Homebrew using sudo", "Restart Docker Desktop first", "Install the tool with pip instead", "Run the installer's 'Next steps' lines"],
+            "answer": 3,
+            "why": "Those lines put `/opt/homebrew/bin` on your PATH. Open a new terminal tab after you run them.",
+        },
+        {
+            "q": "You want to try `systemctl status ssh` in the ubuntu:24.04 practice box, and it fails. What is the fix?",
+            "options": ["Run the command again with sudo", "Use a Multipass VM, which runs systemd", "Install the systemd package with apt", "Add the --privileged flag to docker run"],
+            "answer": 1,
+            "why": "A plain container does not boot systemd as its first process, so systemctl cannot work there; a full VM does.",
+        },
+        {
+            "q": "Which of these should never be committed to the hello-devops repo?",
+            "options": ["requirements.txt", "test_app.py", ".venv/", ".gitignore"],
+            "answer": 2,
+            "why": "The venv is large and machine-specific, so `.gitignore` keeps it out of git.",
+        },
+    ],
+}
+
+OUT.write_text(json.dumps(part, indent=1, ensure_ascii=False) + "\n")
+print("wrote", OUT)

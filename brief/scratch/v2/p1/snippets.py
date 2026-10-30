@@ -160,3 +160,62 @@ S("d06.unit", [{"cmd": "apt-get install -y -qq systemd > /dev/null 2>&1; useradd
                "systemd-analyze verify /etc/systemd/system/hello-worker.service", "echo $?",
                "systemctl --root=/ enable hello-worker.service", "systemctl --root=/ is-enabled hello-worker.service",
                "bash -n /usr/local/bin/worker.sh", "shellcheck /usr/local/bin/worker.sh", "echo $?"], group="d06u")
+
+# ============================================================ Day 7
+S("d07.env", ["echo $HOME", "printenv HOME", "GREETING=hi", "echo $GREETING", "bash -c 'echo \"child sees [$GREETING]\"'",
+              "export GREETING", "bash -c 'echo \"child sees [$GREETING]\"'", "GREETING=hey bash -c 'echo \"one command sees [$GREETING]\"'",
+              "echo $GREETING", "bash -c 'export COLOR=blue; echo \"child set [$COLOR]\"'", "echo \"parent sees [$COLOR]\"",
+              "unset GREETING", "echo \"[$GREETING]\"", "name = alice"], group="d07x")
+S("d07.path", ["echo $PATH", "which ls jq", "type cd ls jq", "nosuchcmd", "echo $?", "mkdir -p ~/bin",
+               "printf '#!/usr/bin/env bash\\necho \"hello from my own command\"\\n' > ~/bin/hello", "chmod +x ~/bin/hello", "hello",
+               "export PATH=\"$HOME/bin:$PATH\"", "hello", "which hello", "ls -a ~"], group="d07x")
+S("d07.quotes", ["name=\"Ada Lovelace\"", "echo 'Hello, $name'", "echo \"Hello, $name\"", "file=\"my notes.txt\"", "touch \"$file\"",
+                 "ls $file", "ls \"$file\"", "echo \"Today is $(date -u +%A)\""], group="d07x")
+S("d07.apt", [{"cmd": "apt-get update -qq", "timeout": 120}, "apt search jq 2>&1 | head -n 4", "apt-cache policy jq | head -n 3",
+              "dpkg -S /usr/bin/jq", "apt-get install -y figlet 2>&1 | tail -n 3", "figlet hi"], group="d07x")
+S("d07.args", [{"cmd": "printf '#!/usr/bin/env bash\\necho \"script name: $0\"\\necho \"first arg:   $1\"\\necho \"arg count:   $#\"\\nfor arg in \"$@\"; do\\n  echo \"- $arg\"\\ndone\\n' > args.sh", "hide": True},
+               "cat args.sh", "chmod +x args.sh", "./args.sh deploy \"eu west\" 3", "./args.sh"], group="d07x")
+S("d07.flow", ["for f in logs/*.log; do echo \"$f: $(grep -c ERROR \"$f\")\"; done",
+               "n=0; while IFS= read -r line; do n=$((n + 1)); done < app.log; echo \"$n lines\"",
+               "if [[ -f app.log ]]; then echo 'app.log exists'; else echo 'no app.log'; fi",
+               "[[ -d logs ]] && echo 'logs is a folder'", "test -f nosuch.log; echo $?", "[[ 10 -gt 9 ]] && echo 'numbers compare as numbers'",
+               "[[ \"abc\" == a* ]] && echo 'starts with a'"], group="d07x")
+S("d07.strict", ["bash -c 'cat nope.txt | sort; echo \"exit=$?\"'", "bash -c 'set -o pipefail; cat nope.txt | sort; echo \"exit=$?\"'",
+                 "bash -c 'set -u; echo \"deploying to $DEPLOY_DIR\"'", "bash -c 'set -e; grep -q FATAL app.log; echo \"never printed\"'",
+                 "echo $?", "bash -c 'set -e; grep -q FATAL app.log || true; echo \"still running\"'",
+                 "DIR=\"\"; echo rm -rf \"$DIR/\"*", "bash -c 'echo rm -rf \"${DIR:?DIR is not set}/\"'"], group="d07x")
+S("d07.trap", [{"cmd": heredoc("trapdemo.sh"), "hide": True}, "bash trapdemo.sh", "echo $?"], group="d07x")
+S("d07.lint", [{"cmd": heredoc("bad.sh"), "hide": True}, "cat bad.sh", "shellcheck bad.sh", "echo $?"], group="d07x")
+S("d07.keygen", [{"cmd": "apt-get install -y -qq openssh-client > /dev/null 2>&1", "hide": True, "timeout": 120},
+                 "ssh-keygen -t ed25519 -C \"you@example.com\" -f ~/.ssh/id_ed25519 -N \"\"",
+                 "ls -l ~/.ssh", "cut -c 1-60 ~/.ssh/id_ed25519.pub"], group="d07x")
+SSHD_SETUP = ("docker network create v2p1-net >/dev/null 2>&1; docker rm -f v2p1-devbox >/dev/null 2>&1; "
+              "docker run -d --name v2p1-devbox --hostname devbox --network v2p1-net --network-alias devbox v2p1-lab:24.04 "
+              "bash -c 'apt-get install -y -qq openssh-server rsync >/dev/null 2>&1; useradd -m -s /bin/bash ubuntu; "
+              "mkdir -p /home/ubuntu/.ssh /run/sshd; touch /home/ubuntu/.ssh/authorized_keys; chown -R ubuntu:ubuntu /home/ubuntu/.ssh; "
+              "chmod 700 /home/ubuntu/.ssh; touch /ready; exec /usr/sbin/sshd -D'; "
+              "until docker exec v2p1-devbox test -f /ready; do sleep 1; done; sleep 2")
+S("d07.ssh", [{"cmd": "apt-get install -y -qq openssh-client rsync > /dev/null 2>&1; mkdir -p /keys", "hide": True, "timeout": 120},
+              {"cmd": "ssh-keygen -q -t ed25519 -C you@example.com -f ~/.ssh/id_ed25519 -N '' && cp ~/.ssh/id_ed25519.pub /keys/", "hide": True},
+              {"host": "docker cp v2p1-cap-d07-ssh:/keys/id_ed25519.pub /tmp/claude-0/v2p1-key.pub && docker cp /tmp/claude-0/v2p1-key.pub v2p1-devbox:/home/ubuntu/.ssh/authorized_keys && docker exec v2p1-devbox chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys && rm -f /tmp/claude-0/v2p1-key.pub"},
+              {"cmd": "ssh ubuntu@devbox 'whoami; hostname'", "keys": [(3, "yes\n", "yes\n")]},
+              "ssh ubuntu@devbox 'whoami; hostname'", "---",
+              {"cmd": "printf 'Host devbox\\n    HostName devbox\\n    User ubuntu\\n    IdentityFile ~/.ssh/id_ed25519\\n' > ~/.ssh/config", "hide": True},
+              "ssh devbox uptime", "scp app.log devbox:/tmp/", "ssh devbox 'ls -l /tmp/app.log'", "---",
+              "rsync -av logs/ devbox:/tmp/logs/", "rsync -av logs/ devbox:/tmp/logs/"],
+  group="d07s", docker=["--network", "v2p1-net"], host_before=[SSHD_SETUP],
+  host_after=["docker rm -f v2p1-devbox >/dev/null 2>&1; docker network rm v2p1-net >/dev/null 2>&1"])
+HELLO_UP = "docker rm -f v2p1-hello >/dev/null 2>&1; docker run -d --name v2p1-hello hello-devops:1.0.0 >/dev/null; sleep 4"
+HELLO_REDIS = "docker rm -f v2p1-hello >/dev/null 2>&1; docker run -d --name v2p1-hello -e REDIS_HOST=nowhere hello-devops:1.0.0 >/dev/null; sleep 4"
+HELLO_DOWN = "docker rm -f v2p1-hello >/dev/null 2>&1"
+S("d07.w1", [{"cmd": heredoc("healthcheck.sh"), "hide": True}, "chmod +x healthcheck.sh", "shellcheck healthcheck.sh", "echo $?",
+             "bash -n healthcheck.sh && echo 'syntax OK'"], group="d07w")
+S("d07.w2", [{"cmd": heredoc("healthcheck.sh") + "\nchmod +x healthcheck.sh", "hide": True},
+             "curl -s localhost:8000/healthz", "echo $?", "RETRIES=3 DELAY=1 ./healthcheck.sh", "echo $?"], group="d07w")
+S("d07.w3", [{"cmd": heredoc("healthcheck.sh") + "\nchmod +x healthcheck.sh", "hide": True},
+             "curl -s localhost:8000/healthz", "./healthcheck.sh", "echo $?", "./healthcheck.sh 2> /dev/null && echo 'smoke test passed: carry on with the deploy'",
+             "./healthcheck.sh http://localhost:8000 extra", "echo $?"],
+  group="d07w", docker=["--network", "container:v2p1-hello"], host_before=[HELLO_UP], host_after=[HELLO_DOWN])
+S("d07.w4", [{"cmd": heredoc("healthcheck.sh") + "\nchmod +x healthcheck.sh", "hide": True},
+             "curl -s localhost:8000/readyz", "RETRIES=3 DELAY=1 ./healthcheck.sh", "echo $?"],
+  group="d07w", docker=["--network", "container:v2p1-hello"], host_before=[HELLO_REDIS], host_after=[HELLO_DOWN])

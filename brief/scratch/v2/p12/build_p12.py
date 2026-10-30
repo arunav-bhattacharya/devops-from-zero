@@ -175,7 +175,7 @@ d50 = {
             "h": "Entities and Smartscape: a map nobody draws",
             "body": (
                 "Dynatrace calls each thing it monitors an entity, and gives each one an ID. The common types are:\n"
-                "- host: a machine or VM (each kind node counts as one)\n"
+                "- host: a machine or VM\n"
                 "- process: one running program on a host, such as gunicorn\n"
                 "- service: what a process offers to callers, such as the hello-devops web endpoints\n"
                 "- Kubernetes cluster, namespace, workload and pod\n\n"
@@ -184,7 +184,7 @@ d50 = {
                 "The map runs in two directions. Vertical links say what runs on what: a service runs in a process, and "
                 "the process runs on a host. Horizontal links say who calls whom: checkout calls payments, and payments "
                 "calls a database.\n\n"
-                "Why care? Every metric, log line and span carries the ID of the entity it came from. That shared ID is "
+                "This matters because every metric, log line and span carries the ID of the entity it came from. That shared ID is "
                 "how Dynatrace joins your signals without join logic from you. It is also the map Davis walks when "
                 "something breaks.\n\n"
                 "You can query the map with DQL, the language you learn on Day 51. `smartscapeNodes \"SERVICE\"` lists "
@@ -230,9 +230,9 @@ d50 = {
                 "this service at this time. When the value leaves the baseline, it raises an event. You can also set "
                 "fixed thresholds, as you did with Prometheus alert rules.\n\n"
                 "Second, it groups related events into one problem and names the most likely root cause. This is where "
-                "it differs from your Part 9 stack. Davis does not just look for graphs that spiked in the same minute. "
-                "It starts at the affected entity and follows the Smartscape links and the traces to what that entity "
-                "depends on. Then it runs a fault-tree analysis to pick the most probable cause.\n\n"
+                "it differs from your Part 9 stack. Davis starts at the affected entity and follows the Smartscape links "
+                "and the traces to what that entity depends on. Graphs that spiked in the same minute are not enough "
+                "on their own. Then it runs a fault-tree analysis to pick the most probable cause.\n\n"
                 "A problem holds:\n"
                 "- an ID such as `P-12345` and a title\n"
                 "- the root-cause entity and the evidence: events, metric changes, deployments\n"
@@ -249,7 +249,7 @@ d50 = {
         {
             "h": "The 2026 names: Latest Dynatrace, Dynatrace Intelligence and Assist",
             "body": (
-                "Dynatrace renamed a lot recently, and old screenshots will confuse you. Here is the current map.\n\n"
+                "Dynatrace renamed a lot recently, and old screenshots will confuse you.\n\n"
                 "Latest Dynatrace is the current platform. You reach it at an address like "
                 "`https://abc12345.apps.dynatrace.com` and work in apps such as Notebooks, Dashboards, Problems, "
                 "Services, Kubernetes and Workflows. Dynatrace Classic is the older generation. Some of its screens "
@@ -264,6 +264,8 @@ d50 = {
                 "- Agents act on what they find, inside rules and approvals that you set.\n\n"
                 "Old names live on in APIs and data. Problems are stored as `dt.davis.problems`, and some docs still "
                 "say Davis CoPilot. Read the DQL that Assist writes the way you would read a colleague's draft.\n\n"
+                "Two apps get most of your time. Notebooks are for exploring: you write DQL step by step and see each "
+                "result. Dashboards are for sharing a view with the team, and you can pin a Notebook result to one.\n\n"
                 "Dynatrace Managed is a self-hosted edition for companies that must keep data on their own servers. "
                 "Grail, and with it DQL, Notebooks and Workflows, only exists on SaaS. This course uses SaaS."
             ),
@@ -276,7 +278,7 @@ d50 = {
         {
             "h": "How it compares, and how to try it for free",
             "body": (
-                "Here is where Dynatrace sits next to the options you are likely to meet:\n"
+                "These are the options you are likely to meet:\n"
                 "- Your open-source stack: free software, full control, runs anywhere. You instrument each service and "
                 "link the signals yourself.\n"
                 "- Datadog and New Relic: also SaaS, agent-based and all-in-one. Compare them on your own services "
@@ -578,7 +580,7 @@ d51 = {
     ],
     "sections": [
         {
-            "h": "Getting data in: tokens, the Operator and the DynaKube",
+            "h": "Three ways in, and a token for each",
             "body": (
                 "Dynatrace only knows what you send it. There are three common ways in:\n"
                 "- OneAgent on a VM or server: one installer, then it watches the host and its processes.\n"
@@ -586,10 +588,21 @@ d51 = {
                 "- OpenTelemetry: send OTLP from your own instrumentation or Collector, as on Day 49.\n\n"
                 "Each way needs a token, a secret key with a list of permissions called scopes. New environments use "
                 "platform tokens, which start with `dt0s16.`. Older ones use access tokens, which start with "
-                "`dt0c01.`. Keep tokens out of git and delete them when you are done.\n\n"
+                "`dt0c01.`. Give a token only the scopes its job needs, keep it out of git, and delete it when you are "
+                "done. The easiest way to get the right scopes for Kubernetes is to let the trial's onboarding page "
+                "create the token, as `dynatrace/README.md` explains.\n\n"
                 "Your environment ID is the first part of your address: in `https://abc12345.apps.dynatrace.com` it is "
                 "`abc12345`. People use the `.apps.` address in the browser. Agents and APIs use "
-                "`https://abc12345.live.dynatrace.com`. Mixing them up is a classic cause of 404 errors.\n\n"
+                "`https://abc12345.live.dynatrace.com`. Mixing them up is a classic cause of 404 errors."
+            ),
+            "refs": [
+                ref("From access tokens to platform tokens (Dynatrace docs)", U["tokens_upgrade"], "docs"),
+                ref("QuickStart app and the free trial (Dynatrace blog)", U["quickstart_blog"], "read"),
+            ],
+        },
+        {
+            "h": "The Operator and the DynaKube on kind",
+            "body": (
                 "On Day 44 you met an operator: a controller that runs software for you, driven by a custom resource. "
                 "The Dynatrace Operator works the same way. You install it once with Helm, then write a "
                 "**DynaKube**, the custom resource that says what you want. Its biggest choice is the mode:\n"
@@ -600,43 +613,26 @@ d51 = {
                 "- `hostMonitoring`: the nodes only.\n"
                 "- `classicFullStack`: the older style, still supported but no longer recommended.\n\n"
                 "The lab's `dynatrace/dynakube.yaml` uses `applicationMonitoring`. Kind nodes are Docker containers on "
-                "your Mac, and a node agent expects a real Linux host underneath. App-only injection asks far less of "
-                "the node. The file adds one ActiveGate with `routing` and `kubernetes-monitoring`, and it only injects "
-                "into namespaces labelled `monitoring: dynatrace`. The official sample asks 6Gi of memory for the "
+                "your Mac, and a node agent expects a real Linux host underneath, so app-only injection is the safer "
+                "bet. The file adds one ActiveGate with `routing` and `kubernetes-monitoring` and only injects into "
+                "namespaces labelled `monitoring: dynatrace`. The official sample asks 6Gi of memory for the "
                 "ActiveGate, which would leave the pod Pending on Docker Desktop. The lab asks for 512Mi, like "
                 "Dynatrace's own setup examples.\n\n"
-                "To be plain about it: Dynatrace does not list kind or Apple Silicon Macs as supported. The images "
+                "A few minutes after you apply it and restart hello-devops, you should see:\n"
+                "- `Running` from `kubectl -n dynatrace get dynakube` (`Deploying` first, `Error` if something is wrong)\n"
+                "- the operator, webhook and `dynakube-activegate-0` pods in the `dynatrace` namespace\n"
+                "- an extra init container called `dynatrace-operator` in each new hello-devops pod (old pods never get one)\n"
+                "- a cluster called `kind-devops` in the Kubernetes app, with nodes, namespaces, workloads and events\n"
+                "- hello-devops in the Services app, if OneAgent can instrument your Python version\n\n"
+                "Dynatrace does not list kind or Apple Silicon Macs as supported. The images "
                 "exist for arm64, and Dynatrace tests its Operator on kind (on Linux machines), so it may work. If it "
-                "does not, use the trial with Dynatrace's Codespaces lab instead."
+                "does not, the README lists the usual causes, and the trial with Dynatrace's Codespaces lab is the "
+                "fallback."
             ),
             "refs": [
                 ref("Set up Dynatrace on Kubernetes: deployment options (Dynatrace docs)", U["k8s_deploy"], "docs"),
                 ref("The official applicationMonitoring sample, v1.11.1 (GitHub)", U["appmon_sample"], "read"),
-                ref("From access tokens to platform tokens (Dynatrace docs)", U["tokens_upgrade"], "docs"),
-            ],
-        },
-        {
-            "h": "What you see after the install",
-            "body": (
-                "Give it a few minutes after you apply the DynaKube. Inside the cluster:\n"
-                "- `kubectl -n dynatrace get dynakube` shows `Running`. It says `Deploying` first, and `Error` if "
-                "something is wrong.\n"
-                "- The `dynatrace` namespace holds the operator pod, the webhook pods and `dynakube-activegate-0`.\n"
-                "- Each new hello-devops pod has an extra init container called `dynatrace-operator`. That is the "
-                "webhook's work. Old pods do not get it, which is why you restart the Deployment.\n\n"
-                "In Dynatrace:\n"
-                "- The Kubernetes app lists a cluster called `kind-devops` with its nodes, namespaces, workloads and "
-                "events. The ActiveGate reads these from the Kubernetes API.\n"
-                "- The Services app shows hello-devops once OneAgent can instrument it. Python support is newer than "
-                "Java support. If the service does not appear, check the technology support page for your versions.\n"
-                "- A Notebook can now query your own data. `smartscapeNodes \"K8S_CLUSTER\"` should list `kind-devops`.\n\n"
-                "When it fails, read the DynaKube's status with `kubectl -n dynatrace describe dynakube dynakube`, then "
-                "the operator log. The README in `dynatrace/` lists the usual causes: a wrong environment ID, missing "
-                "token scopes, a Pending ActiveGate, an image that will not start on arm64."
-            ),
-            "refs": [
                 ref("DynaKube parameters reference (Dynatrace docs)", U["dynakube_params"], "docs"),
-                ref("Dynatrace Operator releases and samples (GitHub)", U["operator_gh"], "read"),
             ],
         },
         {
@@ -798,14 +794,15 @@ d51 = {
         "steps": [
             {
                 "say": "Open a Notebook (the Playground is fine), add a DQL section and run query B1. The `data` command "
-                       "builds a five-row table inside the query. Everyone gets the same result, and Grail scans nothing.",
+                       "builds a six-row table inside the query. Everyone gets the same result, and Grail scans nothing.",
                 "code": (
                     "data record(path = \"/\", status = 200, ms = 12),\n"
-                    "     record(path = \"/\", status = 200, ms = 15),\n"
-                    "     record(path = \"/\", status = 500, ms = 250),\n"
+                    "     record(path = \"/\", status = 200, ms = 18),\n"
+                    "     record(path = \"/\", status = 200, ms = 20),\n"
+                    "     record(path = \"/\", status = 500, ms = 350),\n"
                     "     record(path = \"/healthz\", status = 200, ms = 2),\n"
                     "     record(path = \"/readyz\", status = 503, ms = 1001)\n\n"
-                    "Result: 5 rows with the columns path, status, ms."
+                    "Result: 6 rows with the columns path, status, ms."
                 ),
                 "lang": "text",
             },
@@ -815,19 +812,20 @@ d51 = {
                 "code": (
                     "| filter status >= 500\n\n"
                     "path      status  ms\n"
-                    "/         500     250\n"
+                    "/         500     350\n"
                     "/readyz   503     1001"
                 ),
                 "lang": "text",
             },
             {
                 "say": "Replace the filter with a summarize. It groups the records by `path` and computes one row per "
-                       "group. Each result gets a name with a single `=`, and the `by:` list sits in braces.",
+                       "group. Each result gets a name with a single `=`, and the `by:` list sits in braces. The rows can "
+                       "come back in any order until you sort them.",
                 "code": (
                     "| summarize requests = count(), errors = countIf(status >= 500),\n"
                     "            avg_ms = avg(ms), by: {path}\n\n"
                     "path      requests  errors  avg_ms\n"
-                    "/         3         1       92.3\n"
+                    "/         4         1       100\n"
                     "/healthz  1         0       2\n"
                     "/readyz   1         1       1001"
                 ),
@@ -841,15 +839,15 @@ d51 = {
                     "| sort error_pct desc\n\n"
                     "path      requests  errors  avg_ms  error_pct\n"
                     "/readyz   1         1       1001    100\n"
-                    "/         3         1       92.3    33.3\n"
+                    "/         4         1       100     25\n"
                     "/healthz  1         0       2       0"
                 ),
                 "lang": "text",
             },
             {
-                "say": "Now make two SQL mistakes on purpose, one at a time, and read the messages. Both runs fail: the "
-                       "first line uses `=` where DQL wants a true or false test, and in the second `status` ends up "
-                       "outside the `by:` list.",
+                "say": "Now make two SQL mistakes on purpose, one at a time, and read the messages. Both runs fail. The "
+                       "first uses `=` where DQL wants a true or false test. In the second, `by:` without braces takes "
+                       "only `path`, and `status` is read as one more aggregation, which it is not.",
                 "code": (
                     "| filter status = 500\n"
                     "| summarize requests = count(), by: path, status"
@@ -857,8 +855,8 @@ d51 = {
                 "lang": "text",
             },
             {
-                "say": "Put `fetch logs, from: -1h` where `data` was, and the same commands work on real logs. That is "
-                       "the whole trick of DQL: one source at the top, then small steps you can add and check one at a time.",
+                "say": "Put `fetch logs, from: -1h` where `data` was, and the same commands work on real logs. Only the "
+                       "first line changed. The commands below it do not care where the records came from.",
             },
         ],
     },
@@ -1028,7 +1026,6 @@ d51 = {
             "- `OTEL_EXPORTER_OTLP_HEADERS=Authorization=Api-Token%20<token>` for an access token, or "
             "`Authorization=Bearer%20<token>` for a platform token\n"
             "- `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta`\n\n"
-            "Each line has a reason.\n\n"
             "The endpoint uses `.live.`, not `.apps.`. Dynatrace's docs warn that the `.apps` form returns 404 errors. "
             "The SDK adds the signal path, such as `/v1/traces`, by itself.\n\n"
             "The protocol is OTLP over HTTP with binary protobuf, which is what the Dynatrace docs show for this "
@@ -1066,7 +1063,7 @@ part = {
     "intro": (
         "In Parts 9 to 11 you assembled observability from open-source parts. Dynatrace is the commercial, all-in-one "
         "version: one agent collects the data, one store keeps every signal, and one query language reads it. Day 50 "
-        "explains how it thinks, using a free sandbox. Day 51 gets your own data in and teaches DQL from zero."
+        "explains how it thinks, in a free sandbox. Day 51 gets your own data in and teaches DQL from zero."
     ),
     "lessons": [d50, d51],
     "recap": [

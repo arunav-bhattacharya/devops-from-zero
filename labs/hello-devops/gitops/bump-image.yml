@@ -38,23 +38,30 @@ jobs:
       # Inputs go through env variables, never straight into a script (Day 21).
       ENVIRONMENT: ${{ inputs.environment }}
       VERSION: ${{ inputs.version }}
+      FILE: overlays/${{ inputs.environment }}/kustomization.yaml
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check that the version looks like 1.2.0
+      - name: Check the inputs
         run: |
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Version must look like 1.2.0, got '$VERSION'"
             exit 1
           fi
+          if [ -z "$(yq '.images[] | select(.name == "hello-devops") | .name' "$FILE")" ]; then
+            echo "::error::$FILE has no images entry named hello-devops"
+            exit 1
+          fi
 
-      # kustomize is already installed on GitHub's ubuntu runners.
-      - name: Write the new tag into the overlay
-        working-directory: k8s/overlays/${{ inputs.environment }}
+      # yq (already installed on GitHub's ubuntu runners) changes only these two
+      # fields and keeps every comment. `kustomize edit set image` does the same
+      # job, but it rewrites the whole file and drops comments at line ends.
+      - name: Write the new image into the overlay
         run: |
           # The same lower case image name that release.yml pushes to.
-          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
-          kustomize edit set image "hello-devops=${IMAGE}:${VERSION}"
+          export IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          yq -i '(.images[] | select(.name == "hello-devops")) |=
+            (.newName = strenv(IMAGE) | .newTag = strenv(VERSION))' "$FILE"
           git diff
 
       - name: Open a pull request
@@ -73,7 +80,7 @@ jobs:
           git push origin "$BRANCH"
           gh pr create --base main --head "$BRANCH" \
             --title "Deploy hello-devops ${VERSION} to ${ENVIRONMENT}" \
-            --body "Sets the image tag in k8s/overlays/${ENVIRONMENT}. Argo CD deploys it after you merge."
+            --body "Sets the hello-devops image in ${FILE}. Argo CD deploys it after you merge."
           {
             echo "### Pull request opened"
             echo "Branch \`$BRANCH\` sets $ENVIRONMENT to $VERSION."

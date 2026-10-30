@@ -68,7 +68,7 @@ def d50():
 
 
 def d51():
-    d = Diagram(310, "You write a DynaKube. The Operator reads it and runs a webhook that injects OneAgent into the "
+    d = Diagram(224, "You write a DynaKube. The Operator reads it and runs a webhook that injects OneAgent into the "
                      "hello pod, plus an ActiveGate that relays data to Grail, which you query from a Notebook with DQL")
     d.cap(63, 20, "you write it")
     d.cap(205, 20, "Helm installs it")
@@ -90,9 +90,9 @@ def d51():
     d.cap(380, 110, "data")
     d.cap(352, 202, "with OneAgent")
     d.cap(110, 166, "in kind")
-    d.box(444, 250, 108, 44, "bx", "Notebook")
-    d.arrow(498, 76, 498, 246)
-    d.cap(470, 165, "DQL")
+    d.box(444, 140, 108, 44, "bx", "Notebook")
+    d.arrow(498, 76, 498, 136)
+    d.cap(520, 110, "DQL")
     return d.svg()
 
 

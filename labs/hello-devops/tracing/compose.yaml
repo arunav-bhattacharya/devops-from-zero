@@ -1,0 +1,60 @@
+# Tracing lab (Day 49): hello-devops -> OpenTelemetry Collector -> Jaeger.
+#
+# Start (from this tracing/ folder):  docker compose up -d --build
+# Jaeger UI:                          http://localhost:16686
+# The app:                            http://localhost:8000
+# Stop:                               docker compose down
+#
+# Jaeger keeps traces in memory only, so they are gone after a restart.
+
+services:
+  jaeger:
+    image: jaegertracing/jaeger:2.22.0 # Jaeger v2, all-in-one (see README.md)
+    ports:
+      - "16686:16686" # the Jaeger UI
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.164.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP over gRPC, for apps on your laptop
+      - "4318:4318" # OTLP over HTTP
+    depends_on:
+      - jaeger
+
+  web:
+    build:
+      context: ..                         # the folder with app.py
+      dockerfile: tracing/Dockerfile.otel # app.py unchanged, plus OpenTelemetry
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_HOST: redis
+      APP_VERSION: "1.0.0"
+      # OpenTelemetry settings. Every one is a standard OTEL_ variable.
+      OTEL_SERVICE_NAME: hello-devops
+      OTEL_RESOURCE_ATTRIBUTES: service.version=1.0.0,deployment.environment.name=lab
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none # metrics come from Prometheus in this course
+      OTEL_LOGS_EXPORTER: none
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      # Use the stable attribute names (http.request.method, client.address, ...).
+      OTEL_SEMCONV_STABILITY_OPT_IN: http,database
+      # Keep every trace (the SDK default). Production systems usually sample.
+      OTEL_TRACES_SAMPLER: parentbased_always_on
+    depends_on:
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+  redis:
+    image: redis:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

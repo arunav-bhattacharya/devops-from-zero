@@ -1,0 +1,6 @@
+$ kubectl kustomize overlays/dev | grep 'image:'
+        image: hello-devops:1.1.0
+      - image: redis:8-alpine
+$ kubectl kustomize overlays/prod | grep 'image:'
+        image: hello-devops:1.0.0
+      - image: redis:8-alpine

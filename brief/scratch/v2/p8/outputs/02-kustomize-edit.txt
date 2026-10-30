@@ -1,0 +1,7 @@
+$ cd overlays/prod
+$ kustomize edit set image hello-devops:1.1.0
+$ cd ../..
+$ git diff --stat
+ overlays/prod/kustomization.yaml | 80 ++++++++++++++++++++--------------------
+ 1 file changed, 40 insertions(+), 40 deletions(-)
+$ git checkout -- .

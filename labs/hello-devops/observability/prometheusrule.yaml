@@ -1,10 +1,11 @@
-# Alerting and recording rules for hello-devops on Kubernetes (Day 44).
+# Alerting rules for hello-devops on Kubernetes (Day 44).
 # Needs kube-prometheus-stack (see values.yaml). The Prometheus Operator
 # turns this object into a rule file and loads it into Prometheus.
 # Apply: kubectl apply -f observability/prometheusrule.yaml
 #
-# On Kubernetes the pods run the image's default command, so only
-# hello_requests_total{path} and up exist (no red_metrics.py here).
+# On Kubernetes the pods run the image's default command: two gunicorn
+# workers and no red_metrics.py. So these rules use only "up", which
+# Prometheus records for every scrape and which no worker can confuse.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -18,10 +19,6 @@ spec:
   groups:
     - name: hello-devops
       rules:
-        # Requests per second across all pods.
-        - record: namespace_job:hello_requests:rate5m
-          expr: sum by (namespace, job) (rate(hello_requests_total{job="hello-devops"}[5m]))
-
         # No pod answers its scrape. A dead pod leaves the target list,
         # so "up == 0" alone would miss this case; absent() catches it.
         - alert: HelloNoPodsUp

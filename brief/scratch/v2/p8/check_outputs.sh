@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Capture real output for the Day 40 worked example (kustomize + git), and
-# validate every lab file Part 8 owns. Run from anywhere:
-#   bash brief/scratch/v2/p8/check_outputs.sh
-# Needs: kubectl (with kustomize built in), kustomize, kubeconform, actionlint,
-# and JSON schemas made from the Argo CD / Image Updater CRDs in $SCHEMAS.
+# Validate the lab files Part 8 owns, and capture real output for the Day 40
+# worked example (kubectl kustomize, kustomize edit, yq and git).
+#   SCRATCH=/some/tmp/dir bash brief/scratch/v2/p8/check_outputs.sh
+# Needs on PATH: kubectl, kustomize, kubeconform, actionlint (+ shellcheck), and
+# mikefarah yq v4 as "yq". $SCHEMAS holds JSON schemas made from the Argo CD and
+# Image Updater CRDs with crd2schema.py (files named <kind>_<version>.json).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -15,67 +16,60 @@ SCHEMAS="${SCHEMAS:-$SCRATCH/p8schemas}"
 mkdir -p "$OUTS"
 
 # ---- 1. Validate the lab files this part owns ----
-echo "== kubeconform"
+echo "== kubeconform (argocd/, gitops/smoke-test.yaml)"
 kubeconform -strict -summary \
   -schema-location default \
   -schema-location "$SCHEMAS/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" \
   "$LAB"/argocd/*.yaml "$LAB/gitops/smoke-test.yaml"
-echo "== actionlint"
+echo "== actionlint (gitops/bump-image.yml)"
 actionlint "$LAB/gitops/bump-image.yml" && echo "actionlint: no errors"
 
-# The overlays belong to the Kustomize lesson (Day 37). Render them if present.
+# The overlays belong to the Kustomize lesson (Day 37). Render and check them.
 for env in dev prod; do
-  if [ -f "$LAB/k8s/overlays/$env/kustomization.yaml" ]; then
-    echo "== render overlay $env"
-    kubectl kustomize "$LAB/k8s/overlays/$env" > "$SCRATCH/p8-render-$env.yaml"
-    kubeconform -strict -summary "$SCRATCH/p8-render-$env.yaml"
-  else
-    echo "!! overlay $env is missing"
-  fi
+  echo "== render overlays/$env"
+  kubectl kustomize "$LAB/overlays/$env" | kubeconform -strict -summary -
 done
 
 # ---- 2. Real output for the worked example ----
 # Work on a throw-away git copy of the lab, never on the lab itself.
 WORK="$SCRATCH/p8-worked-$(date +%s)"
 mkdir -p "$WORK"
-cp -R "$LAB/k8s" "$WORK/k8s"
+cp -R "$LAB/k8s" "$LAB/overlays" "$WORK/"
 cd "$WORK"
 git init -q -b main
 git add -A
 git -c user.name=you -c user.email=you@example.com commit -qm "start"
 
-IMG="ghcr.io/<you>/hello-devops"
-# Start both environments on 1.0.0 with the learner's registry image.
-for env in dev prod; do
-  (cd "k8s/overlays/$env" && kustomize edit set image "hello-devops=$IMG:1.0.0")
-done
-git -c user.name=you -c user.email=you@example.com commit -qam "both on 1.0.0"
-
 {
   for env in dev prod; do
-    echo "\$ kubectl kustomize k8s/overlays/$env | grep 'image:'"
-    kubectl kustomize "k8s/overlays/$env" | grep 'image:'
+    echo "\$ kubectl kustomize overlays/$env | grep 'image:'"
+    kubectl kustomize "overlays/$env" | grep 'image:'
   done
 } > "$OUTS/01-images-before.txt"
 
 {
-  echo "\$ cd k8s/overlays/dev"
-  echo "\$ kustomize edit set image hello-devops=$IMG:1.1.0"
-  (cd k8s/overlays/dev && kustomize edit set image "hello-devops=$IMG:1.1.0")
+  echo "\$ cd overlays/prod"
+  echo "\$ kustomize edit set image hello-devops:1.1.0"
+  (cd overlays/prod && kustomize edit set image hello-devops:1.1.0)
+  echo "\$ cd ../.."
   echo "\$ git diff --stat"
   git diff --stat
-  echo "\$ git diff -U0 | grep '^[-+] '"
-  git diff -U0 | grep '^[-+] ' || true
-} > "$OUTS/02-bump-dev.txt"
-git -c user.name=you -c user.email=you@example.com commit -qam "dev 1.1.0"
+  echo "\$ git checkout -- ."
+  git checkout -- .
+} > "$OUTS/02-kustomize-edit.txt"
 
 {
-  echo "\$ cd ../prod"
-  echo "\$ kustomize edit set image hello-devops=$IMG:1.1.0"
-  (cd k8s/overlays/prod && kustomize edit set image "hello-devops=$IMG:1.1.0")
-  echo "\$ git diff -U0 | grep '^[-+] '"
-  git diff -U0 | grep '^[-+] ' || true
-} > "$OUTS/03-promote-prod.txt"
+  echo "\$ yq -i '(.images[] | select(.name == \"hello-devops\")).newTag = \"1.1.0\"' \\"
+  echo "    overlays/prod/kustomization.yaml"
+  yq -i '(.images[] | select(.name == "hello-devops")).newTag = "1.1.0"' overlays/prod/kustomization.yaml
+  echo "\$ git diff -U1"
+  git diff -U1
+} > "$OUTS/03-yq-edit.txt"
+
+{
+  echo "\$ kubectl kustomize overlays/prod | grep 'image:'"
+  kubectl kustomize overlays/prod | grep 'image:'
+} > "$OUTS/04-images-after.txt"
 
 echo "== captured"
 for f in "$OUTS"/*.txt; do echo "--- $f"; cat "$f"; done

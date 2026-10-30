@@ -1,4 +1,4 @@
-# One stable name and address in front of all hello-devops pods.
+# One stable name and address in front of all hello-devops pods (Day 33).
 apiVersion: v1
 kind: Service
 metadata:
@@ -12,6 +12,6 @@ spec:
     app: hello-devops # send traffic to every ready pod with this label
   ports:
     - name: http
-      port: 80          # other pods call http://hello-devops (port 80)
-      targetPort: 8000  # the port the app listens on inside its container
-      nodePort: 30080   # open on every node; kind maps it to localhost:8081
+      port: 80 # other pods call http://hello-devops (port 80)
+      targetPort: 8000 # the port the app listens on inside its container
+      nodePort: 30080 # open on every node; kind-config.yaml maps it to localhost:8081

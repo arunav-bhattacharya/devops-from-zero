@@ -32,7 +32,7 @@ spec:
       source:
         repoURL: https://github.com/<your-github-user>/hello-devops
         targetRevision: main
-        path: "k8s/overlays/{{.env}}" # the Kustomize overlay for this environment
+        path: "overlays/{{.env}}" # the Kustomize overlay for this environment (Day 37)
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{.namespace}}"

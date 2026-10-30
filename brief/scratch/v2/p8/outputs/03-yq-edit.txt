@@ -1,0 +1,12 @@
+$ yq -i '(.images[] | select(.name == "hello-devops")).newTag = "1.1.0"' \
+    overlays/prod/kustomization.yaml
+$ git diff -U1
+diff --git a/overlays/prod/kustomization.yaml b/overlays/prod/kustomization.yaml
+index dc5f3ef..f0ec01f 100644
+--- a/overlays/prod/kustomization.yaml
++++ b/overlays/prod/kustomization.yaml
+@@ -15,3 +15,3 @@ images:
+   - name: hello-devops
+-    newTag: "1.0.0" # prod runs the release that already passed dev
++    newTag: "1.1.0" # prod runs the release that already passed dev
+ replicas:

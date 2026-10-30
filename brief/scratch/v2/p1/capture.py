@@ -82,12 +82,14 @@ def run_snippet(name, spec, workdir):
     """spec: {"steps": [...], "docker": [...extra args], "image": str, "cwd": "/work"}
     A step is a string (a command) or a dict:
       {"cmd": str, "hide": bool, "timeout": s, "wait": s, "keys": [(delay, key, shown)]}"""
+    for hc in spec.get("host_before", []):
+        subprocess.run(hc, shell=True, capture_output=True)
     cname = "v2p1-cap-" + re.sub(r"[^a-z0-9]", "-", name.lower())
     subprocess.run(["docker", "rm", "-f", cname], capture_output=True)
     argv = ["docker", "run", "-it", "--rm", "--name", cname, "-v", f"{workdir}:/work", "-w", spec.get("cwd", "/work")]
     argv += spec.get("docker", []) + [spec.get("image", IMAGE), "bash"]
     s = Session(argv)
-    s.read_until("# ", 20)
+    s.read_until(spec.get("ready", "# "), 30)
     time.sleep(0.3)
     s.send("set +o emacs +o vi; stty -echo; PS2=''; PS1='__P1''PROMPT__'\n")
     s.read_until(TOKEN, 10)
@@ -98,6 +100,9 @@ def run_snippet(name, spec, workdir):
             continue
         if isinstance(step, str):
             step = {"cmd": step}
+        if "host" in step:
+            subprocess.run(step["host"], shell=True, capture_output=True)
+            continue
         cmd = step["cmd"]
         s.send(cmd + "\n")
         pre = ""
@@ -123,6 +128,8 @@ def run_snippet(name, spec, workdir):
         out.append("\n".join(parts))
     s.close()
     subprocess.run(["docker", "rm", "-f", cname], capture_output=True)
+    for hc in spec.get("host_after", []):
+        subprocess.run(hc, shell=True, capture_output=True)
     return "\n".join(x for x in out if x)
 
 

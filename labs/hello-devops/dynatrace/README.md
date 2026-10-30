@@ -108,7 +108,7 @@ kubectl -n hello rollout status deployment/hello-devops
 ```bash
 kubectl -n dynatrace get dynakube          # STATUS should become Running (Deploying first)
 kubectl -n dynatrace get pods              # operator, webhook and dynakube-activegate-0
-kubectl -n hello get pods -o jsonpath='{.items[0].spec.initContainers[*].name}'; echo
+kubectl -n hello get pods -l app=hello-devops -o jsonpath='{.items[0].spec.initContainers[*].name}'; echo
 # prints dynatrace-operator: the webhook added its init container to the pod
 ```
 
@@ -126,6 +126,7 @@ If something fails:
 | `dynakube-activegate-0` is `Pending` | not enough memory in Docker Desktop | `kubectl -n dynatrace describe pod dynakube-activegate-0`; give Docker more memory or lower the request |
 | `ImagePullBackOff` | image or architecture problem on arm64 | `kubectl -n dynatrace describe pod <name>`; this is the "may fail" case |
 | no init container in the hello pods | namespace not labelled, or pods not restarted | check `kubectl get namespace hello --show-labels`, then restart the deployment |
+| hello-devops pods restart with `OOMKilled` | OneAgent adds some memory to the app process | raise the memory limit in `k8s/deployment.yaml` (256Mi) a little and apply again |
 
 ## 6. Uninstall (in this order)
 

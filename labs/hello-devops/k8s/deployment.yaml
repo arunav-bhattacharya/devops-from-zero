@@ -1,4 +1,5 @@
 # Runs 3 copies (pods) of hello-devops and replaces any that die.
+# Day 32 writes the first version, Day 34 adds envFrom, Day 35 adds the probes and resources.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +16,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0 # never drop below 3 ready pods during an update
-      maxSurge: 1       # add at most 1 extra pod at a time
+      maxSurge: 1 # add at most 1 extra pod at a time
   template:
     metadata:
       labels:

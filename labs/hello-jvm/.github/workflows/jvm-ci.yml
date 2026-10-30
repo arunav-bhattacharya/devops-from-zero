@@ -1,0 +1,71 @@
+name: jvm-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# One run per branch or pull request. A new push cancels the older run,
+# except on main, where every merge gets a full result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# The GITHUB_TOKEN in this workflow can only read the repository.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # A JDK to run Gradle. build-logic asks for a Java 21 toolchain,
+      # so Gradle also uses this JDK to compile and test (no extra download).
+      # Do not add "cache: gradle" here: setup-gradle does the caching.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Checks gradle-wrapper.jar against known checksums, caches Gradle's
+      # downloads (written on main, read on other branches) and adds a Job Summary.
+      - uses: gradle/actions/setup-gradle@v6
+        # In a private repository, uncomment the next two lines to use the
+        # open-source (MIT) cache provider instead of the default one.
+        # with:
+        #   cache-provider: basic
+
+      # The same command you run on your laptop, with the same gradle.properties.
+      - name: Build and test
+        run: ./gradlew build
+
+      - name: Upload test reports
+        # Upload even when tests fail: that is when you need the report most.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: "**/build/reports/tests/"
+          retention-days: 7
+
+  image:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the image (no push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          tags: hello-jvm:ci
+          build-args: APP_VERSION=${{ github.sha }}
+          # Reuse image layers from earlier runs (GitHub Actions cache).
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,4 +1,6 @@
-# Settings for the app. Each key becomes an environment variable (see envFrom in deployment.yaml).
+# Settings for the app (Day 34). Each key becomes an environment variable (see envFrom in deployment.yaml).
+# Env vars are read once at start: after you change a value, run
+#   kubectl rollout restart deployment/hello-devops -n hello
 apiVersion: v1
 kind: ConfigMap
 metadata:

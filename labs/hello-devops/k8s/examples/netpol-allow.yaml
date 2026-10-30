@@ -1,0 +1,40 @@
+# Day 33: the allow rules that go with netpol-deny-all.yaml.
+#   allow-web:            anyone may reach the app on port 8000 (your Mac through the NodePort, too).
+#   allow-redis-from-app: only the app's Pods may reach Redis on port 6379 (Redis arrives on Day 34).
+# Ports here are Pod ports (8000), not Service ports (80): policies see traffic after the Service picks a Pod.
+#   Apply: kubectl apply -f k8s/examples/netpol-allow.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web
+  namespace: hello
+spec:
+  podSelector:
+    matchLabels:
+      app: hello-devops
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports: # no "from" list, so any source may connect on this port
+        - protocol: TCP
+          port: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-from-app
+  namespace: hello
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: hello-devops # only Pods with this label, in this same namespace
+      ports:
+        - protocol: TCP
+          port: 6379

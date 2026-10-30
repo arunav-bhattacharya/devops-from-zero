@@ -1,0 +1,31 @@
+# Day 34: watch one ConfigMap value reach a container twice: as an env var and as a file.
+#   kubectl apply -n scratch -f k8s/examples/config-demo.yaml
+#   kubectl logs -n scratch config-demo -f
+#   kubectl patch configmap demo-config -n scratch --type merge -p '{"data":{"COLOR":"green"}}'
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-config
+data:
+  COLOR: "blue"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-demo
+spec:
+  containers:
+    - name: show
+      image: busybox:1.37
+      # Every 5 seconds, print the env var and the file side by side.
+      command: ["sh", "-c", "while true; do echo \"env=$COLOR file=$(cat /config/COLOR)\"; sleep 5; done"]
+      envFrom:
+        - configMapRef:
+            name: demo-config # COLOR becomes an env var, set once when the container starts
+      volumeMounts:
+        - name: config
+          mountPath: /config # COLOR also becomes the file /config/COLOR, which the kubelet keeps up to date
+  volumes:
+    - name: config
+      configMap:
+        name: demo-config

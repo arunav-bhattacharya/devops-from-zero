@@ -45,17 +45,20 @@ fetch dt.davis.problems, from: now() - 2h
 // ======================================================================
 
 // B1. "data" makes a tiny table by hand. It reads nothing from Grail.
-//     Returns 5 rows with the fields path, status and ms.
+//     Returns 6 rows with the fields path, status and ms.
 data record(path = "/", status = 200, ms = 12),
-     record(path = "/", status = 200, ms = 15),
-     record(path = "/", status = 500, ms = 250),
+     record(path = "/", status = 200, ms = 18),
+     record(path = "/", status = 200, ms = 20),
+     record(path = "/", status = 500, ms = 350),
      record(path = "/healthz", status = 200, ms = 2),
      record(path = "/readyz", status = 503, ms = 1001)
 
 // B2. Add "| filter status >= 500" to B1: 2 rows remain (the 500 and the 503).
-// B3. Replace the filter with this line: 3 rows, one per path.
-//     | summarize requests = count(), errors = countIf(status >= 500), by: {path}
-// B4. Then add these two lines: /readyz (100), / (about 33.3), /healthz (0).
+// B3. Replace the filter with these lines: 3 rows, one per path.
+//     | summarize requests = count(), errors = countIf(status >= 500),
+//                 avg_ms = avg(ms), by: {path}
+//     "/" gets requests 4, errors 1, avg_ms 100.
+// B4. Then add these two lines: /readyz (100), / (25), /healthz (0).
 //     | fieldsAdd error_pct = errors * 100.0 / requests
 //     | sort error_pct desc
 

@@ -1,11 +1,12 @@
-# A local cluster: 1 control-plane node and 2 worker nodes (each one is a Docker container).
+# The course cluster: 1 control-plane node and 2 worker nodes. Each node is a Docker container.
 # Create it with: kind create cluster --name devops --config kind-config.yaml
+# kind then adds the kubectl context "kind-devops" and switches to it (Day 30).
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     extraPortMappings:
-      - containerPort: 30080 # the NodePort of the hello-devops Service (k8s/service.yaml)
-        hostPort: 8081       # reach it on your laptop at http://localhost:8081
+      - containerPort: 30080 # the NodePort of the hello-devops Service (k8s/service.yaml, Day 33)
+        hostPort: 8081 # so http://localhost:8081 on your Mac reaches that Service
   - role: worker
   - role: worker

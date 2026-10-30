@@ -1,0 +1,16 @@
+# Day 33: a headless Service for the same Pods as k8s/service.yaml.
+# It has no virtual IP. Its DNS name returns the IP of every ready Pod instead.
+#   kubectl apply -f k8s/examples/headless-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-devops-headless
+  namespace: hello
+spec:
+  clusterIP: None # headless: no ClusterIP and no kube-proxy load balancing
+  selector:
+    app: hello-devops
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

@@ -1,0 +1,102 @@
+ Image v2p3-hello-devops-web Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 648B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.29kB done
+#2 DONE 0.0s
+
+#3 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#3 DONE 0.2s
+
+#4 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#4 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
+#4 CACHED
+
+#5 [internal] load metadata for docker.io/library/python:3.14-slim
+#5 DONE 0.5s
+
+#6 [internal] load metadata for docker.io/library/v2p3-pybase:3.14-slim
+#6 DONE 0.7s
+
+#7 [internal] load .dockerignore
+#7 transferring context: 131B done
+#7 DONE 0.0s
+
+#8 [ 1/10] FROM docker.io/library/python:3.14-slim@sha256:cd89c30eda26ee911a4611b18680086e0ea42e6f5f8cbe653d07fa7958c9cec8
+#8 resolve docker.io/library/python:3.14-slim@sha256:cd89c30eda26ee911a4611b18680086e0ea42e6f5f8cbe653d07fa7958c9cec8 0.0s done
+#8 CACHED
+
+#9 [build 1/6] FROM docker.io/library/v2p3-pybase:3.14-slim@sha256:e831ee5aeb178c2583c298868d8907c8d32e0ac1e964c6b63ed0d2b49976b97b
+#9 resolve docker.io/library/v2p3-pybase:3.14-slim@sha256:e831ee5aeb178c2583c298868d8907c8d32e0ac1e964c6b63ed0d2b49976b97b 0.0s done
+#9 DONE 0.0s
+
+#10 [internal] load build context
+#10 transferring context: 1.82kB done
+#10 DONE 0.0s
+
+#11 [build 2/6] WORKDIR /app
+#11 CACHED
+
+#12 [build 3/6] RUN python -m venv /venv
+#12 CACHED
+
+#13 [build 5/6] RUN pip install --no-cache-dir -r requirements.txt
+#13 CACHED
+
+#14 [build 6/6] RUN pip uninstall -y pip
+#14 CACHED
+
+#15 [stage-1 4/6] COPY --from=build /venv /venv
+#15 CACHED
+
+#16 [stage-1 5/6] COPY app.py .
+#16 CACHED
+
+#17 [build 4/6] COPY requirements.txt .
+#17 CACHED
+
+#18 [stage-1 2/6] RUN pip uninstall -y pip
+#18 CACHED
+
+#19 [stage-1 3/6] WORKDIR /app
+#19 CACHED
+
+#20 [stage-1 6/6] RUN useradd --uid 10001 --no-create-home appuser
+#20 CACHED
+
+#21 exporting to image
+#21 exporting layers done
+#21 exporting manifest sha256:690832e4837589583b69888d9225f327177d03ae60b855cfe113c70bfee38755 done
+#21 exporting config sha256:86bf84eb12f804414d869d492ae3f499a1dd921c722e74ad5e837486ff0c4c83 done
+#21 exporting attestation manifest sha256:daaddaf9dcb3cfbeda2a5482dfe2056afb766c94ff2154b5c4bde41ff420a6c2
+#21 exporting attestation manifest sha256:daaddaf9dcb3cfbeda2a5482dfe2056afb766c94ff2154b5c4bde41ff420a6c2 0.0s done
+#21 exporting manifest list sha256:b80b84581adb9183f461c4e268d593c8fafeb8fa697e5a2f1b852f39f2e75f61 0.0s done
+#21 naming to docker.io/library/v2p3-hello-devops-web:latest done
+#21 unpacking to docker.io/library/v2p3-hello-devops-web:latest done
+#21 DONE 0.1s
+
+#22 resolving provenance for metadata file
+#22 DONE 0.0s
+ Image v2p3-hello-devops-web Built 
+ Network v2p3-hello-devops_default Creating 
+ Network v2p3-hello-devops_default Creating 
+ Network v2p3-hello-devops_default Created 
+ Network v2p3-hello-devops_default Created 
+ Container v2p3-hello-devops-redis-1 Creating 
+ Container v2p3-hello-devops-redis-1 Created 
+ Container v2p3-hello-devops-web-1 Creating 
+ Container v2p3-hello-devops-web-1 Created 
+ Container v2p3-hello-devops-redis-1 Starting 
+ Container v2p3-hello-devops-redis-1 Started 
+ Container v2p3-hello-devops-redis-1 Waiting 
+ Container v2p3-hello-devops-redis-1 Healthy 
+ Container v2p3-hello-devops-web-1 Starting 
+ Container v2p3-hello-devops-web-1 Started 
+Watch enabled
+Syncing service "web" after 1 changes were detected
+ Container v2p3-hello-devops-web-1 Restarting 
+ Container v2p3-hello-devops-web-1 Started 
+service(s) ["web"] restarted
+
