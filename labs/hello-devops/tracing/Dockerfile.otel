@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+# hello-devops with OpenTelemetry zero-code instrumentation (Day 49).
+# Same app.py as the main Dockerfile, no code changes. opentelemetry-instrument
+# starts gunicorn and patches Flask and the Redis client so they create spans.
+#
+# Build from the repository root (the folder with app.py):
+#   docker build -f tracing/Dockerfile.otel -t hello-devops:otel .
+# tracing/compose.yaml builds it for you.
+
+FROM python:3.14-slim
+WORKDIR /app
+RUN python -m venv /venv
+ENV PATH="/venv/bin:$PATH" PYTHONUNBUFFERED=1
+
+# 1. The app's own dependencies.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 2. The OpenTelemetry SDK, the OTLP exporter and the opentelemetry-instrument command.
+RUN pip install --no-cache-dir opentelemetry-distro opentelemetry-exporter-otlp
+
+# 3. Look at the installed packages (Flask, Redis, ...) and install the
+#    matching instrumentation packages.
+RUN opentelemetry-bootstrap -a install
+
+COPY app.py .
+RUN useradd --uid 10001 --no-create-home appuser
+USER 10001
+EXPOSE 8000
+# opentelemetry-instrument wraps the usual gunicorn command.
+CMD ["opentelemetry-instrument", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--no-control-socket", "app:app"]

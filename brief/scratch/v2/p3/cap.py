@@ -119,3 +119,57 @@ def ttymap(text, mapping):
                     new = mapped(m.group(1), mapping).ljust(len(ln) - len(m.group(3))) + m.group(3)
         out.append(new)
     return "\n".join(out)
+
+
+def screen(raw):
+    """Replay cursor moves (up, column 0, clear line) and return the final screen text."""
+    lines, row, col = [[]], 0, 0
+    i = 0
+    while i < len(raw):
+        ch = raw[i]
+        if ch == "\x1b":
+            m = re.match(r"\x1b\[([0-9;?]*)([A-Za-z])", raw[i:])
+            if m:
+                arg, op = m.group(1), m.group(2)
+                n = int(arg) if arg.isdigit() else 1
+                if op == "A":
+                    row = max(0, row - n)
+                elif op == "B":
+                    row += n
+                elif op == "G":
+                    col = max(0, (int(arg) if arg.isdigit() else 1) - 1)
+                elif op == "K":
+                    while len(lines) <= row:
+                        lines.append([])
+                    lines[row] = [] if arg in ("2", "") and col == 0 else lines[row][:col]
+                i += len(m.group(0))
+                continue
+        if ch == "\n":
+            row += 1
+            col = 0
+        elif ch == "\r":
+            col = 0
+        else:
+            while len(lines) <= row:
+                lines.append([])
+            ln = lines[row]
+            while len(ln) < col:
+                ln.append(" ")
+            if col < len(ln):
+                ln[col] = ch
+            else:
+                ln.append(ch)
+            col += 1
+        while len(lines) <= row:
+            lines.append([])
+        i += 1
+    text = "\n".join("".join(l).rstrip() for l in lines)
+    return text.strip("\n")
+
+
+def ttyc(cmd, cwd=None, cols=88, env=None):
+    """Run a command in a fake terminal and return its final screen (for Compose)."""
+    import shlex
+    inner = f"stty cols {cols} rows 60; {cmd}"
+    raw = run(f"script -qc {shlex.quote(inner)} /dev/null", cwd=cwd, env=env)
+    return screen(raw)
