@@ -358,7 +358,7 @@ Everything below runs on an Apple Silicon Mac with Docker Desktop (free for pers
 
    — [docker/docs: DHI get started](https://github.com/docker/docs/blob/main/content/manuals/dhi/get-started.md); [docker debug ref](https://github.com/docker/docs/blob/main/data/cli/debug/docker_debug.yaml)
 9. **Scaffolding and linting.** Run `docker init` in a toy app, then critique and modify the generated Dockerfile. Run `docker build --check .`. — [docker init ref](https://github.com/docker/docs/blob/main/data/cli/init/docker_init.yaml); [build checks](https://github.com/docker/docs/blob/main/content/manuals/build/checks.md)
-10. **Secrets leak demo.** Pass a fake token via `ARG`, find it with `docker history`, then redo the build with `RUN --mount=type=secret`. — [docker/docs: build secrets](https://github.com/docker/docs/blob/main/content/manuals/build/secrets.md) (path note: the file is at `content/manuals/build/building/secrets.md`, see [verified link](https://github.com/docker/docs/blob/main/content/manuals/build/building/secrets.md))
+10. **Secrets leak demo.** Pass a fake token via `ARG`, find it with `docker history`, then redo the build with `RUN --mount=type=secret`. — [docker/docs: build secrets](https://github.com/docker/docs/blob/main/content/manuals/build/building/secrets.md)
 11. **iximiuz Labs.** The "Inspect OCI Image Layout of Single- and Multi-Platform Images" challenge works in the browser. I could not confirm whether it is free. — [iximiuz challenge (search)](https://labs.iximiuz.com/challenges/inspect-oci-image-layout)
 
 **GitHub Actions**
