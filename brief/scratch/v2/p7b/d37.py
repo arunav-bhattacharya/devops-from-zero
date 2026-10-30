@@ -182,7 +182,7 @@ LESSON = {
                 "A few changes matter to you:\n"
                 "- Server-side apply is the default for new releases. The API server merges the changes and tracks which tool owns each field. Upgrades and rollbacks keep the method the release started with, so old Helm 3 releases stay on client-side apply.\n"
                 "- Two flags were renamed: `--atomic` is now `--rollback-on-failure`, and `--force` is now `--force-replace`. The old names still work but print a warning, and older blog posts use them.\n"
-                "- `--wait` uses kstatus to tell when objects are really ready.\n"
+                "- `--wait` uses kstatus, a status library, to tell when each kind of object is really ready.\n"
                 "- You can install a chart by digest, `oci://...@sha256:...`, so you get exactly the bytes you tested.\n"
                 "- Post-renderers are now plugins, and `helm registry login` takes only the host name.\n\n"
                 "Helm 3 is at the end of its life. Its last feature release came out on September 9, 2026, and its security fixes stop on February 10, 2027. "

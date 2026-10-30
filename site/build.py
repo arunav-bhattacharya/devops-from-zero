@@ -20,12 +20,11 @@ from pygments.lexers import get_lexer_by_name
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
-LAB = ROOT / "labs/hello-devops"
 OUT = ROOT / "dist/index.html"
 WEB = ROOT / "public"
 
 FMT = HtmlFormatter(nowrap=True)
-ALIAS = {"sh": "bash", "shell": "bash", "zsh": "bash", "console": "console", "yml": "yaml", "tf": "hcl",
+ALIAS = {"sh": "bash", "shell": "bash", "zsh": "bash", "console": "console", "yml": "yaml", "tf": "hcl", "kts": "kotlin",
          "hcl": "terraform", "dockerfile": "docker", "text": "text", "ini": "ini"}
 
 
@@ -146,43 +145,51 @@ def lesson(L, R, part, k):
     }
 
 
-LAB_FILES = [  # (path, lang, day it is built)
-    ("app.py", "python", 2), ("test_app.py", "python", 2), ("requirements.txt", "text", 2), ("requirements-dev.txt", "text", 2),
-    (".gitignore", "text", 2), ("Dockerfile", "dockerfile", 22), (".dockerignore", "text", 6), ("compose.yaml", "yaml", 7),
-    (".github/workflows/ci.yml", "yaml", 11), (".github/workflows/release.yml", "yaml", 22),
+FIRST = ["app.py", "test_app.py", "requirements.txt", "requirements-dev.txt", ".gitignore", "Dockerfile", ".dockerignore", "compose.yaml"]
+# (project, path prefix, day the file is built or finished), first match wins
+DAYS = [
+    ("hello-devops", "app.py", 2), ("hello-devops", "test_app.py", 2), ("hello-devops", "requirements", 2), ("hello-devops", ".gitignore", 2),
+    ("hello-devops", "Dockerfile", 16), ("hello-devops", ".dockerignore", 13), ("hello-devops", "docker/", 13), ("hello-devops", "compose.yaml", 15),
+    ("hello-devops", ".github/pull_request_template", 17), ("hello-devops", ".github/workflows/ci", 19), ("hello-devops", ".github/actions", 20),
+    ("hello-devops", ".github/dependabot", 21), ("hello-devops", ".github/workflows/release", 21), ("hello-devops", ".github/workflows/terraform", 29),
+    ("hello-devops", "infra/aws", 29), ("hello-devops", "infra/modules", 28), ("hello-devops", "infra/", 27),
+    ("hello-devops", "kind-config", 30), ("hello-devops", "k8s/examples", 31), ("hello-devops", "k8s/hpa", 35), ("hello-devops", "k8s/gateway", 36),
+    ("hello-devops", "k8s/", 30), ("hello-devops", "chart/", 37), ("hello-devops", "overlays/", 37), ("hello-devops", "k8s-broken/", 38),
+    ("hello-devops", "argocd/", 39), ("hello-devops", "gitops/", 40),
+    ("hello-devops", "observability/grafana", 45), ("hello-devops", "observability/loki", 46), ("hello-devops", "observability/compose.loki", 46),
+    ("hello-devops", "observability/", 42), ("hello-devops", "logging/", 47), ("hello-devops", "tracing/", 49), ("hello-devops", "dynatrace/", 51),
+    ("hello-devops", "policy/ai-agent", 54), ("hello-devops", "policy/", 53), ("hello-devops", "security/", 53),
+    ("linux", "", 3), ("hello-jvm", "Dockerfile", 24), ("hello-jvm", ".dockerignore", 24), ("hello-jvm", ".github/", 24),
+    ("hello-jvm", "gradle/libs", 23), ("hello-jvm", "build-logic", 23), ("hello-jvm", "greeting", 23), ("hello-jvm", "", 22),
+    ("terraform-practice", "", 26),
 ]
+LANGS = {".py": "python", ".yaml": "yaml", ".yml": "yaml", ".tf": "hcl", ".tpl": "text", ".txt": "text", ".json": "json", ".md": "text",
+         ".kts": "kotlin", ".kt": "kotlin", ".toml": "ini", ".properties": "ini", ".sh": "bash", ".conf": "ini", ".alloy": "text",
+         ".dql": "text", ".log": "text", ".jsonl": "json"}
+SKIP_DIRS = {".terraform", "__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "charts", ".gradle", "build", ".kotlin", "node_modules"}
+PROJECT_ORDER = ["hello-devops", "linux", "hello-jvm", "terraform-practice"]
 
 
 def labs():
-    files = []
-    seen = set()
-    for path, lang, day in LAB_FILES:
-        p = LAB / path
-        if p.exists():
-            files.append((path, lang, day))
-            seen.add(path)
-    skip = {".terraform", "__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "charts"}
-    extra = sorted(x for x in LAB.rglob("*") if x.is_file() and not skip & set(x.parts) and x.name != "README.md"
-                   and not x.name.endswith((".tfstate", ".lock.hcl", ".pyc", ".tgz", ".zip", ".backup")))
-    days = [("infra/aws", 15), (".github/workflows/terraform", 15), ("infra/local", 14), ("kind-config", 16), ("k8s/gateway", 19),
-            ("k8s", 18), ("chart", 19), ("argocd", 20), ("observability", 21), ("policy/ai-agent", 23), ("policy", 22),
-            (".github/pull_request_template", 9), (".github/dependabot", 12)]
-    langs = {".py": "python", ".yaml": "yaml", ".yml": "yaml", ".tf": "hcl", ".tpl": "text", ".txt": "text", ".json": "json", ".md": "text"}
-    for x in extra:
-        rel = str(x.relative_to(LAB))
-        if rel in seen:
-            continue
-        day = next((d for pre, d in days if rel.startswith(pre)), 23)
-        files.append((rel, langs.get(x.suffix, "text"), day))
     out = []
-    for path, lang, day in files:
-        try:
-            raw = (LAB / path).read_text()
-        except UnicodeDecodeError:
-            continue
-        out.append({"path": path, "lang": lang, "day": day, "html": hl(lang, raw), "lines": raw.count("\n") + 1})
-    first = [x[0] for x in LAB_FILES]
-    return sorted(out, key=lambda f: (f["day"], first.index(f["path"]) if f["path"] in first else 99, f["path"]))
+    projects = sorted((d for d in (ROOT / "labs").iterdir() if d.is_dir()), key=lambda d: (PROJECT_ORDER.index(d.name) if d.name in PROJECT_ORDER else 9, d.name))
+    for proj in projects:
+        for x in sorted(proj.rglob("*")):
+            if not x.is_file() or SKIP_DIRS & set(x.relative_to(proj).parts) or x.name.endswith((".tfstate", ".lock.hcl", ".pyc", ".tgz", ".zip", ".backup", ".jar")) \
+                    or x.name in ("gradlew.bat",) or x.stat().st_size > 200_000:
+                continue
+            rel = str(x.relative_to(proj))
+            if proj.name == "hello-devops" and rel == "README.md":
+                continue
+            try:
+                raw = x.read_text()
+            except UnicodeDecodeError:
+                continue
+            day = next((d for pr, pre, d in DAYS if pr == proj.name and rel.startswith(pre)), 55)
+            lang = "dockerfile" if x.name.startswith("Dockerfile") else ("bash" if x.name == "gradlew" else LANGS.get(x.suffix, "text"))
+            out.append({"path": f"{proj.name}/{rel}", "lang": lang, "day": day, "html": hl(lang, raw), "lines": raw.count("\n") + 1,
+                        "proj": proj.name, "rank": FIRST.index(rel) if rel in FIRST else 99})
+    return sorted(out, key=lambda f: (f["day"], PROJECT_ORDER.index(f["proj"]) if f["proj"] in PROJECT_ORDER else 9, f["rank"], f["path"]))
 
 
 def main():

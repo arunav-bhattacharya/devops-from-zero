@@ -7,9 +7,9 @@ def diagram():
     p = [
         box(16, 24, 128, h, "bxp", "GatewayClass"),
         box(192, 24, 112, h, "bxp", "Gateway"),
-        box(352, 24, 112, h, "bxg", "HTTPRoute"),
+        box(368, 24, 112, h, "bxg", "HTTPRoute"),
         arrow(192, 46, 146, 46, dashed=True), cap(169, 38, "uses"),
-        arrow(352, 46, 306, 46, dashed=True), cap(329, 38, "attaches"),
+        arrow(368, 46, 306, 46, dashed=True), cap(337, 38, "attaches"),
         box(16, 150, 112, h, "bx", "curl :8888"),
         box(176, 150, 128, h, "bxo", "Envoy proxy"),
         box(368, 110, 136, h, "bxt", "hello-devops"),
@@ -17,7 +17,7 @@ def diagram():
         arrow(128, 172, 174, 172),
         cap(72, 212, "port-forward"),
         arrow(248, 68, 240, 148, dashed=True), cap(212, 112, "creates"),
-        arrow(392, 68, 292, 148, dashed=True), cap(368, 96, "rules"),
+        arrow(424, 68, 292, 148, dashed=True), cap(420, 100, "rules"),
         arrow(304, 164, 366, 136), cap(326, 140, "90%"),
         arrow(304, 180, 366, 208), cap(326, 210, "10%"),
     ]

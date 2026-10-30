@@ -493,14 +493,27 @@ function viewLibrary() {
     <div style="display:grid;gap:34px">${body || `<p class="muted">Nothing matches yet.</p>`}</div></div>`;
 }
 let labSel = null;
+const LABDESC = {
+  "hello-devops": "The Python web app you ship all course: Dockerfiles, Compose, workflows, Terraform, Kubernetes, Helm, Argo CD, monitoring, logging, tracing and policy.",
+  "linux": "Sample logs and files for the Linux lessons. Mount this folder into the practice container.",
+  "hello-jvm": "A small Kotlin multi-project Gradle build with a Dockerfile and a CI workflow.",
+  "terraform-practice": "Small Terraform folders for the language and state exercises.",
+};
+let labProj = "hello-devops";
 function viewLabs() {
-  const files = C.labs;
-  if (!files.length) return `<div class="page"><p>No lab files yet.</p></div>`;
+  const all = C.labs;
+  if (!all.length) return `<div class="page"><p>No lab files yet.</p></div>`;
+  const projs = [...new Set(all.map((f) => f.proj))];
+  if (!projs.includes(labProj)) labProj = projs[0];
+  const files = all.filter((f) => f.proj === labProj);
   if (!labSel || !files.find((f) => f.path === labSel)) labSel = files[0].path;
-  const f = files.find((x) => x.path === labSel);
-  return `<div class="page"><header class="lhead"><div class="plate"><span class="pd">LAB</span><span class="pp">hello-devops · finished reference</span></div><h1>Lab files</h1><p class="goal">The finished hello-devops repo, every file tested. Build yours by following the lessons, then come here to compare. Copy a file only when you are truly stuck.</p></header>
-    <div class="labgrid"><div class="labtree" role="list">${files.map((x) => `<button class="${x.path === labSel ? "on" : ""}" data-act="lab" data-p="${esc(x.path)}" role="listitem"><span>${esc(x.path)}</span><small>D${pad(x.day)}</small></button>`).join("")}</div>
-    <div style="min-width:0;display:grid;gap:10px"><span class="label">Final version from Day ${pad(f.day)} · <a href="#d${pad(f.day)}">${esc(L("d" + pad(f.day)) ? L("d" + pad(f.day)).title : "")}</a> · ${f.lines} lines</span>${codeBox({ title: f.path, lang: f.lang, html: f.html })}</div></div></div>`;
+  const f = files.find((x) => x.path === labSel), rel = (x) => x.path.slice(x.proj.length + 1);
+  const dl = L("d" + pad(f.day));
+  return `<div class="page"><header class="lhead"><div class="plate"><span class="pd">LAB</span><span class="pp">finished reference · ${all.length} files</span></div><h1>Lab files</h1><p class="goal">The finished lab repos, every file checked. Build yours by following the lessons, then come here to compare. Copy a file only when you are truly stuck.</p></header>
+    <div class="filter">${projs.map((x) => `<button class="chip${x === labProj ? " on" : ""}" data-act="labp" data-p="${esc(x)}">${esc(x)}</button>`).join("")}</div>
+    <p class="muted" style="margin:0">${esc(LABDESC[labProj] || "")}</p>
+    <div class="labgrid"><div class="labtree" role="list">${files.map((x) => `<button class="${x.path === labSel ? "on" : ""}" data-act="lab" data-p="${esc(x.path)}" role="listitem"><span>${esc(rel(x))}</span><small>D${pad(x.day)}</small></button>`).join("")}</div>
+    <div style="min-width:0;display:grid;gap:10px"><span class="label">Final version from Day ${pad(f.day)}${dl ? ` · <a href="#${dl.id}">${esc(dl.title)}</a>` : ""} · ${f.lines} lines</span>${codeBox({ title: f.path, lang: f.lang, html: f.html })}</div></div></div>`;
 }
 
 function viewPlan() {
@@ -678,6 +691,7 @@ document.addEventListener("click", async (e) => {
     d.flip = false; $("#deck-" + key).outerHTML = deckHTML(key, cards);
   } else if (a === "cmdf") { cmdFilter = b.dataset.f; render(false); }
   else if (a === "lab") { labSel = b.dataset.p; render(false); }
+  else if (a === "labp") { labProj = b.dataset.p; labSel = null; render(false); }
   else if (a === "libk") { libKind = b.dataset.k; render(false); }
   else if (a === "sidetog") { const n = +b.dataset.p, cur = b.getAttribute("aria-expanded") === "true"; sideOpen[n] = !cur; chrome(); }
   else if (a === "reset") {

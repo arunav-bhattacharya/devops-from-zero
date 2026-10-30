@@ -270,7 +270,7 @@ LESSON = {
             {"say": "Check what the new Pod was given. The value looks almost right. You want to test the name from inside the Pod's network, but the app image has no DNS tools.", "code": ENV, "lang": "console"},
             {"say": "Add an ephemeral busybox container to the same Pod. It shares the Pod's network, so its DNS answers are the app's DNS answers. The name `rediss` does not exist.", "code": DEBUG, "lang": "console"},
             {"say": "The correct name resolves to the Redis Service's IP. Hypothesis confirmed: a typo in the ConfigMap, not a broken Redis and not a network problem.", "code": DEBUG2, "lang": "console"},
-            {"say": "Fix the value and roll again. In a real team you would fix it in git, not with `kubectl patch`; on Day 39 Argo CD makes that the only path.", "code": FIX, "lang": "console"},
+            {"say": "Fix the value and roll again. In a real team you would fix it in git, not with `kubectl patch`; on Day 39, Argo CD makes git the normal path.", "code": FIX, "lang": "console"},
         ],
     },
     "code_files": [
