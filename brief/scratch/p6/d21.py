@@ -55,11 +55,11 @@ lesson = {
             "body": (
                 "Monitoring means watching for problems you already know about. Is the pod up? Is the disk full? You set a check and an alert for each one.\n\n"
                 "**Observability** goes further. It is how well you can answer new questions about a running system from what it outputs, without shipping new code. "
-                "\"Why are requests from one country slow since 14:00?\" is an observability question. Systems output four kinds of signals:\n"
+                "Here is an observability question: why are requests from one country slow since 14:00? Systems output four kinds of signals:\n"
                 "- Metrics: numbers over time. Cheap to store, good for graphs and alerts.\n"
                 "- Logs: lines of text about single events, such as one failed request.\n"
                 "- Traces: the path of one request through many services, with timings.\n"
-                "- Profiles: where the code spends CPU and memory. This is the newest signal, and OpenTelemetry support for it is still in an early (alpha) stage.\n\n"
+                "- Profiles: where the code spends CPU and memory. The newest signal; OpenTelemetry support is still alpha.\n\n"
                 "Each signal answers a different question. Metrics tell you that something is wrong. Logs and traces help you find where and why."
             ),
             "refs": [
@@ -88,7 +88,7 @@ lesson = {
             ],
         },
         {
-            "h": "kube-prometheus-stack and the ServiceMonitor",
+            "h": "Prometheus on Kubernetes: the ServiceMonitor",
             "body": (
                 "On Kubernetes you rarely install Prometheus by hand. The kube-prometheus-stack Helm chart installs a full set in one go:\n"
                 "- Prometheus, to scrape and store metrics.\n"
@@ -181,7 +181,7 @@ lesson = {
         "steps": [
             {
                 "say": "You can see the whole pull model with two containers. Start the app with a single gunicorn worker. With two workers, each keeps its own counter, and Go deeper explains why that confuses Prometheus.",
-                "code": "$ docker network create obs\n$ docker run -d --name hello --network obs -p 8000:8000 hello-devops:1.0.0 \\\n    gunicorn --bind 0.0.0.0:8000 --workers 1 app:app",
+                "code": "$ docker network create obs\n$ docker run -d --name hello --network obs -p 8000:8000 hello-devops:1.0.0 \\\n    gunicorn --bind 0.0.0.0:8000 --workers 1 --no-control-socket app:app",
                 "lang": "console",
             },
             {
@@ -355,7 +355,7 @@ lesson = {
             "Prometheus sees a counter that went down and treats it as a restart. `rate()` then counts the jumps as new requests, so the speed looks higher than it is. "
             "That is why the worked example ran one worker. Real apps fix this in one of two ways:\n"
             "- Run one worker per container and add more pods. Kubernetes already handles scaling.\n"
-            "- Use the multiprocess mode of the Python client. Each worker writes to a shared folder set by `PROMETHEUS_MULTIPROC_DIR`, and `/metrics` adds them up.\n\n"
+            "- Use the Python client's multiprocess mode: workers share a folder set by `PROMETHEUS_MULTIPROC_DIR`, and `/metrics` adds them up.\n\n"
             "Now latency. A counter tells you how many, not how fast. For speed, use a histogram. "
             "It counts requests into buckets: under 0.1 seconds, under 0.25 seconds, and so on. "
             "In Python you would add `Histogram(\"hello_request_seconds\", \"Request time\")` and time the handler with it. PromQL can then estimate a percentile:\n\n"

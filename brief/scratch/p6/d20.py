@@ -104,7 +104,7 @@ lesson = {
             "body": (
                 "By default Argo CD only shows differences, and you press Sync to apply them. "
                 "With automated sync, it applies new commits by itself. Two more switches decide how strict it is:\n"
-                "- `selfHeal: true` undoes changes made in the cluster but not in git. Someone runs `kubectl edit`, and seconds later git's version is back.\n"
+                "- `selfHeal: true` undoes changes made in the cluster but not in git, such as a `kubectl edit`.\n"
                 "- `prune: true` deletes objects you removed from git. Without it, they stay in the cluster as leftovers.\n\n"
                 "Both are off by default for safety. The lab's `argocd/application.yaml` turns both on.\n\n"
                 "This trips most people up: other controllers change objects too. The autoscaler from Day 18 raises the number of replicas under load. "
@@ -123,7 +123,7 @@ lesson = {
             "body": (
                 "Argo CD only deploys what git says. So something must write the new image tag into a file and commit it. The usual flow:\n"
                 "1. You push code. CI tests it and builds an image, such as `ghcr.io/you/hello-devops:1.2.0`.\n"
-                "2. A step writes the new tag into git. Your `k8s/` folder uses Kustomize, so `kustomize edit set image` adds it to `kustomization.yaml`.\n"
+                "2. A step writes the new tag into `k8s/kustomization.yaml` with `kustomize edit set image`.\n"
                 "3. CI or a person commits that change, often as a pull request.\n"
                 "4. Argo CD sees the new commit and rolls out the new image.\n\n"
                 "Some teams skip step 2 and use [Argo CD Image Updater](https://github.com/argoproj-labs/argocd-image-updater). "
@@ -324,7 +324,7 @@ lesson = {
             "- One config repo can describe many apps and clusters.\n\n"
             "Who writes the tag? The options, from manual to automatic:\n"
             "1. A person edits the tag in a pull request. Slow, but very clear.\n"
-            "2. CI runs `kustomize edit set image`, or edits a Helm values file, and opens a pull request. This needs a token that can write to the config repo, so keep that token narrow.\n"
+            "2. CI runs `kustomize edit set image` (or edits Helm values) and opens a pull request, using a narrow token.\n"
             "3. Argo CD Image Updater watches the registry and writes the tag for you. It can follow rules such as \"the newest 1.x version\".\n\n"
             "Promotion between environments works the same way. To move version 1.2.0 from staging to prod, you copy the tag from one folder to the other in a pull request. "
             "The image is built once and promoted by changing text. That is the \"build once, deploy many\" idea from Day 9.\n\n"

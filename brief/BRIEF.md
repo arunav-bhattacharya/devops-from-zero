@@ -69,6 +69,10 @@ Part extras: `intro` (2 to 3 sentences), `recap` (6 to 8 bullets), `flashcards` 
 - LISTS: whenever text names three or more things, write a bulleted list; whenever it describes steps or an order, write a numbered list ("1. ", "2. "). A short lead-in sentence, then the list.
 - Section text per lesson: 900 to 1,400 words. Day 1 and Day 23 may reach 1,600. Day 2 (setup) may be shorter in prose and longer in steps.
 
+## Voice: human, blog mode (the learner asked for this)
+
+All prose must read as if a person wrote it. Apply the human-writing skill (`/root/.claude/skills/synced/5c806f8d-0769-4e35-ac24-a3ea18081c67_433d709e-8728-4258-b10c-98909f71fe68/human-writing/SKILL.md`) in blog mode: an experienced engineer writing a blog-style lesson for one friend. Direct, concrete, uneven rhythm that follows the thought, plain opinions where there is a real basis ("for one app on your laptop, port-forward is enough"). Cut staging lines, forced triads, one-line closers, "-ing" tails, "serves as", filler transitions and fake-deep sayings. Never invent anecdotes, numbers or sources to sound human.
+
 ## Human writing rules (checked by the validator)
 
 - No em dashes or en dashes anywhere. Use a period, comma, colon or parentheses.

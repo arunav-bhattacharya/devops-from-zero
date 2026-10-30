@@ -12,7 +12,12 @@ INDEX = json.loads((ROOT / "brief/index.json").read_text())
 BANNED = ["delve", "tapestry", "intricate", "interplay", "underscore", "showcase", "testament", "pivotal",
           "crucial", "foster", "leverage", "landscape", "seamless", "transformative", "game-changer",
           "game changer", "unlock", "realm", "embark", "journey", "let's dive", "here's the thing",
-          "let's break it down", "in conclusion", "in today's fast-paced"]
+          "let's break it down", "in conclusion", "in today's fast-paced",
+          # more chatbot tells from the human-writing skill
+          "serves as", "stands as", "it's worth noting", "it is worth noting", "moreover", "furthermore", "additionally",
+          "crucially", "valuable", "enhance", "boasts", "key takeaway", "let that sink in", "honestly?", "real talk",
+          "at its core", "the real question", "what really matters", "plays a key role", "plays a crucial role",
+          "garner", "bolster", "vibrant", "meticulous", "align with", "evolving", "that's the real", "here's what"]
 LANGS = {"bash", "console", "dockerfile", "yaml", "hcl", "python", "json", "text", "ini"}
 KINDS = {"read", "watch", "listen", "docs"}
 SVG_CLASSES = {"bx", "bxo", "bxt", "bxg", "bxp", "ln", "lnd", "t", "ts", "tk"}
