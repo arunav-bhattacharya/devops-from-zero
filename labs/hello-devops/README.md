@@ -6,7 +6,7 @@ reference: every file the lessons build, already tested. Use it to check your wo
 | Path | Built on |
 |---|---|
 | `app.py`, `test_app.py`, `requirements*.txt` | Day 2 (starter files) |
-| `Dockerfile`, `.dockerignore` | Days 6 and 8 |
+| `Dockerfile`, `.dockerignore` | Days 6 and 8 (pip removed on Day 22) |
 | `compose.yaml` | Day 7 |
 | `.github/pull_request_template.md` | Day 9 |
 | `.github/workflows/ci.yml` | Days 10 and 11 |
@@ -16,6 +16,8 @@ reference: every file the lessons build, already tested. Use it to check your wo
 | `kind-config.yaml`, `k8s/` | Days 16 to 18 |
 | `chart/hello-devops/`, `chart/kind-values.yaml`, `k8s/gateway/` | Day 19 |
 | `argocd/` | Day 20 |
+| `observability/` | Day 21 |
+| `policy/` | Day 22 (and Day 23 for the AI agent policy) |
 
 Run it locally:
 

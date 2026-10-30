@@ -476,7 +476,7 @@ function viewLabs() {
   const f = files.find((x) => x.path === labSel);
   return `<div class="page"><header class="lhead"><div class="plate"><span class="pd">LAB</span><span class="pp">hello-devops · finished reference</span></div><h1>Lab files</h1><p class="goal">The finished hello-devops repo, every file tested. Build yours by following the lessons, then come here to compare. Copy a file only when you are truly stuck.</p></header>
     <div class="labgrid"><div class="labtree" role="list">${files.map((x) => `<button class="${x.path === labSel ? "on" : ""}" data-act="lab" data-p="${esc(x.path)}" role="listitem"><span>${esc(x.path)}</span><small>D${pad(x.day)}</small></button>`).join("")}</div>
-    <div style="min-width:0;display:grid;gap:10px"><span class="label">Built on Day ${pad(f.day)} · <a href="#d${pad(f.day)}">${esc(L("d" + pad(f.day)) ? L("d" + pad(f.day)).title : "")}</a> · ${f.lines} lines</span>${codeBox({ title: f.path, lang: f.lang, html: f.html })}</div></div></div>`;
+    <div style="min-width:0;display:grid;gap:10px"><span class="label">Final version from Day ${pad(f.day)} · <a href="#d${pad(f.day)}">${esc(L("d" + pad(f.day)) ? L("d" + pad(f.day)).title : "")}</a> · ${f.lines} lines</span>${codeBox({ title: f.path, lang: f.lang, html: f.html })}</div></div></div>`;
 }
 
 function viewPlan() {

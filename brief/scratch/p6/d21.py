@@ -38,7 +38,7 @@ lesson = {
             "Kubernetes saves app metrics in etcd for Prometheus to read",
         ],
         "answer": 2,
-        "why": "Prometheus pulls: it scrapes an HTTP page such as /metrics on a schedule. Grafana only draws charts from the data Prometheus stores.",
+        "why": "Prometheus pulls: it scrapes a page such as /metrics on a schedule. Grafana only draws charts from the data Prometheus stores.",
     },
     "terms": [
         {"term": "Observability", "plain": "How well you can understand what a system is doing inside by looking at what it outputs."},
@@ -53,14 +53,15 @@ lesson = {
         {
             "h": "Monitoring and observability",
             "body": (
-                "Monitoring means watching for problems you already know about. Is the pod up? Is the disk full? You set a check and an alert for each one.\n\n"
-                "**Observability** goes further. It is how well you can answer new questions about a running system from what it outputs, without shipping new code. "
-                "Here is an observability question: why are requests from one country slow since 14:00? Systems output four kinds of signals:\n"
+                "Monitoring means watching for problems you already know about. Is the pod up? Is the disk full? You write a check and an alert for each one.\n\n"
+                "**Observability** is how well you can answer new questions about a running system from what it outputs, without shipping new code. "
+                "Here is an observability question: why are requests from one country slow since 14:00? No check you wrote last month answers that. "
+                "Systems give you four kinds of signals:\n"
                 "- Metrics: numbers over time. Cheap to store, good for graphs and alerts.\n"
                 "- Logs: lines of text about single events, such as one failed request.\n"
                 "- Traces: the path of one request through many services, with timings.\n"
                 "- Profiles: where the code spends CPU and memory. The newest signal; OpenTelemetry support is still alpha.\n\n"
-                "Each signal answers a different question. Metrics tell you that something is wrong. Logs and traces help you find where and why."
+                "In practice, a metric alert tells you something is wrong. Then you open logs and traces to find where, and why."
             ),
             "refs": [
                 {"title": "What is OpenTelemetry? (observability basics)", "url": "https://opentelemetry.io/docs/what-is-opentelemetry/", "kind": "docs"},
@@ -70,17 +71,17 @@ lesson = {
         {
             "h": "Metrics with Prometheus",
             "body": (
-                "Prometheus is the standard metrics system on Kubernetes. It works by pulling. "
+                "Prometheus is the standard metrics system on Kubernetes, and it pulls. "
                 "Every few seconds it scrapes each target: it calls a page such as `/metrics` and stores the numbers with a timestamp. "
                 "Your app already serves this page. Each line is one time series: a name, some labels (key and value pairs), and a value:\n\n"
                 "`hello_requests_total{path=\"/\"} 90.0`\n\n"
-                "The main metric types are:\n"
+                "You will meet three metric types:\n"
                 "- Counter: only goes up, like `hello_requests_total`.\n"
                 "- Gauge: goes up and down, like memory in use or the length of a queue.\n"
                 "- Histogram: counts values in buckets, such as how many requests took under 100 ms. You use it for latency.\n\n"
-                "You ask questions with PromQL, the Prometheus query language. A raw counter only grows, so you usually want its speed. "
-                "`rate(hello_requests_total[5m])` gives requests per second, averaged over the last 5 minutes. "
-                "`sum(rate(hello_requests_total[5m]))` adds up all pods. Grafana runs queries like these and draws the results as dashboards."
+                "You ask questions in PromQL, the Prometheus query language. A raw counter only grows, so you almost always want its speed instead. "
+                "`rate(hello_requests_total[5m])` gives requests per second, averaged over the last 5 minutes, and `sum(rate(hello_requests_total[5m]))` adds up all pods. "
+                "If you learn one PromQL function, make it `rate()`. Grafana runs queries like these and draws the results as dashboards."
             ),
             "refs": [
                 {"title": "Prometheus: metric types", "url": "https://prometheus.io/docs/concepts/metric_types/", "kind": "docs"},
@@ -90,18 +91,18 @@ lesson = {
         {
             "h": "Prometheus on Kubernetes: the ServiceMonitor",
             "body": (
-                "On Kubernetes you rarely install Prometheus by hand. The kube-prometheus-stack Helm chart installs a full set in one go:\n"
+                "On Kubernetes you rarely install Prometheus by hand. The kube-prometheus-stack Helm chart installs the whole set at once:\n"
                 "- Prometheus, to scrape and store metrics.\n"
                 "- Grafana, with ready-made dashboards for the cluster.\n"
                 "- Alertmanager, to send alerts to email or chat.\n"
                 "- The Prometheus Operator, which runs Prometheus and Alertmanager for you.\n"
                 "- Exporters that publish metrics about nodes and Kubernetes objects.\n\n"
                 "An operator is a controller that runs a piece of software for you, driven by custom resources. "
-                "The custom resource you need is the ServiceMonitor. It says: find Services with these labels, then scrape this port and path. "
+                "The custom resource you need here is the ServiceMonitor. It says: find Services with these labels, then scrape this port and path. "
                 "The operator turns it into Prometheus settings.\n\n"
                 "This trips most people up. By default, this Prometheus only reads ServiceMonitors that carry the label `release` with the Helm release name. "
                 "The lab installs the chart as `monitoring`, so `observability/servicemonitor.yaml` has `release: monitoring`. "
-                "Forget the label and nothing fails. Your app just never shows up."
+                "Leave the label out and nothing fails. Your app just never shows up, and you get no error to search for."
             ),
             "refs": [
                 {"title": "kube-prometheus-stack Helm chart", "url": "https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack", "kind": "docs"},
@@ -111,9 +112,9 @@ lesson = {
         {
             "h": "Logs: write to stdout, ship with an agent",
             "body": (
-                "In a container, your app should write logs to standard output (stdout), one event per line. "
-                "It should not manage log files itself. Kubernetes keeps each container's output on the node, and `kubectl logs` reads it.\n\n"
-                "That works for one pod and a few minutes. It does not work for 30 pods on 3 nodes, or for a pod deleted an hour ago. "
+                "In a container, your app should write logs to standard output (stdout), one event per line, and leave log files alone. "
+                "Kubernetes keeps each container's output on the node, and `kubectl logs` reads it.\n\n"
+                "That works for one pod and the last few minutes. It falls apart with 30 pods on 3 nodes, or with a pod that was deleted an hour ago. "
                 "So teams add a log pipeline:\n"
                 "1. An agent runs on every node, for example Grafana Alloy or Fluent Bit.\n"
                 "2. It reads the container logs, adds labels such as namespace and pod, and sends them on.\n"
@@ -131,16 +132,16 @@ lesson = {
             "body": (
                 "A trace follows one request. Say a checkout call goes through an API, a payment service and a database. "
                 "The trace shows each step as a span, with its start time and duration. "
-                "You see at once that most of the time was spent waiting for the database.\n\n"
+                "One look tells you that most of the time went into waiting for the database.\n\n"
                 "To get traces, code must create spans and pass a trace ID along with each call. "
                 "[OpenTelemetry](https://opentelemetry.io/docs/what-is-opentelemetry/), often called OTel, is the open standard for this. "
-                "It is a CNCF project and gives you:\n"
+                "It is a CNCF project, and it gives you:\n"
                 "- APIs and SDKs for many languages, including Python and Java.\n"
                 "- Automatic instrumentation for common libraries, so you write less code.\n"
                 "- OTLP, one protocol for traces, metrics and logs.\n"
                 "- The Collector, a service that receives telemetry, processes it (for example, batching or filtering) and exports it.\n\n"
-                "OpenTelemetry is vendor neutral, and it does not store anything itself. "
-                "You send its data to a backend such as Jaeger, Grafana Tempo, Prometheus or a paid service, and you can switch without changing your code."
+                "OpenTelemetry is vendor neutral, and it stores nothing itself. "
+                "You send its data to a backend such as Jaeger, Grafana Tempo, Prometheus or a paid service, and you can switch backends without touching your code."
             ),
             "refs": [
                 {"title": "OpenTelemetry: what it is and is not", "url": "https://opentelemetry.io/docs/what-is-opentelemetry/", "kind": "docs"},
@@ -155,12 +156,12 @@ lesson = {
                 "- Traffic: how many requests arrive.\n"
                 "- Errors: how many requests fail.\n"
                 "- Saturation: how full the system is, such as CPU or memory.\n\n"
-                "For a single service, the [RED method](https://grafana.com/blog/the-red-method-how-to-instrument-your-services/) keeps the three that users feel: rate, errors and duration.\n\n"
-                "Next, decide what good means. An SLI (service level indicator) is a measurement, such as the share of requests that succeed. "
-                "An SLO is the target for it, such as 99.9% over 30 days. The rest is the error budget: "
-                "a 99.9% target allows about 43 minutes of full downtime in 30 days. While budget remains, ship at normal speed. When it runs out, fix reliability first.\n\n"
-                "Alert on symptoms users feel, such as many errors or slow responses. High CPU alone should not wake anyone up. "
-                "After an incident, the team writes a blameless postmortem: what happened and how to prevent it, without blaming a person."
+                "For a single service, the [RED method](https://grafana.com/blog/the-red-method-how-to-instrument-your-services/) keeps the user-facing ones: rate, errors and duration.\n\n"
+                "Then decide what good means. An SLI (service level indicator) is a measurement, such as the share of requests that succeed. "
+                "An SLO is the target for it, such as 99.9% over 30 days. What is left over is the error budget. "
+                "A 99.9% target allows about 43 minutes of full downtime in 30 days. While budget remains, ship at normal speed. When it runs out, reliability work comes first.\n\n"
+                "Alert on symptoms users feel, such as many errors or slow responses. High CPU on its own should not wake anyone up. "
+                "After an incident, the team writes a blameless postmortem: what happened and how to prevent it, with no person to blame."
             ),
             "refs": [
                 {"title": "Google SRE book: Monitoring distributed systems", "url": "https://sre.google/sre-book/monitoring-distributed-systems/", "kind": "read"},
@@ -170,9 +171,9 @@ lesson = {
         },
     ],
     "analogy": (
-        "A car gives you three views of a drive. The gauges on the dashboard are metrics: speed and fuel, always on and quick to read. "
-        "The trip log is like logs: one line for each stop. A GPS replay of one drive is a trace: every turn, and how long each part took. "
-        "Where it breaks: a car has one driver, while your app serves thousands of requests at once, so you must choose what to record and how long to keep it."
+        "A car gives you three views of a drive. The dashboard gauges are metrics: speed and fuel, always on and quick to read. "
+        "The trip log is like logs, with one line for each stop. A GPS replay of one drive is a trace: every turn, and how long each part took. "
+        "Where it breaks: a car has one driver, while your app serves thousands of requests at once. So you have to choose what to record and how long to keep it."
     ),
     "diagram": diagram,
     "diagram_caption": "Prometheus pulls metrics; a ServiceMonitor tells it where to look.",
@@ -180,7 +181,7 @@ lesson = {
         "title": "Query a counter with PromQL, no cluster needed",
         "steps": [
             {
-                "say": "You can see the whole pull model with two containers. Start the app with a single gunicorn worker. With two workers, each keeps its own counter, and Go deeper explains why that confuses Prometheus.",
+                "say": "Two containers are enough to see the whole pull model. Start the app with a single gunicorn worker. With two workers, each keeps its own counter, and Go deeper explains why that confuses Prometheus.",
                 "code": "$ docker network create obs\n$ docker run -d --name hello --network obs -p 8000:8000 hello-devops:1.0.0 \\\n    gunicorn --bind 0.0.0.0:8000 --workers 1 --no-control-socket app:app",
                 "lang": "console",
             },
@@ -190,7 +191,7 @@ lesson = {
                 "lang": "yaml",
             },
             {
-                "say": "Run Prometheus from Docker Hub with your file mounted. It finds the app by its container name, thanks to the shared network (Day 7).",
+                "say": "Run Prometheus from Docker Hub with your file mounted. It finds the app by its container name on the shared network (Day 7).",
                 "code": "$ docker run -d --name prom --network obs -p 9090:9090 \\\n    -v \"$PWD/prometheus.yml:/etc/prometheus/prometheus.yml\" prom/prometheus",
                 "lang": "console",
             },
@@ -200,12 +201,12 @@ lesson = {
                 "lang": "console",
             },
             {
-                "say": "Ask for the raw counter through the HTTP API. The web UI at http://localhost:9090 shows the same. I had sent 30 requests earlier, so mine says 90. Prometheus added the `job` and `instance` labels.",
+                "say": "Ask for the raw counter through the HTTP API. The web UI at http://localhost:9090 shows the same thing. I had sent 30 requests before this, so mine says 90. Prometheus added the `job` and `instance` labels itself.",
                 "code": "$ curl -s localhost:9090/api/v1/query --data-urlencode 'query=hello_requests_total'\n{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{\"__name__\":\"hello_requests_total\",\"instance\":\"hello:8000\",\"job\":\"hello\",\"path\":\"/\"},\"value\":[1793331673.198,\"90\"]}]}}",
                 "lang": "console",
             },
             {
-                "say": "Now ask for the speed. `rate(...[1m])` is the increase per second over the last minute: about 1, because you sent one request per second.",
+                "say": "Now ask for the speed. `rate(...[1m])` is the increase per second over the last minute. It comes out at about 1, because you sent one request per second.",
                 "code": "$ curl -s localhost:9090/api/v1/query --data-urlencode 'query=rate(hello_requests_total[1m])'\n{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":[{\"metric\":{\"instance\":\"hello:8000\",\"job\":\"hello\",\"path\":\"/\"},\"value\":[1793331673.187,\"1.0000000000000002\"]}]}}",
                 "lang": "console",
             },
@@ -249,13 +250,13 @@ lesson = {
     ],
     "mistake": (
         "Creating a ServiceMonitor without the `release: monitoring` label, or with a selector that matches no Service. "
-        "Nothing errors, and your app simply never appears in Prometheus. "
-        "Check the target list in Prometheus first, then compare labels with `kubectl -n hello get svc --show-labels`."
+        "You get no error at all, and your app simply never appears in Prometheus. "
+        "Look at the target list in Prometheus first, then compare labels with `kubectl -n hello get svc --show-labels`."
     ),
     "real_world": (
         "A payments team might set an SLO such as 99.95% of card payments succeed within 2 seconds, and page someone only when the error budget burns too fast. "
-        "Every service shows the same RED dashboard, so anyone on call can read any service. "
-        "Traces from OpenTelemetry show which call to a partner bank made a slow payment slow."
+        "Every service has the same RED dashboard, so whoever is on call can read any service. "
+        "When a payment is slow, a trace from OpenTelemetry shows which call to a partner bank took the time."
     ),
     "task": {
         "title": "Watch hello-devops in Grafana",
@@ -280,16 +281,16 @@ lesson = {
         "answer": (
             "The app serves its counters on /metrics. Prometheus scrapes that page every 15 seconds and stores each value with a timestamp. "
             "It knows where to look because the Prometheus Operator turns our ServiceMonitor, which matches the hello-devops Service by label, into scrape settings. "
-            "Grafana then runs a PromQL query such as sum(rate(hello_requests_total[5m])) and draws the result."
+            "Grafana runs a PromQL query such as sum(rate(hello_requests_total[5m])) and draws the result."
         ),
     },
     "recap": [
         "Monitoring watches for known problems; observability lets you ask new questions from a system's outputs.",
-        "Metrics, logs and traces each answer a different question; profiles are a newer fourth signal.",
+        "Metrics say that something is wrong; logs and traces help you find where and why. Profiles are a newer, fourth signal.",
         "Prometheus pulls: it scrapes /metrics on a schedule and stores time series with labels.",
         "Use rate() on counters to get per-second speed, and let Grafana draw PromQL results.",
         "A ServiceMonitor tells the Prometheus Operator what to scrape, and it needs the release label.",
-        "Set SLOs on what users feel, alert on symptoms, and learn from incidents with blameless postmortems.",
+        "Set SLOs on what users feel, alert on symptoms, and write blameless postmortems after incidents.",
     ],
     "check": [
         {
@@ -312,7 +313,7 @@ lesson = {
                 "Whether its labels and selector match the release and the Service",
             ],
             "answer": 3,
-            "why": "Prometheus only reads ServiceMonitors with the release label, and the selector must match the Service's labels. A mismatch fails silently.",
+            "why": "Prometheus only reads ServiceMonitors with the release label, and the selector must match the Service's labels. A mismatch fails without any error.",
         },
         {
             "q": "Your SLO is 99.9% of requests succeed over 30 days. Halfway through the month, 0.08% of requests have failed. What does this tell you?",
@@ -323,7 +324,7 @@ lesson = {
                 "You should alert on CPU instead of errors",
             ],
             "answer": 0,
-            "why": "The budget is 0.1%, and 0.08% is already used with half the month left, so reliability work comes first.",
+            "why": "The budget is 0.1%. With 0.08% already used and half the month left, reliability work comes first.",
         },
     ],
     "interview": [
@@ -332,7 +333,7 @@ lesson = {
             "a": (
                 "Monitoring watches for known failures with checks and alerts, such as a pod being down or a disk filling up. "
                 "Observability is how well you can understand a system's inner state from its outputs, including questions you did not plan for. "
-                "In practice you get it from good metrics, structured logs and traces that share labels and IDs. "
+                "In practice it comes from good metrics, structured logs and traces that share labels and IDs. "
                 "Monitoring tells you that something is wrong; observability helps you find out why."
             ),
         },
@@ -354,18 +355,17 @@ lesson = {
             "Try it: send 6 requests, then fetch `/metrics` a few times. I saw 5, then 1, then 5 again.\n\n"
             "Prometheus sees a counter that went down and treats it as a restart. `rate()` then counts the jumps as new requests, so the speed looks higher than it is. "
             "That is why the worked example ran one worker. Real apps fix this in one of two ways:\n"
-            "- Run one worker per container and add more pods. Kubernetes already handles scaling.\n"
+            "- Run one worker per container and add more pods. Kubernetes already handles the scaling.\n"
             "- Use the Python client's multiprocess mode: workers share a folder set by `PROMETHEUS_MULTIPROC_DIR`, and `/metrics` adds them up.\n\n"
-            "Now latency. A counter tells you how many, not how fast. For speed, use a histogram. "
+            "A counter tells you how many requests you served, not how fast. For speed you need a histogram. "
             "It counts requests into buckets: under 0.1 seconds, under 0.25 seconds, and so on. "
             "In Python you would add `Histogram(\"hello_request_seconds\", \"Request time\")` and time the handler with it. PromQL can then estimate a percentile:\n\n"
             "`histogram_quantile(0.95, sum by (le) (rate(hello_request_seconds_bucket[5m])))`\n\n"
-            "This reads: the time within which 95% of requests finished, over the last 5 minutes. Percentiles beat averages. "
+            "This reads: the time within which 95% of requests finished, over the last 5 minutes. I trust percentiles more than averages. "
             "If 99 requests take 10 ms and one takes 5 seconds, the average looks fine, but one user waited 5 seconds.\n\n"
-            "Last, alerts. An alerting rule is a PromQL expression plus a duration. "
-            "For example: fire when more than 5% of requests fail for 10 minutes. "
+            "Alerts come last. An alerting rule is a PromQL expression plus a duration. For example, fire when more than 5% of requests fail for 10 minutes. "
             "kube-prometheus-stack reads rules from PrometheusRule objects, found by the same `release` label as ServiceMonitors. "
-            "Alertmanager then groups the alerts and sends them to chat, email or a paging tool."
+            "Alertmanager groups the alerts and sends them to chat, email or a paging tool."
         ),
     },
     "sources": [

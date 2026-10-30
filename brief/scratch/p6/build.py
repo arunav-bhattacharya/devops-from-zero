@@ -17,9 +17,9 @@ part = {
     "part": 6,
     "title": "Modern DevOps: what's trending",
     "intro": (
-        "Part 6 connects everything you built and looks at where DevOps is heading. "
-        "You let Argo CD deploy from git, watch hello-devops with Prometheus and Grafana, and lock down your supply chain with scanning, signing and policies. "
-        "Then you meet platform engineering, FinOps and AI agents, and ship hello-devops end to end in the capstone."
+        "In Part 6, Argo CD takes over deploys from git, Prometheus and Grafana show how hello-devops behaves, and your release gets scanned and signed. "
+        "Then you look at what teams are adopting now: platform engineering, FinOps and AI agents. "
+        "The last lesson is the capstone, where you ship hello-devops end to end."
     ),
     "lessons": [d20.lesson, d21.lesson, d22.lesson, d23.lesson],
     "recap": [
@@ -29,7 +29,7 @@ part = {
         "Logs go to stdout and on to a store like Loki; traces and OpenTelemetry show one request's path.",
         "SLOs and error budgets turn reliability into a number the team can plan with.",
         "Your release now scans, writes an SBOM, signs keylessly and attests provenance; Kyverno checks Pods at the door.",
-        "Platform engineering, FinOps and AI agents with guardrails are where many teams are heading.",
+        "Platform teams build golden paths, FinOps gives every cost an owner, and AI agents get read-only access plus human review.",
         "The capstone ships hello-devops from a commit to a signed, observed, GitOps-managed deploy.",
     ],
     "flashcards": [

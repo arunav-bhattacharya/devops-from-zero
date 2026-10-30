@@ -1,13 +1,13 @@
 {
  "part": 3,
  "title": "CI/CD with GitHub Actions",
- "intro": "Until now you built, tested and packaged hello-devops by hand. In this part GitHub does it for you. Every pull request is linted, tested and built, broken code cannot reach main, and a version tag publishes a release image on its own. It comes now because you have a tested app and a production-ready image, which is exactly what a pipeline needs.",
+ "intro": "Until now you ran every check and build for hello-devops yourself. In this part GitHub runs them for you. Each pull request gets linted, tested and built, only green ones reach main, and pushing a version tag publishes a release image. You already have a tested app and a production-ready image, and that is all a pipeline needs to start.",
  "lessons": [
   {
    "id": "d09",
    "title": "Git, pull requests and CI/CD ideas",
    "minutes": 35,
-   "goal": "By the end you can open, review and merge a pull request with gh, tag a version, and explain CI, continuous delivery and continuous deployment in plain words.",
+   "goal": "By the end you can open, review and merge a pull request with gh, tag a version, and tell continuous integration, delivery and deployment apart.",
    "guess": {
     "q": "Your new team says it practices continuous deployment. What does that mean?",
     "options": [
@@ -17,7 +17,7 @@
      "The production servers are never switched off"
     ],
     "answer": 2,
-    "why": "Continuous deployment releases every passing change automatically. Merging daily is continuous integration, and a human release click is continuous delivery."
+    "why": "With continuous deployment, every change that passes the pipeline goes live and nobody clicks anything. Merging daily is continuous integration, and a human release click is continuous delivery."
    },
    "terms": [
     {
@@ -52,7 +52,7 @@
    "sections": [
     {
      "h": "Git for teams: branches, commits and merges",
-     "body": "On your own, you can commit straight to `main`. In a team, that breaks fast. Two people change the same file, and someone's work gets lost or the app stops working.\n\nGit solves this with branches. A **branch** is a movable label that points at a line of commits. You commit on your branch, and `main` stays untouched until you merge.\n\nThe everyday loop looks like this:\n\n1. Create a branch from the latest `main`, for example `git switch -c add-pr-template`.\n2. Change files and commit in small steps.\n3. Push the branch to GitHub.\n4. Merge it into `main` once it is reviewed and tested.\n\nA merge combines two lines of work. Most of the time git does it alone. When both branches changed the same lines, git stops and asks you to choose. That is a merge conflict. Git marks the clash in the file with `<<<<<<<`, `=======` and `>>>>>>>`. You edit the file to the right result, then add and commit it. Small, short-lived branches make conflicts rare and easy to fix.",
+     "body": "When you work alone, you can commit straight to `main`. With a team, that breaks quickly. Two people change the same file, and one person's work gets lost, or `main` ends up with code that does not run.\n\nBranches fix this. A **branch** is a movable label that points at a line of commits. You commit on your branch, and `main` does not change until you merge.\n\nThe everyday loop looks like this:\n\n1. Create a branch from the latest `main`, for example `git switch -c add-pr-template`.\n2. Change files and commit in small steps.\n3. Push the branch to GitHub.\n4. Merge it into `main` once it is reviewed and tested.\n\nA merge combines two lines of work, and most of the time git does it alone. It stops only when both branches changed the same lines. That is a merge conflict. Git marks the clash in the file with `<<<<<<<`, `=======` and `>>>>>>>`, and you edit the file until it says what it should. Then you add and commit it. The fewer lines a branch touches, the rarer conflicts get, which is one more reason to keep branches small and short.",
      "refs": [
       {
        "title": "About Git",
@@ -73,7 +73,7 @@
     },
     {
      "h": "Pull requests and code review",
-     "body": "A pull request (PR) is a GitHub page that says: please merge my branch into `main`. It shows the diff (the lines you changed), a conversation, and the results of automatic checks.\n\nA pull request gives a team three things:\n\n- Review: a teammate reads the change and comments on single lines.\n- Checks: CI runs the tests and shows a green tick or a red cross.\n- A record: months later, you can see why a line changed and who agreed.\n\nKeep PRs small, so a reviewer can read one in ten minutes. Say what changed and how you tested it. A PR template, which you add today, reminds everyone to do that. Review the code and be kind to the person who wrote it.\n\nYou can open and merge PRs in the browser. Today you use `gh`, the GitHub CLI from Day 2, because it is fast and you can script it.",
+     "body": "A pull request (PR) is a GitHub page that asks to merge your branch into `main`. It shows the diff (the lines you changed), a conversation, and the results of automatic checks. Teams use it for:\n\n- Review: a teammate reads the change and comments on single lines.\n- Checks: CI runs the tests and shows a green tick or a red cross.\n- A record: months later, you can see why a line changed and who agreed.\n\nSmall PRs get better reviews. Aim for one that a reviewer can read in ten minutes. In the description, say what changed and how you tested it. The PR template you add today puts those questions in the box for you. And when you review a teammate's PR, be kind to the person while you are strict about the code.\n\nYou can open and merge PRs in the browser. Today you use `gh`, the GitHub CLI from Day 2, because it is fast and you can script it.",
      "refs": [
       {
        "title": "About pull requests",
@@ -89,7 +89,7 @@
     },
     {
      "h": "Trunk-based development and GitFlow",
-     "body": "A team also agrees on a branching strategy: how long branches live and where releases come from. Two styles are common.\n\nIn trunk-based development, everyone merges small branches into one main branch, the trunk, at least once a day. Branches live for hours, or a day or two. `main` is always in a state you could release. Unfinished features hide behind feature flags, which you meet below.\n\nGitFlow uses several long-lived branches:\n\n- `main` holds released code only.\n- `develop` collects finished features.\n- `feature/...` branches start from `develop`.\n- `release/...` and `hotfix/...` branches prepare and patch releases.\n\nGitFlow fits software that ships big versions a few times a year. Teams that deploy often mostly prefer trunk-based development. Long-lived branches drift apart, and merging them back is slow and risky. GitHub's own [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow) is a simple trunk-based style, and this course uses it.",
+     "body": "Your team also has to agree how long branches live and where releases come from. That agreement is the branching strategy, and two styles are common.\n\nIn trunk-based development, everyone merges small branches into one main branch, the trunk, at least once a day. A branch lives for hours, or a day or two, and `main` is always in a state you could release. Unfinished features hide behind feature flags, which come up again below.\n\nGitFlow uses several long-lived branches:\n\n- `main` holds released code only.\n- `develop` collects finished features.\n- `feature/...` branches start from `develop`.\n- `release/...` and `hotfix/...` branches prepare and patch releases.\n\nGitFlow fits software that ships a big version a few times a year. If you deploy often, it gets in your way. Long-lived branches drift apart, and merging them back is slow and risky, so most teams that deploy often use trunk-based development. This course uses [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow), GitHub's own simple trunk-based style.",
      "refs": [
       {
        "title": "GitHub flow",
@@ -100,7 +100,7 @@
     },
     {
      "h": "CI, continuous delivery and continuous deployment",
-     "body": "Continuous integration (CI) means you merge small changes often, and a server builds and tests every change automatically. The goal is fast feedback. A broken test shows up minutes after your push, while the change is still fresh in your head.\n\nCD has two meanings, and people mix them up:\n\n- Continuous delivery: every change that passes is ready to release. A person clicks a button to put it in production.\n- Continuous deployment: every change that passes goes to production automatically. There is no human step.\n\nThe steps a change goes through are called a pipeline. A typical pipeline runs in this order:\n\n1. Build: install dependencies and package the code.\n2. Test: run linters and automated tests.\n3. Publish: build a container image and push it to a registry.\n4. Deploy: release that image to staging, then to production.\n\nOne rule matters a lot: **build once, deploy many**. You build the image one time, and the very same image (same digest) moves from staging to production. You never rebuild for production. A rebuild can pull newer packages, so what you tested would not be what you ship.",
+     "body": "Continuous integration (CI) means you merge small changes often, and a server builds and tests every change automatically. You hear about a broken test minutes after your push, while you still remember what you changed.\n\nCD has two meanings, and people mix them up:\n\n- Continuous delivery: every change that passes is ready to release. A person clicks a button to put it in production.\n- Continuous deployment: every change that passes goes to production automatically. There is no human step.\n\nThe steps a change goes through are called a pipeline. A typical pipeline runs in this order:\n\n1. Build: install dependencies and package the code.\n2. Test: run linters and automated tests.\n3. Publish: build a container image and push it to a registry.\n4. Deploy: release that image to staging, then to production.\n\nBuild the image one time and never again. This rule is called **build once, deploy many**: the very same image (same digest) moves from staging to production. If you rebuild for production, the build can pull newer packages, and what you ship is no longer what you tested.",
      "refs": [
       {
        "title": "About continuous integration",
@@ -116,7 +116,7 @@
     },
     {
      "h": "Deployment strategies: how new versions reach users",
-     "body": "Deploying means swapping the old version for the new one while users keep working. There are four common ways to do it:\n\n- Rolling: replace servers or containers a few at a time. Kubernetes does this by default (Day 17).\n- Blue/green: run the new version (green) next to the old one (blue), then switch all traffic at once.\n- Canary: send a small share of traffic, say 5%, to the new version, then grow it step by step.\n- Feature flags: ship new code switched off, then turn it on for some users with a setting.\n\nEach one is a trade-off. Rolling needs no extra servers, but old and new versions run side by side for a while. Blue/green makes rollback instant, but needs double the capacity during the switch. Canary limits the damage of a bad release, but needs good metrics to judge it (Day 21). Feature flags need no deploy at all, but leave `if` branches in the code that you must clean up later.\n\nTools such as [Argo Rollouts](https://github.com/argoproj/argo-rollouts) automate blue/green and canary releases on Kubernetes.",
+     "body": "Deploying means swapping the old version for the new one while users keep working. Four ways are common:\n\n- Rolling: replace servers or containers a few at a time. Kubernetes does this by default (Day 17).\n- Blue/green: run the new version (green) next to the old one (blue), then switch all traffic at once.\n- Canary: send a small share of traffic, say 5%, to the new version, then grow it step by step.\n- Feature flags: ship new code switched off, then turn it on for some users with a setting.\n\nNone of them is free. Rolling needs no extra servers, but old and new versions serve users side by side for a while. Blue/green gives you an instant rollback and costs double the capacity during the switch. A canary limits the damage of a bad release, as long as you have good metrics to judge it (Day 21). Feature flags need no deploy at all. You pay for them later, with `if` branches in the code that someone has to clean up.\n\nOn Kubernetes, tools such as [Argo Rollouts](https://github.com/argoproj/argo-rollouts) automate blue/green and canary releases.",
      "refs": [
       {
        "title": "Argo Rollouts: blue/green and canary for Kubernetes",
@@ -132,7 +132,7 @@
     },
     {
      "h": "Semantic versions and git tags",
-     "body": "A version number tells users how much changed. [Semantic versioning](https://github.com/semver/semver/blob/master/semver.md) uses three numbers, MAJOR.MINOR.PATCH:\n\n- MAJOR goes up when you break compatibility, as in 2.0.0.\n- MINOR goes up when you add a feature that stays compatible, as in 1.3.0.\n- PATCH goes up for a compatible bug fix, as in 1.2.1.\n\nA git tag is a name that points at one commit for good, such as `v1.2.0`. A branch label moves with each new commit, while a tag stays where you put it. Use annotated tags (`git tag -a`). They store who made the tag, when, and a message.\n\nTags connect git to releases. On Day 12, pushing a tag such as `v1.0.0` starts a workflow that builds and publishes the image `1.0.0`. The git tag, the image tag and the app's `version` field then all match. Note that a plain `git push` does not send tags. You push each tag by name.",
+     "body": "A version number tells users how much changed. [Semantic versioning](https://github.com/semver/semver/blob/master/semver.md) uses three numbers, MAJOR.MINOR.PATCH:\n\n- MAJOR goes up when you break compatibility, as in 2.0.0.\n- MINOR goes up when you add a feature that stays compatible, as in 1.3.0.\n- PATCH goes up for a compatible bug fix, as in 1.2.1.\n\nA git tag is a name for one commit, such as `v1.2.0`. A branch label moves forward with each new commit, but a tag stays where you put it. Use annotated tags (`git tag -a`), which also store who made the tag, when, and a message.\n\nIn this course, a tag is what starts a release. On Day 12, pushing the tag `v1.0.0` starts a workflow that builds and publishes the image `1.0.0`. The git tag, the image tag and the app's `version` field then all match. One catch: a plain `git push` does not send tags, so you push each tag by name.",
      "refs": [
       {
        "title": "Semantic Versioning 2.0.0 specification",
@@ -147,34 +147,34 @@
      ]
     }
    ],
-   "analogy": "A pull request is like a suggested edit in a shared document. You write on your own copy, a colleague reads the suggestion and comments, and the owner accepts it into the main text. CI is a spell checker that runs on every suggestion before anyone reads it. The analogy breaks because git keeps many parallel copies and combines them line by line, while a document has only one text.",
+   "analogy": "A pull request works like a suggested edit in a shared document. You write on your own copy, a colleague reads the suggestion and comments, and the owner accepts it into the main text. CI is a spell checker that runs on every suggestion before anyone reads it. Where it breaks: a document has one text, while git keeps many parallel copies and combines them line by line.",
    "diagram": "<svg viewBox=\"0 0 560 210\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A change moves from a branch to a pull request with CI checks and review, then merges to main and gets a version tag\"><rect x=\"8\" y=\"24\" width=\"88\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"52\" y=\"51\" class=\"t\" font-size=\"13\" text-anchor=\"middle\">Branch</text><line x1=\"96\" y1=\"46\" x2=\"120\" y2=\"46\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"124\" y=\"24\" width=\"128\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"188\" y=\"51\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Pull request</text><line x1=\"252\" y1=\"46\" x2=\"276\" y2=\"46\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"280\" y=\"24\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"348\" y=\"51\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Merge to main</text><line x1=\"416\" y1=\"46\" x2=\"440\" y2=\"46\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"444\" y=\"24\" width=\"108\" height=\"44\" rx=\"10\" class=\"bxg\"/><text x=\"498\" y=\"51\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Tag v1.2.0</text><text x=\"52\" y=\"88\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">short-lived</text><text x=\"348\" y=\"88\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">main stays green</text><text x=\"498\" y=\"88\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">a fixed release</text><rect x=\"96\" y=\"128\" width=\"112\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"152\" y=\"155\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">CI checks</text><rect x=\"228\" y=\"128\" width=\"120\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"288\" y=\"155\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Code review</text><line x1=\"152\" y1=\"128\" x2=\"170\" y2=\"72\" class=\"lnd\" marker-end=\"url(#ar)\"/><line x1=\"288\" y1=\"128\" x2=\"220\" y2=\"72\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"152\" y=\"192\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">runs on every push</text><text x=\"288\" y=\"192\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">a teammate reads it</text></svg>",
    "diagram_caption": "One change: a short branch, a pull request with checks and review, a merge, then a tag for the release.",
    "worked": {
     "title": "Resolve a merge conflict",
     "steps": [
      {
-      "say": "Two branches changed the same line of `app.py`. On `main`, a teammate changed the default greeting to 'Hello, DevOps team!'. On your branch `friendly`, you changed it to 'Hi there, DevOps!'. Git cannot keep both by itself.",
+      "say": "Two branches changed the same line of `app.py`. On `main`, a teammate changed the default greeting to 'Hello, DevOps team!'. On your branch `friendly`, you changed it to 'Hi there, DevOps!'. Git cannot keep both on its own.",
       "code": "$ git switch main\n$ git merge friendly\nAuto-merging app.py\nCONFLICT (content): Merge conflict in app.py\nAutomatic merge failed; fix conflicts and then commit the result.",
       "lang": "console"
      },
      {
-      "say": "`git status` shows `UU`, which means both sides changed the file and it is not merged yet. Look at the clash.",
+      "say": "`git status` shows `UU`: both sides changed the file, and it is not merged yet. Find the clash.",
       "code": "$ git status --short\nUU app.py\n$ grep -n -A4 \"<<<<<<<\" app.py\n3:<<<<<<< HEAD\n4-GREETING = os.getenv(\"GREETING\", \"Hello, DevOps team!\")\n5-=======\n6-GREETING = os.getenv(\"GREETING\", \"Hi there, DevOps!\")\n7->>>>>>> friendly",
       "lang": "console"
      },
      {
-      "say": "Read the markers. Above `=======` is your current branch (HEAD, here `main`). Below it is the incoming branch. You decide the result: here you combine both ideas, and you delete all three marker lines.",
+      "say": "Above `=======` is your current branch (HEAD, here `main`). Below it is the incoming branch. You decide the result. Here you combine both ideas and delete all three marker lines.",
       "code": "GREETING = os.getenv(\"GREETING\", \"Hi there, DevOps team!\")",
       "lang": "python"
      },
      {
-      "say": "Mark the conflict as solved by adding the file, then commit. The graph shows the two lines of work joined by a merge commit.",
+      "say": "Adding the file tells git the conflict is solved. Then commit. The graph shows the two lines of work joined by a merge commit.",
       "code": "$ git add app.py\n$ git commit -m \"Merge friendly: keep both ideas\"\n$ git log --oneline --graph\n*   763f293 Merge friendly: keep both ideas\n|\\\n| * d4ba8e1 Friendlier greeting\n* | 024c024 Greet the team\n|/\n* 7142d7d Add greeting",
       "lang": "console"
      },
      {
-      "say": "Run the tests before you push. Git only checks that the text merged cleanly, so it cannot tell if the code still works. Here the teammate's test still expects 'Hello, DevOps team!', so you fix `test_app.py` and commit before you push. Catching this kind of break is exactly the job of CI.",
+      "say": "Run the tests before you push. Git only checks that the text merged cleanly, and it has no idea whether the code still works. Here the teammate's test still expects 'Hello, DevOps team!', so you fix `test_app.py` and commit again. Breaks like this are what CI is for.",
       "code": "$ pytest -q | tail -2\nFAILED test_app.py::test_index_says_hello - AssertionError: assert 'Hi there,...\n1 failed, 2 passed in 0.20s",
       "lang": "console"
      }
@@ -230,19 +230,19 @@
      "what": "List pull requests that were merged."
     }
    ],
-   "mistake": "Working on one big branch for days, then opening a huge pull request. Reviews get shallow, conflicts pile up, and a failing test is hard to trace. Make one small branch per change, open the PR early (as a draft if needed), and merge within a day or two.",
-   "real_world": "At PayLoop, a made-up payments company, every change to the checkout service goes through a pull request. The merge button only turns on after one approving review and green CI. Merges to `main` deploy to staging automatically, and the same image reaches production when an engineer clicks approve, which is continuous delivery.",
+   "mistake": "The classic mistake is a big branch that lives for days and ends as one huge pull request. Reviewers can only skim it, conflicts pile up, and when a test fails you can't tell which change broke it. Make one small branch per change, open the PR early (as a draft if it is not ready), and merge within a day or two.",
+   "real_world": "At PayLoop, a made-up payments company, every change to the checkout service goes through a pull request. The merge button turns on only after one approving review and green CI. Merges to `main` deploy to staging on their own. The same image reaches production when an engineer clicks approve, and that human click is what makes it continuous delivery.",
    "task": {
     "title": "Your first pull request with gh",
     "steps": [
      "In `~/code/hello-devops`, switch to `main` and pull, so you start from the latest code.",
      "Create a branch called `add-pr-template`.",
-     "Create `.github/pull_request_template.md` with the content from the Files section, and commit it with a clear message.",
+     "Create `.github/pull_request_template.md` with the content from the Files section. Commit it with a message that says what it adds.",
      "Push the branch and open a pull request with `gh pr create --fill`.",
-     "Open the PR in the browser. Read the Files changed tab as a reviewer would, and leave one comment on a line.",
+     "Open the PR in the browser. Read the Files changed tab the way a reviewer would, and leave a comment on one line.",
      "Merge the PR with squash and delete the branch, using `gh pr merge`.",
      "Update your local `main`, then create the annotated tag `v0.1.0` and push it.",
-     "Start a second branch, change one line, and push it. On the repository page, click Compare & pull request: the description box now starts from your template. Close that PR if you do not need it."
+     "Start a second branch, change one line, and push it. On the repository page, click Compare & pull request. The description box now starts from your template. Close that PR if you don't need it."
     ],
     "hints": [
      "If `gh pr create` asks where to push the branch, pick your own repository.",
@@ -253,13 +253,13 @@
    },
    "explain_back": {
     "prompt": "Explain continuous integration, continuous delivery and continuous deployment to a teammate in 3 to 4 sentences. Say where a human decides.",
-    "answer": "Continuous integration means everyone merges small changes often, and every change is built and tested automatically, so problems show up within minutes. Continuous delivery adds the rest of the pipeline: every change that passes is packaged and ready to release, and a person decides when it goes to production. Continuous deployment removes that last human step, so every passing change goes live on its own. In all three, you build the artifact once and promote that same artifact through each stage."
+    "answer": "Continuous integration means we all merge small changes often, and a server builds and tests each one, so we hear about a break within minutes. Continuous delivery carries every passing change through the rest of the pipeline, so it is packaged and ready to release, and a person decides when it goes to production. Continuous deployment drops that last human step, and every passing change goes live on its own. In both kinds of CD, the artifact is built once, and that same artifact moves through each stage."
    },
    "recap": [
     "Work on short-lived branches and merge them through pull requests with review and checks.",
-    "A merge conflict means two branches changed the same lines; you pick the result and commit.",
-    "Trunk-based development keeps main releasable with small daily merges; GitFlow uses long-lived branches.",
-    "CI tests every change; continuous delivery keeps it releasable; continuous deployment releases it automatically.",
+    "A merge conflict means two branches changed the same lines. You pick the result and commit it.",
+    "Trunk-based development keeps main releasable with small daily merges. GitFlow uses long-lived branches and suits rare, big releases.",
+    "CI builds and tests every change. Continuous delivery keeps it ready to release, and continuous deployment releases it automatically.",
     "Build once, deploy many: promote one tested image instead of rebuilding for each environment.",
     "Semantic versions and annotated git tags such as v1.2.0 name exact releases."
    ],
@@ -273,7 +273,7 @@
       "Blue/green deployment"
      ],
      "answer": 1,
-     "why": "Every change is releasable and a human picks the moment, which is continuous delivery."
+     "why": "Every change is ready to ship and a person picks the moment. That is continuous delivery."
     },
     {
      "q": "You fix a bug in version 2.4.1, and nobody has to change how they call your API. What is the next version?",
@@ -301,16 +301,16 @@
    "interview": [
     {
      "q": "What is the difference between continuous delivery and continuous deployment?",
-     "a": "Both build, test and package every change automatically, so main is always releasable. In continuous delivery, a person decides when a release goes to production, often with one click or an approval. In continuous deployment, every change that passes the pipeline goes to production with no human step. Continuous deployment needs strong automated tests, good monitoring and fast rollback, because nobody looks at each release by hand."
+     "a": "Both build, test and package every change automatically, so main is always releasable. In continuous delivery, a person decides when a release goes to production, often with one click or an approval. In continuous deployment, every change that passes the pipeline goes to production with no human step. That only works with strong automated tests, good monitoring and fast rollback, because nobody looks at each release by hand."
     },
     {
      "q": "Why do many teams prefer trunk-based development to GitFlow?",
-     "a": "Trunk-based development keeps branches small and short-lived, so merges are easy and conflicts are rare. Main is always releasable, which fits CI and frequent deploys. GitFlow's long-lived develop and release branches drift apart, so merges get big and risky. GitFlow still fits products that ship versioned releases a few times a year, or that must patch several old versions."
+     "a": "Trunk-based development keeps branches small and short-lived, so merges are easy and conflicts are rare. Main stays releasable, which fits CI and frequent deploys. In GitFlow, the long-lived develop and release branches drift apart, and merges get big and risky. GitFlow still fits products that ship versioned releases a few times a year, or that must patch several old versions."
     }
    ],
    "deeper": {
     "minutes": 12,
-    "body": "When you merge a pull request on GitHub, you pick one of three methods. Each one leaves a different history on `main`:\n\n- Create a merge commit: keeps every commit from the branch and adds one merge commit with two parents.\n- Squash and merge: combines all branch commits into one new commit on `main`.\n- Rebase and merge: replays each branch commit on top of `main`, with no merge commit.\n\nMany trunk-based teams choose squash. One PR becomes one commit, so `git log` stays readable and `git revert` can undo a whole PR in one step. The small commits inside the PR are still visible on the PR page. Admins can switch methods on or off in the repository settings, so the whole team uses one style. See [About merge methods on GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github).\n\nHow does git merge text at all? It uses a three-way merge. First it finds the merge base: the last commit both branches share. Then it compares each side with that base, region by region:\n\n1. If only one side changed a region, git takes that change.\n2. If both sides made the same change, git takes it once.\n3. If both sides changed the same region in different ways, git marks a conflict.\n\nThis explains why small, short branches conflict less. The fewer lines each side changed since the merge base, the smaller the chance that they touch the same region.\n\nIt also explains a trap. Git can merge two changes cleanly that still break each other. One branch renames a function, and another branch adds a new call to the old name. No lines clash, so git is happy, but the code is broken. Only tests catch this. That is why CI runs on the merged result of a pull request, which Day 10 shows in the `pull_request` event.\n\nLast, rebasing. `git rebase main` replays your branch's commits on top of the newest `main`, so your branch looks as if you started it today. It rewrites your commits with new IDs. Only rebase branches that nobody else works on, and push afterwards with `git push --force-with-lease`, which refuses to overwrite work you have not seen."
+    "body": "When you merge a pull request on GitHub, you pick one of three methods, and each leaves a different history on `main`:\n\n- Create a merge commit: keeps every commit from the branch and adds one merge commit with two parents.\n- Squash and merge: combines all branch commits into one new commit on `main`.\n- Rebase and merge: replays each branch commit on top of `main`, with no merge commit.\n\nMany trunk-based teams choose squash, and it is a good default. One PR becomes one commit, so `git log` stays readable and `git revert` can undo a whole PR in one step. The small commits inside the PR are still visible on the PR page. Admins can switch methods on or off in the repository settings, so the whole team uses one style. See [About merge methods on GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github).\n\nHow does git merge text at all? It uses a three-way merge. First it finds the merge base: the last commit both branches share. Then it compares each side with that base, region by region:\n\n1. If only one side changed a region, git takes that change.\n2. If both sides made the same change, git takes it once.\n3. If both sides changed the same region in different ways, git marks a conflict.\n\nSo the fewer lines each side changed since the merge base, the smaller the chance that both touch the same region. That is the mechanical reason short branches conflict less.\n\nThe same rules hide a trap. Git can cleanly merge two changes that still break each other. Say one branch renames a function, and another branch adds a new call to the old name. No lines clash, so git is happy, and the code is broken anyway. Only tests catch this. That is why CI runs on the merged result of a pull request, which you will see in the `pull_request` event on Day 10.\n\nLast, rebasing. `git rebase main` replays your branch's commits on top of the newest `main`, so your branch looks as if you started it today. It rewrites your commits with new IDs. Only rebase branches that nobody else works on, and push afterwards with `git push --force-with-lease`. That flag refuses to overwrite work you have not seen."
    },
    "sources": [
     {
@@ -345,7 +345,7 @@
      "On a fresh virtual machine made just for this job"
     ],
     "answer": 3,
-    "why": "GitHub-hosted runners are new virtual machines for every job, so nothing from the last run is left. That is why almost every job starts with checkout and setup steps."
+    "why": "GitHub-hosted runners are brand-new virtual machines for every job, so nothing from the last run is left. That is why almost every job starts with checkout and setup steps."
    },
    "terms": [
     {
@@ -380,7 +380,7 @@
    "sections": [
     {
      "h": "What GitHub Actions is",
-     "body": "GitHub Actions is the automation built into GitHub. You describe a task in a YAML file, and GitHub runs it when something happens in your repository. CI is the most common use. You can also automate releases, issue labels or nightly checks.\n\nEverything fits in a small hierarchy:\n\n1. An event happens, for example you push a commit.\n2. GitHub finds every **workflow** that listens for that event.\n3. Each workflow starts one or more jobs. Jobs run in parallel unless one needs another.\n4. Each job runs on a **runner**, a machine that executes the job's steps in order.\n5. Each step is a shell command or a ready-made action.\n\nIf a step fails, the job stops and is marked as failed. Remember exit codes from Day 3. A command that ends with a non-zero code fails its step. `pytest` exits with 1 when a test fails, so a failing test turns the job red.",
+     "body": "You describe a task in a YAML file, and GitHub runs it when something happens in your repository. That is GitHub Actions, the automation built into GitHub. CI is its most common use. It can also automate releases, label issues or run checks every night.\n\nThe pieces fit inside each other, from the outside in:\n\n1. An event happens, for example you push a commit.\n2. GitHub finds every **workflow** that listens for that event.\n3. Each workflow starts one or more jobs. Jobs run in parallel unless one needs another.\n4. Each job runs on a **runner**, a machine that executes the job's steps in order.\n5. Each step is a shell command or a ready-made action.\n\nA step fails when its command ends with a non-zero exit code, the same exit codes you met on Day 3. The job then stops and is marked as failed. `pytest` exits with 1 when a test fails, so one failing test turns the job red.",
      "refs": [
       {
        "title": "Understanding GitHub Actions",
@@ -396,7 +396,7 @@
     },
     {
      "h": "Anatomy of a workflow file",
-     "body": "Workflows live in `.github/workflows/` at the root of your repository. Every `.yml` or `.yaml` file there is a workflow. These top-level keys are the ones you use most:\n\n- `name`: the label shown in the Actions tab.\n- `on`: the events that start the workflow.\n- `env`: environment variables for all jobs (optional).\n- `jobs`: a map from job IDs, such as `test`, to job settings.\n\nInside a job, `runs-on` picks the runner and `steps` lists the work. Give steps a `name`, so the logs are easy to read.\n\nYAML trips most people up at first. Indentation carries meaning, so use spaces and never tabs. A list item starts with a dash and a space. Strings with special characters, such as `*` or `:`, need quotes. Versions need quotes too: YAML reads `3.10` as the number 3.1, so write `\"3.10\"`. The YAML extension in VS Code from Day 2 flags many mistakes while you type.",
+     "body": "Workflows live in `.github/workflows/` at the root of your repository. GitHub treats every `.yml` or `.yaml` file there as a workflow. You will use these top-level keys most:\n\n- `name`: the label shown in the Actions tab.\n- `on`: the events that start the workflow.\n- `env`: environment variables for all jobs (optional).\n- `jobs`: a map from job IDs, such as `test`, to job settings.\n\nInside a job, `runs-on` picks the runner and `steps` lists the work. Give your steps a `name`, so the logs are easy to read.\n\nYAML trips most people up at first. Indentation carries meaning, so use spaces and never tabs. A list item starts with a dash and a space. Strings with special characters, such as `*` or `:`, need quotes. Versions need quotes too: YAML reads `3.10` as the number 3.1, so write `\"3.10\"`. The YAML extension in VS Code from Day 2 flags many of these mistakes while you type.",
      "refs": [
       {
        "title": "Workflow syntax for GitHub Actions",
@@ -412,7 +412,7 @@
     },
     {
      "h": "Events: when a workflow runs",
-     "body": "The `on` key lists the events. You will use these four a lot:\n\n- `push`: a commit or tag is pushed. Filters such as `branches: [main]` or `tags: [\"v*\"]` narrow it down.\n- `pull_request`: a PR is opened, gets new commits, or is reopened.\n- `workflow_dispatch`: adds a Run workflow button to the Actions tab.\n- `schedule`: runs on a timer written in cron syntax.\n\nSome details matter later. A `pull_request` run tests the result of merging your branch into the target branch, so it catches clashes with other people's work. The Run workflow button only appears once the workflow file is on the default branch. Schedules use UTC unless you set a time zone, and the shortest interval is every 5 minutes. They only run from the default branch, can start late when GitHub is busy, and are switched off in public repos after 60 days without activity.\n\nYou can list several events at once. `on: [push, workflow_dispatch]` runs on every push and also gives you the button.",
+     "body": "The `on` key lists the events. You will use these four a lot:\n\n- `push`: a commit or tag is pushed. Filters such as `branches: [main]` or `tags: [\"v*\"]` narrow it down.\n- `pull_request`: a PR is opened, gets new commits, or is reopened.\n- `workflow_dispatch`: adds a Run workflow button to the Actions tab.\n- `schedule`: runs on a timer written in cron syntax.\n\nA `pull_request` run tests the result of merging your branch into the target branch, so it catches clashes with other people's work. The Run workflow button only appears once the workflow file is on the default branch.\n\nSchedules come with the most rules. They use UTC unless you set a time zone, and the shortest interval is every 5 minutes. They run only from the default branch and can start late when GitHub is busy. In public repos, GitHub switches them off after 60 days without activity.\n\nYou can list several events at once. `on: [push, workflow_dispatch]` runs on every push and also gives you the button.",
      "refs": [
       {
        "title": "Events that trigger workflows",
@@ -423,7 +423,7 @@
     },
     {
      "h": "Runners, and uses versus run",
-     "body": "A runner is the machine that runs a job. There are two kinds:\n\n- GitHub-hosted: a fresh virtual machine for every job, with git, Docker, Python and many tools installed. In public repos the standard Linux runner has 4 CPUs and 16 GB of memory.\n- Self-hosted: a machine you run yourself and register with GitHub. Useful for special hardware or private networks, but you must patch and secure it.\n\nBilling in short: standard GitHub-hosted runners are free in public repositories. Private repos on the Free plan get a monthly allowance, at the time of writing $12 of compute, which is about 2,000 Linux minutes. Check the [current billing page](https://docs.github.com/en/billing/concepts/product-billing/github-actions) before you rely on these numbers.\n\nA step does its work in one of two ways. `run:` executes shell commands, with bash on Linux. `uses:` calls an action: packaged code that someone published, such as `actions/checkout@v7`. The part after `@` is the version. You pass inputs to an action under `with:`. Each runner starts empty, so nearly every job begins with `actions/checkout`, which copies your repository onto the runner.",
+     "body": "Runners come in two kinds:\n\n- GitHub-hosted: a fresh virtual machine for every job, with git, Docker, Python and many other tools installed. In public repos the standard Linux runner has 4 CPUs and 16 GB of memory.\n- Self-hosted: a machine you run yourself and register with GitHub. It helps with special hardware or private networks, but patching and securing it is your job.\n\nThis course uses GitHub-hosted runners. The standard ones are free in public repositories. Private repos on the Free plan get a monthly allowance: at the time of writing, $12 of compute, which is about 2,000 Linux minutes. Check the [current billing page](https://docs.github.com/en/billing/concepts/product-billing/github-actions) before you rely on these numbers.\n\nA step does its work in one of two ways. With `run:`, it executes shell commands, with bash on Linux. With `uses:`, it calls an action: packaged code that someone published, such as `actions/checkout@v7`. The part after `@` is the version, and you pass inputs to the action under `with:`. Each runner starts empty, so nearly every job begins with `actions/checkout`, which copies your repository onto the runner.",
      "refs": [
       {
        "title": "GitHub-hosted runners",
@@ -439,7 +439,7 @@
     },
     {
      "h": "Contexts, expressions and env",
-     "body": "A context is a set of facts about the current run. You read it with an expression written as `${{ ... }}`. GitHub replaces the expression with its value before the step runs. Some examples:\n\n- `${{ github.sha }}`: the full commit ID that started the run.\n- `${{ github.ref_name }}`: the branch or tag name, such as `main` or `v1.2.0`.\n- `${{ github.event_name }}`: the event, such as `push`.\n- `${{ runner.os }}`: the runner's operating system, such as `Linux`.\n\nYou set environment variables with `env` at three levels: the whole workflow, one job, or one step. The most specific level wins, so a step's value beats the job's value. GitHub also sets default variables in every step, such as `GITHUB_SHA` and `GITHUB_REF_NAME`.\n\nStart one safety habit now. Some values are text that other people control, like branch names or PR titles. Do not paste their expressions straight into a `run:` script, because the text becomes part of your script. Copy the value into `env` first and use the shell variable, as the hello workflow does. Day 12 explains why.",
+     "body": "A context is a set of facts about the current run. You read one with an expression, written as `${{ ... }}`. GitHub replaces the expression with its value before the step runs. You will see these often:\n\n- `${{ github.sha }}`: the full commit ID that started the run.\n- `${{ github.ref_name }}`: the branch or tag name, such as `main` or `v1.2.0`.\n- `${{ github.event_name }}`: the event, such as `push`.\n- `${{ runner.os }}`: the runner's operating system, such as `Linux`.\n\nYou can set environment variables with `env` for the whole workflow, for one job, or for one step. The most specific level wins, so a step's value beats the job's value. GitHub also sets default variables in every step, such as `GITHUB_SHA` and `GITHUB_REF_NAME`.\n\nStart one safety habit now. Some values are text that other people control, like branch names or PR titles. If you paste their expressions straight into a `run:` script, that text becomes part of your script, and the shell may run it as code. Copy the value into `env` first and use the shell variable, as the hello workflow does. The shell then treats it as plain data.",
      "refs": [
       {
        "title": "Contexts reference",
@@ -460,7 +460,7 @@
     },
     {
      "h": "Reading runs in the Actions tab",
-     "body": "Every run appears in your repository's Actions tab. Click a run to see a graph of its jobs, then click a job to see the log of each step. A green tick means success, a red cross means failure, and a grey icon means skipped or cancelled.\n\nWhen a run fails, open the first red step and read the last lines of its log. That is usually where the error is. The `gh` CLI does the same from your terminal:\n\n- `gh run list` shows recent runs and their status.\n- `gh run watch` follows a run live until it finishes.\n- `gh run view --log-failed` prints only the logs of failed steps.\n- `gh run rerun --failed` runs the failed jobs again.\n\nLogs are kept for a limited time, and anyone who can read the repository can read them. So never print a secret, not even for a quick test.",
+     "body": "Every run shows up in your repository's Actions tab. Click a run to see a graph of its jobs, then click a job to see the log of each step. A green tick means success, a red cross means failure, and a grey icon means skipped or cancelled.\n\nWhen a run fails, open the first red step and read the last lines of its log. The error is usually there. The `gh` CLI does the same from your terminal:\n\n- `gh run list` shows recent runs and their status.\n- `gh run watch` follows a run live until it finishes.\n- `gh run view --log-failed` prints only the logs of failed steps.\n- `gh run rerun --failed` runs the failed jobs again.\n\nGitHub keeps logs for a limited time, and anyone who can read the repository can read them. Never print a secret, not even for a quick test.",
      "refs": [
       {
        "title": "Using workflow run logs",
@@ -470,14 +470,14 @@
      ]
     }
    ],
-   "analogy": "A workflow is like an order ticket in a restaurant kitchen. When an order comes in (the event), a cook gets a clean, empty station (the runner) and follows the ticket line by line (the steps). When the dish is done, the station is wiped for the next order. The analogy breaks at the end. A kitchen keeps its leftovers, while a runner keeps nothing unless you save it as a cache or an artifact (Day 11).",
+   "analogy": "A workflow is like an order ticket in a restaurant kitchen. An order comes in (the event), a cook gets a clean, empty station (the runner) and follows the ticket line by line (the steps). When the dish is done, the station is wiped for the next order. The kitchen picture fails on leftovers: a kitchen keeps them, and a runner keeps nothing unless you save it as a cache or an artifact (Day 11).",
    "diagram": "<svg viewBox=\"0 0 560 230\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A push event starts the ci.yml workflow, whose test job runs checkout, setup-python and pytest in order on a fresh runner\"><rect x=\"8\" y=\"93\" width=\"72\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"44\" y=\"120\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">push</text><line x1=\"80\" y1=\"115\" x2=\"100\" y2=\"115\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"104\" y=\"93\" width=\"88\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"148\" y=\"120\" class=\"t\" font-size=\"13\" text-anchor=\"middle\">ci.yml</text><line x1=\"192\" y1=\"115\" x2=\"212\" y2=\"115\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"216\" y=\"93\" width=\"104\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"268\" y=\"120\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">job: test</text><text x=\"44\" y=\"156\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">event</text><text x=\"148\" y=\"156\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">workflow</text><text x=\"268\" y=\"156\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">fresh VM</text><line x1=\"320\" y1=\"115\" x2=\"376\" y2=\"42\" class=\"lnd\"/><line x1=\"320\" y1=\"115\" x2=\"376\" y2=\"115\" class=\"lnd\"/><line x1=\"320\" y1=\"115\" x2=\"376\" y2=\"188\" class=\"lnd\"/><rect x=\"376\" y=\"20\" width=\"168\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"460\" y=\"47\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">1 checkout</text><rect x=\"376\" y=\"93\" width=\"168\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"460\" y=\"120\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">2 setup-python</text><rect x=\"376\" y=\"166\" width=\"168\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"460\" y=\"193\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">3 pytest</text><line x1=\"460\" y1=\"64\" x2=\"460\" y2=\"89\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"460\" y1=\"137\" x2=\"460\" y2=\"162\" class=\"ln\" marker-end=\"url(#ar)\"/></svg>",
    "diagram_caption": "A push starts the workflow; its job gets a fresh runner and runs the steps in order.",
    "worked": {
     "title": "Your first workflow: hello.yml",
     "steps": [
      {
-      "say": "Work on a branch so you can experiment safely. The folder name matters: GitHub only reads workflows from `.github/workflows/`.",
+      "say": "Work on a branch, so your experiments stay off `main`. The folder name matters: GitHub only reads workflows from `.github/workflows/`.",
       "code": "cd ~/code/hello-devops\ngit switch -c try-actions\nmkdir -p .github/workflows\ncode .github/workflows/hello.yml",
       "lang": "bash"
      },
@@ -487,7 +487,7 @@
       "lang": "yaml"
      },
      {
-      "say": "Commit and push. The push is the event, so the run starts within seconds. `gh run watch` lets you pick the run and follows it until it ends.",
+      "say": "Commit and push. The push is the event, so the run starts within seconds. `gh run watch` asks which run to follow and stays with it until it ends.",
       "code": "$ git add .github/workflows/hello.yml\n$ git commit -m \"Add a hello workflow\"\n$ git push -u origin try-actions\n$ gh run watch",
       "lang": "console"
      },
@@ -497,12 +497,12 @@
       "lang": "text"
      },
      {
-      "say": "Expand the second step. `uname -sm` prints `Linux x86_64`, and the Python and Docker versions follow. The runner already has these tools, so your CI only has to pick a Python version and install your packages.",
+      "say": "Expand the second step. `uname -sm` prints `Linux x86_64`, followed by the Python and Docker versions. Those tools are already on the runner, so your CI only has to pick a Python version and install your packages.",
       "code": "Linux x86_64",
       "lang": "text"
      },
      {
-      "say": "The hello workflow was practice. Delete the branch here and on GitHub, so it never runs again.",
+      "say": "That was practice. Delete the branch here and on GitHub, so `hello.yml` never runs again.",
       "code": "$ git switch main\n$ git branch -D try-actions\n$ git push origin --delete try-actions",
       "lang": "console"
      }
@@ -556,8 +556,8 @@
      "what": "Delete a branch on GitHub."
     }
    ],
-   "mistake": "Saving the workflow in the wrong folder, such as `.github/workflow/` or `github/workflows/`. GitHub ignores it silently: nothing runs and no error appears. The folder must be exactly `.github/workflows/` at the root of the repository.",
-   "real_world": "At PayLoop, every new service starts from the same CI template, so it runs tests on every push from its first day. Engineers rarely open the Actions tab when things are green. When a pull request shows a red cross, they jump straight to the failed step's log.",
+   "mistake": "If you save the workflow in the wrong folder, such as `.github/workflow/` or `github/workflows/`, GitHub ignores it. Nothing runs, and no error appears anywhere. The folder must be exactly `.github/workflows/` at the root of the repository.",
+   "real_world": "PayLoop starts every new service from the same CI template, so tests run on every push from the service's first day. When everything is green, engineers rarely open the Actions tab. When a pull request shows a red cross, they go straight to the failed step's log.",
    "task": {
     "title": "Run pytest on every push",
     "steps": [
@@ -571,7 +571,7 @@
      "Open a PR, merge it into `main`, and press Run workflow for `ci` in the Actions tab."
     ],
     "hints": [
-     "Your file has the same shape as `hello.yml`, with different steps.",
+     "Your file has the same shape as `hello.yml`. Only the steps differ.",
      "Quote the Python version: `\"3.14\"`.",
      "If no run appears at all, check the folder name and the indentation."
     ],
@@ -582,7 +582,7 @@
     "answer": "When I push, GitHub creates a push event for my repository. Every workflow in .github/workflows that lists push under on starts a run. Each job gets a fresh runner, a virtual machine that runs the job's steps in order, such as checkout, setup-python and pytest. If every step exits with code 0, the job passes and I see a green tick; a non-zero exit code fails the step, the job and the run."
    },
    "recap": [
-    "Workflows are YAML files in .github/workflows, and the events under on start them.",
+    "Workflows are YAML files in .github/workflows, and the events listed under on start them.",
     "A workflow has jobs, a job has steps, and each job runs on its own fresh runner.",
     "run executes shell commands; uses calls a published action, with inputs under with.",
     "Expressions such as ${{ github.sha }} read contexts; env can be set per workflow, job or step.",
@@ -599,7 +599,7 @@
       "schedule with cron \"2 0 * * *\" only"
      ],
      "answer": 0,
-     "why": "Cron fields start with the minute, then the hour, so \"0 2 * * *\" is 02:00, and workflow_dispatch adds the button."
+     "why": "Cron fields start with the minute, then the hour, so \"0 2 * * *\" is 02:00. workflow_dispatch adds the button."
     },
     {
      "q": "Job test has three steps. Step 2 runs pip install and exits with code 1. What happens?",
@@ -610,7 +610,7 @@
       "Only a warning appears, because install steps cannot fail"
      ],
      "answer": 1,
-     "why": "By default a non-zero exit code fails the step and stops the job."
+     "why": "By default, a non-zero exit code fails the step and stops the job."
     },
     {
      "q": "A step must print the branch name, and branch names can contain odd characters. What is the safest way?",
@@ -631,12 +631,12 @@
     },
     {
      "q": "When would you choose self-hosted runners over GitHub-hosted ones?",
-     "a": "GitHub-hosted runners are fresh, patched virtual machines that you do not maintain, and they are free for public repos. Self-hosted runners make sense when you need special hardware, access to a private network, or lower cost at very high volume. The price is work: you patch, scale and secure them yourself. GitHub recommends self-hosted runners only for private repositories, because a pull request from a fork could run code on your machine."
+     "a": "GitHub-hosted runners are fresh, patched virtual machines that you do not maintain, and they are free for public repos. Self-hosted runners make sense when you need special hardware, access to a private network, or lower cost at very high volume. In exchange, you patch, scale and secure them yourself. GitHub recommends self-hosted runners only for private repositories, because a pull request from a fork could run code on your machine."
     }
    ],
    "deeper": {
     "minutes": 12,
-    "body": "A `run:` step looks like a list of commands. GitHub actually saves it as a script file and runs that file with a shell. The shell and its options decide how failures behave.\n\nOn Linux runners, if you do not set `shell`, GitHub runs `bash -e {0}`, where `{0}` is the script file. The `-e` flag is the `set -e` from Day 3: the script stops at the first command that fails, and the step fails with that exit code.\n\nIf you write `shell: bash` yourself, GitHub runs `bash --noprofile --norc -eo pipefail {0}` instead. The extra `pipefail` matters for pipes. Without it, a pipe returns the exit code of its last command. So `pytest -q | tee test.log` passes even when tests fail, because `tee` worked fine. With `pipefail`, the failing `pytest` fails the whole pipe, and the step goes red as it should.\n\nYou can set the shell once for every step. Add a `defaults` block at the top of the workflow with `run: shell: bash` inside it. Many teams do this to get `pipefail` everywhere.\n\nA few more facts that save debugging time:\n\n- Each `run:` step starts a new shell. A variable you `export` in one step is gone in the next one.\n- To hand a value to later steps, append a line like `NAME=value` to the file named in `$GITHUB_ENV`.\n- All steps in a job share one disk, so a file written in step 2 is still there in step 3.\n- `working-directory: app` runs a step inside a subfolder.\n- `continue-on-error: true` lets a step fail without failing the job. Use it rarely, because it hides problems.\n\nThe supported shells table in the [workflow syntax reference](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) lists the exact command line for each shell. When a script behaves one way on your laptop and another way in CI, these flags are a likely reason."
+    "body": "A `run:` step looks like a list of commands, but GitHub saves it as a script file and runs that file with a shell. The shell and its options decide how failures behave.\n\nOn Linux runners, if you do not set `shell`, GitHub runs `bash -e {0}`, where `{0}` is the script file. The `-e` flag is the `set -e` from Day 3: the script stops at the first command that fails, and the step fails with that exit code.\n\nIf you write `shell: bash` yourself, GitHub runs `bash --noprofile --norc -eo pipefail {0}` instead. The extra `pipefail` changes how pipes fail. Without it, a pipe returns the exit code of its last command. So `pytest -q | tee test.log` passes even when tests fail, because `tee` worked fine. With `pipefail`, the failing `pytest` fails the whole pipe, and the step goes red.\n\nTo set the shell once for every step, add a `defaults` block at the top of the workflow with `run: shell: bash` inside it. Many teams do this to get `pipefail` everywhere, and I would too.\n\nSome more facts that save debugging time:\n\n- Each `run:` step starts a new shell. A variable you `export` in one step is gone in the next one.\n- To hand a value to later steps, append a line like `NAME=value` to the file named in `$GITHUB_ENV`.\n- All steps in a job share one disk, so a file written in step 2 is still there in step 3.\n- `working-directory: app` runs a step inside a subfolder.\n- `continue-on-error: true` lets a step fail without failing the job. Use it rarely, because it hides problems.\n\nThe supported shells table in the [workflow syntax reference](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) lists the exact command line for each shell. If a script works on your laptop and fails in CI, check these flags early."
    },
    "sources": [
     {
@@ -671,7 +671,7 @@
      "Build runs anyway, because test is not required"
     ],
     "answer": 2,
-    "why": "GitHub treats a skipped check as passed, so a skipped build does not block the merge. Require the test checks too."
+    "why": "GitHub treats a skipped check as passed, so a skipped build does not block the merge. Require the test checks as well."
    },
    "terms": [
     {
@@ -706,7 +706,7 @@
    "sections": [
     {
      "h": "What a good CI pipeline does",
-     "body": "Your Day 10 workflow runs the tests. A real pipeline answers more questions on every change. Is the code clean? Does it work on every Python version you support? Does the Docker image still build? It also answers fast, because people wait for CI before they merge.\n\nA good order is cheap checks first and slow checks last:\n\n1. Lint and format check: seconds, and it catches typos and unused code.\n2. Unit tests: seconds to minutes.\n3. Docker build: the slowest part, so it only runs after the tests pass.\n\nJobs run in parallel by default. The `needs` key makes a job wait. With `needs: test` on the `build` job, the build starts only after every test job succeeds. If a test fails, the build is skipped, and you get feedback without paying for the slow part.\n\nThe triggers change too. On Day 10, CI ran on every push. Now it runs on pull requests, which test the merged result, and on pushes to `main`. Running on pushes to every branch as well would test each PR commit twice. One more line, `permissions: contents: read`, makes the job's token read-only, and Day 12 explains it.\n\nToday you grow `ci.yml` into the lab's final version, one piece at a time.",
+     "body": "Today you grow the Day 10 `ci.yml` into the lab's final version, one piece at a time. Right now it only runs the tests. A real pipeline checks more, and it has to be quick, because people wait for CI before they merge. Put cheap checks first and slow ones last:\n\n1. Lint and format check: seconds. It catches typos and unused code.\n2. Unit tests on each Python version you support: seconds to minutes.\n3. Docker build: the slowest part, so it only runs after the tests pass.\n\nJobs run in parallel by default. The `needs` key makes a job wait. With `needs: test` on the `build` job, the build starts only after every test job succeeds. If a test fails, the build is skipped, and you get the bad news without paying for the slow part.\n\nThe triggers change too. On Day 10, CI ran on every push. Now it runs on pull requests, which test the merged result, and on pushes to `main`. Running on pushes to every branch as well would test each PR commit twice. One more line, `permissions: contents: read`, makes the job's token read-only. Day 12 explains why that matters.",
      "refs": [
       {
        "title": "Using jobs in a workflow (needs)",
@@ -722,7 +722,7 @@
     },
     {
      "h": "Lint, tests and a test report",
-     "body": "A linter reads your code without running it and flags problems such as unused imports or undefined names. This course uses ruff. Two commands cover lint and formatting:\n\n- `ruff check .` finds lint problems, and `ruff check --fix .` fixes the safe ones.\n- `ruff format --check .` fails if a file is not formatted, and `ruff format .` formats it.\n\nBoth exit with code 1 when they find a problem, so they fail the step, just like `pytest`.\n\nNext, a test report. `pytest --junitxml=reports/junit.xml` also writes the results as JUnit XML, a format most tools can read. The runner is deleted after the job, so you save the report as an artifact with `actions/upload-artifact`. You can download it from the run page or with `gh run download`.\n\nAdd `if: ${{ !cancelled() }}` to the upload step. Normally a step is skipped once an earlier step has failed. This condition makes the upload run even after a test failure, which is exactly when you want the report. Artifact names must be unique within a run, so the name includes the Python version.",
+     "body": "A linter reads your code without running it and flags problems such as unused imports or undefined names. This course uses ruff, which handles both lint and formatting:\n\n- `ruff check .` finds lint problems, and `ruff check --fix .` fixes the safe ones.\n- `ruff format --check .` fails if a file is not formatted, and `ruff format .` formats it.\n\nBoth exit with code 1 when they find a problem, so they fail the step the same way `pytest` does.\n\nNext comes a test report. `pytest --junitxml=reports/junit.xml` also writes the results as JUnit XML, a format most tools can read. The runner is deleted after the job, so you save the report as an artifact with `actions/upload-artifact`. You can download it from the run page or with `gh run download`.\n\nPut `if: ${{ !cancelled() }}` on the upload step. Normally GitHub skips every step after one fails. With this condition, the upload still runs after a test failure, and that is the run where you need the report most. Artifact names must be unique within a run, so the name includes the Python version.",
      "refs": [
       {
        "title": "Workflow artifacts",
@@ -738,7 +738,7 @@
     },
     {
      "h": "Speed up with a cache, widen with a matrix",
-     "body": "Every job starts on an empty machine, so `pip install` downloads every package again. A cache fixes that. `actions/setup-python` has one built in: set `cache: pip`. It saves pip's download folder after the job, under a key made from a hash of your requirements files. The next run with the same files restores it in seconds. Set `cache-dependency-path: requirements*.txt`, so a change to either requirements file starts a fresh cache.\n\nA matrix runs one job definition several times with different values. Your app should work on Python 3.13 and 3.14:\n\n- `matrix: python-version: [\"3.13\", \"3.14\"]` under `strategy` creates two jobs.\n- `${{ matrix.python-version }}` passes each value to setup-python.\n- `fail-fast: false` lets both finish, even if one fails. The default cancels the rest.\n\nThe two jobs run at the same time, so the matrix adds almost no waiting. They show up as two separate checks, `test (3.13)` and `test (3.14)`. You need these exact names for the ruleset later today.",
+     "body": "Every job starts on an empty machine, so `pip install` downloads every package again. A cache fixes that, and `actions/setup-python` has one built in: set `cache: pip`. It saves pip's download folder after the job, under a key made from a hash of your requirements files. The next run with the same files restores it in seconds. Set `cache-dependency-path: requirements*.txt` too, so a change to either requirements file starts a fresh cache.\n\nA matrix runs one job definition several times with different values. Your app should work on Python 3.13 and 3.14:\n\n- `matrix: python-version: [\"3.13\", \"3.14\"]` under `strategy` creates two jobs.\n- `${{ matrix.python-version }}` passes each value to setup-python.\n- `fail-fast: false` lets both finish, even if one fails. The default cancels the rest.\n\nThe two jobs run at the same time, so the matrix adds almost no waiting. They show up as two separate checks, `test (3.13)` and `test (3.14)`. Remember those exact names, because the ruleset needs them later today.",
      "refs": [
       {
        "title": "Dependency caching",
@@ -759,7 +759,7 @@
     },
     {
      "h": "Check that the Docker image builds",
-     "body": "Your Dockerfile is code too, and it can break. A wrong `COPY` path, or a package that no longer installs, only shows up when you build. So CI builds the image for every change, without pushing it anywhere.\n\nThe `build` job uses Docker's own actions:\n\n- `docker/setup-buildx-action` starts a BuildKit builder.\n- `docker/build-push-action` builds the image; with `push: false` it only builds.\n- `cache-from: type=gha` and `cache-to: type=gha,mode=max` keep image layers in the Actions cache.\n\nThe layer cache works like the one on your laptop from Day 6. If `requirements.txt` did not change, the `pip install` layer comes back from the cache, and the build takes seconds. On Day 12, a second workflow uses the same actions with `push: true`.",
+     "body": "Your Dockerfile is code too, and it can break. A wrong `COPY` path, or a package that no longer installs, only shows up when you build. So CI builds the image for every change, without pushing it anywhere.\n\nThe `build` job uses Docker's own actions:\n\n- `docker/setup-buildx-action` starts a BuildKit builder.\n- `docker/build-push-action` builds the image; with `push: false` it only builds.\n- `cache-from: type=gha` and `cache-to: type=gha,mode=max` keep image layers in the Actions cache.\n\nThe layer cache behaves like the one on your laptop from Day 6. If `requirements.txt` did not change, the `pip install` layer comes back from the cache and the build takes seconds. On Day 12, a second workflow uses the same actions with `push: true`.",
      "refs": [
       {
        "title": "docker/build-push-action README",
@@ -770,7 +770,7 @@
     },
     {
      "h": "Stop broken code from merging",
-     "body": "CI only protects you if a red result stops the merge. On GitHub you get that with a **ruleset** on `main`, a named list of rules for branches or tags. The older feature, branch protection rules, still works. Rulesets are more flexible: several can apply at once, and anyone with read access can see them.\n\nA good starter ruleset for `main` has three rules:\n\n- Require a pull request before merging, so nobody pushes to `main` directly.\n- Require status checks to pass: `test (3.13)`, `test (3.14)` and `build`.\n- Block force pushes, which is on by default.\n\nThree details trip most people up:\n\n- On the Free plan, rulesets are only enforced on public repositories.\n- A new ruleset starts as Disabled, so set its enforcement status to Active.\n- A job skipped because its `needs` failed counts as passed, so require the test checks too.\n\nSince you work alone, leave required approvals at zero. GitHub does not let you approve your own pull request.",
+     "body": "CI only protects you if a red result stops the merge. On GitHub you get that with a **ruleset** on `main`: a named list of rules for branches or tags. The older feature, branch protection rules, still works. Rulesets are more flexible, since several can apply at once, and anyone with read access can see them.\n\nFor `main`, start with these rules:\n\n- Require a pull request before merging, so nobody pushes to `main` directly.\n- Require status checks to pass: `test (3.13)`, `test (3.14)` and `build`.\n- Block force pushes, which is on by default.\n\nMost people get caught by at least one of these details:\n\n- On the Free plan, rulesets are only enforced on public repositories.\n- A new ruleset starts as Disabled, so set its enforcement status to Active.\n- A job skipped because its `needs` failed counts as passed, so require the test checks too.\n\nYou work alone, so leave required approvals at zero. GitHub does not let you approve your own pull request.",
      "refs": [
       {
        "title": "About rulesets",
@@ -791,7 +791,7 @@
     },
     {
      "h": "Keep CI fast and cheap",
-     "body": "Slow CI changes how people work. They stop waiting for it, or they bundle many changes into one big PR. These settings keep it quick:\n\n- `concurrency` cancels a stale run when you push again to the same branch or PR.\n- `timeout-minutes` stops a hung job early. The default is 360 minutes.\n- `paths-ignore` on `push` skips runs when a push only changes Markdown files.\n- The pip and Docker layer caches keep installs and builds short.\n\nNever put path filters on `pull_request` when its checks are required. A workflow that is skipped never reports, so its checks stay Pending and block the merge for good. On `main`, the lab lets every run finish, so each merge gets a full result.\n\nTwo tools help before you push. [actionlint](https://github.com/rhysd/actionlint) checks workflow files for mistakes such as typos in keys or bad expressions. [act](https://github.com/nektos/act) runs workflows on your laptop in Docker containers. It is handy for quick tries, but it does not match GitHub's runners exactly, so the real test is still a push.",
+     "body": "Slow CI changes how people work. They stop waiting for it, or they bundle many changes into one big PR. These settings keep it quick:\n\n- `concurrency` cancels a stale run when you push again to the same branch or PR.\n- `timeout-minutes` stops a hung job early. The default is 360 minutes.\n- `paths-ignore` on `push` skips runs when a push only changes Markdown files.\n- The pip and Docker layer caches keep installs and builds short.\n\nThe lab makes one exception to the cancelling: on `main`, every run finishes, so each merge gets a full result.\n\nNever put path filters on `pull_request` when its checks are required. A workflow that is skipped never reports, so its checks stay Pending and block the merge.\n\nTwo tools help before you push. [actionlint](https://github.com/rhysd/actionlint) checks workflow files for mistakes such as typos in keys or bad expressions. [act](https://github.com/nektos/act) runs workflows on your laptop in Docker containers. It is handy for quick tries, but it does not match GitHub's runners exactly, so the real test is still a push.",
      "refs": [
       {
        "title": "Control the concurrency of workflows and jobs",
@@ -811,24 +811,24 @@
      ]
     }
    ],
-   "analogy": "CI is like the final inspection line in a car factory. Quick checks such as the lights and the horn come first, and the slow road test runs only for cars that passed them. The matrix is the same road test on two kinds of road at the same time. The ruleset is the guard at the gate who lets no car out without a fully signed sheet. The analogy breaks because CI inspects a car that does not exist yet: the merged result of your branch and main.",
+   "analogy": "CI is like the final inspection line in a car factory. Quick checks such as the lights and the horn come first, and only cars that pass them get the slow road test. The matrix is the same road test on two kinds of road at once. The ruleset is the guard at the gate who lets no car out without a fully signed sheet. One difference: CI inspects a car that does not exist yet, the merged result of your branch and main.",
    "diagram": "<svg viewBox=\"0 0 560 210\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A pull request starts two test jobs, one per Python version; the build job needs both; the merge is allowed only when all checks are green\"><rect x=\"8\" y=\"83\" width=\"128\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"72\" y=\"110\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Pull request</text><line x1=\"136\" y1=\"105\" x2=\"172\" y2=\"50\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"136\" y1=\"105\" x2=\"172\" y2=\"160\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"176\" y=\"24\" width=\"112\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"232\" y=\"51\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">test 3.13</text><rect x=\"176\" y=\"142\" width=\"112\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"232\" y=\"169\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">test 3.14</text><text x=\"232\" y=\"109\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">matrix: 2 jobs</text><line x1=\"288\" y1=\"46\" x2=\"324\" y2=\"98\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"288\" y1=\"164\" x2=\"324\" y2=\"112\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"328\" y=\"83\" width=\"88\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"372\" y=\"110\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">build</text><text x=\"372\" y=\"146\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">needs: test</text><line x1=\"416\" y1=\"105\" x2=\"444\" y2=\"105\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"448\" y=\"83\" width=\"104\" height=\"44\" rx=\"10\" class=\"bxg\"/><text x=\"500\" y=\"110\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Can merge</text><text x=\"500\" y=\"146\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">all checks green</text></svg>",
    "diagram_caption": "Tests run once per Python version, the build waits for them, and the ruleset allows the merge only when every check is green.",
    "worked": {
     "title": "A red lint check, fixed in two minutes",
     "steps": [
      {
-      "say": "A teammate's PR adds `import json` to `app.py` but never uses it. The check `test (3.14)` turns red at the Lint and format check step, and `build` is skipped. You read the failure from the terminal.",
+      "say": "A teammate's PR adds `import json` to `app.py` but never uses it. Both test checks turn red at the Lint and format check step, and `build` is skipped. You read the failure from the terminal.",
       "code": "$ gh pr checks\n$ gh run view --log-failed",
       "lang": "console"
      },
      {
-      "say": "The log ends with ruff's report. F401 is the rule for unused imports, and the `[*]` means ruff can fix it. The step failed because ruff exited with code 1.",
+      "say": "The log ends with ruff's report. F401 is the rule for unused imports, and `[*]` means ruff can fix it. The step failed because ruff exited with code 1.",
       "code": "F401 [*] `json` imported but unused\n --> app.py:3:8\n  |\n1 | \"\"\"hello-devops: the tiny web app you ship all through the course.\"\"\"\n2 |\n3 | import json\n  |        ^^^^\n4 | import os\n  |\nFound 1 error.\n[*] 1 fixable with `--fix`.",
       "lang": "console"
      },
      {
-      "say": "Check out the PR branch and run the same command locally. You get the same answer in a second, with no waiting for CI.",
+      "say": "Check out the PR branch and run the same command on your laptop. You get the same answer in a second, without waiting for CI.",
       "code": "$ gh pr checkout 7\n$ ruff check . --output-format concise\napp.py:3:8: F401 [*] `json` imported but unused\nFound 1 error.\n[*] 1 fixable with `--fix`.",
       "lang": "console"
      },
@@ -838,7 +838,7 @@
       "lang": "console"
      },
      {
-      "say": "Commit and push to the same branch. The push starts a new run. If the old run were still going, concurrency would cancel it. When all three checks are green, the ruleset unlocks the merge button.",
+      "say": "Commit and push to the same branch, which starts a new run. If the old run were still going, concurrency would cancel it. Once all three checks are green, the ruleset lets you merge.",
       "code": "$ git commit -am \"Remove unused import\"\n$ git push\n$ gh pr checks --watch",
       "lang": "console"
      }
@@ -894,19 +894,19 @@
      "what": "Install act, which runs workflows locally in Docker containers."
     }
    ],
-   "mistake": "Adding a path filter to the `pull_request` trigger to save minutes. A PR that only touches docs then never runs CI, its required checks wait as Pending forever, and the merge stays blocked. Filter only `push`, as the lab does, or skip the expensive work inside the job instead.",
-   "real_world": "At PayLoop, the checkout service has a ruleset on main that requires one review and green checks for lint, tests and the image build. The team treats ten minutes as the limit for CI; when it creeps above that, someone adds caching or splits slow tests. Nobody, not even admins, is on the bypass list for main.",
+   "mistake": "A path filter on the `pull_request` trigger looks like an easy way to save minutes. Then a PR that only touches docs never runs CI, its required checks wait as Pending forever, and the merge stays blocked. Filter only `push`, as the lab does, or skip the expensive work inside the job instead.",
+   "real_world": "The checkout service at PayLoop has a ruleset on main that requires one review and green checks for lint, tests and the image build. The team treats ten minutes as the limit for CI. When a run creeps above that, someone adds caching or splits slow tests. Nobody is on the bypass list for main, not even admins.",
    "task": {
     "title": "Build the full pipeline and protect main",
     "steps": [
      "Check that your repository is public with `gh repo view --json visibility`. On the Free plan, rulesets only work on public repos.",
-     "On a branch `ci-pipeline`, grow `ci.yml` into the version in the Files section, one piece at a time: triggers, concurrency, permissions, matrix, cache, lint, report, build.",
+     "On a branch `ci-pipeline`, grow `ci.yml` into the version in the Files section one piece at a time: triggers, concurrency, permissions, matrix, cache, lint, report, build.",
      "Before you push, run `ruff check .`, `ruff format --check .` and `pytest -q` on your laptop.",
      "Push, open a PR, and watch it with `gh pr checks --watch`. Expect three checks: `test (3.13)`, `test (3.14)` and `build`.",
      "Download one JUnit report with `gh run download` and open the XML file.",
      "Merge the PR.",
      "In Settings, open Rulesets and create a branch ruleset for `main`: require a pull request and the three status checks, then set enforcement to Active.",
-     "Prove it: on a new branch, break a test, open a PR, and confirm that GitHub blocks the merge. Then fix the test and merge."
+     "Prove it works. On a new branch, break a test, open a PR, and confirm that GitHub blocks the merge. Then fix the test and merge."
     ],
     "hints": [
      "A check name only shows up in the ruleset search after it has run in the repository recently, so let the pipeline run first.",
@@ -917,12 +917,12 @@
    },
    "explain_back": {
     "prompt": "Explain how your CI pipeline keeps broken code out of main, in 3 to 4 sentences. Mention needs, the matrix and the ruleset.",
-    "answer": "Every pull request starts the ci workflow. Lint and tests run first, once per Python version through the matrix, and the build job waits for them with needs. A ruleset on main requires a pull request plus all three checks, test (3.13), test (3.14) and build, so the merge button stays locked until they are green. I list the test checks by name because a skipped build would otherwise count as passed."
+    "answer": "Every pull request starts the ci workflow. Lint and tests run first, once per Python version through the matrix, and the build job waits for them with needs. A ruleset on main requires a pull request plus all three checks, test (3.13), test (3.14) and build, so the merge stays blocked until they are green. I list the test checks by name because a skipped build would otherwise count as passed."
    },
    "recap": [
     "Order checks from cheap to slow: lint, tests, then the Docker build with needs: test.",
     "cache: pip and the gha layer cache make repeat runs fast.",
-    "A matrix runs one job per Python version, and each becomes its own check.",
+    "A matrix runs one job per Python version, and each one becomes its own check.",
     "Upload test reports with if: ${{ !cancelled() }} so failed runs still leave a report.",
     "A ruleset on main with required checks blocks red pull requests; set it to Active.",
     "concurrency, timeout-minutes and a push-only paths-ignore keep CI quick and cheap."
@@ -959,7 +959,7 @@
       "Move pip install into the build job"
      ],
      "answer": 0,
-     "why": "The pip cache restores downloaded packages, so installs take seconds while the requirements files are unchanged."
+     "why": "The pip cache restores downloaded packages, so installs take seconds as long as the requirements files are unchanged."
     }
    ],
    "interview": [
@@ -969,12 +969,12 @@
     },
     {
      "q": "What are required status checks, and what can go wrong with them?",
-     "a": "They are checks named in a ruleset or branch protection rule that must pass before a pull request can merge. They are matched by exact name, so renaming a job or changing a matrix can drop protection until you update the list. A workflow skipped by a path or branch filter leaves its checks Pending and blocks the merge. A job skipped because its dependency failed counts as success, so you must also require the earlier jobs."
+     "a": "They are checks named in a ruleset or branch protection rule that must pass before a pull request can merge. GitHub matches them by exact name, so renaming a job or changing a matrix can drop protection until you update the list. A workflow skipped by a path or branch filter leaves its checks Pending and blocks the merge. And a job skipped because its dependency failed counts as success, so you must also require the earlier jobs."
     }
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Listing every matrix check in the ruleset works, but it can break quietly. Add Python 3.15 next year and forget the ruleset, and the new check is not required. Rename a job, and the old required name never reports again, so every PR waits forever.\n\nMany teams fix this with one gate job at the end of the workflow, and they require only that job. The gate has three parts:\n\n- `needs: [test, build]` makes it wait for every other job.\n- `if: ${{ always() }}` makes it run even when a needed job failed or was skipped.\n- One step runs `exit 1` when `contains(needs.*.result, 'failure')` or `contains(needs.*.result, 'cancelled')` is true.\n\n`needs.*.result` is a list with the result of each needed job: `success`, `failure`, `cancelled` or `skipped`. The gate turns that list into one clear answer. Here `always()` is a safe choice, because the gate only reads results and runs nothing risky.\n\nWhy not a gate with plain `needs` and no `if`? A failed test would then skip the gate, and a skipped gate counts as passed. That is the same trap as before, one level further down. The `always()` makes the gate honest.\n\nWhen is a gate overkill? For a small repository with three checks, listing them is clearer, so the lab does that. Reach for a gate when your matrix grows or when some jobs only run sometimes.\n\nTwo more ruleset settings matter as a team grows. Require branches to be up to date before merging (strict mode) makes each PR pass its checks on top of the newest `main`. It is safer, but a busy repository re-runs CI often. A merge queue solves that at scale. GitHub tests queued PRs together on a temporary branch and merges them in order. Workflows then also need the `merge_group` event, or their required checks never report for the queue.\n\nRead more in [Troubleshooting required status checks](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks)."
+    "body": "Listing every matrix check in the ruleset works, but it can break quietly. Add Python 3.15 next year and forget the ruleset, and the new check is not required. Rename a job, and the old required name never reports again, so every PR waits forever.\n\nMany teams fix this with one gate job at the end of the workflow, and they require only that job. The gate needs:\n\n- `needs: [test, build]`, so it waits for every other job.\n- `if: ${{ always() }}`, so it runs even when a needed job failed or was skipped.\n- One step that runs `exit 1` when `contains(needs.*.result, 'failure')` or `contains(needs.*.result, 'cancelled')` is true.\n\n`needs.*.result` is a list with the result of each needed job: `success`, `failure`, `cancelled` or `skipped`. The gate turns that list into one answer. Using `always()` is safe here, because the gate only reads results and runs nothing risky.\n\nWhy not a gate with plain `needs` and no `if`? A failed test would then skip the gate, and a skipped gate counts as passed. It is the same trap as before, one level further down. With `always()`, the gate runs every time and reports what really happened.\n\nFor a small repository with three checks, a gate is overkill and listing the checks is clearer, so the lab does that. Reach for a gate when your matrix grows or when some jobs only run sometimes.\n\nAs a team grows, two more ruleset settings come up. Require branches to be up to date before merging (strict mode) makes each PR pass its checks on top of the newest `main`. It is safer, but a busy repository re-runs CI often. A merge queue solves that at scale: GitHub tests queued PRs together on a temporary branch and merges them in order. Workflows then also need the `merge_group` event, or their required checks never report for the queue.\n\nRead more in [Troubleshooting required status checks](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks)."
    },
    "sources": [
     {
@@ -1044,7 +1044,7 @@
    "sections": [
     {
      "h": "Secrets and variables",
-     "body": "Some values must never sit in your code: passwords, API keys, cloud credentials. GitHub stores them as secrets. A secret is encrypted, and a workflow only gets it when it asks for it by name, as in `${{ secrets.NAME }}`.\n\nSecrets and plain variables can live at three levels:\n\n- Repository: every workflow in the repository can read them.\n- Environment: only jobs that use that environment, such as `production`, can read them.\n- Organization: shared by several repositories, for teams.\n\nVariables hold settings that are not secret, such as a region or a bucket name. You read them with `${{ vars.NAME }}`. Set both in Settings, or with `gh secret set` and `gh variable set`.\n\nGitHub hides known secret values in logs as `***`, but do not rely on that. A secret that is changed, for example base64 encoded, is not hidden. Never `echo` a secret, never put a whole JSON file in one secret, and rotate any secret that leaks. Pull requests from forks get no secrets at all.",
+     "body": "Passwords, API keys and cloud credentials must never sit in your code. GitHub stores them as secrets instead. A secret is encrypted, and a workflow gets it only when it asks for it by name, as in `${{ secrets.NAME }}`.\n\nSecrets and plain variables can live at three levels:\n\n- Repository: every workflow in the repository can read them.\n- Environment: only jobs that use that environment, such as `production`, can read them.\n- Organization: several repositories share them, which suits teams.\n\nVariables hold settings that are not secret, such as a region or a bucket name. You read them with `${{ vars.NAME }}`. Set both in Settings, or with `gh secret set` and `gh variable set`.\n\nGitHub hides known secret values in logs as `***`, but don't count on it. A secret that has been changed, for example base64 encoded, is not hidden. So never `echo` a secret, and never put a whole JSON file in one secret. If a secret leaks, rotate it. Pull requests from forks get no secrets at all.",
      "refs": [
       {
        "title": "About secrets",
@@ -1060,7 +1060,7 @@
     },
     {
      "h": "GITHUB_TOKEN and least privilege",
-     "body": "Every job gets a token without asking: the `GITHUB_TOKEN`. GitHub creates it when the job starts, and it expires when the job ends. It only works on the current repository. Actions in the job can use it even if you never pass it to them, so its power matters.\n\n**Least privilege** means a token gets only the access its task needs. You control that with the `permissions` key:\n\n- At the top of the workflow, set the default for every job, such as `contents: read`.\n- In a job that needs more, set its own `permissions`, such as `packages: write`.\n- Any permission you do not list is set to `none`.\n\nSo the release job can push images, while every other job can only read code. If an action in a read-only job is ever compromised, it cannot push a fake image or change your code. Your `ci.yml` from Day 11 already starts with `contents: read` for this reason.",
+     "body": "Every job gets a token without asking: the `GITHUB_TOKEN`. GitHub creates it when the job starts, and it expires when the job ends. It only works on the current repository. Actions in the job can use it even if you never pass it to them, so how much it can do matters.\n\n**Least privilege** means a token gets only the access its task needs. You control that with the `permissions` key:\n\n- At the top of the workflow, set the default for every job, such as `contents: read`.\n- In a job that needs more, set its own `permissions`, such as `packages: write`.\n- Any permission you do not list is set to `none`.\n\nWith that setup the release job can push images, and every other job can only read code. If an action in a read-only job is ever compromised, it cannot push a fake image or change your code. Your `ci.yml` from Day 11 already starts with `contents: read` for this reason.",
      "refs": [
       {
        "title": "GITHUB_TOKEN",
@@ -1076,7 +1076,7 @@
     },
     {
      "h": "From a git tag to an image in GHCR",
-     "body": "Now the payoff. When you push a tag such as `v1.0.0`, `release.yml` builds the image and pushes it to GitHub Container Registry (GHCR). It lands at `ghcr.io/$GH_USER/hello-devops`, the same package you pushed by hand on Day 8. The job runs these steps:\n\n1. `actions/checkout` fetches the code at the tag.\n2. The QEMU and Buildx setup actions prepare a builder for amd64 (most servers) and arm64 (your Mac).\n3. `docker/login-action` logs in to `ghcr.io` with the `GITHUB_TOKEN`.\n4. `docker/metadata-action` turns the git tag into the image tags `1.0.0`, `sha-<commit>` and `latest`.\n5. `docker/build-push-action` builds both architectures with `APP_VERSION=1.0.0` and pushes them.\n\nThe image is built once, from the tag. Later stages deploy this exact image by its digest, which the last step writes to the run summary. Day 22 adds a scan, an SBOM and a signature to this job.\n\nA new GHCR package is private, even when the repository is public. To pull it, make it public in its package settings, or log in with a personal access token (classic) that has the `read:packages` scope.",
+     "body": "When you push a tag such as `v1.0.0`, `release.yml` builds the image and pushes it to GitHub Container Registry (GHCR). It lands at `ghcr.io/$GH_USER/hello-devops`, the same package you pushed by hand on Day 8. The job runs these steps:\n\n1. `actions/checkout` fetches the code at the tag.\n2. The QEMU and Buildx setup actions prepare a builder for amd64 (most servers) and arm64 (your Mac).\n3. `docker/login-action` logs in to `ghcr.io` with the `GITHUB_TOKEN`.\n4. `docker/metadata-action` turns the git tag into the image tags `1.0.0`, `sha-<commit>` and `latest`.\n5. `docker/build-push-action` builds both architectures with `APP_VERSION=1.0.0` and pushes them.\n\nThe image is built once, from the tag. The last step writes its digest to the run summary, and later stages deploy this exact image by that digest. Day 22 adds a scan, an SBOM and a signature to this job.\n\nA new GHCR package is private, even when the repository is public. To pull it, make it public in its package settings, or log in with a personal access token (classic) that has the `read:packages` scope.",
      "refs": [
       {
        "title": "Publishing Docker images",
@@ -1097,7 +1097,7 @@
     },
     {
      "h": "Environments: a human approval gate",
-     "body": "An environment is a named deploy target, such as `staging` or `production`. A job opts in with `environment: production`. Before that job starts, GitHub checks the environment's protection rules:\n\n- Required reviewers: up to six people or teams, and one approval lets the job go on.\n- Wait timer: a delay before the job may start.\n- Deployment branches and tags: for example, only tags matching `v*` may deploy.\n\nEnvironment secrets are only handed over after the rules pass. So the approval is also a gate for credentials.\n\nPlan limits matter here. On the Free, Pro and Team plans, required reviewers only work in public repositories. Private repositories need GitHub Enterprise for them. If a workflow names an environment that does not exist yet, GitHub creates it with no rules, and the job runs right away.",
+     "body": "An environment is a named deploy target, such as `staging` or `production`. A job opts in with `environment: production`. Before that job starts, GitHub checks the environment's protection rules:\n\n- Required reviewers: up to six people or teams. One approval lets the job go on.\n- Wait timer: a delay before the job may start.\n- Deployment branches and tags: for example, only tags matching `v*` may deploy.\n\nGitHub hands over environment secrets only after the rules pass, so the approval also guards your credentials.\n\nWhether you get required reviewers depends on your plan. On the Free, Pro and Team plans, they only work in public repositories. Private repositories need GitHub Enterprise for them. Watch out for one more thing: if a workflow names an environment that does not exist yet, GitHub creates it with no rules, and the job runs right away.",
      "refs": [
       {
        "title": "Deployment environments",
@@ -1113,7 +1113,7 @@
     },
     {
      "h": "OIDC: cloud access without stored keys",
-     "body": "To deploy to a cloud such as AWS, a workflow needs credentials. The old way is to store an access key as a secret. That key lives for months, works from anywhere, and is painful to rotate.\n\nOpenID Connect (OIDC) removes the stored key. It works in five steps:\n\n1. The job asks GitHub for a signed ID token, which needs `id-token: write` in `permissions`.\n2. The token states facts: this repository, this branch or environment, this workflow.\n3. The job sends the token to AWS and asks to use an IAM role.\n4. AWS checks the signature and compares the facts with the role's trust policy.\n5. If they match, AWS returns keys that expire after one hour by default.\n\nThe `aws-actions/configure-aws-credentials` action handles steps 1, 3 and 5 for you. You give it the role ARN and a region. The worked example shows the workflow side, and Day 15 creates the IAM role and its trust policy for real.",
+     "body": "To deploy to a cloud such as AWS, a workflow needs credentials. The simple way is to store an access key as a secret. That key lives for months, works from anywhere, and is painful to rotate.\n\nOpenID Connect (OIDC) gets rid of the stored key. It works in five steps:\n\n1. The job asks GitHub for a signed ID token, which needs `id-token: write` in `permissions`.\n2. The token states facts: this repository, this branch or environment, this workflow.\n3. The job sends the token to AWS and asks to use an IAM role.\n4. AWS checks the signature and compares the facts with the role's trust policy.\n5. If they match, AWS returns keys that expire after one hour by default.\n\nYou don't code any of this yourself. The `aws-actions/configure-aws-credentials` action handles steps 1, 3 and 5, and you give it the role ARN and a region. The worked example shows the workflow side, and Day 15 creates the IAM role and its trust policy for real.",
      "refs": [
       {
        "title": "OpenID Connect",
@@ -1134,7 +1134,7 @@
     },
     {
      "h": "Reuse and supply-chain safety",
-     "body": "As workflows grow, two features stop copy and paste:\n\n- A reusable workflow has `on: workflow_call`. Other workflows call it as a job, with `uses:` and the file path.\n- A composite action bundles several steps in an `action.yml` file, used as one step.\n\nEvery action you call is someone else's code, running with your token and your secrets. Three habits protect you:\n\n- Pin third-party actions to a full commit SHA, and keep the version in a comment.\n- Turn on Dependabot for `github-actions`, so it opens PRs that update versions and pins.\n- Avoid `pull_request_target` together with code from the pull request.\n\nWhy a SHA? A tag such as `v4` can be moved to different code by anyone who controls the action's repository. A commit SHA always means the same code. Why avoid `pull_request_target`? It runs with secrets and a write token, even for pull requests from forks. If the job then runs the fork's build script, a stranger's code gets your secrets. GitHub is adding guard rails, but the safe choice is plain `pull_request`. Day 22 shows real attacks where these habits would have helped.",
+     "body": "Once you have several workflows, you will want to stop copying steps between them. GitHub has two features for that:\n\n- A reusable workflow has `on: workflow_call`. Other workflows call it as a job, with `uses:` and the file path.\n- A composite action bundles several steps in an `action.yml` file, used as one step.\n\nEvery action you call is someone else's code, and it runs with your token and your secrets. These habits protect you:\n\n- Pin third-party actions to a full commit SHA, and keep the version in a comment.\n- Turn on Dependabot for `github-actions`, so it opens PRs that update versions and pins.\n- Avoid `pull_request_target` together with code from the pull request.\n\nWhy a SHA? Anyone who controls an action's repository can move a tag such as `v4` to different code. A commit SHA always means the same code.\n\n`pull_request_target` is risky because it runs with secrets and a write token, even for pull requests from forks. If the job then runs the fork's build script, a stranger's code gets your secrets. GitHub is adding guard rails, but plain `pull_request` is the safe choice. Day 22 shows real attacks where these habits would have helped.",
      "refs": [
       {
        "title": "Reusing workflow configurations",
@@ -1154,7 +1154,7 @@
      ]
     }
    ],
-   "analogy": "The GITHUB_TOKEN is like a hotel key card. The front desk makes a new card for each stay, it only opens the doors you booked, and it stops working at checkout. A long-lived cloud key is like a copied master key: it opens many doors for years, so losing it is a disaster. OIDC is showing your passport at the desk to get a fresh card each time. The analogy breaks because one guest holds a key card, while every action in a job can use the token.",
+   "analogy": "The GITHUB_TOKEN is like a hotel key card. The front desk makes a new card for each stay, it opens only the doors you booked, and it stops working at checkout. A long-lived cloud key is more like a copied master key: it opens many doors for years, so losing it is a disaster. OIDC is showing your passport at the desk to get a fresh card each time. The comparison falls short in one place: a key card has one guest, while every action in a job can use the token.",
    "diagram": "<svg viewBox=\"0 0 560 200\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Pushing a version tag waits for approval in the production environment, then builds amd64 and arm64 images and pushes them to ghcr.io using a short-lived GITHUB_TOKEN\"><text x=\"62\" y=\"30\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">you push</text><text x=\"190\" y=\"30\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">production env</text><text x=\"328\" y=\"30\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">amd64 + arm64</text><text x=\"484\" y=\"30\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">1.0.0, sha, latest</text><rect x=\"8\" y=\"42\" width=\"108\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"62\" y=\"69\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Tag v1.0.0</text><line x1=\"116\" y1=\"64\" x2=\"136\" y2=\"64\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"140\" y=\"42\" width=\"100\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"190\" y=\"69\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Approval</text><line x1=\"240\" y1=\"64\" x2=\"260\" y2=\"64\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"264\" y=\"42\" width=\"128\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"328\" y=\"69\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Build + push</text><line x1=\"392\" y1=\"64\" x2=\"412\" y2=\"64\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"416\" y=\"42\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxg\"/><text x=\"484\" y=\"69\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">ghcr.io</text><rect x=\"264\" y=\"136\" width=\"128\" height=\"40\" rx=\"10\" class=\"bx\"/><text x=\"328\" y=\"161\" class=\"t\" font-size=\"13\" text-anchor=\"middle\">GITHUB_TOKEN</text><line x1=\"328\" y1=\"136\" x2=\"328\" y2=\"90\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"206\" y=\"161\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">short-lived</text><text x=\"452\" y=\"161\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">packages: write</text></svg>",
    "diagram_caption": "A version tag starts the release: an approval gate, then an amd64 and arm64 build pushed to GHCR with a write-scoped, short-lived token.",
    "worked": {
@@ -1166,12 +1166,12 @@
       "lang": "yaml"
      },
      {
-      "say": "It deploys from any branch, its token can write everything, it prints a secret, and it uses long-lived AWS keys. Fix the trigger and the default permissions first.",
+      "say": "Four problems: it deploys from any branch, its token can write everything, it prints a secret, and it uses long-lived AWS keys. Fix the trigger and the default permissions first.",
       "code": "name: deploy\non:\n  push:\n    branches: [main]\npermissions:\n  contents: read",
       "lang": "yaml"
      },
      {
-      "say": "Give the job an environment, so it waits for approval. Then grant only the extra permission OIDC needs. `id-token: write` lets the job ask for an ID token; it gives no write access to your repository.",
+      "say": "Give the job an environment, so it waits for approval. Then grant only the extra permission OIDC needs. `id-token: write` lets the job ask for an ID token. It gives no write access to your repository.",
       "code": "jobs:\n  deploy:\n    runs-on: ubuntu-latest\n    environment: production\n    permissions:\n      contents: read\n      id-token: write",
       "lang": "yaml"
      },
@@ -1181,7 +1181,7 @@
       "lang": "yaml"
      },
      {
-      "say": "Finish the switch. The IAM role's trust policy accepts only tokens from this repository's production environment (Day 15 builds it). Then delete the old key secrets here, and deactivate the keys in AWS, so a leaked copy is useless.",
+      "say": "Finish the switch. The IAM role's trust policy accepts only tokens from this repository's production environment (Day 15 builds it). Delete the old key secrets here and deactivate the keys in AWS, so a leaked copy is useless.",
       "code": "$ gh variable set AWS_ROLE_ARN --body arn:aws:iam::123456789012:role/hello-devops-deploy\n$ gh variable set SITE_BUCKET --body hello-devops-site\n$ gh secret delete AWS_ACCESS_KEY_ID\n$ gh secret delete AWS_SECRET_ACCESS_KEY",
       "lang": "console"
      }
@@ -1239,8 +1239,8 @@
      "what": "List an action's tags with their commit SHAs, so you can pin by SHA."
     }
    ],
-   "mistake": "The push to GHCR fails with `denied` even though the job has `packages: write`. This usually means the package already exists, for example from your manual push on Day 8, and is not linked to this repository. Open the package settings, add `hello-devops` under Manage Actions access with the Write role, and re-run the job.",
-   "real_world": "At PayLoop, only the release workflow may push images, and it only runs for version tags. Production deploys wait in a protected environment until an engineer from the on-call rotation approves. No CI system holds long-lived cloud keys: each job gets short-lived AWS credentials through OIDC, with one role per environment.",
+   "mistake": "If the push to GHCR fails with `denied` while the job has `packages: write`, the package most likely exists already and is not linked to this repository. Your manual push on Day 8 would do that. Open the package settings, add `hello-devops` under Manage Actions access with the Write role, and re-run the job.",
+   "real_world": "PayLoop lets only the release workflow push images, and that workflow only runs for version tags. Production deploys wait in a protected environment until an engineer from the on-call rotation approves. No CI system there holds long-lived cloud keys. Each job gets short-lived AWS credentials through OIDC, with one role per environment.",
    "task": {
     "title": "Release v1.0.0 to GHCR",
     "steps": [
@@ -1255,17 +1255,17 @@
     ],
     "hints": [
      "If the job never asks for approval, check that the environment name in the workflow matches exactly.",
-     "Push tags one at a time. GitHub creates no events when more than three tags are pushed at once.",
+     "Push tags one at a time. GitHub creates no events when you push more than three tags at once.",
      "If you pushed 1.0.0 by hand on Day 8, this release replaces that tag with a new digest."
     ],
     "done_when": "`curl localhost:8000` against the image you pulled from GHCR shows `\"version\": \"1.0.0\"`."
    },
    "explain_back": {
     "prompt": "Explain how your release workflow keeps credentials safe, in 3 to 4 sentences. Mention GITHUB_TOKEN permissions, the environment and SHA pinning.",
-    "answer": "The workflow gives every job a read-only GITHUB_TOKEN, and only the image job gets packages: write, so nothing else can push. The token is created for that job and expires when it ends, so there is no long-lived password to leak. The job uses the production environment, so it waits for my approval before it runs and before any environment secrets are released. The third-party Docker actions are pinned to full commit SHAs, so nobody can swap their code by moving a tag."
+    "answer": "The workflow gives every job a read-only GITHUB_TOKEN, and only the image job gets packages: write, so nothing else can push. That token is created for the job and expires when the job ends, so there is no long-lived password to leak. The job uses the production environment, so it waits for my approval before it runs and before any environment secrets are released. The third-party Docker actions are pinned to full commit SHAs, so nobody can swap their code by moving a tag."
    },
    "recap": [
-    "Secrets are encrypted and read by name; never print them, and rotate any that leak.",
+    "Secrets are encrypted and read by name. Never print them, and rotate any that leak.",
     "Set permissions: contents: read at the top, and grant more only in the job that needs it.",
     "A v* tag triggers release.yml, which builds amd64 and arm64 images and pushes them to GHCR.",
     "Environments with required reviewers pause a job until a person approves it.",
@@ -1282,7 +1282,7 @@
       "No permissions key at all"
      ],
      "answer": 1,
-     "why": "The job needs to read code and write one comment, and nothing else."
+     "why": "The job needs to read code and write one comment. It needs nothing else."
     },
     {
      "q": "A new teammate wants to deploy to AWS by saving an IAM user's access key as a repository secret. What do you suggest?",
@@ -1293,7 +1293,7 @@
       "Save the key as a variable so it is easy to see"
      ],
      "answer": 0,
-     "why": "OIDC gives each job keys that expire soon and removes the stored secret."
+     "why": "With OIDC each job gets keys that expire soon, and there is no stored secret left."
     },
     {
      "q": "Every production release must wait for a human. The repository is public, on the Free plan. What do you use?",
@@ -1310,7 +1310,7 @@
    "interview": [
     {
      "q": "Why use OIDC instead of storing cloud access keys in CI?",
-     "a": "Stored keys live a long time and work from anywhere, so a leak gives an attacker access until someone notices and rotates them. With OIDC, the workflow proves who it is with a signed token, and the cloud returns credentials that expire soon. The cloud's trust policy can limit access to one repository, branch or environment. There is no secret to rotate or leak, and each role can follow least privilege."
+     "a": "Stored keys live a long time and work from anywhere. If one leaks, an attacker has access until someone notices and rotates it. With OIDC, the workflow proves who it is with a signed token, and the cloud returns credentials that expire soon. The cloud's trust policy can limit access to one repository, branch or environment. There is no stored secret to leak or rotate, and each role can follow least privilege."
     },
     {
      "q": "How do you protect a CI/CD pipeline from a compromised third-party action?",
@@ -1319,7 +1319,7 @@
    ],
    "deeper": {
     "minutes": 13,
-    "body": "The ID token that GitHub gives your job is a JSON Web Token (JWT): a small JSON document, signed by GitHub and encoded as text. Its fields are called claims. Four of them matter most:\n\n- `iss` (issuer) is `https://token.actions.githubusercontent.com`, so the cloud knows who signed it.\n- `aud` (audience) says who the token is for; the AWS action asks for `sts.amazonaws.com`.\n- `sub` (subject) says which workflow is calling, for example `repo:octo-org/octo-repo:environment:production`.\n- `exp` says when the token expires.\n\nThe real security lives on the cloud side. The IAM role's trust policy decides which tokens it accepts. A strict policy checks `aud` and the exact `sub`. A loose policy, such as one that matches `repo:octo-org/*`, lets every repository owned by `octo-org` assume the role. Always pin `sub` to one repository, plus a branch or an environment.\n\nThe `sub` value depends on the job:\n\n- A job with `environment: production` gets a subject ending in `environment:production`.\n- A job running on a branch gets one ending in `ref:refs/heads/main`.\n- A job started by a pull request gets one ending in `pull_request`.\n\nSo you can give the production role only to production jobs, and a read-only role to pull request jobs.\n\nOne recent change affects your repository. Repositories created after July 15, 2026 use an immutable subject format that includes numeric IDs, for example `repo:octo-org@123456/octo-repo@456789:ref:refs/heads/main`. This stops someone who later takes over a deleted account name from matching an old trust policy. Your hello-devops repository is new, so copy the exact format from the [OIDC reference](https://docs.github.com/en/actions/reference/security/oidc) when you write the trust policy on Day 15.\n\nTwo habits complete the picture. Ask for `id-token: write` only in the job that deploys, not for the whole workflow. And pair OIDC with environments: protection rules must pass before the job reaches a runner, so no token exists until a person has approved."
+    "body": "The ID token that GitHub gives your job is a JSON Web Token (JWT): a small JSON document, signed by GitHub and encoded as text. Its fields are called claims. Four of them matter most:\n\n- `iss` (issuer) is `https://token.actions.githubusercontent.com`, so the cloud knows who signed it.\n- `aud` (audience) says who the token is for; the AWS action asks for `sts.amazonaws.com`.\n- `sub` (subject) says which workflow is calling, for example `repo:octo-org/octo-repo:environment:production`.\n- `exp` says when the token expires.\n\nThe checking happens on the cloud side. The IAM role's trust policy decides which tokens it accepts. A strict policy checks `aud` and the exact `sub`. A loose policy, such as one that matches `repo:octo-org/*`, lets every repository owned by `octo-org` assume the role. Always pin `sub` to one repository, plus a branch or an environment.\n\nThe `sub` value depends on the job:\n\n- A job with `environment: production` gets a subject ending in `environment:production`.\n- A job running on a branch gets one ending in `ref:refs/heads/main`.\n- A job started by a pull request gets one ending in `pull_request`.\n\nSo you can give the production role only to production jobs, and a read-only role to pull request jobs.\n\nOne recent change affects your repository. Repositories created after July 15, 2026 use an immutable subject format that includes numeric IDs, for example `repo:octo-org@123456/octo-repo@456789:ref:refs/heads/main`. This stops someone who later takes over a deleted account name from matching an old trust policy. Your hello-devops repository is new, so copy the exact format from the [OIDC reference](https://docs.github.com/en/actions/reference/security/oidc) when you write the trust policy on Day 15.\n\nAsk for `id-token: write` only in the job that deploys, not for the whole workflow. And pair OIDC with environments. Protection rules must pass before the job reaches a runner, so no token exists until a person has approved."
    },
    "sources": [
     {
@@ -1342,23 +1342,23 @@
   }
  ],
  "recap": [
-  "Small branches and pull requests, with review and CI, are how teams change code safely.",
-  "CI tests every change; continuous delivery keeps it releasable; continuous deployment releases it automatically.",
-  "A workflow is YAML in .github/workflows: events start jobs, and jobs run steps on fresh runners.",
-  "The lab's ci.yml lints, tests on Python 3.13 and 3.14, saves a JUnit report and checks the Docker build.",
-  "A ruleset with required checks keeps red pull requests out of main.",
-  "release.yml turns a v* tag into an amd64 and arm64 image in GHCR, built once and named by digest.",
-  "Least privilege everywhere: read-only tokens by default, OIDC instead of stored keys, approvals for production.",
-  "Pin third-party actions to commit SHAs and let Dependabot keep them current."
+  "Change code on small, short-lived branches, and merge through pull requests that a reviewer and CI both check.",
+  "CI builds and tests every change. With continuous delivery a person picks the release moment; with continuous deployment nobody does.",
+  "A workflow is a YAML file in .github/workflows: an event starts it, and each job runs its steps on a fresh runner.",
+  "The lab's ci.yml lints, tests on Python 3.13 and 3.14, keeps a JUnit report and checks that the Docker image builds.",
+  "A ruleset on main with required checks stops red pull requests from merging.",
+  "release.yml turns a v* tag into one amd64 and arm64 image in GHCR, built once and deployed by digest.",
+  "Give tokens the least access they need: read-only by default, OIDC instead of stored keys, approval before production.",
+  "Pin third-party actions to commit SHAs, and let Dependabot keep the pins current."
  ],
  "flashcards": [
   {
    "front": "Continuous delivery vs continuous deployment?",
-   "back": "Delivery: every change is releasable and a person clicks release. Deployment: every passing change goes live automatically."
+   "back": "Delivery: every change is ready to release, and a person clicks release. Deployment: every passing change goes live on its own."
   },
   {
    "front": "What does 'build once, deploy many' mean?",
-   "back": "Build the image one time and promote that same digest through every environment."
+   "back": "Build the image one time, then promote that same digest through every environment."
   },
   {
    "front": "In semver 2.4.1, which number changes for a compatible bug fix?",
@@ -1366,7 +1366,7 @@
   },
   {
    "front": "Canary vs blue/green deployment?",
-   "back": "Canary sends a small share of traffic to the new version first; blue/green switches all traffic between two full copies."
+   "back": "A canary gets a small share of traffic first. Blue/green switches all traffic at once between two full copies."
   },
   {
    "front": "Where must workflow files live?",
@@ -1378,19 +1378,19 @@
   },
   {
    "front": "What makes a step fail?",
-   "back": "A command that ends with a non-zero exit code."
+   "back": "Any command that ends with a non-zero exit code."
   },
   {
    "front": "What does needs: test do on a job?",
-   "back": "The job waits until the test job succeeds; if test fails, the job is skipped."
+   "back": "The job waits for test to succeed. If test fails, this job is skipped."
   },
   {
    "front": "Why add if: ${{ !cancelled() }} to an upload step?",
-   "back": "So it runs even after an earlier step failed, unless the run was cancelled."
+   "back": "So the report still uploads after an earlier step failed. It is skipped only when the run was cancelled."
   },
   {
    "front": "Why not require only the last job of a needs chain?",
-   "back": "If an earlier job fails, the last job is skipped, and a skipped check counts as passed."
+   "back": "If an earlier job fails, the last job is skipped, and GitHub counts a skipped check as passed."
   },
   {
    "front": "Why put paths-ignore on push but not on pull_request?",
@@ -1398,7 +1398,7 @@
   },
   {
    "front": "What does permissions: contents: read at the top of a workflow do?",
-   "back": "Makes every job's GITHUB_TOKEN read-only for code; unlisted permissions become none."
+   "back": "It makes the GITHUB_TOKEN read-only for code in every job, and sets every permission you don't list to none."
   },
   {
    "front": "How long does a GITHUB_TOKEN live?",
@@ -1410,11 +1410,11 @@
   },
   {
    "front": "Why pin an action to a full commit SHA?",
-   "back": "A tag can be moved to other code; a commit SHA always means the same code."
+   "back": "Whoever controls the action's repository can move a tag to other code. A full commit SHA always means the same code."
   },
   {
    "front": "Is a new GHCR package public or private?",
-   "back": "Private. Make it public in its package settings, or pull with a read:packages token."
+   "back": "Private, even in a public repository. Make it public in its package settings, or pull with a read:packages token."
   }
  ],
  "quiz": [
@@ -1427,7 +1427,7 @@
     "CI stops running on old branches"
    ],
    "answer": 0,
-   "why": "Long-lived, large branches drift from main, so conflicts and shallow reviews pile up."
+   "why": "Branches that live long and grow big drift away from main. Conflicts pile up, and reviewers can only skim."
   },
   {
    "q": "Which event lets you start a workflow with a button in the Actions tab?",
@@ -1438,7 +1438,7 @@
     "pull_request"
    ],
    "answer": 2,
-   "why": "workflow_dispatch adds the Run workflow button once the file is on the default branch."
+   "why": "workflow_dispatch adds the Run workflow button, once the workflow file is on the default branch."
   },
   {
    "q": "Why does the lab's ci.yml put the Python version in the artifact name?",
@@ -1449,7 +1449,7 @@
     "Each matrix job needs a unique artifact name"
    ],
    "answer": 3,
-   "why": "Each matrix job uploads its own report, and two artifacts in one run cannot share a name."
+   "why": "Each matrix job uploads its own report, and two artifacts in one run cannot have the same name."
   },
   {
    "q": "In release.yml, which permission lets the GITHUB_TOKEN push images to GHCR?",
@@ -1460,7 +1460,7 @@
     "actions: write"
    ],
    "answer": 1,
-   "why": "GHCR is part of GitHub Packages, so pushing needs packages: write."
+   "why": "GHCR is part of GitHub Packages, so the token needs packages: write to push there."
   },
   {
    "q": "You push the tag v2.3.0. Which image tags does the lab's metadata-action produce?",
@@ -1482,7 +1482,7 @@
     "Dependabot only works with tags"
    ],
    "answer": 0,
-   "why": "Whoever controls the action's repository can move a tag; a full SHA always names the same code."
+   "why": "Whoever controls the action's repository can move a tag. A full SHA always names the same code."
   },
   {
    "q": "A CI step ends with `grep ERROR app.log`, and the log contains no errors. What happens to the step?",
@@ -1493,7 +1493,7 @@
     "It fails, because grep needs sudo"
    ],
    "answer": 1,
-   "why": "grep returns exit code 1 when it finds no match, and any non-zero exit code fails the step.",
+   "why": "grep exits with 1 when it finds no match, and any non-zero exit code fails the step.",
    "from": "Part 1"
   },
   {
@@ -1505,7 +1505,7 @@
     "Use the image digest, sha256:..."
    ],
    "answer": 3,
-   "why": "Tags can be moved to other images; a digest names exact content and never changes.",
+   "why": "A tag can be moved to another image. A digest names the exact content and never changes.",
    "from": "Part 2"
   }
  ]

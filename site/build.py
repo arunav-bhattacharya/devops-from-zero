@@ -147,8 +147,8 @@ def lesson(L, R, part, k):
 
 LAB_FILES = [  # (path, lang, day it is built)
     ("app.py", "python", 2), ("test_app.py", "python", 2), ("requirements.txt", "text", 2), ("requirements-dev.txt", "text", 2),
-    (".gitignore", "text", 2), ("Dockerfile", "dockerfile", 8), (".dockerignore", "text", 6), ("compose.yaml", "yaml", 7),
-    (".github/workflows/ci.yml", "yaml", 11), (".github/workflows/release.yml", "yaml", 12),
+    (".gitignore", "text", 2), ("Dockerfile", "dockerfile", 22), (".dockerignore", "text", 6), ("compose.yaml", "yaml", 7),
+    (".github/workflows/ci.yml", "yaml", 11), (".github/workflows/release.yml", "yaml", 22),
 ]
 
 
@@ -164,7 +164,8 @@ def labs():
     extra = sorted(x for x in LAB.rglob("*") if x.is_file() and not skip & set(x.parts) and x.name != "README.md"
                    and not x.name.endswith((".tfstate", ".lock.hcl", ".pyc", ".tgz", ".zip", ".backup")))
     days = [("infra/aws", 15), (".github/workflows/terraform", 15), ("infra/local", 14), ("kind-config", 16), ("k8s/gateway", 19),
-            ("k8s", 18), ("chart", 19), ("argocd", 20), ("observability", 21), ("policy", 22)]
+            ("k8s", 18), ("chart", 19), ("argocd", 20), ("observability", 21), ("policy/ai-agent", 23), ("policy", 22),
+            (".github/pull_request_template", 9), (".github/dependabot", 12)]
     langs = {".py": "python", ".yaml": "yaml", ".yml": "yaml", ".tf": "hcl", ".tpl": "text", ".txt": "text", ".json": "json", ".md": "text"}
     for x in extra:
         rel = str(x.relative_to(LAB))
