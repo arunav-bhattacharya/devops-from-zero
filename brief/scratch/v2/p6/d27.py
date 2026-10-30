@@ -313,7 +313,7 @@ LESSON = {
         {"q": "How do you manage Terraform state in a team?",
          "a": "I keep it in a remote backend, such as a versioned and encrypted S3 bucket with `use_lockfile = true`, or HCP Terraform. Locking means only one run changes a state at a time. I limit who can read and write it, because it holds secrets, and usually only the pipeline may write. I split large setups into several states, one per environment or component, so a mistake has a smaller blast radius. Changes to addresses go through `moved`, `import` and `removed` blocks in pull requests, not hand edits."},
         {"q": "What is drift, and how do you handle it?",
-         "a": "Drift is a difference between the real infrastructure and Terraform's state, usually from a manual change or another tool. A normal plan shows it and proposes to undo it, and `plan -refresh-only` shows only the outside changes. Then I decide which side is right: apply to restore the code, or change the code to match reality. `apply -refresh-only` only updates the state, so the code still wins on the next apply. A scheduled refresh-only plan in CI catches drift early."},
+         "a": "Drift is a difference between the real infrastructure and Terraform's state, usually from a manual change or another tool. A normal plan shows it and proposes to undo it, and `plan -refresh-only` shows only the outside changes. Then I decide which side is right. Either I apply to restore the code, or I change the code to match reality. `apply -refresh-only` only updates the state, so the code still wins on the next apply. A scheduled refresh-only plan in CI catches drift early."},
         {"q": "How do you bring existing infrastructure under Terraform?",
          "a": "I write an `import` block with the target address and the provider's ID, plus a resource block that describes the object. `plan -generate-config-out` can draft that block. Then I plan and iterate until the plan says the object will be imported with nothing destroyed, because a mismatch shows up as \"must be replaced\". After apply I delete the import block. For many resources, newer Terraform versions can also discover them in bulk with `terraform query`."},
     ],
@@ -330,7 +330,7 @@ LESSON = {
             "- Keep it in a remote backend that encrypts at rest, such as S3 with server-side encryption.\n"
             "- Limit who can read it. Reading state is close to reading production.\n"
             "- On OpenTofu, turn on state encryption. An `encryption` block inside `terraform` encrypts state and plan files with a key from a passphrase or a key service such as AWS KMS.\n\n"
-            "One last state topic: locks that get stuck. If a run crashes, or someone closes a laptop in the middle of an apply, the lock can stay behind. Every later run stops with `Error acquiring the state lock` and prints the lock's ID. First make sure no run is really in progress. Then `terraform force-unlock LOCK_ID` removes it. Never force-unlock a lock that someone is actively holding, because two applies writing one state is exactly how states get corrupted."
+            "Which tool should you reach for first? Keep secrets out of `.tf` files and committed `.tfvars` files, always. Mark anything secret as `sensitive`. Where your Terraform and provider versions allow it, pass secrets as ephemeral values into write-only arguments, so they never reach the state. And whatever is left, protect by protecting the state."
         ),
     },
     "sources": [

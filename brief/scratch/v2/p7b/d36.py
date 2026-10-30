@@ -126,7 +126,8 @@ LESSON = {
                 "3. The HTTPRoute `hello-devops` attaches to `hello-gateway` and points at the `hello-devops` Service.\n"
                 "4. Envoy Gateway turns the route into Envoy settings and sends them to the proxy, which starts forwarding.\n\n"
                 "kind has one catch. The proxy's Service has type LoadBalancer. On a cloud, that creates a real load balancer with an address. "
-                "kind has no cloud, so the Service never gets one, and `kubectl get gateway -n hello` shows PROGRAMMED `False` with the message \"No addresses have been assigned to the Gateway\". "
+                "A kind cluster has no cloud, so the Service never gets one. "
+                "As a result, `kubectl get gateway -n hello` shows PROGRAMMED `False` with the message \"No addresses have been assigned to the Gateway\". "
                 "This is expected. The routing behind it works, and you reach the proxy with `kubectl port-forward`, as the [Envoy Gateway quickstart](https://gateway.envoyproxy.io/docs/tasks/quickstart/) does.\n\n"
                 "If you want a real address on kind, the kind project's [cloud-provider-kind](https://github.com/kubernetes-sigs/cloud-provider-kind) acts as a cloud load balancer for local clusters. "
                 "On a Mac it exposes the address through a port on localhost. For one app on a laptop, port-forward is enough."
@@ -173,8 +174,8 @@ LESSON = {
                 "Two of its settings matter:\n"
                 "- `volumeBindingMode: WaitForFirstConsumer`: the PV is created only when a Pod uses the claim, on that Pod's node.\n"
                 "- `reclaimPolicy: Delete`: deleting the PVC also deletes the PV and the data.\n\n"
-                "Access modes say who may mount a volume. `ReadWriteOnce` (RWO) means one node at a time, the usual case for disks. "
-                "`ReadWriteMany` (RWX) needs network storage such as NFS. `ReadOnlyMany` and `ReadWriteOncePod` exist too."
+                "Access modes say who may mount a volume. The mode `ReadWriteOnce` (RWO) means one node at a time, the usual case for disks. "
+                "The mode `ReadWriteMany` (RWX) needs network storage such as NFS. Two more modes exist: `ReadOnlyMany` and `ReadWriteOncePod`."
             ),
             "refs": [
                 {"title": "Persistent volumes", "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/", "kind": "docs"},
@@ -377,7 +378,7 @@ LESSON = {
             "- `ReadWriteOnce` means one node at a time. If `redis-0` moves to another node, a local-path volume cannot follow it, because the data lives on the old node. Cloud disks can move between nodes; local folders cannot.\n"
             "- A StatefulSet wants a headless Service (`clusterIP: None`) so each Pod gets its own DNS name. Your existing `redis` Service is a normal one; for one replica that still works.\n"
             "- Scaling down does not delete the PVCs of removed Pods, so scaling back up finds the old data.\n\n"
-            "Kubernetes 1.37 also brought two StatefulSet changes you may read about: `maxUnavailable` for rolling updates is on by default again, and a new `Recreate` update strategy exists as an alpha feature.\n\n"
+            "Kubernetes 1.37 also changed two StatefulSet details you may read about. The `maxUnavailable` setting for rolling updates is on by default again. A new `Recreate` update strategy exists as an alpha feature.\n\n"
             "The traffic side has its own next step. cloud-provider-kind can give the Gateway a real address on your laptop. "
             "It runs on your Mac, watches the cluster, and exposes each LoadBalancer Service through a port on localhost. "
             "With it running, `kubectl get gateway` shows an address and PROGRAMMED True, which matches what you will see on a cloud. "

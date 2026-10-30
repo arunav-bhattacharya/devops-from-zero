@@ -77,8 +77,8 @@ LESSON = {
                 "- Startup probe: \"Have you finished starting?\" Until it passes, the other two wait. If it never passes, the container is restarted.\n"
                 "- Liveness probe: \"Are you stuck?\" After enough failures in a row, the kubelet kills the container and starts a new one.\n"
                 "- Readiness probe: \"Can you take traffic right now?\" While it fails, the Pod leaves the Service's endpoints. Nothing restarts.\n\n"
-                "hello-devops has two endpoints made for this. `/healthz` answers as long as the Python process can serve a request. "
-                "`/readyz` also pings Redis and returns 503 when Redis is down. "
+                "hello-devops has two endpoints made for this. The `/healthz` endpoint answers as long as the Python process can serve a request. "
+                "The `/readyz` endpoint also pings Redis and returns 503 when Redis is down. "
                 "The lab's `k8s/deployment.yaml` points the startup and liveness probes at `/healthz` and the readiness probe at `/readyz`.\n\n"
                 "One surprise: Kubernetes does not run the `HEALTHCHECK` line from your Dockerfile (Part 3). "
                 "That line only matters when you run the image with plain Docker. In a cluster, probes take its place."
@@ -184,7 +184,7 @@ LESSON = {
                 "The [metrics-server README](https://github.com/kubernetes-sigs/metrics-server) says this flag is for testing only. "
                 "Until metrics arrive, `kubectl get hpa` shows `cpu: <unknown>/70%`.\n\n"
                 "Three more rules. Without a CPU request the HPA cannot compute a percentage, so it does nothing. "
-                "The Deployment's `replicas` field fights the HPA on every `kubectl apply`; the HPA docs suggest removing it, and the lab keeps it equal to `minReplicas` so the two agree when the app is quiet. "
+                "The Deployment's `replicas` field fights the HPA on every `kubectl apply`. The HPA docs suggest removing it; the lab keeps it equal to `minReplicas`, so the two agree when the app is quiet. "
                 "And scale to zero exists since Kubernetes 1.37 as a beta, but only for object or external metrics such as a queue length, never for CPU."
             ),
             "refs": [
@@ -409,7 +409,7 @@ LESSON = {
             "All of this scales Pods. When the nodes are full, new Pods stay `Pending`. "
             "Node autoscalers, such as the Cluster Autoscaler or Karpenter on a cloud, notice those Pending Pods and add nodes. "
             "When nodes are under-used, they drain and remove them, and that drain respects your PDBs. "
-            "kind cannot add nodes, so on your laptop the ceiling is the memory you gave Docker Desktop.\n\n"
+            "A kind cluster cannot add nodes, so on your laptop the ceiling is the memory you gave Docker Desktop.\n\n"
             "Probes deserve the same care as numbers. Tune them like alerts: a probe acts on its own, often when nobody is watching. "
             "Before you tighten a timeout, ask what happens if every Pod fails that probe in the same minute."
         ),

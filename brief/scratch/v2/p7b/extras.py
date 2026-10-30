@@ -41,10 +41,10 @@ EXTRAS = {
         {
             "q": "Every Pod of a Service is Running and 1/1 Ready, but requests to the Service fail, and its EndpointSlice shows `<unset>`. What is the most likely cause?",
             "options": [
-                "The readiness probe is too strict",
-                "The memory limit is too low",
-                "The image tag does not exist",
-                "The Service selector does not match the Pods' labels",
+                "The readiness probe fails on every Pod",
+                "The memory limit is too low for the app",
+                "The image tag does not exist in the registry",
+                "The Service selector does not match the labels",
             ],
             "answer": 3,
             "why": "Ready Pods that are missing from the endpoints are not selected at all, which points at the selector (or the targetPort).",
@@ -53,7 +53,7 @@ EXTRAS = {
             "q": "Your team installs Envoy Gateway and a monitoring stack, and also deploys its own small service to dev and prod. Which split fits best?",
             "options": [
                 "Kustomize for everything, including the third-party tools",
-                "Helm charts for the third-party tools, Kustomize overlays for your service",
+                "Helm for the tools, Kustomize overlays for your service",
                 "Copies of every YAML file per environment",
                 "One Helm chart that bundles all three together",
             ],

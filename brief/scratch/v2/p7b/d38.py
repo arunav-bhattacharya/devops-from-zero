@@ -172,7 +172,7 @@ LESSON = {
         {
             "h": "Events, logs and exit codes",
             "body": (
-                "**Events** are short records that Kubernetes parts write about objects: the scheduler placed a Pod, the kubelet pulled an image, a probe failed. "
+                "Events are short records that Kubernetes parts write about objects: the scheduler placed a Pod, the kubelet pulled an image, a probe failed. "
                 "The API server keeps them for about an hour by default, so read them early.\n\n"
                 "Three ways to read them:\n"
                 "- `kubectl describe pod <name>` shows one object's events at the bottom.\n"
@@ -196,8 +196,8 @@ LESSON = {
             "h": "Looking inside: exec, port-forward and kubectl debug",
             "body": (
                 "Sometimes you need to test from inside the cluster. Can this Pod resolve a name, reach a port, see a file?\n\n"
-                "`kubectl exec -it <pod> -- sh` opens a shell in a running container. It only works if the image has a shell and the tools you need, and small images often do not. "
-                "hello-devops has `sh` and Python, but no `nslookup`, `curl` or `wget`. Distroless images have no shell at all.\n\n"
+                "The command `kubectl exec -it <pod> -- sh` opens a shell in a running container. That only works if the image has a shell and the tools you need. "
+                "Small images often do not. The hello-devops image has `sh` and Python, but no `nslookup`, `curl` or `wget`. Distroless images have no shell at all.\n\n"
                 "That is what `kubectl debug` is for. It adds an **ephemeral container** to a running Pod: a temporary extra container with an image you choose, such as `busybox`, or `nicolaka/netshoot`, a large image full of network tools. "
                 "It shares the Pod's network, so it sees DNS and ports exactly as the app does. With `--target=web` it also sees the processes of the `web` container. "
                 "Ephemeral containers are never restarted, and they go away when the Pod is deleted. Two more forms:\n"
@@ -243,9 +243,9 @@ LESSON = {
                 "- Headlamp is a graphical alternative. The old Kubernetes Dashboard project has been archived, and the [Kubernetes blog](https://kubernetes.io/blog/2026/06/01/dashboard-to-headlamp/) points to Headlamp instead.\n\n"
                 "Learn the plain kubectl commands first anyway. k9s is not installed on every machine you will log in to; kubectl is.\n\n"
                 "If many Pods fail at once, and all on one node, look at the node. "
-                "`kubectl get nodes` shows `NotReady` when a kubelet stops reporting. "
-                "`kubectl describe node <name>` shows conditions such as `MemoryPressure` and `DiskPressure`, and lists the Pods on the node with their requests. "
-                "On kind, a node is a Docker container, so `docker stats` on your Mac shows whether Docker Desktop itself is short of memory, and Docker Desktop's settings let you give it more."
+                "The command `kubectl get nodes` shows `NotReady` when a kubelet stops reporting. "
+                "Then `kubectl describe node <name>` shows conditions such as `MemoryPressure` and `DiskPressure`, and lists the Pods on the node with their requests. "
+                "On kind, a node is a Docker container. Run `docker stats` on your Mac to see whether Docker Desktop itself is short of memory; its settings let you give it more."
             ),
             "refs": [
                 {"title": "k9s (GitHub)", "url": "https://github.com/derailed/k9s", "kind": "docs"},
@@ -353,8 +353,8 @@ LESSON = {
             "options": [
                 "Raise the Pod's memory limit",
                 "Remove the taint from every node",
-                "Lower the Pod's memory request, or free up room on the workers",
-                "Add a readiness probe so the scheduler can test it",
+                "Lower the memory request, or free up room",
+                "Add a readiness probe to the Pod",
             ],
             "answer": 2,
             "why": "The two workers lack free memory for the request, and scheduling uses requests, so the request must shrink or room must appear.",
@@ -373,13 +373,13 @@ LESSON = {
         {
             "q": "A CI job's ServiceAccount `deployer` in namespace `ci` gets Forbidden when it applies a Deployment to namespace `shop`. Which command checks the permission directly?",
             "options": [
-                "`kubectl describe deployment -n shop`",
-                "`kubectl get events -n ci`",
-                "`kubectl logs -n ci deployer`",
-                "`kubectl auth can-i create deployments -n shop --as=system:serviceaccount:ci:deployer`",
+                "Read the Deployment's events in `shop`",
+                "Read the CI job's logs once more",
+                "Restart the CI runner and try again",
+                "Run `kubectl auth can-i` as that ServiceAccount",
             ],
             "answer": 3,
-            "why": "`auth can-i` with `--as` asks the API server whether that exact subject may do that exact action in that namespace.",
+            "why": "`kubectl auth can-i create deployments -n shop --as=system:serviceaccount:ci:deployer` asks the API server about that exact subject, action and namespace.",
         },
     ],
     "interview": [
@@ -387,7 +387,7 @@ LESSON = {
             "q": "A Pod is in CrashLoopBackOff. Walk me through how you debug it.",
             "a": (
                 "I start with `kubectl get pods` for the restart count, then `kubectl describe pod` for the Events and the Last State with its exit code. "
-                "Exit code 137 with OOMKilled points at memory, a failed liveness probe shows up in the Events, and a small code like 1 means the app exited with its own error. "
+                "Exit code 137 with OOMKilled points at memory, and a failed liveness probe shows up in the Events. A small code such as 1 means the app exited with its own error. "
                 "Then `kubectl logs --previous` shows what the crashed container printed. "
                 "If the image has no tools, I use `kubectl debug` with an ephemeral container to check config, DNS or files from inside the Pod."
             ),

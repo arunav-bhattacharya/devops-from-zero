@@ -139,9 +139,9 @@ LESSON = {
                 "- `templates/NOTES.txt`: text Helm prints after an install, such as how to reach the app.\n\n"
                 "Inside a template, `{{ .Values.greeting }}` reads a value, `{{ .Release.Name }}` is the name you gave this install, and `{{ .Chart.AppVersion }}` comes from `Chart.yaml`. "
                 "A pipe changes a value: `{{ .Values.greeting | quote }}` wraps it in quotes. "
-                "`{{- if .Values.httpRoute.enabled }}` leaves a whole object out unless the value is true, and the `-` trims the blank line the tag would leave.\n\n"
+                "A line such as `{{- if .Values.httpRoute.enabled }}` leaves a whole object out unless the value is true. The `-` trims the blank line the tag would leave.\n\n"
                 "The lab chart puts the same labels on every object with one helper: `{{- include \"hello-devops.labels\" . | nindent 4 }}`. "
-                "`include` renders the helper, and `nindent 4` starts a new line indented by 4 spaces, which YAML needs. "
+                "The `include` function renders the helper, and `nindent 4` starts a new line indented by 4 spaces, which YAML needs. "
                 "Indentation is where most template bugs come from, so render before you install. "
                 "`helm template hello chart/hello-devops` prints the final YAML, and `helm lint` checks the chart for mistakes. Neither touches the cluster.\n\n"
                 "The chart also has a small trick from the [Helm tips page](https://helm.sh/docs/howto/charts_tips_and_tricks/). "
@@ -207,9 +207,9 @@ LESSON = {
                 "Log in once with `helm registry login ghcr.io -u <your-github-user>` and a GitHub token that can write packages. "
                 "Always pin `--version`, for the same reason you never deploy `:latest` images: you want the same chart today and next month. "
                 "Most third-party projects publish this way now. Envoy Gateway's chart on Day 36 came from `oci://docker.io/envoyproxy/gateway-helm`.\n\n"
-                "`Chart.yaml` holds two version numbers, and people mix them up. "
-                "`version` is the chart's own version: bump it on every change to the chart, so one version number always means the same files. "
-                "`appVersion` is the version of the app inside, which the lab chart uses as the default image tag."
+                "Your `Chart.yaml` holds two version numbers, and people mix them up. "
+                "The `version` field is the chart's own version: bump it on every change to the chart, so one number always means the same files. "
+                "The `appVersion` field is the version of the app inside, which the lab chart uses as the default image tag."
             ),
             "refs": [
                 {"title": "Use OCI-based registries (Helm docs)", "url": "https://helm.sh/docs/topics/registries/", "kind": "docs"},
@@ -258,7 +258,8 @@ LESSON = {
         },
     ],
     "analogy": (
-        "Helm is a recipe card with blanks: \"___ grams of sugar, bake for ___ minutes\". `values.yaml` holds the usual amounts, your values file changes a few, and the kitchen logbook (the release history) lets you bake an earlier version again. "
+        "Helm is a recipe card with blanks: \"___ grams of sugar, bake for ___ minutes\". The `values.yaml` file holds the usual amounts, and your values file changes a few. "
+        "The kitchen logbook, the release history, lets you bake an earlier version again. "
         "Kustomize is a master drawing with sheets of tracing paper on top: the drawing stays as it is, and each sheet adds the changes for one environment. "
         "Where it breaks: a recipe makes a new cake each time, while `helm upgrade` changes the cake that is already on the table."
     ),
@@ -343,7 +344,7 @@ LESSON = {
     "explain_back": {
         "prompt": "Explain in 3 to 4 sentences how Helm and Kustomize each turn one set of files into a dev and a prod version of an app. Say which you would use for hello-devops and why.",
         "answer": (
-            "Helm keeps templates with blanks and fills them from a values file, so dev and prod are two values files for the same chart, and each install is a release with revisions. "
+            "Helm keeps templates with blanks and fills them from a values file. Dev and prod are then two values files for the same chart, and each install is a release with revisions. "
             "Kustomize keeps plain YAML as a base and puts each environment's changes in an overlay folder, as patches, image tags and replica counts. "
             "Both produce ordinary YAML that the cluster applies. "
             "For hello-devops I would use Kustomize, because the differences are small and the files stay readable, and keep Helm for the third-party tools I install."
@@ -385,8 +386,8 @@ LESSON = {
             "options": [
                 "It fails, because Helm 4 removed the flag",
                 "It ignores the flag and never rolls back",
-                "It works and prints a warning; the new name is `--rollback-on-failure`",
-                "It switches the release back to client-side apply",
+                "It works, with a warning to use the new name",
+                "It switches the release to client-side apply",
             ],
             "answer": 2,
             "why": "Helm 4 renamed `--atomic` to `--rollback-on-failure` and keeps the old name working with a deprecation warning.",
@@ -406,7 +407,7 @@ LESSON = {
             "q": "What is a Helm release, and how does a rollback work?",
             "a": (
                 "A release is one installed copy of a chart, with a name, a namespace and a numbered history of revisions stored as Secrets. "
-                "Each install, upgrade or rollback adds a revision with the rendered manifest and the values used. "
+                "Each install, upgrade or rollback adds a revision. It holds the rendered manifest and the values used. "
                 "`helm rollback` re-applies an earlier revision's manifest and records it as a new revision, so history is never lost. "
                 "In Helm 4 it also keeps the apply method the release started with, client-side or server-side."
             ),
@@ -414,7 +415,8 @@ LESSON = {
         {
             "q": "How do you manage different settings for dev, staging and prod?",
             "a": (
-                "I keep one source of truth for the app and express each environment as a small difference: a values file per environment with Helm, or an overlay per environment with Kustomize. "
+                "I keep one source of truth for the app and express each environment as a small difference. "
+                "With Helm that is one values file per environment; with Kustomize, one overlay per environment. "
                 "Image tags are pinned per environment, so promotion is a reviewed change that copies a tag from one environment to the next. "
                 "Secrets stay out of those files and come from a secret manager. "
                 "Rendering every environment in CI, with `helm template` or `kubectl kustomize`, catches mistakes before they reach a cluster."
