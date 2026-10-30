@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-config
+  namespace: hello
+data:
+  GREETING: "Hello from Kubernetes!"
+  REDIS_HOST: "redis"
