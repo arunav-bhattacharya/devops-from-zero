@@ -18,7 +18,7 @@ def diagram():
         cap(72, 212, "port-forward"),
         arrow(248, 68, 240, 148, dashed=True), cap(212, 112, "creates"),
         arrow(424, 68, 292, 148, dashed=True), cap(420, 100, "rules"),
-        arrow(304, 164, 366, 136), cap(326, 140, "90%"),
+        arrow(304, 164, 366, 136), cap(344, 168, "90%"),
         arrow(304, 180, 366, 208), cap(326, 210, "10%"),
     ]
     return svg(250, "Gateway API on kind: GatewayClass, Gateway and HTTPRoute configure an Envoy proxy that splits requests 90 to 10 between two Services", p)
