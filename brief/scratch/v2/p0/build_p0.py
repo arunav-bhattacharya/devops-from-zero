@@ -188,10 +188,10 @@ d01 = {
                 "7. Run: the platform keeps the app alive, restarts it if it crashes and adds copies under load.\n"
                 "8. Observe: graphs, logs and alerts show how the app behaves for real users.\n"
                 "9. Feedback: what you learn shapes the next change, and the loop starts again.\n\n"
-                "Here is a small example from this course. Tomorrow you create hello-devops, a tiny web app that answers with a greeting. "
+                "Take a small example from this course. Tomorrow you create hello-devops, a tiny web app that answers with a greeting. "
                 "Say you change its default greeting from \"Hello, DevOps!\" to \"Hi there\" and push. "
                 "The test step fails at once, because one test still expects the old greeting. You learn this in two minutes on your branch, not from a user on Friday night. "
-                "That is the whole point of the pipeline: each step catches a different kind of mistake, as close as possible to where it was made.\n\n"
+                "Each step of the pipeline catches a different kind of mistake, as close as possible to where it was made.\n\n"
                 "CI/CD covers steps 2 to 6. Continuous integration (CI) means you merge small changes often, and a machine builds and tests each one. "
                 "Continuous delivery (CD) means every change that passes is ready to release at any time. You build both in Part 4.\n\n"
                 "Deciding what to change needs a person. Building, testing and shipping are the same every time, so hand them to a machine."
@@ -201,7 +201,7 @@ d01 = {
         {
             "h": "Where each part of this course sits",
             "body": (
-                "The course has 55 lessons in 15 parts. Each part owns one piece of the path above. Here is the whole map, with the days:\n\n"
+                "The course has 55 lessons in 15 parts, and each part owns one piece of the path above:\n\n"
                 "- Part 0, Start here (Days 1 and 2): this map, and your laptop setup.\n"
                 "- Part 1, The Linux command line (Days 3 to 7): files, text tools, permissions, processes, SSH and scripts.\n"
                 "- Part 2, Networking and the cloud (Days 8 to 10): addresses, DNS, HTTP, TLS, load balancers and cloud basics.\n"
@@ -219,7 +219,7 @@ d01 = {
                 "- Part 14, Platform engineering, AI and your capstone (Days 54 and 55): one project that touches every part.\n\n"
                 "Read it as layers. Linux and networking sit underneath everything, because every server, container and CI runner you touch runs Linux and talks over a network. "
                 "Docker, GitHub Actions and Gradle carry a change from your laptop to a package. Terraform builds the ground it runs on. Kubernetes and Argo CD run and deploy it. "
-                "Prometheus, Grafana, the EFK stack, OpenTelemetry and Dynatrace tell you how it behaves. DevSecOps checks each step.\n\n"
+                "Prometheus, Grafana, the EFK stack (Elasticsearch, Fluent Bit and Kibana, for logs), OpenTelemetry and Dynatrace tell you how it behaves. DevSecOps checks each step.\n\n"
                 "Infrastructure means the machines, networks and storage your app runs on. A container image is your app plus everything it needs, packed so it runs the same anywhere. "
                 "You meet both properly later, so a rough idea is enough today.\n\n"
                 "Do not try to memorize the list. When a new tool appears, in this course or at work, come back here and ask which step it owns."
@@ -291,7 +291,7 @@ d01 = {
                 "By the capstone it is tested, packaged, deployed to Kubernetes by Argo CD and watched on dashboards. "
                 "Part 5 adds a second, small Kotlin app called hello-jvm, so you see the same ideas with Gradle and the JVM.\n\n"
                 "Everything runs on your Mac and costs nothing. You practise Linux in a throwaway Ubuntu container from Day 2, and in a small Ubuntu virtual machine from Day 6. "
-                "The only cloud steps are on Day 29, and they are optional."
+                "The only steps that need a cloud provider account are on Day 29, and they are optional."
             ),
             "refs": [MS_SHELL],
         },
@@ -551,7 +551,7 @@ d02 = {
                 "So install it from HashiCorp's own tap: an extra collection of Homebrew packages. `brew install hashicorp/tap/terraform` names the tap and the package together.\n\n"
                 "The Gradle part needs a JDK 21. If you already have one from work, for example through SDKMAN, keep it and check it with `java -version`. "
                 "Otherwise, `brew install openjdk@21`. Homebrew keeps versioned JDKs out of your PATH on purpose (it calls them keg-only), so macOS cannot find this one yet. "
-                "The install prints a `sudo ln -sfn ...` command that links it into `/Library/Java/JavaVirtualMachines`. Run that line, then `java -version` should print 21.\n\n"
+                "The install prints a `sudo ln -sfn ...` command that links it into `/Library/Java/JavaVirtualMachines`. Run that line, then `java -version` should print 21. If a newer JDK is also installed, macOS picks the newest; `/usr/libexec/java_home -V` lists them all.\n\n"
                 "VS Code is a cask too, and the cask also adds the `code` command to your terminal. You add extensions with `code --install-extension` and an extension ID."
             ),
             "refs": [TF_INSTALL, JDK21, SDKMAN],
@@ -562,16 +562,16 @@ d02 = {
                 "Servers, containers and CI runners run Linux with the bash shell and the GNU versions of tools like `sed` and `grep`. "
                 "Your Mac runs zsh and the BSD versions, which differ in small, annoying ways. A flag that works on your Mac can fail on a server.\n\n"
                 "So Part 1 has you practise inside real Linux. The quickest way is a throwaway Ubuntu container:\n\n"
-                "`docker run -it --rm --hostname box -v \"$PWD\":/lab -w /lab ubuntu:24.04 bash`\n\n"
+                "`docker run -it --rm --hostname box -v \"$PWD\":/work -w /work ubuntu:24.04 bash`\n\n"
                 "Each flag has a job:\n\n"
                 "- `-it` gives you an interactive terminal.\n"
                 "- `--rm` deletes the container when you exit, so every session starts clean.\n"
                 "- `--hostname box` gives it a short name, which shows up in the prompt.\n"
-                "- `-v \"$PWD\":/lab` shares your current Mac folder into the container at `/lab`.\n"
-                "- `-w /lab` starts you in that folder.\n\n"
-                "Three surprises are normal. You are root, the all-powerful user, because the image has no other user yet. "
+                "- `-v \"$PWD\":/work` shares your current Mac folder into the container at `/work`.\n"
+                "- `-w /work` starts you in that folder.\n\n"
+                "Three surprises are normal. You are root, the all-powerful user, because a container starts as root unless you tell it otherwise. "
                 "The image is minimized, so tools like `less` are missing and `man` pages are stripped out; `apt install` adds what you need. "
-                "And anything you install is gone after you exit, because `--rm` throws the container away. Files in `/lab` survive, because they live on your Mac.\n\n"
+                "And anything you install is gone after you exit, because `--rm` throws the container away. Files in `/work` survive, because they live on your Mac.\n\n"
                 "One thing a container cannot do is run systemd, the program that starts and supervises services on a real Linux machine. "
                 "Day 6 needs it, so it uses Multipass to start a small Ubuntu VM instead. Install Multipass today with `brew install --cask multipass` and check it with `multipass version`, or wait until Day 6."
             ),
@@ -624,23 +624,23 @@ d02 = {
         "title": "Your first visit to the Linux practice box",
         "steps": [
             {
-                "say": "Make a throwaway folder with one file in it, then start the box from there. The first run downloads the `ubuntu:24.04` image, which takes a few seconds. Your prompt changes: you are now root on a machine called box, in the folder /lab.",
+                "say": "Make a throwaway folder with one file in it, then start the box from there. The first run downloads the `ubuntu:24.04` image, which takes a few seconds. Your prompt changes: you are now root on a machine called box, in the folder /work.",
                 "code": (
                     "$ mkdir -p ~/code/box-demo && cd ~/code/box-demo\n"
                     "$ echo \"hello from the Mac\" > note.txt\n"
-                    "$ docker run -it --rm --hostname box -v \"$PWD\":/lab -w /lab ubuntu:24.04 bash\n"
-                    "root@box:/lab#"
+                    "$ docker run -it --rm --hostname box -v \"$PWD\":/work -w /work ubuntu:24.04 bash\n"
+                    "root@box:/work#"
                 ),
                 "lang": "console",
             },
             {
                 "say": "Look around. This is real Ubuntu, you are the root user, and the file you made on your Mac is here, because `-v` shared the folder.",
                 "code": (
-                    "root@box:/lab# grep PRETTY /etc/os-release\n"
+                    "root@box:/work# grep PRETTY /etc/os-release\n"
                     "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\n"
-                    "root@box:/lab# whoami\n"
+                    "root@box:/work# whoami\n"
                     "root\n"
-                    "root@box:/lab# cat note.txt\n"
+                    "root@box:/work# cat note.txt\n"
                     "hello from the Mac"
                 ),
                 "lang": "console",
@@ -648,9 +648,9 @@ d02 = {
             {
                 "say": "Now the minimized image shows itself. `less` is not installed at all, and `man` exists but its pages were removed to keep the image small.",
                 "code": (
-                    "root@box:/lab# less note.txt\n"
+                    "root@box:/work# less note.txt\n"
                     "bash: less: command not found\n"
-                    "root@box:/lab# man ls\n"
+                    "root@box:/work# man ls\n"
                     "This system has been minimized by removing packages and content that are\n"
                     "not required on a system that users do not log into."
                 ),
@@ -659,10 +659,10 @@ d02 = {
             {
                 "say": "Install what you need with apt, Ubuntu's package manager. `apt update` refreshes the list of packages, and `apt install -y` installs without asking. The output is long; these are the last lines.",
                 "code": (
-                    "root@box:/lab# apt update && apt install -y less tree\n"
+                    "root@box:/work# apt update && apt install -y less tree\n"
                     "Setting up less (590-2ubuntu2.1) ...\n"
                     "Setting up tree (2.1.1-2ubuntu3.24.04.2) ...\n"
-                    "root@box:/lab# tree\n"
+                    "root@box:/work# tree\n"
                     ".\n"
                     "`-- note.txt\n\n"
                     "1 directory, 1 file"
@@ -670,10 +670,10 @@ d02 = {
                 "lang": "console",
             },
             {
-                "say": "Write a file from inside Linux, then leave with `exit`. Back on the Mac, the new file is there, because `/lab` is your Mac folder.",
+                "say": "Write a file from inside Linux, then leave with `exit`. Back on the Mac, the new file is there, because `/work` is your Mac folder.",
                 "code": (
-                    "root@box:/lab# echo \"hello from Linux\" > from-box.txt\n"
-                    "root@box:/lab# exit\n"
+                    "root@box:/work# echo \"hello from Linux\" > from-box.txt\n"
+                    "root@box:/work# exit\n"
                     "$ cat from-box.txt\n"
                     "hello from Linux"
                 ),
@@ -709,7 +709,7 @@ d02 = {
         {"cmd": "code --install-extension hashicorp.terraform", "what": "Add a VS Code extension by its ID. Repeat for each extension."},
         {"cmd": "gh auth login", "what": "Log in to GitHub from the terminal through your browser."},
         {"cmd": "docker run --rm hello-world", "what": "Check that Docker can download and run a container. Day 11 explains what happens."},
-        {"cmd": "docker run -it --rm --hostname box -v \"$PWD\":/lab -w /lab ubuntu:24.04 bash", "what": "Open the Linux practice box, with the current folder shared at /lab. Type exit to leave."},
+        {"cmd": "docker run -it --rm --hostname box -v \"$PWD\":/work -w /work ubuntu:24.04 bash", "what": "Open the Linux practice box, with the current folder shared at /work. Type exit to leave."},
         {"cmd": "multipass version", "what": "Check that Multipass is installed. Day 6 uses it to start an Ubuntu VM."},
         {"cmd": "python3.14 -m venv .venv && source .venv/bin/activate", "what": "Create a virtual environment in this folder and turn it on."},
         {"cmd": "pip install -r requirements-dev.txt", "what": "Install the app's packages and the dev tools into the active venv."},
@@ -823,7 +823,7 @@ d02 = {
             "3. It unpacks the bottle into its own folder, such as `/opt/homebrew/Cellar/jq/` plus the version.\n"
             "4. It links the command into `/opt/homebrew/bin`, a folder that is on your PATH.\n\n"
             "That is why two versions can sit side by side in the Cellar while only the linked one runs. "
-            "Some formulae skip step 4 on purpose. Homebrew calls them keg-only: `openjdk@21` is one, because linking it could shadow a JDK you installed another way. "
+            "Some formulae skip step 4 on purpose. Homebrew calls them keg-only. Versioned formulae such as `openjdk@21` are keg-only, so they cannot clash with the main `openjdk` formula. "
             "That is why it asks you to make the `/Library/Java/JavaVirtualMachines` link yourself. "
             "Casks work differently again: they install an app into `/Applications`. A tap is an extra git repository of formulae, which is how `hashicorp/tap` works.\n\n"
             "The \"Next steps\" lines from the Homebrew installer run `brew shellenv`. That command prints `export` lines for PATH and a few other variables, and `eval` runs them in your shell. "
@@ -868,7 +868,7 @@ part = {
         {"front": "Which DORA metrics measure instability?", "back": "Change fail rate and deployment rework rate."},
         {"front": "Why do small, frequent changes lower risk?", "back": "Each one is easy to review, test and undo. When one fails, you know which small change caused it."},
         {"front": "Where do you install Terraform from with Homebrew, and why?", "back": "From HashiCorp's tap (`hashicorp/tap/terraform`), because Homebrew's main collection stopped updating it after the 2023 licence change."},
-        {"front": "What do `--rm` and `-v \"$PWD\":/lab` do in the practice box command?", "back": "`--rm` deletes the container when you exit; `-v` shares your current Mac folder into it at /lab."},
+        {"front": "What do `--rm` and `-v \"$PWD\":/work` do in the practice box command?", "back": "`--rm` deletes the container when you exit; `-v` shares your current Mac folder into it at /work."},
         {"front": "Why does Day 6 use a Multipass VM instead of the container?", "back": "A plain container cannot run systemd, the service manager that Day 6 teaches."},
         {"front": "What does activating a Python venv change?", "back": "It puts `.venv/bin` first on PATH, so `python` and `pip` use the project's private packages."},
         {"front": "What does `gh repo create hello-devops --public --source=. --push` do?", "back": "Creates the GitHub repo from this folder, adds it as the origin remote, and pushes your commits."},

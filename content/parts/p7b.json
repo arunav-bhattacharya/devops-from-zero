@@ -1,0 +1,1736 @@
+[
+ {
+  "id": "d35",
+  "title": "Health checks, resources and scaling",
+  "minutes": 50,
+  "goal": "By the end you can give hello-devops health checks and resource settings that match what it really needs, autoscale it with an HPA, and control where its Pods run and how many may be down at once.",
+  "guess": {
+   "q": "A container uses more CPU than its CPU limit for a few seconds. What does Kubernetes do?",
+   "options": [
+    "Kills the container and starts a new one",
+    "Slows it down, and it keeps running",
+    "Moves the Pod to a node with more CPU",
+    "Marks the Pod not ready until it calms down"
+   ],
+   "answer": 1,
+   "why": "CPU can be handed out in smaller slices, so the kernel throttles the container and it runs slower. Only going over the memory limit gets a container killed."
+  },
+  "terms": [
+   {
+    "term": "Liveness probe",
+    "plain": "A regular check of a container; after enough failures in a row, the kubelet restarts it."
+   },
+   {
+    "term": "Readiness probe",
+    "plain": "A regular check; while it fails, the Pod gets no traffic from Services, but keeps running."
+   },
+   {
+    "term": "Startup probe",
+    "plain": "A check that holds back the other probes until a slow app has finished starting."
+   },
+   {
+    "term": "Resource request",
+    "plain": "The CPU and memory the scheduler reserves for a container on a node."
+   },
+   {
+    "term": "Resource limit",
+    "plain": "The most CPU or memory a container may use; over the memory limit it is killed."
+   },
+   {
+    "term": "QoS class",
+    "plain": "Guaranteed, Burstable or BestEffort: decides which Pods a short node evicts first."
+   },
+   {
+    "term": "HorizontalPodAutoscaler (HPA)",
+    "plain": "An object that changes a Deployment's number of Pods based on metrics such as CPU."
+   },
+   {
+    "term": "PodDisruptionBudget (PDB)",
+    "plain": "A rule that limits how many Pods of an app planned work, such as a node drain, may take down at once."
+   }
+  ],
+  "sections": [
+   {
+    "h": "Running is not the same as healthy",
+    "body": "Since Day 31, Kubernetes has restarted your containers when their process exits. That covers crashes. It does not cover an app that is still running but stuck, or one that is up but cannot reach its database. From the outside, both look like a healthy process.\n\nA **probe** is a small check that the kubelet runs against a container on a timer. The kubelet is the agent on each node (Day 30), so the check runs right next to the container. The lab uses HTTP probes: the kubelet sends a GET request, and any status from 200 to 399 counts as a pass. A probe can also run a command in the container (`exec`), open a TCP connection (`tcpSocket`) or call a gRPC health check.\n\nThere are three probes. Each asks a different question, and a failure leads to a different action:\n- Startup probe: \"Have you finished starting?\" Until it passes, the other two wait. If it never passes, the container is restarted.\n- Liveness probe: \"Are you stuck?\" After enough failures in a row, the kubelet kills the container and starts a new one.\n- Readiness probe: \"Can you take traffic right now?\" While it fails, the Pod leaves the Service's endpoints. Nothing restarts.\n\nhello-devops has two endpoints made for this. `/healthz` answers as long as the Python process can serve a request. `/readyz` also pings Redis and returns 503 when Redis is down. The lab's `k8s/deployment.yaml` points the startup and liveness probes at `/healthz` and the readiness probe at `/readyz`.\n\nOne surprise: Kubernetes does not run the `HEALTHCHECK` line from your Dockerfile (Part 3). That line only matters when you run the image with plain Docker. In a cluster, probes take its place.",
+    "refs": [
+     {
+      "title": "Liveness, readiness and startup probes",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/probes/",
+      "kind": "docs"
+     },
+     {
+      "title": "Configure liveness, readiness and startup probes",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes health probes explained (Tech Tutorials with Piyush, CKA series)",
+      "url": "https://www.youtube.com/watch?v=x2e6pIBLKzw",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Probe timing, and the liveness trap",
+    "body": "Every probe has the same four timing settings, and you should be able to read them:\n- `periodSeconds`: how often to check. Default 10.\n- `timeoutSeconds`: how long one check may take. Default 1.\n- `failureThreshold`: how many failures in a row before the kubelet acts. Default 3.\n- `initialDelaySeconds`: how long to wait after the container starts. Default 0.\n\nMultiply them to see how fast each probe acts. In the lab, the startup probe allows 30 failures, 2 seconds apart, so the app gets up to 60 seconds to boot. The liveness probe needs 3 misses 10 seconds apart, so a stuck container is replaced after about 30 seconds. The readiness probe checks every 5 seconds and acts after 2 misses, so a Pod leaves the Service within about 10 seconds.\n\nNow the trap, which catches many teams. Never make the liveness probe depend on something outside the container, such as a database. Picture Redis going down for a minute while `/healthz` checks Redis. Every hello-devops Pod fails liveness at about the same time, and the kubelet restarts all of them. The restarts cannot fix Redis, and while they happen no Pod can serve anything. The [probes docs](https://kubernetes.io/docs/concepts/workloads/pods/probes/) warn that a wrong liveness probe \"can lead to cascading failures\".\n\nReadiness is the right place for dependency checks, because failing it only pauses traffic. Even there, be careful. If every Pod fails readiness at once, the Service has no endpoints left and users get errors. That is why the lab's readiness probe allows a 2-second timeout and 2 failures instead of the tightest values.\n\nReadiness also guards rollouts. On Day 32 a rolling update waited for new Pods to become ready before it removed old ones. That wait is this probe.",
+    "refs": [
+     {
+      "title": "Configure liveness, readiness and startup probes",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "kind": "docs"
+     },
+     {
+      "title": "7 common Kubernetes pitfalls (Kubernetes blog)",
+      "url": "https://kubernetes.io/blog/2025/10/20/seven-kubernetes-pitfalls-and-how-to-avoid/",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "Requests and limits: what you reserve and what you may use",
+    "body": "Each container can say how much CPU and memory it needs. CPU is counted in cores: `100m` means 100 millicores, a tenth of one core. Memory is counted in bytes: `128Mi` means 128 mebibytes.\n\nThere are two numbers, and they do different jobs:\n- A request is what the scheduler reserves. It puts a Pod only on a node whose unreserved room fits the request. If no node fits, the Pod stays `Pending`.\n- A limit is the most the container may use. The Linux kernel enforces it while the container runs, with cgroups, the same feature that limits Docker containers.\n\nWhat happens at the limit depends on the resource, and this trips most people up. CPU time can be handed out in smaller slices, so a container at its CPU limit is throttled: it keeps running, only slower. Memory cannot be taken back once a process holds it. A container that goes over its memory limit is killed by the kernel's out-of-memory (OOM) killer. Kubernetes then shows `OOMKilled` and exit code 137. The 137 means the process got signal 9, SIGKILL (128 + 9).\n\nA short way to remember it: too much CPU makes you slow, too much memory gets you killed.\n\nThe lab asks for `100m` CPU and `128Mi` memory, and limits memory to `256Mi`. It sets no CPU limit on purpose. A CPU limit throttles a container even when the node has idle cores, which shows up as slow responses that are hard to explain. For a web app like this one, I would skip the CPU limit and rely on the request.\n\nRequests are a different story: always set them. The scheduler, the autoscaler and the eviction order all depend on them. Skipping them is the first pitfall in the Kubernetes blog's [7 common pitfalls](https://kubernetes.io/blog/2025/10/20/seven-kubernetes-pitfalls-and-how-to-avoid/). One more rule from the docs: if you set a limit but no request, Kubernetes copies the limit into the request.",
+    "refs": [
+     {
+      "title": "Resource management for Pods and containers",
+      "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "kind": "docs"
+     },
+     {
+      "title": "Assign memory resources to containers and Pods",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes requests and limits (Tech Tutorials with Piyush, CKA series)",
+      "url": "https://www.youtube.com/watch?v=Q-mk6EZVX_Q",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "QoS classes, LimitRanges and ResourceQuotas",
+    "body": "Your requests and limits also put each Pod into a quality of service (QoS) class. When a node runs short of memory, the kubelet evicts whole Pods to protect itself, and the class decides who goes first:\n- BestEffort: no requests or limits at all. Evicted first.\n- Burstable: at least one request or limit, but not Guaranteed. The lab's Pods are here.\n- Guaranteed: every container has CPU and memory requests equal to its limits. Evicted last.\n\nEviction is different from an OOM kill. An OOM kill hits one container that broke its own limit. Eviction removes Pods because the node as a whole is short, and their Deployment recreates them on another node. Read a Pod's class with `kubectl get pod <name> -n hello -o jsonpath='{.status.qosClass}'`.\n\nIn a shared cluster, admins add two guard rails per namespace:\n- A LimitRange sets default requests and limits for containers that set none, plus a minimum and maximum per container.\n- A ResourceQuota caps the total for the whole namespace, such as 4 CPUs of requests, 8Gi of memory or 20 Pods.\n\nWith a quota on CPU or memory, the API server may reject any Pod that does not state those requests. A LimitRange with defaults fixes that for teams who forget. You will not need either on your laptop. You will meet both at work, often as an error message the first time you deploy to a new namespace.",
+    "refs": [
+     {
+      "title": "Pod quality of service classes",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/",
+      "kind": "docs"
+     },
+     {
+      "title": "Limit ranges",
+      "url": "https://kubernetes.io/docs/concepts/policy/limit-range/",
+      "kind": "docs"
+     },
+     {
+      "title": "Resource quotas",
+      "url": "https://kubernetes.io/docs/concepts/policy/resource-quotas/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Scaling out with the HorizontalPodAutoscaler",
+    "body": "A HorizontalPodAutoscaler (HPA) changes the number of replicas of a Deployment for you. It is one more control loop, like the ones from Day 30. Every 15 seconds it does this:\n1. Reads the current CPU use of each Pod from the metrics API.\n2. Turns it into a percentage of the Pod's CPU request, and averages it.\n3. Works out how many replicas would bring the average back to the target.\n4. Sets the Deployment's replica count, between `minReplicas` and `maxReplicas`.\n\nStep 3 is one line of math: `desired = ceil(currentReplicas * currentValue / targetValue)`. The lab's `k8s/hpa.yaml` targets 70% of the 100m request, so 70m per Pod. Say 3 Pods average 140m under load. That is twice the target, so the HPA asks for ceil(3 * 140 / 70) = 6 Pods. It ignores changes within 10% of the target, so the count does not jump around.\n\nIt scales up at once, but scales down slowly on purpose. By default it wants 5 minutes of lower numbers before it removes Pods. The lab shortens that to 2 minutes with `behavior.scaleDown.stabilizationWindowSeconds: 120`, so you can watch it happen.\n\nThe numbers come from metrics-server, a small add-on that asks each kubelet for CPU and memory use. kind does not ship it. After you install it, you add one flag, `--kubelet-insecure-tls`, because kind's kubelets use self-signed certificates. The [metrics-server README](https://github.com/kubernetes-sigs/metrics-server) says this flag is for testing only. Until metrics arrive, `kubectl get hpa` shows `cpu: <unknown>/70%`.\n\nThree more rules. Without a CPU request the HPA cannot compute a percentage, so it does nothing. The Deployment's `replicas` field fights the HPA on every `kubectl apply`; the HPA docs suggest removing it, and the lab keeps it equal to `minReplicas` so the two agree when the app is quiet. And scale to zero exists since Kubernetes 1.37 as a beta, but only for object or external metrics such as a queue length, never for CPU.",
+    "refs": [
+     {
+      "title": "Horizontal Pod autoscaling",
+      "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/",
+      "kind": "docs"
+     },
+     {
+      "title": "HorizontalPodAutoscaler walkthrough",
+      "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes autoscaling explained: HPA vs VPA (Tech Tutorials with Piyush, CKA series)",
+      "url": "https://www.youtube.com/watch?v=afUL5jGoLx0",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Scaling up: the VPA and in-place resize",
+    "body": "The HPA adds Pods. The other direction is to make each Pod bigger, which is called vertical scaling.\n\nThe Vertical Pod Autoscaler (VPA) watches real CPU and memory use over time and recommends requests. It is an add-on: you install its CRDs and controllers yourself, and it reads the same metrics API as the HPA. Its `updateMode` decides how far it goes:\n- `Off`: only write recommendations. A safe way to learn what your app needs.\n- `Initial`: set requests when Pods are created, never later.\n- `Recreate`: evict Pods whose requests are far off, so they come back with new numbers.\n- `InPlaceOrRecreate` and `InPlace`: change running Pods without a restart when the node allows it.\n\nDo not let a VPA and an HPA both act on CPU for the same Deployment. The VPA raises the request, which lowers the HPA's percentage, and the two keep undoing each other's work.\n\nThose last two modes rest on in-place Pod resize, which became stable in Kubernetes 1.35. Before it, a Pod's resources were fixed for its whole life. Now you can patch the `resize` subresource of a running Pod with `kubectl patch pod <name> --subresource resize --patch '...'`. Each container's `resizePolicy` says whether a change needs a restart. The default, `NotRequired`, applies the new numbers to the running container.\n\nThis works on single Pods. Changing the resources in a Deployment's template still rolls out new Pods, as on Day 32. Day to day you change the Deployment. In-place resize matters most for tools like the VPA, and for Pods that are slow or costly to restart.",
+    "refs": [
+     {
+      "title": "Vertical Pod autoscaling",
+      "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/vertical-pod-autoscale/",
+      "kind": "docs"
+     },
+     {
+      "title": "Resize CPU and memory resources assigned to containers",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/resize-container-resources/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Where Pods land, and how many may leave",
+    "body": "The scheduler picks a node for each Pod from the nodes that fit its requests. You can steer that choice. From simple to strong:\n1. `nodeSelector`: run only on nodes with this label, such as `disktype: ssd`.\n2. Node affinity: the same idea with more operators. A `required` rule must match; a `preferred` rule is a wish the scheduler weighs.\n3. Pod affinity and anti-affinity: place Pods near or away from other Pods, by their labels. Anti-affinity on `kubernetes.io/hostname` spreads replicas over nodes.\n4. Taints and tolerations: a taint on a node keeps Pods away, and a toleration on a Pod lets it in anyway.\n\nYou already have a taint. kind's control-plane node carries `node-role.kubernetes.io/control-plane:NoSchedule`. That is why your app Pods only ever land on the two workers. `kubectl describe node devops-control-plane | grep Taints` shows it. The prod overlay on Day 37 uses anti-affinity, so one node failure cannot take every Pod.\n\nLast, the PodDisruptionBudget (PDB). Kubernetes splits disruptions into two kinds. Voluntary ones are planned, such as a `kubectl drain` before node maintenance, or a cluster upgrade. Involuntary ones just happen: a node crashes or loses power. A PDB limits only the voluntary kind.\n\nWith `minAvailable: 2`, a drain evicts hello-devops Pods one at a time. Each eviction waits until enough replacements are ready elsewhere, so at least 2 keep serving. A PDB cannot stop a crash. Replicas spread over several nodes are your answer to that.",
+    "refs": [
+     {
+      "title": "Assigning Pods to nodes",
+      "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/",
+      "kind": "docs"
+     },
+     {
+      "title": "Taints and tolerations",
+      "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+      "kind": "docs"
+     },
+     {
+      "title": "Disruptions and PodDisruptionBudgets",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/disruptions/",
+      "kind": "docs"
+     }
+    ]
+   }
+  ],
+  "analogy": "A shop manager checks a new clerk in three ways. On the first morning she gives them time to settle in before judging anything: that is the startup probe. Every few minutes she checks that they are awake at all, and if not, sends them home and calls someone new: liveness. And she checks whether they can serve customers right now; if their till is broken, she puts a closed sign on that counter but keeps the clerk: readiness. Where it breaks: the manager can ask why, while the kubelet only sees pass or fail from one URL.",
+  "diagram": "<svg viewBox=\"0 0 560 242\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"The kubelet runs three probes: startup holds the others back, liveness restarts the container, readiness removes the Pod from Service traffic\"><rect class=\"bxt\" x=\"16\" y=\"103\" width=\"96\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"64\" y=\"130\" font-size=\"13\" text-anchor=\"middle\">kubelet</text><rect class=\"bx\" x=\"152\" y=\"24\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"220\" y=\"43\" font-size=\"13\" text-anchor=\"middle\">startup</text><text class=\"ts\" x=\"220\" y=\"59\" font-size=\"11\" text-anchor=\"middle\">GET /healthz</text><rect class=\"bx\" x=\"152\" y=\"103\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"220\" y=\"122\" font-size=\"13\" text-anchor=\"middle\">liveness</text><text class=\"ts\" x=\"220\" y=\"138\" font-size=\"11\" text-anchor=\"middle\">GET /healthz</text><rect class=\"bx\" x=\"152\" y=\"182\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"220\" y=\"201\" font-size=\"13\" text-anchor=\"middle\">readiness</text><text class=\"ts\" x=\"220\" y=\"217\" font-size=\"11\" text-anchor=\"middle\">GET /readyz</text><rect class=\"bxg\" x=\"368\" y=\"24\" width=\"180\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"458\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">Others wait</text><rect class=\"bxo\" x=\"368\" y=\"103\" width=\"180\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"458\" y=\"130\" font-size=\"13\" text-anchor=\"middle\">Restart container</text><rect class=\"bxp\" x=\"368\" y=\"182\" width=\"180\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"458\" y=\"209\" font-size=\"13\" text-anchor=\"middle\">No Service traffic</text><line class=\"ln\" x1=\"112\" y1=\"116\" x2=\"150\" y2=\"50\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"112\" y1=\"125\" x2=\"150\" y2=\"125\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"112\" y1=\"134\" x2=\"150\" y2=\"200\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"288\" y1=\"46\" x2=\"366\" y2=\"46\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"327\" y=\"38\" font-size=\"11\" text-anchor=\"middle\">until pass</text><line class=\"ln\" x1=\"288\" y1=\"125\" x2=\"366\" y2=\"125\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"327\" y=\"117\" font-size=\"11\" text-anchor=\"middle\">3 misses</text><line class=\"ln\" x1=\"288\" y1=\"204\" x2=\"366\" y2=\"204\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"327\" y=\"196\" font-size=\"11\" text-anchor=\"middle\">2 misses</text></svg>",
+  "diagram_caption": "Three probes, three different actions: wait, restart, or stop sending traffic.",
+  "worked": {
+   "title": "Cause an OOMKill and read the evidence",
+   "steps": [
+    {
+     "say": "Start a Pod that grabs 150 MB of memory but may use only 100Mi. It runs Python from the hello-devops image, which your kind nodes already have, so nothing is downloaded.",
+     "code": "$ kubectl apply -n hello -f - <<'EOF'\napiVersion: v1\nkind: Pod\nmetadata:\n  name: hog\nspec:\n  containers:\n    - name: hog\n      image: hello-devops:1.0.0\n      command: [\"python\", \"-c\", \"import time; data = bytearray(150 * 1024 * 1024); print('got 150 MB'); time.sleep(3600)\"]\n      resources:\n        limits:\n          memory: 100Mi\nEOF\npod/hog created",
+     "lang": "console"
+    },
+    {
+     "say": "Watch it. Within seconds the kernel kills it. Kubernetes restarts it, it dies again, and the waits between restarts grow: that is `CrashLoopBackOff`. Press Ctrl+C to stop watching.",
+     "code": "$ kubectl get pod hog -n hello -w\nNAME   READY   STATUS              RESTARTS     AGE\nhog    0/1     ContainerCreating   0            1s\nhog    0/1     OOMKilled           0            3s\nhog    0/1     OOMKilled           1 (2s ago)   5s\nhog    0/1     CrashLoopBackOff    1 (3s ago)   6s",
+     "lang": "console"
+    },
+    {
+     "say": "`describe` keeps the reason of the last crash under Last State. `OOMKilled` with exit code 137 means the kernel sent SIGKILL because the container went over its memory limit.",
+     "code": "$ kubectl describe pod hog -n hello | grep -A 3 \"Last State\"\n    Last State:     Terminated\n      Reason:       OOMKilled\n      Exit Code:    137\n      Started:      Fri, 30 Oct 2026 10:12:03 +0000",
+     "lang": "console"
+    },
+    {
+     "say": "The crashed container's log is empty. Python never reached its print line, and a process killed from outside gets no chance to write an error. An empty log plus exit code 137 points at memory, not at your code.",
+     "code": "$ kubectl logs hog -n hello --previous\n$",
+     "lang": "console"
+    },
+    {
+     "say": "Look at what Kubernetes stored. You set only a memory limit, so it copied the limit into the memory request. With no CPU numbers at all, the Pod is Burstable, not Guaranteed.",
+     "code": "$ kubectl get pod hog -n hello -o jsonpath='{.spec.containers[0].resources}{\"\\n\"}'\n{\"limits\":{\"memory\":\"100Mi\"},\"requests\":{\"memory\":\"100Mi\"}}\n$ kubectl get pod hog -n hello -o jsonpath='{.status.qosClass}{\"\\n\"}'\nBurstable",
+     "lang": "console"
+    },
+    {
+     "say": "Fix it. A bare Pod's resources only change through the resize subresource, so the simple path is delete and recreate. Run the command from step 1 again with `memory: 256Mi`. A Deployment would do this replace for you.",
+     "code": "$ kubectl delete pod hog -n hello\npod \"hog\" deleted from hello namespace\n$ # run the command from step 1 again, with memory: 256Mi\n$ kubectl get pod hog -n hello\nNAME   READY   STATUS    RESTARTS   AGE\nhog    1/1     Running   0          8s\n$ kubectl logs hog -n hello\ngot 150 MB",
+     "lang": "console"
+    },
+    {
+     "say": "Clean up. In real work you would pick the new limit from measured use (`kubectl top pod`), not from a guess.",
+     "code": "$ kubectl delete pod hog -n hello\npod \"hog\" deleted from hello namespace",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "k8s/hpa.yaml",
+    "src": "# Adds or removes hello-devops Pods to keep average CPU near 70% of the request.\n# Needs metrics-server in the cluster (Day 35 shows how to install it on kind).\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: hello-devops\n  namespace: hello\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: hello-devops\n  minReplicas: 3 # the same as replicas in deployment.yaml, so the two agree when the app is quiet\n  maxReplicas: 6\n  metrics:\n    - type: Resource\n      resource:\n        name: cpu\n        target:\n          type: Utilization\n          averageUtilization: 70 # 70% of the CPU request (100m), so about 70m per Pod\n  behavior:\n    scaleDown:\n      stabilizationWindowSeconds: 120 # wait for 2 quiet minutes before removing Pods (the default is 300)",
+    "run": "kubectl apply -f k8s/hpa.yaml"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "kubectl describe pod <pod-name> -n hello",
+    "what": "Show a Pod's probes, resources, Last State and Events."
+   },
+   {
+    "cmd": "kubectl get pod <pod-name> -n hello -o jsonpath='{.status.qosClass}'",
+    "what": "Print a Pod's QoS class: Guaranteed, Burstable or BestEffort."
+   },
+   {
+    "cmd": "kubectl scale deployment redis -n hello --replicas=0",
+    "what": "Stop Redis, to watch the readiness probe take Pods out of the Service."
+   },
+   {
+    "cmd": "kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml",
+    "what": "Install the latest metrics-server, which the HPA and kubectl top need."
+   },
+   {
+    "cmd": "kubectl patch deployment metrics-server -n kube-system --type=json -p '[{\"op\":\"add\",\"path\":\"/spec/template/spec/containers/0/args/-\",\"value\":\"--kubelet-insecure-tls\"}]'",
+    "what": "On kind only: let metrics-server accept the kubelets' self-signed certificates."
+   },
+   {
+    "cmd": "kubectl top pods -n hello",
+    "what": "Show the current CPU and memory use of each Pod."
+   },
+   {
+    "cmd": "kubectl top nodes",
+    "what": "Show CPU and memory use per node."
+   },
+   {
+    "cmd": "kubectl get hpa -n hello -w",
+    "what": "Watch the autoscaler's current CPU, target and replica count."
+   },
+   {
+    "cmd": "kubectl describe hpa hello-devops -n hello",
+    "what": "Show the HPA's conditions and recent scaling events, to see why it did or did not scale."
+   },
+   {
+    "cmd": "kubectl run load -n hello --image=busybox:1.37 --restart=Never -- /bin/sh -c \"while true; do wget -q -O- http://hello-devops > /dev/null; done\"",
+    "what": "Start a Pod that sends requests in a loop, to give the HPA some CPU to react to."
+   },
+   {
+    "cmd": "kubectl create poddisruptionbudget hello-pdb -n hello --selector=app=hello-devops --min-available=2",
+    "what": "Create a PDB: planned work must leave at least 2 hello-devops Pods running."
+   },
+   {
+    "cmd": "kubectl get pdb -n hello",
+    "what": "List PDBs and how many disruptions each allows right now."
+   },
+   {
+    "cmd": "kubectl drain devops-worker --ignore-daemonsets --delete-emptydir-data",
+    "what": "Mark a node unschedulable and evict its Pods, respecting PDBs."
+   },
+   {
+    "cmd": "kubectl uncordon devops-worker",
+    "what": "Let the scheduler use the node again after a drain."
+   },
+   {
+    "cmd": "kubectl describe node devops-control-plane | grep Taints",
+    "what": "Show a node's taints, such as the control-plane NoSchedule taint."
+   }
+  ],
+  "mistake": "The liveness probe checks something outside the container, such as the database. When the database has a short problem, every Pod fails liveness at once and restarts, which turns a small outage into a full one. Keep liveness to \"is this process alive\" (`/healthz`) and put dependency checks in readiness (`/readyz`).",
+  "real_world": "At PayLite, a made-up payments company, each service's requests come from a week of real usage in monitoring, reviewed after every big release. An HPA adds checkout Pods as traffic climbs during sales, and a PDB lets node upgrades take down only one checkout Pod at a time. Probe changes go through code review like alert rules, because a bad liveness probe can restart every Pod at once.",
+  "task": {
+   "title": "Probes, autoscaling and a safe drain on the lab app",
+   "steps": [
+    "Open `k8s/deployment.yaml` and work out from the timing settings how long each probe takes to act. Check with `kubectl describe pod` that a running Pod shows the same probes.",
+    "In a second terminal, run `kubectl get pods -n hello -w`. Scale Redis to 0 replicas and watch the hello-devops Pods go to `0/1` READY while RESTARTS stays at 0. Try `curl localhost:8081`.",
+    "Scale Redis back to 1 and watch the app Pods become ready again on their own.",
+    "Install metrics-server, add the `--kubelet-insecure-tls` flag, and wait until `kubectl top pods -n hello` prints numbers.",
+    "Apply `k8s/hpa.yaml` (it is listed in the kustomization, so `kubectl apply -k k8s` works too). Check that `kubectl get hpa -n hello` shows a real percentage instead of `<unknown>`.",
+    "Start the load generator Pod from the commands list and watch `kubectl get hpa -n hello -w` until REPLICAS goes above 3. Delete the load Pod and watch the count return to 3 after about 2 quiet minutes.",
+    "Create a PodDisruptionBudget for hello-devops with `minAvailable` 2 and read ALLOWED DISRUPTIONS in `kubectl get pdb -n hello`.",
+    "Drain the node `devops-worker` while you watch the Pods move, then make it schedulable again with `kubectl uncordon`.",
+    "Print the QoS class of one hello-devops Pod and of the Redis Pod, and explain each from their resources."
+   ],
+   "hints": [
+    "No scale-up? One load Pod may not be enough on a fast Mac. Start a second one with another name, and check `kubectl top pods -n hello`.",
+    "The drain needs `--ignore-daemonsets` (kindnet and kube-proxy run on every node) and `--delete-emptydir-data` (metrics-server keeps scratch files in an emptyDir).",
+    "HPA still `<unknown>`? Look at `kubectl logs -n kube-system deployment/metrics-server`. A missing `--kubelet-insecure-tls` flag shows up there as certificate errors."
+   ],
+   "done_when": "`kubectl get hpa -n hello` showed more than 3 replicas under load, and `kubectl drain` moved the app Pods without ever leaving fewer than 2 ready."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences why the hello-devops Pods went to 0/1 READY but did not restart when you scaled Redis to zero. Mention both probes and what each one checks.",
+   "answer": "The readiness probe calls `/readyz`, which pings Redis, so it started returning 503 and the Pods left the Service's endpoints. The liveness probe calls `/healthz`, which only checks that the process answers, so it kept passing and the kubelet had no reason to restart anything. When Redis came back, `/readyz` passed again and the Pods rejoined the Service without anyone touching them. If liveness had checked Redis, every Pod would have restarted for nothing."
+  },
+  "recap": [
+   "Startup holds back the other probes, liveness restarts a stuck container, readiness only stops traffic.",
+   "Keep dependencies out of liveness; a shared outage would restart every Pod at once.",
+   "Requests decide placement; over the memory limit means OOMKilled (exit 137), at the CPU limit means throttling.",
+   "Requests and limits set the QoS class, which decides eviction order when a node runs short.",
+   "An HPA needs metrics-server (with `--kubelet-insecure-tls` on kind) and CPU requests; it scales up fast and down slowly.",
+   "Taints, affinity and nodeSelector steer scheduling; a PDB limits planned disruptions such as a drain."
+  ],
+  "check": [
+   {
+    "q": "A Spring Boot service needs about 90 seconds to start. Its liveness probe kills it after 30 seconds, again and again. What is the best fix?",
+    "options": [
+     "Add a startup probe that allows more than 90 seconds",
+     "Raise the container's memory limit",
+     "Point the readiness probe at `/healthz` too",
+     "Add more replicas to the Deployment"
+    ],
+    "answer": 0,
+    "why": "A startup probe holds the liveness probe back until the app has started, so slow starts are not mistaken for a stuck process."
+   },
+   {
+    "q": "metrics-server works and `kubectl top pods` prints numbers, but the HPA still shows `cpu: <unknown>/70%`. What is the most likely cause?",
+    "options": [
+     "The HPA needs a memory metric as well",
+     "The cluster has too few worker nodes",
+     "The Pods have no CPU request to compute a percentage from",
+     "The Deployment's `replicas` is set higher than `maxReplicas`"
+    ],
+    "answer": 2,
+    "why": "A utilization target is a percentage of the CPU request, so without a request the HPA has nothing to divide by."
+   },
+   {
+    "q": "A Deployment has 3 replicas and a PDB with `minAvailable: 3`. You run `kubectl drain` on the node that holds one of them. What happens?",
+    "options": [
+     "The Pod is evicted at once, and the PDB is ignored for drains",
+     "The node is deleted and the Pod moves with it",
+     "Kubernetes adds a fourth replica first, then evicts",
+     "The eviction is refused and drain keeps retrying"
+    ],
+    "answer": 3,
+    "why": "With all 3 required, the budget allows 0 disruptions, so every eviction is refused until you change the PDB or add replicas."
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the difference between liveness, readiness and startup probes?",
+    "a": "A liveness probe checks whether the container is stuck; after repeated failures the kubelet restarts it. A readiness probe checks whether the Pod can take traffic; while it fails, the Pod is removed from Service endpoints but keeps running. A startup probe protects slow starters by holding the other two back until it passes. Liveness should test only the process itself, while readiness may check dependencies such as a database."
+   },
+   {
+    "q": "How do requests and limits work, and what happens when a container goes over them?",
+    "a": "Requests are what the scheduler reserves, so they decide which node a Pod can go on, and the HPA computes percentages from them. Limits are the most a container may use, enforced by the kernel through cgroups. Over the memory limit the container is OOMKilled with exit code 137; at the CPU limit it is only throttled. I always set requests and a memory limit, and think twice before adding a CPU limit to a latency-sensitive service."
+   },
+   {
+    "q": "An HPA is not scaling. How do you find out why?",
+    "a": "First `kubectl get hpa` to see the current value: `<unknown>` means no metrics, so check that metrics-server runs and that the Pods have CPU requests. Then `kubectl describe hpa` shows conditions such as AbleToScale and ScalingActive, plus events that explain each decision. If metrics look fine, check whether the count is already at `maxReplicas`, or whether the target is so high that the load never crosses it. Last, look for a second controller, such as a VPA on CPU or a deploy tool resetting `replicas`."
+   }
+  ],
+  "deeper": {
+   "minutes": 12,
+   "body": "Picking good numbers is most of the work with resources, and guessing goes wrong in both directions. Requests that are too high waste nodes and make the HPA react late, because each Pod looks idle. Requests that are too low pack too many Pods onto a node and make the HPA scale early and often.\n\nA simple way to start from data:\n1. Run the app under normal load for a day and look at its use with `kubectl top pods`, or a Grafana dashboard once you reach Part 10.\n2. Set the memory request near normal use and the memory limit with room for peaks, often about twice the request.\n3. Set the CPU request near normal use. The HPA's percentage is based on it, so this number also sets when scaling starts.\n4. Run a VPA in `Off` mode next to the app. Its recommendations are a second opinion that costs nothing.\n5. Check again after big changes to the app, such as a new framework version or a new cache.\n\nCPU is not always the right signal to scale on. A worker that reads jobs from a queue may sit at low CPU while thousands of jobs wait. KEDA, a CNCF project, scales Deployments on events such as queue length, and can scale to zero when there is no work. Kubernetes 1.37 also lets an HPA scale to zero by itself as a beta, when it uses an object or external metric.\n\nAll of this scales Pods. When the nodes are full, new Pods stay `Pending`. Node autoscalers, such as the Cluster Autoscaler or Karpenter on a cloud, notice those Pending Pods and add nodes. When nodes are under-used, they drain and remove them, and that drain respects your PDBs. kind cannot add nodes, so on your laptop the ceiling is the memory you gave Docker Desktop.\n\nProbes deserve the same care as numbers. Tune them like alerts: a probe acts on its own, often when nobody is watching. Before you tighten a timeout, ask what happens if every Pod fails that probe in the same minute."
+  },
+  "sources": [
+   {
+    "title": "Liveness, readiness and startup probes",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/probes/"
+   },
+   {
+    "title": "Resource management for Pods and containers",
+    "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"
+   },
+   {
+    "title": "Horizontal Pod autoscaling",
+    "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/"
+   },
+   {
+    "title": "metrics-server (GitHub)",
+    "url": "https://github.com/kubernetes-sigs/metrics-server"
+   }
+  ]
+ },
+ {
+  "id": "d36",
+  "title": "Traffic and storage: Gateway API, Ingress and volumes",
+  "minutes": 50,
+  "goal": "By the end you can route outside traffic to hello-devops through a Gateway, send a small share of it to a canary, end TLS at the Gateway, and give a Pod storage that outlives it.",
+  "guess": {
+   "q": "On a fresh kind cluster with nothing extra installed, you run `kubectl apply` on a Gateway and an HTTPRoute. What happens?",
+   "options": [
+    "Traffic starts flowing, because Kubernetes ships a default proxy",
+    "The apply fails, because the cluster does not know these object types",
+    "Kubernetes downloads Envoy and starts it for you",
+    "The objects are saved, and the old Ingress controller serves them"
+   ],
+   "answer": 1,
+   "why": "The Gateway API is not built in. Until you install its CRDs, the API server rejects the objects with \"no matches for kind\", and even then nothing routes until a controller such as Envoy Gateway runs."
+  },
+  "terms": [
+   {
+    "term": "Ingress",
+    "plain": "The older Kubernetes object for HTTP routing into a cluster; its API is now frozen."
+   },
+   {
+    "term": "Gateway API",
+    "plain": "The newer official routing objects (GatewayClass, Gateway, HTTPRoute), installed as CRDs."
+   },
+   {
+    "term": "Gateway",
+    "plain": "An entry point with listeners, such as HTTP on port 80, run by a proxy that a controller starts."
+   },
+   {
+    "term": "HTTPRoute",
+    "plain": "Rules that match requests by path, header or host and send them to Services, with optional weights."
+   },
+   {
+    "term": "PersistentVolumeClaim (PVC)",
+    "plain": "An app's request for storage of a given size and access mode."
+   },
+   {
+    "term": "PersistentVolume (PV)",
+    "plain": "A piece of real storage in the cluster that a claim binds to."
+   },
+   {
+    "term": "StorageClass",
+    "plain": "A type of storage the cluster can create on demand when a claim asks for it."
+   },
+   {
+    "term": "StatefulSet",
+    "plain": "Like a Deployment, but each Pod keeps a stable name and its own volume."
+   }
+  ],
+  "sections": [
+   {
+    "h": "Getting traffic in from outside",
+    "body": "So far you have reached hello-devops in two ways: the NodePort that kind maps to localhost:8081 (Day 33), and `kubectl port-forward`. Both are fine on a laptop. Neither is how real users arrive.\n\nTraffic that enters the cluster from outside is called north-south traffic. Traffic between Services inside the cluster is east-west. For north-south HTTP traffic you usually want:\n- One entry point for many apps, so you pay for one load balancer instead of ten.\n- Routing by host name and path, such as `shop.example.com/api` to one Service and `/` to another.\n- TLS in one place, so each app does not handle its own certificates.\n- Gradual releases, such as sending 10% of requests to a new version.\n\nA Service of type LoadBalancer gives you an address, but it works with connections (layer 4). It never looks at a URL path or a header. For that you need a proxy that understands HTTP (layer 7), plus a Kubernetes object that tells the proxy what to do. Kubernetes has two such APIs: the older Ingress and the newer Gateway API.",
+    "refs": [
+     {
+      "title": "Service (Kubernetes docs)",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/service/",
+      "kind": "docs"
+     },
+     {
+      "title": "What is Gateway API for Kubernetes? Find out in ten minutes",
+      "url": "https://www.youtube.com/watch?v=yWD_FGMJOCw",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Ingress, and why it is fading",
+    "body": "An Ingress is a Kubernetes object with HTTP routing rules: host names, paths and the Service each one goes to. It has been stable since Kubernetes 1.19, and you will see it in many clusters and tutorials. An Ingress does nothing by itself. An Ingress controller, a proxy running in the cluster, reads the objects and does the routing.\n\nTwo things changed:\n- The Ingress API is frozen. It stays supported, but it gets no new features, and the [Ingress docs](https://kubernetes.io/docs/concepts/services-networking/ingress/) recommend Gateway instead.\n- ingress-nginx, the most popular community controller, was retired on March 24, 2026. Existing installs keep running, with no more releases, bug fixes or security patches.\n\nIngress was small on purpose: hosts, paths and TLS. Everything else, such as rewrites, timeouts or canary weights, went into annotations that each controller defined its own way. A config written for one controller rarely worked on another.\n\nIf you meet ingress-nginx at work, treat it as a migration. `kubectl get pods -A -l app.kubernetes.io/name=ingress-nginx` finds it. [Ingress2Gateway](https://kubernetes.io/blog/2026/03/20/ingress2gateway-1-0-release/) translates Ingress objects and many ingress-nginx annotations into Gateway API objects, and warns about what it cannot translate. Do not confuse ingress-nginx with F5's NGINX Ingress Controller, which is a separate product.",
+    "refs": [
+     {
+      "title": "Ingress",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/",
+      "kind": "docs"
+     },
+     {
+      "title": "Ingress NGINX retirement: what you need to know",
+      "url": "https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/",
+      "kind": "read"
+     },
+     {
+      "title": "Before you migrate: five surprising Ingress-NGINX behaviors",
+      "url": "https://kubernetes.io/blog/2026/02/27/ingress-nginx-before-you-migrate/",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "The Gateway API: one object per role",
+    "body": "The **Gateway API** is the newer, official set of objects for routing traffic into a cluster. It is not built into Kubernetes. You install it as CRDs (custom resource definitions: new object types that the API server learns), plus a controller that implements them. Until the CRDs exist, applying a Gateway fails with \"no matches for kind\".\n\nIt splits the job by who owns what:\n- GatewayClass: which controller handles Gateways of this class. The platform team creates it once per cluster.\n- Gateway: an entry point with one or more listeners, such as \"HTTP on port 80\". The controller starts a proxy for it.\n- HTTPRoute: routing rules for one app, such as \"`/` goes to Service `hello-devops` on port 80\". App teams own these and attach them to a Gateway.\n\nA Gateway's `allowedRoutes` decides which namespaces may attach routes. The lab allows all of them, which is easy on a laptop. At work you would pick `Same` or a label selector.\n\nFeatures that Ingress hid in annotations are real fields here: header matching, weights, redirects, rewrites and timeouts. Because they are fields, they behave the same across implementations such as Envoy Gateway, Istio, Cilium, Traefik and the cloud providers' load balancers.\n\nThe Gateway API ships on its own schedule, separate from Kubernetes. Version 1.7 is the newest. Each release has a Standard channel (stable) and an Experimental channel. Stick to Standard: everything in this lesson has been Standard since 1.0.",
+    "refs": [
+     {
+      "title": "Gateway API (Kubernetes docs)",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/gateway/",
+      "kind": "docs"
+     },
+     {
+      "title": "Gateway API project site",
+      "url": "https://gateway-api.sigs.k8s.io/",
+      "kind": "docs"
+     },
+     {
+      "title": "Mastering Kubernetes Gateway API (Is it Observable)",
+      "url": "https://www.youtube.com/watch?v=HLXyrQT8zV0",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Envoy Gateway on kind, step by step",
+    "body": "To try it you need one implementation. This course uses Envoy Gateway, an open source controller that runs the Envoy proxy (Envoy itself is a CNCF project). One `helm install` brings the controller and its own copy of the Gateway API CRDs. Envoy Gateway 1.9 bundles Gateway API 1.6, which is fine, because the lab uses only Standard features.\n\nWhen you run `kubectl apply -k k8s/gateway`, this happens:\n1. The GatewayClass `eg` names the controller `gateway.envoyproxy.io/gatewayclass-controller`. Envoy Gateway sees its own name and accepts the class.\n2. The Gateway `hello-gateway` uses class `eg`, so Envoy Gateway creates an Envoy proxy Deployment and Service for it in `envoy-gateway-system`.\n3. The HTTPRoute `hello-devops` attaches to `hello-gateway` and points at the `hello-devops` Service.\n4. Envoy Gateway turns the route into Envoy settings and sends them to the proxy, which starts forwarding.\n\nkind has one catch. The proxy's Service has type LoadBalancer. On a cloud, that creates a real load balancer with an address. kind has no cloud, so the Service never gets one, and `kubectl get gateway -n hello` shows PROGRAMMED `False` with the message \"No addresses have been assigned to the Gateway\". This is expected. The routing behind it works, and you reach the proxy with `kubectl port-forward`, as the [Envoy Gateway quickstart](https://gateway.envoyproxy.io/docs/tasks/quickstart/) does.\n\nIf you want a real address on kind, the kind project's [cloud-provider-kind](https://github.com/kubernetes-sigs/cloud-provider-kind) acts as a cloud load balancer for local clusters. On a Mac it exposes the address through a port on localhost. For one app on a laptop, port-forward is enough.",
+    "refs": [
+     {
+      "title": "Envoy Gateway quickstart",
+      "url": "https://gateway.envoyproxy.io/docs/tasks/quickstart/",
+      "kind": "docs"
+     },
+     {
+      "title": "Experimenting with Gateway API using kind (Kubernetes blog)",
+      "url": "https://kubernetes.io/blog/2026/01/28/experimenting-gateway-api-with-kind/",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "Matching, canary weights and TLS",
+    "body": "An HTTPRoute holds a list of rules, and each rule has matches and backends. A match can test:\n- The path, such as `PathPrefix /api` or `Exact /healthz`.\n- Headers, such as `x-canary: always`.\n- The HTTP method and query parameters.\n\nWhen several rules match one request, the most specific one wins. A longer path beats a shorter one, and with equal paths, more header matches win. You do not need to order rules by hand.\n\nA rule can send traffic to more than one backend, with weights. Weights 90 and 10 send about 9 of every 10 requests to the first Service and 1 to the second. That is a canary release: a new version gets a small share of real traffic while you watch its errors and latency. If it looks good, you move the weights. If not, you set the canary to 0. The lab's `k8s/gateway/httproute-canary.yaml` does this, and adds a header rule so testers can always reach the canary.\n\nTLS is set on the Gateway, not on each route. An HTTPS listener with `tls.mode: Terminate` decrypts at the proxy, with a certificate and key from a Secret of type `kubernetes.io/tls`. The proxy then sends plain HTTP to your Pods inside the cluster. Apps stay simple, and one team manages certificates in one place. At work, cert-manager usually creates and renews those Secrets. In the lab you make a self-signed certificate with `openssl`, so `curl` needs `-k` to accept it.",
+    "refs": [
+     {
+      "title": "HTTPRoute traffic splitting (Envoy Gateway)",
+      "url": "https://gateway.envoyproxy.io/docs/tasks/traffic/http-traffic-splitting/",
+      "kind": "docs"
+     },
+     {
+      "title": "Secure gateways with TLS (Envoy Gateway)",
+      "url": "https://gateway.envoyproxy.io/docs/tasks/security/secure-gateways/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Storage: volumes that outlive Pods",
+    "body": "Containers lose their files when they restart, because each start begins again from the image. A volume is a folder that Kubernetes mounts into a container. Some volumes are short-lived: an `emptyDir` is created with its Pod and deleted with it. It suits scratch files and sharing files between containers in one Pod.\n\nFor data that must survive the Pod, there are three objects:\n- A **PersistentVolume** (PV) is a piece of real storage: a cloud disk, a network share or a folder on a node.\n- A PersistentVolumeClaim (PVC) is an app's request for storage: \"1Gi that one node can read and write\".\n- A StorageClass is a type of storage the cluster can create on demand.\n\nYou mostly write PVCs. When a PVC names a StorageClass, or the cluster has a default one, the class's provisioner creates a matching PV. That is called dynamic provisioning. kind's default class is called `standard`. It uses the local-path provisioner, which makes a folder on a node. Two of its settings matter:\n- `volumeBindingMode: WaitForFirstConsumer`: the PV is created only when a Pod uses the claim, on that Pod's node.\n- `reclaimPolicy: Delete`: deleting the PVC also deletes the PV and the data.\n\nAccess modes say who may mount a volume. `ReadWriteOnce` (RWO) means one node at a time, the usual case for disks. `ReadWriteMany` (RWX) needs network storage such as NFS. `ReadOnlyMany` and `ReadWriteOncePod` exist too.",
+    "refs": [
+     {
+      "title": "Persistent volumes",
+      "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/",
+      "kind": "docs"
+     },
+     {
+      "title": "Storage classes",
+      "url": "https://kubernetes.io/docs/concepts/storage/storage-classes/",
+      "kind": "docs"
+     },
+     {
+      "title": "Volumes",
+      "url": "https://kubernetes.io/docs/concepts/storage/volumes/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "StatefulSets, and why managed databases often win",
+    "body": "A Deployment treats its Pods as interchangeable. They get random names, and any one can replace any other. A database cannot work like that: replica 0 might be the primary, and each replica needs its own disk.\n\nA StatefulSet gives each Pod:\n- A stable name with a number, such as `redis-0` and `redis-1`.\n- Its own PVC from a `volumeClaimTemplates` section, such as `data-redis-0`. A replacement Pod gets the same PVC back.\n- A stable DNS name through a headless Service (Day 33), such as `redis-0.redis.hello.svc.cluster.local`.\n- Ordered start and stop: `redis-0` first, then `redis-1`.\n\nDeleting a StatefulSet does not delete its PVCs. That protects your data, and it means you clean up by hand.\n\nYou can run databases this way. Operators (controllers built for one database, such as CloudNativePG for Postgres) automate a lot of the work. Still, backups, upgrades, replication and failover become your job. Many teams keep the cluster for stateless apps and pay for a managed database such as Amazon RDS or Cloud SQL. My rule of thumb: if losing the data would hurt the business, start with a managed database, and move it into the cluster only for a real reason. The lab's Redis has no volume at all, because it only holds a demo counter. Go deeper below to give it one.",
+    "refs": [
+     {
+      "title": "StatefulSets",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/",
+      "kind": "docs"
+     }
+    ]
+   }
+  ],
+  "analogy": "The Gateway is the reception desk of an office building, and the GatewayClass is the company that staffs it. Each HTTPRoute is a line in the visitor book that a tenant writes: \"visitors for Acme go to floor 3, testers with a blue badge go to floor 4\". Tenants add their own lines without touching the desk. Where it breaks: a receptionist can use judgment, while the proxy follows the most specific matching rule and nothing else.",
+  "diagram": "<svg viewBox=\"0 0 560 250\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Gateway API on kind: GatewayClass, Gateway and HTTPRoute configure an Envoy proxy that splits requests 90 to 10 between two Services\"><rect class=\"bxp\" x=\"16\" y=\"24\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"80\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">GatewayClass</text><rect class=\"bxp\" x=\"192\" y=\"24\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"248\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">Gateway</text><rect class=\"bxg\" x=\"352\" y=\"24\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"408\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">HTTPRoute</text><line class=\"lnd\" x1=\"192\" y1=\"46\" x2=\"146\" y2=\"46\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"169\" y=\"38\" font-size=\"11\" text-anchor=\"middle\">uses</text><line class=\"lnd\" x1=\"352\" y1=\"46\" x2=\"306\" y2=\"46\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"329\" y=\"38\" font-size=\"11\" text-anchor=\"middle\">attaches</text><rect class=\"bx\" x=\"16\" y=\"150\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"72\" y=\"177\" font-size=\"13\" text-anchor=\"middle\">curl :8888</text><rect class=\"bxo\" x=\"176\" y=\"150\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"240\" y=\"177\" font-size=\"13\" text-anchor=\"middle\">Envoy proxy</text><rect class=\"bxt\" x=\"368\" y=\"110\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"436\" y=\"137\" font-size=\"13\" text-anchor=\"middle\">hello-devops</text><rect class=\"bxt\" x=\"368\" y=\"190\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"436\" y=\"217\" font-size=\"13\" text-anchor=\"middle\">hello-canary</text><line class=\"ln\" x1=\"128\" y1=\"172\" x2=\"174\" y2=\"172\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"72\" y=\"212\" font-size=\"11\" text-anchor=\"middle\">port-forward</text><line class=\"lnd\" x1=\"248\" y1=\"68\" x2=\"240\" y2=\"148\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"212\" y=\"112\" font-size=\"11\" text-anchor=\"middle\">creates</text><line class=\"lnd\" x1=\"392\" y1=\"68\" x2=\"292\" y2=\"148\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"368\" y=\"96\" font-size=\"11\" text-anchor=\"middle\">rules</text><line class=\"ln\" x1=\"304\" y1=\"164\" x2=\"366\" y2=\"136\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"326\" y=\"140\" font-size=\"11\" text-anchor=\"middle\">90%</text><line class=\"ln\" x1=\"304\" y1=\"180\" x2=\"366\" y2=\"208\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"326\" y=\"210\" font-size=\"11\" text-anchor=\"middle\">10%</text></svg>",
+  "diagram_caption": "The objects on top configure the proxy below, which splits real requests between two Services.",
+  "worked": {
+   "title": "Data that survives its Pod",
+   "steps": [
+    {
+     "say": "Check which storage the cluster offers. kind has one class, `standard`, marked as the default. It makes folders on nodes and deletes them with their claim.",
+     "code": "$ kubectl get storageclass\nNAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE\nstandard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  3d",
+     "lang": "console"
+    },
+    {
+     "say": "Apply the demo file: a namespace, a 1Gi claim and a Pod that mounts it at `/data`. Because of `WaitForFirstConsumer`, the claim stays `Pending` until the Pod is scheduled; here that takes a few seconds.",
+     "code": "$ kubectl apply -f k8s/storage/pvc-demo.yaml\nnamespace/storage-demo created\npersistentvolumeclaim/notes created\npod/writer created\n$ kubectl get pvc -n storage-demo\nNAME    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE\nnotes   Bound    pvc-3f1c2a9e-8d7b-4c55-9a0e-6b2f4d1e7c80   1Gi        RWO            standard       <unset>                 12s",
+     "lang": "console"
+    },
+    {
+     "say": "The provisioner created a PV for the claim and named it after the claim's ID. Nobody wrote a PV by hand: that is dynamic provisioning.",
+     "code": "$ kubectl get pv\nNAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE\npvc-3f1c2a9e-8d7b-4c55-9a0e-6b2f4d1e7c80   1Gi        RWO            Delete           Bound    storage-demo/notes   standard       <unset>                          14s",
+     "lang": "console"
+    },
+    {
+     "say": "The Pod adds one line to `/data/starts.log` each time it starts, then prints the file. One start so far.",
+     "code": "$ kubectl logs writer -n storage-demo\nstarted at Fri Oct 30 10:20:11 UTC 2026",
+     "lang": "console"
+    },
+    {
+     "say": "Delete the Pod and create it again. The delete takes up to 30 seconds, because `sleep` ignores the polite stop signal. The new Pod mounts the same claim and finds the old line still there.",
+     "code": "$ kubectl delete pod writer -n storage-demo\npod \"writer\" deleted from storage-demo namespace\n$ kubectl apply -f k8s/storage/pvc-demo.yaml\nnamespace/storage-demo unchanged\npersistentvolumeclaim/notes unchanged\npod/writer created\n$ kubectl logs writer -n storage-demo\nstarted at Fri Oct 30 10:20:11 UTC 2026\nstarted at Fri Oct 30 10:23:47 UTC 2026",
+     "lang": "console"
+    },
+    {
+     "say": "Find the data. On kind a node is a Docker container, and local-path keeps each volume in a folder under `/var/local-path-provisioner`, named after the PV, namespace and claim.",
+     "code": "$ kubectl get pod writer -n storage-demo -o jsonpath='{.spec.nodeName}{\"\\n\"}'\ndevops-worker2\n$ docker exec devops-worker2 ls /var/local-path-provisioner\npvc-3f1c2a9e-8d7b-4c55-9a0e-6b2f4d1e7c80_storage-demo_notes",
+     "lang": "console"
+    },
+    {
+     "say": "Clean up. Deleting the namespace deletes the claim, and the `Delete` reclaim policy then removes the PV and its folder. With `Retain`, the PV and data would stay for you to recover.",
+     "code": "$ kubectl delete namespace storage-demo\nnamespace \"storage-demo\" deleted\n$ kubectl get pv\nNo resources found",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "k8s/gateway/kustomization.yaml",
+    "src": "# The Gateway API front door for hello-devops (Day 36). Apply with: kubectl apply -k k8s/gateway\n# Install Envoy Gateway first: it brings the Gateway API types (CRDs) and the controller.\n# Not listed here on purpose: canary.yaml, httproute-canary.yaml and gateway-https.yaml\n# are optional extras that you apply by hand with kubectl apply -f.\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - gatewayclass.yaml\n  - gateway.yaml\n  - httproute.yaml",
+    "run": "kubectl apply -k k8s/gateway"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/gateway/gatewayclass.yaml",
+    "src": "# Which controller runs our Gateways: Envoy Gateway. Cluster-wide, so no namespace.\napiVersion: gateway.networking.k8s.io/v1\nkind: GatewayClass\nmetadata:\n  name: eg\nspec:\n  controllerName: gateway.envoyproxy.io/gatewayclass-controller",
+    "run": "kubectl apply -k k8s/gateway"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/gateway/gateway.yaml",
+    "src": "# The front door: Envoy Gateway starts an Envoy proxy that listens for HTTP on port 80.\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: hello-gateway\n  namespace: hello\nspec:\n  gatewayClassName: eg\n  listeners:\n    - name: http\n      protocol: HTTP\n      port: 80\n      allowedRoutes:\n        namespaces:\n          from: All # routes from any namespace may attach (fine on a laptop; use Same or Selector at work)",
+    "run": "kubectl apply -k k8s/gateway"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/gateway/httproute.yaml",
+    "src": "# A routing rule: requests for any path go to the hello-devops Service.\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: hello-devops\n  namespace: hello\nspec:\n  parentRefs:\n    - name: hello-gateway # attach to this Gateway (same namespace)\n  rules:\n    - matches:\n        - path:\n            type: PathPrefix\n            value: /\n      backendRefs:\n        - name: hello-devops # the Service from k8s/service.yaml\n          port: 80",
+    "run": "kubectl apply -k k8s/gateway"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/gateway/canary.yaml",
+    "src": "# A second version of the app for the canary exercise on Day 36.\n# Same image, but a different version label and greeting, so you can tell the answers apart.\n# Apply with: kubectl apply -f k8s/gateway/canary.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hello-canary\n  namespace: hello\n  labels:\n    app: hello-canary\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: hello-canary\n  template:\n    metadata:\n      labels:\n        app: hello-canary\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.0\n          imagePullPolicy: IfNotPresent\n          ports:\n            - name: http\n              containerPort: 8000\n          env:\n            - name: APP_VERSION\n              value: \"1.1.0-canary\"\n            - name: GREETING\n              value: \"Hello from the canary!\"\n            - name: REDIS_HOST\n              value: \"redis\" # share the visit counter with the main app\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: http\n            periodSeconds: 5\n          resources:\n            requests:\n              cpu: 50m\n              memory: 128Mi\n            limits:\n              memory: 256Mi\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: hello-canary\n  namespace: hello\n  labels:\n    app: hello-canary\nspec:\n  selector:\n    app: hello-canary\n  ports:\n    - name: http\n      port: 80\n      targetPort: http",
+    "run": "kubectl apply -f k8s/gateway/canary.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/gateway/httproute-canary.yaml",
+    "src": "# A canary release. It has the same name as httproute.yaml, so applying it REPLACES that route.\n#   kubectl apply -f k8s/gateway/httproute-canary.yaml   (start the canary)\n#   kubectl apply -k k8s/gateway                         (go back to 100% hello-devops)\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: hello-devops\n  namespace: hello\nspec:\n  parentRefs:\n    - name: hello-gateway\n  rules:\n    # Rule 1: requests with the header \"x-canary: always\" always go to the canary.\n    # A header match is more specific than a path alone, so this rule wins for those requests.\n    - matches:\n        - path:\n            type: PathPrefix\n            value: /\n          headers:\n            - name: x-canary\n              value: always\n      backendRefs:\n        - name: hello-canary\n          port: 80\n    # Rule 2: everyone else. About 9 in 10 requests go to hello-devops, 1 in 10 to the canary.\n    - matches:\n        - path:\n            type: PathPrefix\n            value: /\n      backendRefs:\n        - name: hello-devops\n          port: 80\n          weight: 90\n        - name: hello-canary\n          port: 80\n          weight: 10",
+    "run": "kubectl apply -f k8s/gateway/httproute-canary.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/gateway/gateway-https.yaml",
+    "src": "# Optional (Day 36): the same Gateway as gateway.yaml, plus an HTTPS listener on port 443.\n# The Gateway ends TLS here and sends plain HTTP to the Pods (\"TLS termination\").\n# First create the Secret \"hello-tls\" from a certificate and key, then:\n#   kubectl apply -f k8s/gateway/gateway-https.yaml\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: hello-gateway\n  namespace: hello\nspec:\n  gatewayClassName: eg\n  listeners:\n    - name: http\n      protocol: HTTP\n      port: 80\n      allowedRoutes:\n        namespaces:\n          from: All\n    - name: https\n      protocol: HTTPS\n      port: 443\n      tls:\n        mode: Terminate # decrypt at the Gateway\n        certificateRefs:\n          - kind: Secret\n            name: hello-tls # a Secret of type kubernetes.io/tls in namespace hello\n      allowedRoutes:\n        namespaces:\n          from: All",
+    "run": "kubectl apply -f k8s/gateway/gateway-https.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/storage/pvc-demo.yaml",
+    "src": "# Day 36 storage demo: a claim for a small disk, and a Pod that writes to it.\n# Apply with: kubectl apply -f k8s/storage/pvc-demo.yaml\n# Clean up with: kubectl delete namespace storage-demo\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: storage-demo\n---\n# The claim: \"I need 1Gi that one node can read and write.\"\n# No storageClassName, so the cluster's default class is used (on kind: \"standard\").\napiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: notes\n  namespace: storage-demo\nspec:\n  accessModes:\n    - ReadWriteOnce\n  resources:\n    requests:\n      storage: 1Gi\n---\n# Each time this Pod starts, it adds one line to /data/starts.log and prints the whole file.\napiVersion: v1\nkind: Pod\nmetadata:\n  name: writer\n  namespace: storage-demo\nspec:\n  containers:\n    - name: writer\n      image: busybox:1.37\n      command: [\"sh\", \"-c\", \"echo \\\"started at $(date)\\\" >> /data/starts.log; cat /data/starts.log; sleep 3600\"]\n      volumeMounts:\n        - name: notes\n          mountPath: /data # the disk appears here inside the container\n      resources:\n        requests:\n          cpu: 10m\n          memory: 16Mi\n        limits:\n          memory: 32Mi\n  volumes:\n    - name: notes\n      persistentVolumeClaim:\n        claimName: notes # use the claim above",
+    "run": "kubectl apply -f k8s/storage/pvc-demo.yaml"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.9.3 -n envoy-gateway-system --create-namespace",
+    "what": "Install Envoy Gateway and its Gateway API CRDs. Check the quickstart for the current version."
+   },
+   {
+    "cmd": "kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available",
+    "what": "Wait until the Envoy Gateway controller is running."
+   },
+   {
+    "cmd": "kubectl apply -k k8s/gateway",
+    "what": "Create the GatewayClass, the Gateway and the HTTPRoute."
+   },
+   {
+    "cmd": "kubectl get gatewayclass,gateway,httproute -A",
+    "what": "List the Gateway API objects in all namespaces, with their status columns."
+   },
+   {
+    "cmd": "kubectl describe httproute hello-devops -n hello",
+    "what": "Show a route's conditions, such as Accepted and ResolvedRefs."
+   },
+   {
+    "cmd": "ENVOY_SVC=$(kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=hello-gateway -o name)",
+    "what": "Find the Envoy proxy Service that belongs to hello-gateway."
+   },
+   {
+    "cmd": "kubectl -n envoy-gateway-system port-forward $ENVOY_SVC 8888:80",
+    "what": "Reach the Gateway on localhost:8888 (kind has no cloud load balancer)."
+   },
+   {
+    "cmd": "kubectl apply -f k8s/gateway/canary.yaml -f k8s/gateway/httproute-canary.yaml",
+    "what": "Start the canary Deployment and replace the route with a 90/10 split."
+   },
+   {
+    "cmd": "curl -H \"x-canary: always\" localhost:8888",
+    "what": "Send a request that the header rule always routes to the canary."
+   },
+   {
+    "cmd": "openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj \"/CN=hello.local\" -keyout tls.key -out tls.crt",
+    "what": "Make a self-signed certificate and key for local TLS tests."
+   },
+   {
+    "cmd": "kubectl create secret tls hello-tls -n hello --cert=tls.crt --key=tls.key",
+    "what": "Store the certificate and key as a TLS Secret the Gateway can use."
+   },
+   {
+    "cmd": "kubectl get pods -A -l app.kubernetes.io/name=ingress-nginx",
+    "what": "Check whether a cluster still runs the retired ingress-nginx controller."
+   },
+   {
+    "cmd": "kubectl get storageclass",
+    "what": "List the types of storage the cluster offers (kind has `standard`)."
+   },
+   {
+    "cmd": "kubectl get pvc,pv -A",
+    "what": "List storage claims and the volumes bound to them."
+   }
+  ],
+  "mistake": "You write an HTTPRoute, curl the Gateway and get a 404 or 500, then start changing the Gateway. Usually the route never attached or points at a Service name or port that does not exist. Run `kubectl describe httproute` first: the Accepted condition says whether the Gateway took the route, and ResolvedRefs says whether its backends exist.",
+  "real_world": "At PayLite, the platform team owns one shared Gateway per cluster, with its TLS certificates renewed by cert-manager. Each product team writes HTTPRoutes for its own paths, and new versions of the card service start at 5% of traffic before the weights move. The card database is a managed service outside the cluster; only caches and queues run as StatefulSets.",
+  "task": {
+   "title": "Put hello-devops behind a Gateway and run a canary",
+   "steps": [
+    "Install Envoy Gateway with Helm (check its quickstart for the current version) and wait until the `envoy-gateway` Deployment is Available.",
+    "Write the four files in `k8s/gateway/` (kustomization, GatewayClass, Gateway, HTTPRoute) and apply them. Read `kubectl get gatewayclass,gateway,httproute -A` and explain the PROGRAMMED column.",
+    "Find the Envoy proxy Service for your Gateway and port-forward local port 8888 to its port 80. Leave that terminal open.",
+    "Run `curl localhost:8888` and check that hello-devops answers through the Gateway with its ConfigMap greeting.",
+    "Apply `canary.yaml` and `httproute-canary.yaml`. Send 50 requests and count how many came from each version.",
+    "Send a few requests with the header `x-canary: always` and check that the canary answers every one.",
+    "Change the weights to 50 and 50, apply, and count again. Then restore the plain route with `kubectl apply -k k8s/gateway` and delete the canary with `kubectl delete -f k8s/gateway/canary.yaml`.",
+    "Optional: make a self-signed certificate, store it as the Secret `hello-tls` in namespace `hello`, apply `gateway-https.yaml`, port-forward 8443 to 443, and run `curl -k https://localhost:8443`.",
+    "Run the ingress-nginx check from the commands list and confirm your cluster has no retired controller."
+   ],
+   "hints": [
+    "`kubectl get svc -n envoy-gateway-system -l gateway.envoyproxy.io/owning-gateway-name=hello-gateway -o name` prints the Service in a form `kubectl port-forward` accepts.",
+    "To count answers: `for i in $(seq 1 50); do curl -s localhost:8888 | jq -r .message; done | sort | uniq -c`. Expect roughly 45 and 5, never exact numbers.",
+    "Route not working? `kubectl describe httproute hello-devops -n hello` shows Accepted and ResolvedRefs. A ResolvedRefs of False usually means a Service name or port is wrong."
+   ],
+   "done_when": "`curl localhost:8888` answers through the Gateway, and 50 requests show mostly the main greeting with a few from the canary."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences how one `curl localhost:8888` request can end up at the canary Pod. Mention the Gateway, the HTTPRoute, the weights and the Service.",
+   "answer": "Port-forward sends the request to the Envoy proxy that Envoy Gateway started for `hello-gateway`. Envoy checks the HTTPRoutes attached to that Gateway; my request has no `x-canary` header, so the 90/10 rule matches. Envoy picks a backend by weight, and about one request in ten goes to the `hello-canary` Service. That Service sends it to one of its ready Pods, which answers with the canary greeting."
+  },
+  "recap": [
+   "Services give an address; HTTP routing by host, path and header needs Ingress or the Gateway API.",
+   "The Ingress API is frozen, and ingress-nginx was retired on March 24, 2026 with no more security fixes.",
+   "Gateway API roles: GatewayClass (controller), Gateway (listeners, TLS), HTTPRoute (app rules and weights).",
+   "On kind, Envoy Gateway routes for real; PROGRAMMED stays False without a load balancer, so use port-forward.",
+   "A PVC asks for storage, a StorageClass creates the PV, and `reclaimPolicy` decides what happens to the data.",
+   "StatefulSets give each replica a stable name and its own PVC; many teams still prefer managed databases."
+  ],
+  "check": [
+   {
+    "q": "A shop needs `/api` sent to Service `api` and every other path to Service `web`, through one Gateway. What do you write?",
+    "options": [
+     "A second GatewayClass for the API traffic",
+     "Two Gateways, one for each Service",
+     "An HTTPRoute with two rules that match on path",
+     "A LoadBalancer Service with two ports"
+    ],
+    "answer": 2,
+    "why": "Routing rules live in an HTTPRoute; the `/api` prefix rule is more specific, so it wins for those requests and `/` takes the rest."
+   },
+   {
+    "q": "On kind, `kubectl get gateway` shows PROGRAMMED False, \"No addresses have been assigned\", but curl through the port-forward works. What should you fix?",
+    "options": [
+     "Nothing: kind has no cloud load balancer to give the Gateway an address",
+     "The HTTPRoute, because it did not attach to the Gateway",
+     "The GatewayClass, because its controller name is wrong",
+     "The Service, because its targetPort does not match"
+    ],
+    "answer": 0,
+    "why": "Programmed is False only because the proxy's LoadBalancer Service never got an address; routing works, as the curl shows."
+   },
+   {
+    "q": "A Postgres Pod on kind keeps its data on a PVC from the `standard` class. You delete the whole namespace. What happens to the data?",
+    "options": [
+     "It stays on the PV until you delete the PV by hand",
+     "It is deleted, because the class's reclaim policy is Delete",
+     "It is saved into etcd until a new claim asks for it",
+     "It moves to another node with free space"
+    ],
+    "answer": 1,
+    "why": "Deleting the namespace deletes the PVC, and with `reclaimPolicy: Delete` the PV and its folder go too."
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why is the Gateway API replacing Ingress?",
+    "a": "Ingress covered only hosts, paths and TLS, so every controller added its own annotations, and configs did not move between controllers. The Gateway API makes features such as header matching, weights and timeouts real fields that behave the same everywhere. It also splits ownership: the platform team runs GatewayClasses and Gateways, and app teams write Routes. On top of that, the Ingress API is frozen and ingress-nginx was retired in March 2026, so new clusters should start with Gateway API."
+   },
+   {
+    "q": "Explain PV, PVC and StorageClass, and how dynamic provisioning works.",
+    "a": "A PVC is an app's request for storage, a PV is the actual storage, and a StorageClass describes a kind of storage and the provisioner that creates it. With dynamic provisioning, the app only writes a PVC; the class's provisioner creates a matching PV and the two are bound. The binding mode decides when that happens, often only once a Pod is scheduled, and the reclaim policy decides whether the data is deleted or kept with the claim. Access modes such as ReadWriteOnce limit how many nodes can mount it at once."
+   },
+   {
+    "q": "Would you run your database in Kubernetes?",
+    "a": "It depends on the team and the data. A StatefulSet gives stable names and one volume per replica, and operators such as CloudNativePG automate failover and backups. But the team then owns backups, restores, upgrades and capacity, and has to test them. For business-critical data and a small team, I would start with a managed database and keep the cluster for stateless services and caches. I would move a database in only for a clear reason, such as cost at scale or a platform team that already runs operators well."
+   }
+  ],
+  "deeper": {
+   "minutes": 15,
+   "body": "The lab's Redis forgets the visit count every time its Pod restarts. A StatefulSet with a volume fixes that. Treat these steps as a sketch to try in a copy of `k8s/redis.yaml`, not as a change to the base:\n1. Change `kind: Deployment` to `kind: StatefulSet`, and add `serviceName: redis` under `spec`.\n2. Add a `volumeClaimTemplates` section with one template named `data`: access mode `ReadWriteOnce` and a request of `1Gi`. The StatefulSet makes one PVC per Pod, called `data-redis-0`.\n3. Mount the `data` volume at `/data` in the Redis container. The official Redis image keeps its files there.\n4. Turn on saving: run Redis with `redis-server --appendonly yes`, so each write also goes to disk.\n5. Apply it, count a few visits, then delete the Pod `redis-0`. It comes back with the same name and the same PVC, and the count carries on.\n\nCheck the pieces with `kubectl get pvc -n hello` and `kubectl get pv`. On kind the PV is a folder inside a node container, so deleting the cluster deletes the data. For practice that is fine.\n\nThings that surprise people:\n- Deleting a StatefulSet leaves its PVCs behind. You delete them yourself when you are sure.\n- `ReadWriteOnce` means one node at a time. If `redis-0` moves to another node, a local-path volume cannot follow it, because the data lives on the old node. Cloud disks can move between nodes; local folders cannot.\n- A StatefulSet wants a headless Service (`clusterIP: None`) so each Pod gets its own DNS name. Your existing `redis` Service is a normal one; for one replica that still works.\n- Scaling down does not delete the PVCs of removed Pods, so scaling back up finds the old data.\n\nKubernetes 1.37 also brought two StatefulSet changes you may read about: `maxUnavailable` for rolling updates is on by default again, and a new `Recreate` update strategy exists as an alpha feature.\n\nThe traffic side has its own next step. cloud-provider-kind can give the Gateway a real address on your laptop. It runs on your Mac, watches the cluster, and exposes each LoadBalancer Service through a port on localhost. With it running, `kubectl get gateway` shows an address and PROGRAMMED True, which matches what you will see on a cloud. Read its README before you install it, because it needs permission to open ports on your machine."
+  },
+  "sources": [
+   {
+    "title": "Gateway API (Kubernetes docs)",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/gateway/"
+   },
+   {
+    "title": "Envoy Gateway quickstart",
+    "url": "https://gateway.envoyproxy.io/docs/tasks/quickstart/"
+   },
+   {
+    "title": "Ingress NGINX retirement: what you need to know",
+    "url": "https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/"
+   },
+   {
+    "title": "Persistent volumes",
+    "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/"
+   }
+  ]
+ },
+ {
+  "id": "d37",
+  "title": "Packaging with Helm and Kustomize",
+  "minutes": 50,
+  "goal": "By the end you can package hello-devops as a Helm chart, install, upgrade and roll back releases with Helm 4, and build dev and prod versions of the plain YAML with Kustomize overlays.",
+  "guess": {
+   "q": "Revision 3 of your Helm release is bad, so you run `helm rollback shop 1`. What does `helm history shop` show afterwards?",
+   "options": [
+    "Revisions 2 and 3 are gone, and 1 is current again",
+    "A new revision 4 that has the same content as revision 1",
+    "Revision 1 marked deployed, with no new revision",
+    "Nothing changes until you also run `helm upgrade`"
+   ],
+   "answer": 1,
+   "why": "Helm never rewrites history. A rollback applies what revision 1 had and records it as a new revision 4, described as \"Rollback to 1\"."
+  },
+  "terms": [
+   {
+    "term": "Helm chart",
+    "plain": "A package of templated Kubernetes YAML plus default values, in one folder."
+   },
+   {
+    "term": "Values",
+    "plain": "The settings that fill a chart's templates, from values.yaml, -f files or --set."
+   },
+   {
+    "term": "Release",
+    "plain": "One installed copy of a chart in a namespace, with its own name."
+   },
+   {
+    "term": "Revision",
+    "plain": "One numbered version of a release; every install, upgrade or rollback adds one."
+   },
+   {
+    "term": "Kustomize",
+    "plain": "A tool built into kubectl that builds YAML from a base plus changes, without templates."
+   },
+   {
+    "term": "Overlay",
+    "plain": "A Kustomize folder that points at a base and lists the changes for one environment."
+   },
+   {
+    "term": "Patch",
+    "plain": "A small description of changes to an object, applied on top of the base."
+   },
+   {
+    "term": "OCI registry",
+    "plain": "A registry such as ghcr.io that stores images, and also Helm charts."
+   }
+  ],
+  "sections": [
+   {
+    "h": "Why package manifests at all",
+    "body": "hello-devops now has more than ten YAML files. Imagine running it three times, for dev, staging and prod. Each copy needs a different image tag, replica count and greeting, and prod also wants a disruption budget. If you copy the folder three times, the copies drift apart. Someone fixes a probe in prod and forgets dev. Six months later, nobody knows which differences are on purpose.\n\nThere are two popular answers, and they come from opposite directions:\n- Templating, with Helm: write the YAML once with blanks, such as `replicas: {{ .Values.replicaCount }}`, and fill the blanks per environment from a values file.\n- Patching, with Kustomize: keep plain, valid YAML as a base, and describe each environment as a small set of changes on top of it.\n\nBoth end the same way. They render ordinary Kubernetes YAML, and the API server never knows which tool made it. That is also why Argo CD (Day 39) can deploy with either one.\n\nYou will use both at work, often in the same cluster. Helm is how most third-party software ships. Kustomize is a common choice for a team's own services. This lesson builds one of each for hello-devops.",
+    "refs": [
+     {
+      "title": "Helm vs Kustomize: the fight between templating and patching (DevOps Toolkit)",
+      "url": "https://www.youtube.com/watch?v=ZMFYSm0ldQ0",
+      "kind": "watch"
+     },
+     {
+      "title": "Using Helm",
+      "url": "https://helm.sh/docs/intro/using_helm/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "A Helm chart from the inside",
+    "body": "Helm is the package manager for Kubernetes, a bit like Homebrew for apps in a cluster. A package is called a **chart**, and a chart is a folder:\n- `Chart.yaml`: the chart's name, its own `version`, and the `appVersion` it deploys by default.\n- `values.yaml`: the default settings.\n- `templates/`: YAML files with placeholders in Go template syntax.\n- `templates/_helpers.tpl`: named snippets that other templates reuse. Files that start with `_` render no objects.\n- `templates/NOTES.txt`: text Helm prints after an install, such as how to reach the app.\n\nInside a template, `{{ .Values.greeting }}` reads a value, `{{ .Release.Name }}` is the name you gave this install, and `{{ .Chart.AppVersion }}` comes from `Chart.yaml`. A pipe changes a value: `{{ .Values.greeting | quote }}` wraps it in quotes. `{{- if .Values.httpRoute.enabled }}` leaves a whole object out unless the value is true, and the `-` trims the blank line the tag would leave.\n\nThe lab chart puts the same labels on every object with one helper: `{{- include \"hello-devops.labels\" . | nindent 4 }}`. `include` renders the helper, and `nindent 4` starts a new line indented by 4 spaces, which YAML needs. Indentation is where most template bugs come from, so render before you install. `helm template hello chart/hello-devops` prints the final YAML, and `helm lint` checks the chart for mistakes. Neither touches the cluster.\n\nThe chart also has a small trick from the [Helm tips page](https://helm.sh/docs/howto/charts_tips_and_tricks/). A `checksum/config` annotation on the Pod template holds a hash of the ConfigMap. Change the greeting, the hash changes, and the Deployment rolls out new Pods that read it.",
+    "refs": [
+     {
+      "title": "Chart template guide: named templates",
+      "url": "https://helm.sh/docs/chart_template_guide/named_templates/",
+      "kind": "docs"
+     },
+     {
+      "title": "Chart tips and tricks",
+      "url": "https://helm.sh/docs/howto/charts_tips_and_tricks/",
+      "kind": "docs"
+     },
+     {
+      "title": "What is Helm in Kubernetes? Helm and Helm charts explained (TechWorld with Nana; its Tiller part is Helm 2 history)",
+      "url": "https://www.youtube.com/watch?v=-ykwb1d0DXU",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Releases, revisions and rollbacks",
+    "body": "When you install a chart, Helm creates a release: one named copy of the chart in one namespace. You can install the same chart many times under different names. Every install, upgrade or rollback adds a numbered revision, and Helm stores each revision as a Secret in the release's namespace.\n\nThe commands follow a release's life:\n1. `helm install hello chart/hello-devops -f chart/kind-values.yaml` renders with your values, applies, and records revision 1.\n2. `helm upgrade hello chart/hello-devops -f chart/kind-values.yaml` renders again and applies the difference as revision 2.\n3. `helm history hello` lists the revisions and their status.\n4. `helm rollback hello 1` applies what revision 1 had, recorded as a new revision 3. History is never rewritten.\n5. `helm uninstall hello` deletes every object the release created.\n\n`helm upgrade --install` installs when the release does not exist yet and upgrades when it does. CI pipelines use it so one command works both times.\n\nOne rule surprises nearly everyone. If you pass any values on `helm upgrade`, Helm starts from the chart's defaults plus only the values you pass now. Values you passed at install time are dropped. With no values at all, it reuses the last ones. So keep your settings in a values file and pass it with `-f` every time.\n\nBy default, `helm install` returns once the API server has the objects, before the Pods are ready. Add `--wait` to wait for them, and `--rollback-on-failure` to undo an upgrade that fails.",
+    "refs": [
+     {
+      "title": "Using Helm: install, upgrade and rollback",
+      "url": "https://helm.sh/docs/intro/using_helm/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "What changed in Helm 4",
+    "body": "Helm 4.0 came out in November 2025, the first major version in six years. Day to day it feels like Helm 3, and charts with `apiVersion: v2` work unchanged. A few changes matter to you:\n- Server-side apply is the default for new releases. The API server merges the changes and tracks which tool owns each field. Upgrades and rollbacks keep the method the release started with, so old Helm 3 releases stay on client-side apply.\n- Two flags were renamed: `--atomic` is now `--rollback-on-failure`, and `--force` is now `--force-replace`. The old names still work but print a warning, and older blog posts use them.\n- `--wait` uses kstatus to tell when objects are really ready.\n- You can install a chart by digest, `oci://...@sha256:...`, so you get exactly the bytes you tested.\n- Post-renderers are now plugins, and `helm registry login` takes only the host name.\n\nHelm 3 is at the end of its life. Its last feature release came out on September 9, 2026, and its security fixes stop on February 10, 2027. Install Helm 4 and learn its flag names.\n\nA new chart format, Charts v3, is experimental and hidden behind `HELM_EXPERIMENTAL_CHART_V3=1`. You can ignore it for now.",
+    "refs": [
+     {
+      "title": "Helm 4 overview",
+      "url": "https://helm.sh/docs/overview",
+      "kind": "docs"
+     },
+     {
+      "title": "Helm 3 end of life (Helm blog)",
+      "url": "https://helm.sh/blog/helm-v3-end-of-life",
+      "kind": "read"
+     },
+     {
+      "title": "Helm 4 released (Helm blog)",
+      "url": "https://helm.sh/blog/helm-4-released",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "Charts in OCI registries",
+    "body": "You can share a chart through the same kind of registry that stores your images. Helm calls this OCI support, after the Open Container Initiative standard that registries follow.\n\nThe flow has three commands:\n1. `helm package chart/hello-devops` makes `hello-devops-0.2.0.tgz`, named after the chart version.\n2. `helm push hello-devops-0.2.0.tgz oci://ghcr.io/<your-github-user>/charts` uploads it to GitHub's registry, next to your image from Day 21.\n3. `helm install hello oci://ghcr.io/<your-github-user>/charts/hello-devops --version 0.2.0` installs it on any cluster.\n\nLog in once with `helm registry login ghcr.io -u <your-github-user>` and a GitHub token that can write packages. Always pin `--version`, for the same reason you never deploy `:latest` images: you want the same chart today and next month. Most third-party projects publish this way now. Envoy Gateway's chart on Day 36 came from `oci://docker.io/envoyproxy/gateway-helm`.\n\n`Chart.yaml` holds two version numbers, and people mix them up. `version` is the chart's own version: bump it on every change to the chart, so one version number always means the same files. `appVersion` is the version of the app inside, which the lab chart uses as the default image tag.",
+    "refs": [
+     {
+      "title": "Use OCI-based registries (Helm docs)",
+      "url": "https://helm.sh/docs/topics/registries/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Kustomize: a base and overlays",
+    "body": "Kustomize is built into kubectl, and you have already used it: `kubectl apply -k k8s` reads `k8s/kustomization.yaml`. That folder is the base. An **overlay** is another folder with its own `kustomization.yaml` that points at the base and lists changes:\n- `resources: [../../k8s]` pulls in the base. An overlay can add files too, such as prod's `pdb.yaml`.\n- `namespace: hello-prod` moves every object into one namespace, and renames the Namespace object as well.\n- `images` changes an image tag without touching the Deployment file.\n- `replicas` sets a Deployment's replica count, and `labels` adds a label such as `env: prod` to every object and Pod.\n- `patches` changes anything else.\n\nPatches come in two styles. A strategic merge patch looks like a small piece of the object with only the changed fields; prod's `deployment-patch.yaml` is one. A JSON patch is a list of operations, such as \"replace `/spec/minReplicas` with 4\". JSON patches suit one exact field, or removing one, like the `nodePort` that both overlays drop.\n\nKustomize has a layout rule that trips people up. An overlay cannot live inside its base folder. An overlay at `k8s/overlays/prod` that points at `../../` fails with \"cycle detected\", because the base would contain the overlay. That is why the lab keeps `overlays/` next to `k8s/`.\n\nThree commands do the work: `kubectl kustomize overlays/prod` prints the result, `kubectl diff -k overlays/prod` shows what would change in the cluster, and `kubectl apply -k overlays/prod` applies it.",
+    "refs": [
+     {
+      "title": "Declarative management of Kubernetes objects using Kustomize",
+      "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "kind": "docs"
+     },
+     {
+      "title": "Should we template or patch Kubernetes manifests? Helm vs Kustomize side by side",
+      "url": "https://www.youtube.com/watch?v=Q19x62ZrR-U",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Helm or Kustomize, or both",
+    "body": "Pick the tool that matches the job:\n- Someone else's software, such as Envoy Gateway, metrics-server or a monitoring stack: Helm. That is how those projects ship, and their values are the supported way to configure them.\n- Your own app with a few differences per environment: either works. Kustomize keeps every file as plain YAML that anyone can read.\n- Your own app installed by many teams with many settings: Helm, because values give each team one clear place to set things.\n\nThey also combine. You can render a chart with `helm template` and keep the output as a Kustomize base. Kustomize can also render charts itself through its `helmCharts` field, with the `--enable-helm` flag. Argo CD (Day 39) renders both straight from git, and Day 40 promotes a release by changing `newTag` in an overlay.\n\nEach tool has a way to go wrong. Helm templates get hard to read once every field becomes a value; a `values.yaml` that repeats the whole Deployment has gone too far. Kustomize gets confusing when an overlay changes half the base; then the base is wrong, and should change instead.\n\nMy default for a team's own services is Kustomize with one base and small overlays, and Helm for everything installed from outside.",
+    "refs": [
+     {
+      "title": "Kustomize with kubectl (Kubernetes docs)",
+      "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "kind": "docs"
+     }
+    ]
+   }
+  ],
+  "analogy": "Helm is a recipe card with blanks: \"___ grams of sugar, bake for ___ minutes\". `values.yaml` holds the usual amounts, your values file changes a few, and the kitchen logbook (the release history) lets you bake an earlier version again. Kustomize is a master drawing with sheets of tracing paper on top: the drawing stays as it is, and each sheet adds the changes for one environment. Where it breaks: a recipe makes a new cake each time, while `helm upgrade` changes the cake that is already on the table.",
+  "diagram": "<svg viewBox=\"0 0 560 262\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Helm fills templates with values and Kustomize patches a base with an overlay; both produce plain YAML for the cluster\"><rect class=\"bx\" x=\"16\" y=\"20\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"80\" y=\"47\" font-size=\"13\" text-anchor=\"middle\">templates</text><rect class=\"bx\" x=\"16\" y=\"76\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"80\" y=\"103\" font-size=\"13\" text-anchor=\"middle\">values.yaml</text><rect class=\"bxo\" x=\"184\" y=\"48\" width=\"104\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"236\" y=\"75\" font-size=\"13\" text-anchor=\"middle\">helm</text><rect class=\"bx\" x=\"16\" y=\"148\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"80\" y=\"175\" font-size=\"13\" text-anchor=\"middle\">k8s/ base</text><rect class=\"bx\" x=\"16\" y=\"204\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"80\" y=\"231\" font-size=\"13\" text-anchor=\"middle\">overlays/prod</text><rect class=\"bxg\" x=\"184\" y=\"176\" width=\"104\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"236\" y=\"203\" font-size=\"13\" text-anchor=\"middle\">kustomize</text><rect class=\"bxt\" x=\"320\" y=\"112\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"376\" y=\"139\" font-size=\"13\" text-anchor=\"middle\">plain YAML</text><rect class=\"bxp\" x=\"456\" y=\"112\" width=\"96\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"504\" y=\"139\" font-size=\"13\" text-anchor=\"middle\">cluster</text><line class=\"ln\" x1=\"144\" y1=\"42\" x2=\"182\" y2=\"62\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"98\" x2=\"182\" y2=\"80\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"170\" x2=\"182\" y2=\"190\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"226\" x2=\"182\" y2=\"208\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"288\" y1=\"74\" x2=\"318\" y2=\"124\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"288\" y1=\"194\" x2=\"318\" y2=\"146\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"432\" y1=\"134\" x2=\"454\" y2=\"134\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"236\" y=\"108\" font-size=\"11\" text-anchor=\"middle\">fill the blanks</text><text class=\"ts\" x=\"236\" y=\"238\" font-size=\"11\" text-anchor=\"middle\">apply patches</text></svg>",
+  "diagram_caption": "Two roads to the same place: Helm fills blanks, Kustomize patches a base. The cluster only sees plain YAML.",
+  "worked": {
+   "title": "One base, two environments with Kustomize",
+   "steps": [
+    {
+     "say": "The dev overlay runs a newer image, so build it and load it into kind first. The build arg bakes the version into the app's answer.",
+     "code": "$ docker build --build-arg APP_VERSION=1.1.0 -t hello-devops:1.1.0 .\n$ kind load docker-image hello-devops:1.1.0 --name devops",
+     "lang": "console"
+    },
+    {
+     "say": "Render dev without touching the cluster. The greeting, the tag, the replica count and the Service type all come from the overlay. The second `replicas: 1` belongs to Redis, which the overlay leaves alone.",
+     "code": "$ kubectl kustomize overlays/dev | grep -E \"GREETING|image: hello|replicas: [0-9]|type: ClusterIP\"\n  GREETING: Hello from dev!\n  type: ClusterIP\n  replicas: 1\n        image: hello-devops:1.1.0\n  replicas: 1",
+     "lang": "console"
+    },
+    {
+     "say": "Render prod. Same base, different answers, plus one extra object: the PodDisruptionBudget that only `overlays/prod` adds.",
+     "code": "$ kubectl kustomize overlays/prod | grep -E \"GREETING|image: hello|replicas: [0-9]|type: ClusterIP\"\n  GREETING: Hello from prod!\n  type: ClusterIP\n  replicas: 4\n        image: hello-devops:1.0.0\n  replicas: 1\n$ kubectl kustomize overlays/prod | grep \"^kind:\" | sort | uniq -c\n   1 kind: ConfigMap\n   2 kind: Deployment\n   1 kind: HorizontalPodAutoscaler\n   1 kind: Namespace\n   1 kind: PodDisruptionBudget\n   2 kind: Service",
+     "lang": "console"
+    },
+    {
+     "say": "Why `overlays/` sits next to `k8s/` and not inside it: Kustomize refuses an overlay inside its own base. This is the error you would get (long paths shortened).",
+     "code": "$ kubectl kustomize k8s/overlays/prod\nerror: accumulating resources: accumulation err='accumulating resources from '../../':\n  ... cycle detected: candidate root '/Users/you/code/hello-devops/k8s'\n  contains visited root '/Users/you/code/hello-devops/k8s/overlays/prod'",
+     "lang": "console"
+    },
+    {
+     "say": "Apply both. Each overlay creates its own namespace, so dev, prod and the base app in `hello` run side by side. Both overlays switched the Service to ClusterIP, because NodePort 30080 is already taken by the base app.",
+     "code": "$ kubectl apply -k overlays/dev\nnamespace/hello-dev created\nconfigmap/hello-config created\nservice/hello-devops created\nservice/redis created\ndeployment.apps/hello-devops created\ndeployment.apps/redis created\nhorizontalpodautoscaler.autoscaling/hello-devops created\n$ kubectl apply -k overlays/prod",
+     "lang": "console"
+    },
+    {
+     "say": "List every hello-devops Pod in the cluster with its `env` label. The base app has no label; dev has 1 Pod and prod has 4.",
+     "code": "$ kubectl get pods -A -l app=hello-devops -L env\nNAMESPACE    NAME                            READY   STATUS    RESTARTS   AGE   ENV\nhello        hello-devops-6c9f8b7d4-2qkzt    1/1     Running   0          2d\nhello        hello-devops-6c9f8b7d4-8hx7m    1/1     Running   0          2d\nhello        hello-devops-6c9f8b7d4-tr5vn    1/1     Running   0          2d\nhello-dev    hello-devops-7f5d6c9b8-xm4rp    1/1     Running   0          50s   dev\nhello-prod   hello-devops-5b8c7d6f9-4wq9z    1/1     Running   0          35s   prod\nhello-prod   hello-devops-5b8c7d6f9-9kdlp    1/1     Running   0          35s   prod\nhello-prod   hello-devops-5b8c7d6f9-hb2nx    1/1     Running   0          35s   prod\nhello-prod   hello-devops-5b8c7d6f9-t7m4c    1/1     Running   0          35s   prod",
+     "lang": "console"
+    },
+    {
+     "say": "Call dev through a port-forward. The new version and the dev greeting prove that the overlay's changes reached the running app.",
+     "code": "$ kubectl -n hello-dev port-forward svc/hello-devops 8082:80 &\n$ curl -s localhost:8082 | jq .\n{\n  \"host\": \"hello-devops-7f5d6c9b8-xm4rp\",\n  \"message\": \"Hello from dev!\",\n  \"version\": \"1.1.0\",\n  \"visits\": 1\n}",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "chart/hello-devops/Chart.yaml",
+    "src": "apiVersion: v2 # the chart format Helm 3 and Helm 4 both read\nname: hello-devops\ndescription: The hello-devops web app from \"DevOps, from zero\"\ntype: application\nversion: 0.2.0 # the chart's own version: bump it every time you change the chart\nappVersion: \"1.0.0\" # the app version (image tag) this chart deploys by default",
+    "run": "helm lint chart/hello-devops"
+   },
+   {
+    "lang": "yaml",
+    "title": "chart/hello-devops/values.yaml",
+    "src": "# Default settings for the chart.\n# Change them with -f my-values.yaml (preferred) or --set key=value.\n\nreplicaCount: 2 # ignored when autoscaling.enabled is true (the HPA owns the count then)\n\nimage:\n  repository: hello-devops\n  tag: \"\" # empty: use appVersion from Chart.yaml\n  pullPolicy: IfNotPresent\n\n# Settings the app reads from environment variables.\ngreeting: \"Hello from Helm!\"\nredisHost: \"\" # empty: the app counts visits in memory\n\nservice:\n  type: ClusterIP\n  port: 80\n\nresources:\n  requests:\n    cpu: 100m\n    memory: 128Mi\n  limits:\n    memory: 256Mi\n\nstartupProbe:\n  httpGet:\n    path: /healthz\n    port: http\n  periodSeconds: 2\n  failureThreshold: 30\n\nlivenessProbe:\n  httpGet:\n    path: /healthz\n    port: http\n  periodSeconds: 10\n\nreadinessProbe:\n  httpGet:\n    path: /readyz\n    port: http\n  periodSeconds: 5\n  timeoutSeconds: 2\n  failureThreshold: 2\n\n# Optional HorizontalPodAutoscaler. Needs metrics-server (Day 35).\nautoscaling:\n  enabled: false\n  minReplicas: 2\n  maxReplicas: 5\n  targetCPUUtilizationPercentage: 70\n\n# Optional Gateway API route. Needs a Gateway (k8s/gateway/ in the lab repo, Day 36).\nhttpRoute:\n  enabled: false\n  gateway:\n    name: hello-gateway\n    namespace: hello\n  hostname: \"\" # for example helm.local; empty: match any host name\n  path: /",
+    "run": "helm lint chart/hello-devops"
+   },
+   {
+    "lang": "text",
+    "title": "chart/hello-devops/templates/_helpers.tpl",
+    "src": "{{/*\nNamed templates (helpers) that the other templates reuse with \"include\".\nFiles that start with an underscore render no objects of their own.\n*/}}\n\n{{/* Labels that pick this release's Pods. Never change them after the first install. */}}\n{{- define \"hello-devops.selectorLabels\" -}}\napp.kubernetes.io/name: {{ .Chart.Name }}\napp.kubernetes.io/instance: {{ .Release.Name }}\n{{- end }}\n\n{{/* All labels: the selector labels plus information about the chart. */}}\n{{- define \"hello-devops.labels\" -}}\n{{ include \"hello-devops.selectorLabels\" . }}\napp.kubernetes.io/version: {{ .Values.image.tag | default .Chart.AppVersion | quote }}\napp.kubernetes.io/managed-by: {{ .Release.Service }}\nhelm.sh/chart: {{ printf \"%s-%s\" .Chart.Name .Chart.Version }}\n{{- end }}",
+    "run": "helm template hello chart/hello-devops"
+   },
+   {
+    "lang": "yaml",
+    "title": "chart/hello-devops/templates/configmap.yaml",
+    "src": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: {{ .Release.Name }}-config\n  labels:\n    {{- include \"hello-devops.labels\" . | nindent 4 }}\ndata:\n  GREETING: {{ .Values.greeting | quote }}\n  REDIS_HOST: {{ .Values.redisHost | quote }}",
+    "run": "helm template hello chart/hello-devops"
+   },
+   {
+    "lang": "yaml",
+    "title": "chart/hello-devops/templates/deployment.yaml",
+    "src": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: {{ .Release.Name }}\n  labels:\n    {{- include \"hello-devops.labels\" . | nindent 4 }}\nspec:\n  {{- if not .Values.autoscaling.enabled }}\n  replicas: {{ .Values.replicaCount }}\n  {{- end }}\n  selector:\n    matchLabels:\n      {{- include \"hello-devops.selectorLabels\" . | nindent 6 }}\n  template:\n    metadata:\n      labels:\n        {{- include \"hello-devops.labels\" . | nindent 8 }}\n      annotations:\n        # Changes when the ConfigMap changes, so Pods restart and read the new settings.\n        checksum/config: {{ include (print $.Template.BasePath \"/configmap.yaml\") . | sha256sum }}\n    spec:\n      containers:\n        - name: web\n          image: \"{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}\"\n          imagePullPolicy: {{ .Values.image.pullPolicy }}\n          ports:\n            - name: http\n              containerPort: 8000\n          envFrom:\n            - configMapRef:\n                name: {{ .Release.Name }}-config\n          startupProbe:\n            {{- toYaml .Values.startupProbe | nindent 12 }}\n          livenessProbe:\n            {{- toYaml .Values.livenessProbe | nindent 12 }}\n          readinessProbe:\n            {{- toYaml .Values.readinessProbe | nindent 12 }}\n          resources:\n            {{- toYaml .Values.resources | nindent 12 }}",
+    "run": "helm template hello chart/hello-devops"
+   },
+   {
+    "lang": "yaml",
+    "title": "chart/hello-devops/templates/service.yaml",
+    "src": "apiVersion: v1\nkind: Service\nmetadata:\n  name: {{ .Release.Name }}\n  labels:\n    {{- include \"hello-devops.labels\" . | nindent 4 }}\nspec:\n  type: {{ .Values.service.type }}\n  selector:\n    {{- include \"hello-devops.selectorLabels\" . | nindent 4 }}\n  ports:\n    - name: http\n      port: {{ .Values.service.port }}\n      targetPort: http",
+    "run": "helm template hello chart/hello-devops"
+   },
+   {
+    "lang": "yaml",
+    "title": "chart/hello-devops/templates/hpa.yaml",
+    "src": "{{- if .Values.autoscaling.enabled }}\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: {{ .Release.Name }}\n  labels:\n    {{- include \"hello-devops.labels\" . | nindent 4 }}\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: {{ .Release.Name }}\n  minReplicas: {{ .Values.autoscaling.minReplicas }}\n  maxReplicas: {{ .Values.autoscaling.maxReplicas }}\n  metrics:\n    - type: Resource\n      resource:\n        name: cpu\n        target:\n          type: Utilization\n          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}\n{{- end }}",
+    "run": "helm template hello chart/hello-devops --set autoscaling.enabled=true"
+   },
+   {
+    "lang": "yaml",
+    "title": "chart/hello-devops/templates/httproute.yaml",
+    "src": "{{- if .Values.httpRoute.enabled }}\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: {{ .Release.Name }}\n  labels:\n    {{- include \"hello-devops.labels\" . | nindent 4 }}\nspec:\n  parentRefs:\n    - name: {{ .Values.httpRoute.gateway.name }}\n      namespace: {{ .Values.httpRoute.gateway.namespace }}\n  {{- with .Values.httpRoute.hostname }}\n  hostnames:\n    - {{ . | quote }}\n  {{- end }}\n  rules:\n    - matches:\n        - path:\n            type: PathPrefix\n            value: {{ .Values.httpRoute.path }}\n      backendRefs:\n        - name: {{ .Release.Name }}\n          port: {{ .Values.service.port }}\n{{- end }}",
+    "run": "helm template hello chart/hello-devops --set httpRoute.enabled=true"
+   },
+   {
+    "lang": "text",
+    "title": "chart/hello-devops/templates/NOTES.txt",
+    "src": "{{ .Chart.Name }} {{ .Values.image.tag | default .Chart.AppVersion }} is installed as release \"{{ .Release.Name }}\" in namespace \"{{ .Release.Namespace }}\".\n\nTry it:\n  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }} 8090:{{ .Values.service.port }}\n  curl localhost:8090\n{{- if .Values.httpRoute.enabled }}\n\nThrough the Gateway (keep the Envoy port-forward from Day 36 running on 8888):\n  curl {{ with .Values.httpRoute.hostname }}-H \"Host: {{ . }}\" {{ end }}localhost:8888\n{{- end }}",
+    "run": "helm install hello chart/hello-devops -n hello-helm --create-namespace --dry-run=client"
+   },
+   {
+    "lang": "text",
+    "title": "chart/hello-devops/.helmignore",
+    "src": "# Files Helm leaves out when it packages the chart.\n.DS_Store\n.git/\n*.swp\n*.bak\n*.tmp",
+    "run": "helm package chart/hello-devops"
+   },
+   {
+    "lang": "yaml",
+    "title": "chart/kind-values.yaml",
+    "src": "# Values for the local kind cluster (Day 37). Use them with:\n#   helm install hello chart/hello-devops -n hello-helm --create-namespace -f chart/kind-values.yaml\n# Pass the same file again on every helm upgrade, so no setting is lost.\ngreeting: \"Hello from Helm on kind!\"\n\nhttpRoute:\n  enabled: true\n  hostname: helm.local # curl -H \"Host: helm.local\" localhost:8888",
+    "run": "helm install hello chart/hello-devops -n hello-helm --create-namespace -f chart/kind-values.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "overlays/dev/kustomization.yaml",
+    "src": "# The dev environment: the base in k8s/ plus a few changes (Day 37).\n#   Preview: kubectl kustomize overlays/dev\n#   Apply:   kubectl apply -k overlays/dev\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - ../../k8s # the base: every file listed in k8s/kustomization.yaml\nnamespace: hello-dev # move everything into its own namespace (the Namespace object is renamed too)\nlabels:\n  - pairs:\n      env: dev\n    includeTemplates: true # also put the label on the Pods\nimages:\n  - name: hello-devops\n    newTag: \"1.1.0\" # dev runs the newest build\nreplicas:\n  - name: hello-devops\n    count: 1\npatches:\n  # Say which environment answers.\n  - target:\n      kind: ConfigMap\n      name: hello-config\n    patch: |-\n      - op: replace\n        path: /data/GREETING\n        value: \"Hello from dev!\"\n  # One or two Pods are enough in dev.\n  - target:\n      kind: HorizontalPodAutoscaler\n      name: hello-devops\n    patch: |-\n      - op: replace\n        path: /spec/minReplicas\n        value: 1\n      - op: replace\n        path: /spec/maxReplicas\n        value: 2\n  # NodePort 30080 belongs to the base app in namespace hello, and two Services\n  # cannot share one NodePort. Use a ClusterIP Service and port-forward instead.\n  - target:\n      kind: Service\n      name: hello-devops\n    patch: |-\n      - op: replace\n        path: /spec/type\n        value: ClusterIP\n      - op: remove\n        path: /spec/ports/0/nodePort",
+    "run": "kubectl kustomize overlays/dev"
+   },
+   {
+    "lang": "yaml",
+    "title": "overlays/prod/kustomization.yaml",
+    "src": "# The prod environment: the base in k8s/ plus prod settings (Day 37).\n#   Preview: kubectl kustomize overlays/prod\n#   Apply:   kubectl apply -k overlays/prod\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - ../../k8s # the base\n  - pdb.yaml # prod only: a PodDisruptionBudget\nnamespace: hello-prod\nlabels:\n  - pairs:\n      env: prod\n    includeTemplates: true\nimages:\n  - name: hello-devops\n    newTag: \"1.0.0\" # prod runs the release that already passed dev\nreplicas:\n  - name: hello-devops\n    count: 4 # the same as minReplicas below, so kubectl apply and the HPA agree\npatches:\n  # More memory and a spread over nodes (a strategic merge patch in its own file).\n  - path: deployment-patch.yaml\n    target:\n      kind: Deployment\n      name: hello-devops\n  # Say which environment answers.\n  - target:\n      kind: ConfigMap\n      name: hello-config\n    patch: |-\n      - op: replace\n        path: /data/GREETING\n        value: \"Hello from prod!\"\n  # Prod scales between 4 and 10 Pods.\n  - target:\n      kind: HorizontalPodAutoscaler\n      name: hello-devops\n    patch: |-\n      - op: replace\n        path: /spec/minReplicas\n        value: 4\n      - op: replace\n        path: /spec/maxReplicas\n        value: 10\n  # Same reason as in dev: NodePort 30080 is taken by the base app.\n  - target:\n      kind: Service\n      name: hello-devops\n    patch: |-\n      - op: replace\n        path: /spec/type\n        value: ClusterIP\n      - op: remove\n        path: /spec/ports/0/nodePort",
+    "run": "kubectl kustomize overlays/prod"
+   },
+   {
+    "lang": "yaml",
+    "title": "overlays/prod/deployment-patch.yaml",
+    "src": "# A strategic merge patch: write only the fields that change. Kustomize merges them\n# into the Deployment named in kustomization.yaml (target), and matches containers by name.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hello-devops\nspec:\n  template:\n    spec:\n      affinity:\n        podAntiAffinity:\n          # Prefer to put hello-devops Pods on different nodes, so one node failure\n          # does not take them all. \"Preferred\" means the scheduler may still\n          # stack them if it has no other choice.\n          preferredDuringSchedulingIgnoredDuringExecution:\n            - weight: 100\n              podAffinityTerm:\n                topologyKey: kubernetes.io/hostname\n                labelSelector:\n                  matchLabels:\n                    app: hello-devops\n      containers:\n        - name: web\n          resources:\n            requests:\n              cpu: 200m\n              memory: 192Mi\n            limits:\n              memory: 384Mi",
+    "run": "kubectl kustomize overlays/prod"
+   },
+   {
+    "lang": "yaml",
+    "title": "overlays/prod/pdb.yaml",
+    "src": "# During planned work, such as kubectl drain, at most one hello-devops Pod may be down at a time.\n# It does not protect against unplanned failures, such as a node crashing.\napiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata:\n  name: hello-devops\nspec:\n  maxUnavailable: 1\n  selector:\n    matchLabels:\n      app: hello-devops",
+    "run": "kubectl kustomize overlays/prod"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "helm lint chart/hello-devops",
+    "what": "Check a chart for mistakes."
+   },
+   {
+    "cmd": "helm template hello chart/hello-devops -f chart/kind-values.yaml",
+    "what": "Print the YAML the chart would create, without touching the cluster."
+   },
+   {
+    "cmd": "helm install hello chart/hello-devops -n hello-helm --create-namespace -f chart/kind-values.yaml",
+    "what": "Install the chart as a release named hello (revision 1)."
+   },
+   {
+    "cmd": "helm upgrade hello chart/hello-devops -n hello-helm -f chart/kind-values.yaml",
+    "what": "Apply changed values or templates as a new revision."
+   },
+   {
+    "cmd": "helm upgrade --install hello chart/hello-devops -n hello-helm -f chart/kind-values.yaml --wait --rollback-on-failure",
+    "what": "Install or upgrade, wait for ready Pods, and roll back on failure (the CI form)."
+   },
+   {
+    "cmd": "helm history hello -n hello-helm",
+    "what": "List a release's revisions and their status."
+   },
+   {
+    "cmd": "helm rollback hello 1 -n hello-helm",
+    "what": "Return to revision 1; Helm records it as a new revision."
+   },
+   {
+    "cmd": "helm get values hello -n hello-helm",
+    "what": "Show the values the release uses now."
+   },
+   {
+    "cmd": "helm list -A",
+    "what": "List every release in every namespace."
+   },
+   {
+    "cmd": "helm uninstall hello -n hello-helm",
+    "what": "Delete the release and every object it created."
+   },
+   {
+    "cmd": "helm package chart/hello-devops",
+    "what": "Pack the chart into a versioned .tgz file."
+   },
+   {
+    "cmd": "helm push hello-devops-0.2.0.tgz oci://ghcr.io/<your-github-user>/charts",
+    "what": "Upload a packaged chart to an OCI registry."
+   },
+   {
+    "cmd": "kubectl kustomize overlays/prod",
+    "what": "Print what an overlay builds, without applying it."
+   },
+   {
+    "cmd": "kubectl diff -k overlays/prod",
+    "what": "Show what applying the overlay would change in the cluster."
+   },
+   {
+    "cmd": "kubectl apply -k overlays/dev",
+    "what": "Build the dev overlay and apply it."
+   }
+  ],
+  "mistake": "You run `helm upgrade` with one new `--set`, and settings you gave at install time quietly disappear. When you pass any values on an upgrade, Helm starts from the chart's defaults plus only those values. Keep your settings in a values file such as `chart/kind-values.yaml`, pass it with `-f` on every install and upgrade, and check with `helm get values`.",
+  "real_world": "At PayLite, everything installed from outside, such as Envoy Gateway and the monitoring stack, comes from Helm charts pinned to exact versions in an OCI registry. Each in-house service has one Kustomize base and overlays for dev, staging and prod. Promoting a release means a pull request that changes `newTag` in the next overlay, which Argo CD then applies.",
+  "task": {
+   "title": "Ship hello-devops as a Helm release",
+   "steps": [
+    "Write the chart in `chart/hello-devops/` and `chart/kind-values.yaml` from the files above, then run `helm lint chart/hello-devops`.",
+    "Render it with `helm template` and your values file. Find the labels from the helper, the image tag and the HTTPRoute in the output.",
+    "Install it as release `hello` in namespace `hello-helm` with `chart/kind-values.yaml`, and read the NOTES that Helm prints.",
+    "With the Envoy port-forward from Day 36 running, call `curl -H \"Host: helm.local\" localhost:8888` and check the greeting.",
+    "Change the greeting in `chart/kind-values.yaml`, run `helm upgrade` with the same file, and watch the Pods roll. Then run `helm history`.",
+    "Roll back to revision 1, run `helm history` again, and curl once more.",
+    "Upgrade with your values file plus `--set autoscaling.enabled=true`. Use `helm get manifest` to confirm that an HPA appeared and `replicas` left the Deployment.",
+    "Package the chart with `helm package`. Optional: log in to GHCR, push it, and install it from `oci://` into a new namespace.",
+    "Clean up with `helm uninstall`, and delete the `hello-dev` and `hello-prod` namespaces from the worked example."
+   ],
+   "hints": [
+    "Release names are unique per namespace, and most helm commands need `-n hello-helm`. `helm list -A` shows every release in the cluster.",
+    "Greeting back to the chart default after an upgrade? You passed values without the file. `helm get values hello -n hello-helm` shows what the release really uses.",
+    "Curl returns the base app's greeting instead of Helm's? Your request did not match the chart's route. Check the Host header and `kubectl get httproute -A`."
+   ],
+   "done_when": "`helm history hello -n hello-helm` shows install, upgrade and a \"Rollback to 1\" revision, and the curl through the Gateway shows the greeting from revision 1."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences how Helm and Kustomize each turn one set of files into a dev and a prod version of an app. Say which you would use for hello-devops and why.",
+   "answer": "Helm keeps templates with blanks and fills them from a values file, so dev and prod are two values files for the same chart, and each install is a release with revisions. Kustomize keeps plain YAML as a base and puts each environment's changes in an overlay folder, as patches, image tags and replica counts. Both produce ordinary YAML that the cluster applies. For hello-devops I would use Kustomize, because the differences are small and the files stay readable, and keep Helm for the third-party tools I install."
+  },
+  "recap": [
+   "Helm templates with values; Kustomize patches a plain base. Both render ordinary YAML.",
+   "A chart is Chart.yaml, values.yaml, templates, helpers and NOTES; render with `helm template` before installing.",
+   "Every install, upgrade and rollback is a revision; rollback adds a new one instead of rewriting history.",
+   "Passing values on upgrade drops earlier ones, so pass the same values file every time.",
+   "Helm 4: server-side apply for new releases, `--rollback-on-failure` and `--force-replace`; Helm 3 security fixes end February 10, 2027.",
+   "Overlays point at a base with `resources`, then set namespace, images, replicas, labels and patches; never put them inside the base."
+  ],
+  "check": [
+   {
+    "q": "A chart's `values.yaml` says `replicaCount: 2`. You installed with `-f prod.yaml`, which sets 5. Now you run `helm upgrade web ./chart --set image.tag=1.2.0` only. How many replicas run afterwards?",
+    "options": [
+     "5, because Helm keeps install values forever",
+     "6, because Helm adds the counts together",
+     "1, because `--set` resets every value to 1",
+     "2, because the upgrade starts from the chart defaults"
+    ],
+    "answer": 3,
+    "why": "Passing any values on upgrade means chart defaults plus only the new values, so prod.yaml's 5 is dropped and the default 2 applies."
+   },
+   {
+    "q": "Prod needs a bigger memory limit on the base Deployment's `web` container, and nothing else changes. What do you add to the prod overlay?",
+    "options": [
+     "A strategic merge patch with only that container's resources",
+     "A full copy of deployment.yaml with the new limit",
+     "An `images` entry with a new tag",
+     "A `configMapGenerator` with a MEMORY key"
+    ],
+    "answer": 0,
+    "why": "A strategic merge patch names the Deployment and container and lists only the changed fields; Kustomize merges it into the base."
+   },
+   {
+    "q": "An old CI script runs `helm upgrade --install api ./chart --atomic`. What happens with Helm 4?",
+    "options": [
+     "It fails, because Helm 4 removed the flag",
+     "It ignores the flag and never rolls back",
+     "It works and prints a warning; the new name is `--rollback-on-failure`",
+     "It switches the release back to client-side apply"
+    ],
+    "answer": 2,
+    "why": "Helm 4 renamed `--atomic` to `--rollback-on-failure` and keeps the old name working with a deprecation warning."
+   }
+  ],
+  "interview": [
+   {
+    "q": "When would you choose Helm, and when Kustomize?",
+    "a": "Helm is a package manager with templates and release history, and it is the standard way to install and upgrade third-party software. Kustomize keeps plain YAML and adds per-environment overlays, which suits a team's own services with small differences. Helm's templates are powerful but get hard to read, while Kustomize gets messy if overlays rewrite most of the base. Many teams use Helm for platform tools and Kustomize for their own apps, and GitOps tools such as Argo CD render both."
+   },
+   {
+    "q": "What is a Helm release, and how does a rollback work?",
+    "a": "A release is one installed copy of a chart, with a name, a namespace and a numbered history of revisions stored as Secrets. Each install, upgrade or rollback adds a revision with the rendered manifest and the values used. `helm rollback` re-applies an earlier revision's manifest and records it as a new revision, so history is never lost. In Helm 4 it also keeps the apply method the release started with, client-side or server-side."
+   },
+   {
+    "q": "How do you manage different settings for dev, staging and prod?",
+    "a": "I keep one source of truth for the app and express each environment as a small difference: a values file per environment with Helm, or an overlay per environment with Kustomize. Image tags are pinned per environment, so promotion is a reviewed change that copies a tag from one environment to the next. Secrets stay out of those files and come from a secret manager. Rendering every environment in CI, with `helm template` or `kubectl kustomize`, catches mistakes before they reach a cluster."
+   }
+  ],
+  "deeper": {
+   "minutes": 12,
+   "body": "Helm keeps its memory inside the cluster. Each revision of a release is a Secret of type `helm.sh/release.v1` in the release's namespace, named like `sh.helm.release.v1.hello.v3`. List them with `kubectl get secrets -n hello-helm -l owner=helm`. Each one holds the chart, the values and the rendered manifest, compressed and encoded. Helm keeps the last 10 revisions per release by default; `--history-max` changes that.\n\nThis design has a consequence: Helm only knows what it applied, not what is in the cluster now. If someone runs `kubectl edit` on a Deployment that Helm manages, Helm does not notice until the next upgrade. What happens then depends on the apply method:\n- With server-side apply, the default for new Helm 4 releases, the API server tracks which manager owns each field. A field changed by hand now has a different owner, and Helm reports a conflict instead of silently overwriting it. `--force-conflicts` takes the field back.\n- With client-side apply, Helm compares the old manifest, the new one and the live object, and patches the difference. Hand edits to fields the chart does not set survive; edits to fields it does set are overwritten.\n\nEither way, hand edits make the next upgrade harder to predict. Argo CD (Day 39) fixes this by watching for drift all the time and showing it.\n\nTwo Helm features you will meet in third-party charts:\n- Hooks: templates with a `helm.sh/hook` annotation run at set points, such as a database migration Job before an upgrade.\n- Tests: Pods with the `test` hook that `helm test <release>` runs after an install, to check the app answers.\n\nOn the Kustomize side, look at `configMapGenerator`. It builds a ConfigMap from literals or files and adds a hash of the content to its name, such as `hello-config-h622489h5k`. Kustomize also updates every reference to that name. Change a value, the name changes, the Pod template changes, and the Deployment rolls out by itself. It is the Kustomize version of the chart's `checksum/config` trick."
+  },
+  "sources": [
+   {
+    "title": "Helm 4 overview",
+    "url": "https://helm.sh/docs/overview"
+   },
+   {
+    "title": "Using Helm",
+    "url": "https://helm.sh/docs/intro/using_helm/"
+   },
+   {
+    "title": "Declarative management of Kubernetes objects using Kustomize",
+    "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/"
+   },
+   {
+    "title": "Use OCI-based registries (Helm docs)",
+    "url": "https://helm.sh/docs/topics/registries/"
+   }
+  ]
+ },
+ {
+  "id": "d38",
+  "title": "Troubleshooting Kubernetes",
+  "minutes": 50,
+  "goal": "By the end you can find out why a workload is broken with a fixed order of kubectl commands, read the common failure states, test from inside Pods that have no tools, and tell an RBAC \"forbidden\" from a bug.",
+  "guess": {
+   "q": "A Pod is in CrashLoopBackOff, and `kubectl logs` on it shows nothing useful. Where is the error message most likely to be?",
+   "options": [
+    "Nowhere: a crashing app never writes its error",
+    "In the previous container's log: `kubectl logs --previous`",
+    "Only in etcd, which kubectl cannot read",
+    "In the node's disk, which you must open with SSH"
+   ],
+   "answer": 1,
+   "why": "After a restart, `kubectl logs` shows the new container, which may have printed nothing yet. `--previous` shows the container that crashed, error and all."
+  },
+  "terms": [
+   {
+    "term": "Event",
+    "plain": "A short record that a Kubernetes part wrote about an object, such as a failed probe; kept about an hour."
+   },
+   {
+    "term": "CrashLoopBackOff",
+    "plain": "A container keeps exiting, and Kubernetes waits longer before each restart, up to 5 minutes."
+   },
+   {
+    "term": "ImagePullBackOff",
+    "plain": "The node failed to get the image and now waits longer between tries."
+   },
+   {
+    "term": "CreateContainerConfigError",
+    "plain": "The image is there, but the container's settings cannot be built, usually a missing ConfigMap or Secret."
+   },
+   {
+    "term": "Ephemeral container",
+    "plain": "A temporary extra container that kubectl debug adds to a running Pod for checks."
+   },
+   {
+    "term": "RBAC",
+    "plain": "Role-based access control: rules that say who may do which actions on which objects."
+   },
+   {
+    "term": "Role and RoleBinding",
+    "plain": "A Role lists allowed actions in one namespace; a RoleBinding gives that Role to someone."
+   },
+   {
+    "term": "ServiceAccount",
+    "plain": "An identity for a program, such as a CI job or a Pod that calls the Kubernetes API."
+   }
+  ],
+  "sections": [
+   {
+    "h": "A method beats guessing",
+    "body": "When something breaks, the urge is to change three things and hope. Kubernetes punishes that. Many parts react on their own, so a guess can change the evidence before you have read it. A fixed order of checks is faster, even when you think you already know the answer.\n\nWork from the bottom up, because each layer depends on the one below it:\n1. The Pod: is it scheduled, running, ready, restarting?\n2. The Service: does it select those Pods, and does its `targetPort` match the port the app listens on?\n3. The route: does the Gateway or Ingress send traffic to that Service?\n4. The node: if many Pods fail together, is one node short of memory or not ready?\n\nFor each layer, the commands are nearly always the same:\n1. `kubectl get` for STATUS, READY and RESTARTS.\n2. `kubectl describe`, reading the Events at the bottom first.\n3. `kubectl logs`, with `--previous` if the container restarted.\n4. `kubectl get events` for the whole namespace, sorted by time.\n5. `kubectl exec`, `port-forward` or `debug` to test from inside.\n\nTwo habits help more than any tool. Change one thing at a time, then watch what happens. And test layers one by one: `kubectl port-forward pod/<pod>` skips the Service, so if the Pod answers there and not through the Service, you know which layer to read.",
+    "refs": [
+     {
+      "title": "A visual guide on troubleshooting Kubernetes deployments (Learnkube)",
+      "url": "https://learnkube.com/troubleshooting-deployments",
+      "kind": "read"
+     },
+     {
+      "title": "Debug Pods",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/",
+      "kind": "docs"
+     },
+     {
+      "title": "Troubleshooting Pods in CrashLoopBackOff, Pending and ImagePullBackOff",
+      "url": "https://www.youtube.com/watch?v=ULitVDnqy8Y",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Pods that never start",
+    "body": "In these four states the container has not run yet, so `kubectl logs` has nothing to show. The answer is in `kubectl describe pod`, under Events:\n- `Pending`: no node will take the Pod. Usual causes: requests larger than any node's free room, a PVC that cannot bind, or a nodeSelector, affinity or taint that rules out every node.\n- `ContainerCreating` for more than a minute: the node is still setting the Pod up. Usually a volume that will not mount, or a large image still downloading.\n- `ErrImagePull`, then `ImagePullBackOff`: the node cannot get the image. Check the name and tag, the registry login for private images, and on kind whether you ran `kind load docker-image`.\n- `CreateContainerConfigError`: the image is there, but the kubelet cannot build the container's settings. Almost always a missing ConfigMap or Secret, or a missing key in one.\n\n\"BackOff\" in a status only means the kubelet now waits longer between tries. It is never the cause. Look for the first error in the Events.\n\nFor `Pending`, the scheduler writes a `FailedScheduling` event, and it pays to read it slowly. A message that starts `0/3 nodes are available: 1 node(s) had untolerated taint(s), 2 Insufficient cpu` counts all three nodes. One is ruled out by a taint (kind's control plane, Day 35), and two lack free CPU for the request. Lower the request, remove other workloads, or add a node.",
+    "refs": [
+     {
+      "title": "Debug Pods",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/",
+      "kind": "docs"
+     },
+     {
+      "title": "Images: pull policy and errors",
+      "url": "https://kubernetes.io/docs/concepts/containers/images/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Pods that start, then fail",
+    "body": "Here the container ran at least once, so there is evidence in its logs and in its last state:\n- `CrashLoopBackOff`: the container keeps exiting, and the kubelet waits longer before each restart: 10 seconds, then 20, 40, up to 5 minutes. It is a symptom. Read `kubectl logs --previous` for the app's own error, then `Last State` in describe.\n- `OOMKilled`: `Last State` shows `Reason: OOMKilled` and `Exit Code: 137`. The container went over its memory limit (Day 35).\n- Restarts with clean logs: often a liveness probe that fails. The Events say `Liveness probe failed` and then that the container will be restarted. The app was fine; the check was wrong.\n- `Running` but `0/1` READY: the readiness probe fails, so the Pod gets no traffic. The Events show `Readiness probe failed` with a status code or an error.\n- All Pods ready, but the Service still fails: the Service matches no Pods. `kubectl get endpointslices -l kubernetes.io/service-name=<svc>` shows `<unset>` under ENDPOINTS.\n\nFor that last case, compare the Service's selector (`kubectl describe service`) with the Pods' labels (`kubectl get pods --show-labels`), and check that `targetPort` is the port the app listens on. This one fools people, because every Pod looks healthy.\n\nRemember that the STATUS column is a summary kubectl writes for you. `CrashLoopBackOff` is not a Pod phase; the phase is still `Running`. When the column confuses you, `kubectl get pod <name> -o yaml` shows the real fields under `status`.",
+    "refs": [
+     {
+      "title": "Pod lifecycle",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "kind": "docs"
+     },
+     {
+      "title": "Debug Services",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Events, logs and exit codes",
+    "body": "**Events** are short records that Kubernetes parts write about objects: the scheduler placed a Pod, the kubelet pulled an image, a probe failed. The API server keeps them for about an hour by default, so read them early.\n\nThree ways to read them:\n- `kubectl describe pod <name>` shows one object's events at the bottom.\n- `kubectl get events -n <ns> --sort-by=.metadata.creationTimestamp` lists the namespace's events, oldest first.\n- `kubectl events -n <ns> --for pod/<name>` is the newer command. It sorts by time on its own, and `--types=Warning` hides the routine ones.\n\nLogs are what the container wrote to standard output and standard error. `kubectl logs <pod>` reads the current container. Right after a crash, that is a fresh container that may not have printed anything yet. `--previous` reads the one before, the one that crashed. Add `-c <container>` when a Pod has more than one container, and `-f` to follow new lines.\n\nThe exit code under `Last State` narrows things down fast:\n- 0: the process finished on purpose. In a Deployment that still counts as a restart, because a web app should never finish.\n- 1, or another small number: the app exited with its own error. Read the logs.\n- 137: killed with SIGKILL (128 + 9). Most often the OOM killer, or an app that ignored the stop signal until its grace period ran out.\n- 143: stopped with SIGTERM (128 + 15), the polite stop signal Kubernetes sends first.",
+    "refs": [
+     {
+      "title": "Determine the reason for Pod failure",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/determine-reason-pod-failure/",
+      "kind": "docs"
+     },
+     {
+      "title": "Debug running Pods",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Looking inside: exec, port-forward and kubectl debug",
+    "body": "Sometimes you need to test from inside the cluster. Can this Pod resolve a name, reach a port, see a file?\n\n`kubectl exec -it <pod> -- sh` opens a shell in a running container. It only works if the image has a shell and the tools you need, and small images often do not. hello-devops has `sh` and Python, but no `nslookup`, `curl` or `wget`. Distroless images have no shell at all.\n\nThat is what `kubectl debug` is for. It adds an **ephemeral container** to a running Pod: a temporary extra container with an image you choose, such as `busybox`, or `nicolaka/netshoot`, a large image full of network tools. It shares the Pod's network, so it sees DNS and ports exactly as the app does. With `--target=web` it also sees the processes of the `web` container. Ephemeral containers are never restarted, and they go away when the Pod is deleted. Two more forms:\n- `kubectl debug <pod> -it --copy-to=<pod>-debug --container=web -- sh` makes a copy of the Pod with a shell, for a container that crashes too fast to inspect.\n- `kubectl debug node/<node> -it --image=ubuntu` starts a Pod on that node with the node's files mounted at `/host`.\n\nFor DNS and network checks you often do not need the broken Pod at all. A throwaway Pod is enough: `kubectl run net-test -n hello --rm -it --image=busybox:1.37 --restart=Never -- nslookup redis.hello.svc.cluster.local`. NXDOMAIN means the name is wrong or the Service does not exist. If the name resolves but connections fail, check the Service's endpoints next.",
+    "refs": [
+     {
+      "title": "Debug running Pods (kubectl debug)",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/",
+      "kind": "docs"
+     },
+     {
+      "title": "Debugging DNS resolution",
+      "url": "https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/",
+      "kind": "docs"
+     },
+     {
+      "title": "Debugging with ephemeral containers (DevOpsDays Seattle 2022 talk)",
+      "url": "https://www.youtube.com/watch?v=xE_nlt8Lyk4",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Forbidden: RBAC basics",
+    "body": "Sooner or later you will see `Error from server (Forbidden)`. That is not a bug in your YAML. The API server understood the request and refused it, because the person or program behind it lacks permission.\n\nKubernetes decides with role-based access control (RBAC), and four kinds of object do the work:\n- A Role lists allowed actions in one namespace, such as `get`, `list` and `watch` on `pods`. A ClusterRole does the same for the whole cluster.\n- A RoleBinding gives a Role to subjects in one namespace. A ClusterRoleBinding gives a ClusterRole everywhere.\n- Subjects are users, groups and ServiceAccounts. A ServiceAccount is an identity for a program, such as a CI job or a Pod that calls the API.\n\nPermissions only add up. There are no deny rules, so \"forbidden\" always means that nothing allowed the action.\n\nThe error tells you exactly what was missing, for example: `User \"system:serviceaccount:hello:viewer\" cannot delete resource \"pods\" in API group \"\" in the namespace \"hello\"`. Read it as subject, verb, resource, API group and namespace. Then ask the cluster directly:\n- `kubectl auth can-i delete pods -n hello` answers yes or no for you.\n- Add `--as=system:serviceaccount:hello:viewer` to ask on behalf of someone else. Your kind admin user is allowed to do that.\n\nFix it with the smallest Role that does the job. Binding a robot to `cluster-admin` makes the error go away, and also opens the whole cluster to that robot.",
+    "refs": [
+     {
+      "title": "Using RBAC authorization",
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "kind": "docs"
+     },
+     {
+      "title": "Configure service accounts for Pods",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Faster tools, and when the node is the problem",
+    "body": "A few tools save time once the method is in your head:\n- `kubectl top pods` and `kubectl top nodes` show live CPU and memory use, from the metrics-server you installed on Day 35. Check them before you raise a limit.\n- k9s is a terminal UI over the same API. You move between Pods, logs, events and describe output with a few keys. Install it with `brew install derailed/k9s/k9s` and run `k9s -n debug-lab`.\n- Headlamp is a graphical alternative. The old Kubernetes Dashboard project has been archived, and the [Kubernetes blog](https://kubernetes.io/blog/2026/06/01/dashboard-to-headlamp/) points to Headlamp instead.\n\nLearn the plain kubectl commands first anyway. k9s is not installed on every machine you will log in to; kubectl is.\n\nIf many Pods fail at once, and all on one node, look at the node. `kubectl get nodes` shows `NotReady` when a kubelet stops reporting. `kubectl describe node <name>` shows conditions such as `MemoryPressure` and `DiskPressure`, and lists the Pods on the node with their requests. On kind, a node is a Docker container, so `docker stats` on your Mac shows whether Docker Desktop itself is short of memory, and Docker Desktop's settings let you give it more.",
+    "refs": [
+     {
+      "title": "k9s (GitHub)",
+      "url": "https://github.com/derailed/k9s",
+      "kind": "docs"
+     },
+     {
+      "title": "From Kubernetes Dashboard to Headlamp (Kubernetes blog)",
+      "url": "https://kubernetes.io/blog/2026/06/01/dashboard-to-headlamp/",
+      "kind": "read"
+     }
+    ]
+   }
+  ],
+  "analogy": "A good mechanic with a car that will not start does not swap parts at random. They check in a fixed order: is there fuel, does the engine turn, does it keep running, do the wheels get power. Each answer rules out a whole layer. kubectl get, describe, logs and events are that checklist for a cluster. Where it breaks: a car waits for the mechanic, while Kubernetes keeps restarting things as you look, so read the Events and `--previous` logs before they change.",
+  "diagram": "<svg viewBox=\"0 0 560 242\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Debug bottom-up: first the Pod, then the Service, then the route, and the node when many Pods fail together\"><rect class=\"bxt\" x=\"16\" y=\"40\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"86\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">1. Pod</text><rect class=\"bxg\" x=\"210\" y=\"40\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">2. Service</text><rect class=\"bxp\" x=\"404\" y=\"40\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"474\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">3. Route</text><line class=\"ln\" x1=\"156\" y1=\"62\" x2=\"208\" y2=\"62\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"350\" y1=\"62\" x2=\"402\" y2=\"62\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"86\" y=\"24\" font-size=\"11\" text-anchor=\"middle\">start here</text><text class=\"ts\" x=\"86\" y=\"104\" font-size=\"11\" text-anchor=\"middle\">get, describe</text><text class=\"ts\" x=\"86\" y=\"118\" font-size=\"11\" text-anchor=\"middle\">logs --previous</text><text class=\"ts\" x=\"280\" y=\"104\" font-size=\"11\" text-anchor=\"middle\">endpointslices</text><text class=\"ts\" x=\"280\" y=\"118\" font-size=\"11\" text-anchor=\"middle\">selector, targetPort</text><text class=\"ts\" x=\"474\" y=\"104\" font-size=\"11\" text-anchor=\"middle\">httproute status</text><text class=\"ts\" x=\"474\" y=\"118\" font-size=\"11\" text-anchor=\"middle\">port-forward test</text><rect class=\"bxo\" x=\"210\" y=\"150\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"177\" font-size=\"13\" text-anchor=\"middle\">4. Node</text><line class=\"lnd\" x1=\"140\" y1=\"84\" x2=\"226\" y2=\"148\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"280\" y=\"214\" font-size=\"11\" text-anchor=\"middle\">describe node</text><text class=\"ts\" x=\"280\" y=\"228\" font-size=\"11\" text-anchor=\"middle\">top nodes</text></svg>",
+  "diagram_caption": "Debug in the order traffic depends on: Pod first, then Service, then route; check the node when failures cluster.",
+  "worked": {
+   "title": "A stuck rollout and a DNS name with a typo",
+   "steps": [
+    {
+     "say": "Set this up on purpose: change `REDIS_HOST` in the lab's ConfigMap to `rediss`, one letter too many, and restart the Deployment so new Pods read it. This is a typical real mistake.",
+     "code": "$ kubectl patch configmap hello-config -n hello --type merge -p '{\"data\":{\"REDIS_HOST\":\"rediss\"}}'\nconfigmap/hello-config patched\n$ kubectl rollout restart deployment/hello-devops -n hello\ndeployment.apps/hello-devops restarted",
+     "lang": "console"
+    },
+    {
+     "say": "The symptom: the rollout never finishes. One new Pod is Running but not ready. The three old Pods keep serving, because the Deployment uses `maxUnavailable: 0` and readiness gates the rollout. Users see nothing wrong yet.",
+     "code": "$ kubectl rollout status deployment/hello-devops -n hello --timeout=60s\nWaiting for deployment \"hello-devops\" rollout to finish: 1 out of 3 new replicas have been updated...\nerror: timed out waiting for the condition\n$ kubectl get pods -n hello -l app=hello-devops\nNAME                            READY   STATUS    RESTARTS   AGE\nhello-devops-5d8f7c6b9-4kq2w    0/1     Running   0          75s\nhello-devops-6c9f8b7d4-2qkzt    1/1     Running   0          2d\nhello-devops-6c9f8b7d4-8hx7m    1/1     Running   0          2d\nhello-devops-6c9f8b7d4-tr5vn    1/1     Running   0          2d",
+     "lang": "console"
+    },
+    {
+     "say": "Ask the new Pod's events. Readiness fails with 503, and the app returns 503 from `/readyz` when it cannot reach Redis. Yet Redis itself is Running and ready, so the problem is between the two.",
+     "code": "$ kubectl events -n hello --for pod/hello-devops-5d8f7c6b9-4kq2w --types=Warning\nLAST SEEN           TYPE      REASON      OBJECT                             MESSAGE\n3s (x14 over 68s)   Warning   Unhealthy   Pod/hello-devops-5d8f7c6b9-4kq2w   Readiness probe failed: HTTP probe failed with statuscode: 503\n$ kubectl get pods -n hello -l app=redis\nNAME                     READY   STATUS    RESTARTS   AGE\nredis-7c6d9f5b8d-q2l8v   1/1     Running   0          2d",
+     "lang": "console"
+    },
+    {
+     "say": "Check what the new Pod was given. The value looks almost right. You want to test the name from inside the Pod's network, but the app image has no DNS tools.",
+     "code": "$ kubectl exec hello-devops-5d8f7c6b9-4kq2w -n hello -- printenv REDIS_HOST\nrediss\n$ kubectl exec hello-devops-5d8f7c6b9-4kq2w -n hello -- nslookup rediss\nerror: Internal error occurred: ... OCI runtime exec failed: exec failed: unable to start container process: exec: \"nslookup\": executable file not found in $PATH: unknown",
+     "lang": "console"
+    },
+    {
+     "say": "Add an ephemeral busybox container to the same Pod. It shares the Pod's network, so its DNS answers are the app's DNS answers. The name `rediss` does not exist.",
+     "code": "$ kubectl debug -it hello-devops-5d8f7c6b9-4kq2w -n hello --image=busybox:1.37 --target=web\nTargeting container \"web\". If you don't see processes from this container it may be because the container runtime doesn't support this feature.\nDefaulting debug container name to debugger-qz8vt.\nAll commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.\nIf you don't see a command prompt, try pressing enter.\n/ # nslookup rediss.hello.svc.cluster.local\nServer:\t\t10.96.0.10\nAddress:\t10.96.0.10:53\n\n** server can't find rediss.hello.svc.cluster.local: NXDOMAIN\n\n** server can't find rediss.hello.svc.cluster.local: NXDOMAIN\n",
+     "lang": "console"
+    },
+    {
+     "say": "The correct name resolves to the Redis Service's IP. Hypothesis confirmed: a typo in the ConfigMap, not a broken Redis and not a network problem.",
+     "code": "/ # nslookup redis.hello.svc.cluster.local\nServer:\t\t10.96.0.10\nAddress:\t10.96.0.10:53\n\nName:\tredis.hello.svc.cluster.local\nAddress: 10.96.84.21\n\n/ # exit",
+     "lang": "console"
+    },
+    {
+     "say": "Fix the value and roll again. In a real team you would fix it in git, not with `kubectl patch`; on Day 39 Argo CD makes that the only path.",
+     "code": "$ kubectl patch configmap hello-config -n hello --type merge -p '{\"data\":{\"REDIS_HOST\":\"redis\"}}'\nconfigmap/hello-config patched\n$ kubectl rollout restart deployment/hello-devops -n hello\ndeployment.apps/hello-devops restarted\n$ kubectl rollout status deployment/hello-devops -n hello\ndeployment \"hello-devops\" successfully rolled out",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "text",
+    "title": "k8s-broken/README.md",
+    "src": "# Break-and-fix lab (Day 38)\n\nA small online shop runs five services. Each one is broken in a different way.\nYour job: find out why with `kubectl`, fix the YAML file, apply it again, and check the fix.\n\nDo not open `SOLUTIONS.md` until you have tried each one. The skill you are practising is the\nsearch, not the answer.\n\n## Before you start\n\n- Your kind cluster from Day 30 is running (`kubectl get nodes` shows three Ready nodes).\n- The image is loaded into the cluster: `kind load docker-image hello-devops:1.0.0 --name devops`.\n- Optional: metrics-server from Day 35, so `kubectl top` works.\n\n## Start the lab\n\n```bash\nkubectl apply -f k8s-broken/\nkubectl get pods -n debug-lab -w\n```\n\nWait about two minutes before you start. Some problems only show after a few restarts.\n\n## What the shop team reports\n\n| Service | File | What people see |\n|---|---|---|\n| catalog | `01-catalog.yaml` | The Pod never starts. Its STATUS is `ErrImagePull`, then `ImagePullBackOff`. |\n| checkout | `02-checkout.yaml` | The Pod stays `0/1` with STATUS `CreateContainerConfigError`. `kubectl logs` shows nothing. |\n| search | `03-search.yaml` | Both Pods are `Running` and `1/1` Ready, but requests to `http://search.debug-lab` fail. |\n| reports | `04-reports.yaml` | RESTARTS keeps going up. STATUS switches between `OOMKilled` and `CrashLoopBackOff`. |\n| profile | `05-profile.yaml` | The Pod is `Running` and Ready, then restarts every half a minute or so. The logs look normal. |\n\nTo test the search service from inside the cluster, start a throwaway Pod:\n\n```bash\nkubectl run net-test -n debug-lab --rm -it --image=busybox:1.37 --restart=Never -- wget -qO- -T 3 http://search\n```\n\n## The method (use it for every service)\n\n1. `kubectl get pods -n debug-lab`: which Pod, which STATUS, how many RESTARTS.\n2. `kubectl describe pod <pod> -n debug-lab`: read the Events at the bottom first, then `Last State`.\n3. `kubectl logs <pod> -n debug-lab --previous`: what the crashed container printed before it died.\n4. `kubectl get events -n debug-lab --sort-by=.metadata.creationTimestamp`: everything that happened, in order.\n5. For a Service: `kubectl get endpointslices -n debug-lab -l kubernetes.io/service-name=<service>`.\n6. Compare what you found with the YAML file. Change one thing, `kubectl apply -f` the file, and watch again.\n\n## You are done when\n\n- `kubectl get pods -n debug-lab` shows every Pod `Running`, `1/1` Ready, and RESTARTS no longer going up for two minutes.\n- The `net-test` command above prints JSON from the search service.\n\nClean up with `kubectl delete namespace debug-lab`.",
+    "run": "kubectl apply -f k8s-broken/"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s-broken/00-namespace.yaml",
+    "src": "# Day 38 break-and-fix lab. Everything lives in its own namespace, so cleanup is one command:\n#   kubectl delete namespace debug-lab\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: debug-lab",
+    "run": "kubectl apply -f k8s-broken/"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s-broken/01-catalog.yaml",
+    "src": "# catalog: lists the products in the shop.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: catalog\n  namespace: debug-lab\n  labels:\n    app: catalog\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: catalog\n  template:\n    metadata:\n      labels:\n        app: catalog\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.1\n          imagePullPolicy: IfNotPresent\n          ports:\n            - name: http\n              containerPort: 8000\n          env:\n            - name: GREETING\n              value: \"Welcome to the catalog\"\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: http\n            periodSeconds: 5\n          resources:\n            requests:\n              cpu: 50m\n              memory: 128Mi\n            limits:\n              memory: 256Mi",
+    "run": "kubectl apply -f k8s-broken/"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s-broken/02-checkout.yaml",
+    "src": "# checkout: takes the payment. Its settings live in a ConfigMap.\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: checkout-settings\n  namespace: debug-lab\ndata:\n  GREETING: \"Ready to pay?\"\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: checkout\n  namespace: debug-lab\n  labels:\n    app: checkout\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: checkout\n  template:\n    metadata:\n      labels:\n        app: checkout\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.0\n          imagePullPolicy: IfNotPresent\n          ports:\n            - name: http\n              containerPort: 8000\n          envFrom:\n            - configMapRef:\n                name: checkout-config\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: http\n            periodSeconds: 5\n          resources:\n            requests:\n              cpu: 50m\n              memory: 128Mi\n            limits:\n              memory: 256Mi",
+    "run": "kubectl apply -f k8s-broken/"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s-broken/03-search.yaml",
+    "src": "# search: finds products. Other services call it at http://search.debug-lab\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: search\n  namespace: debug-lab\n  labels:\n    app: search\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: search\n  template:\n    metadata:\n      labels:\n        app: search\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.0\n          imagePullPolicy: IfNotPresent\n          ports:\n            - name: http\n              containerPort: 8000\n          env:\n            - name: GREETING\n              value: \"Search results\"\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: http\n            periodSeconds: 5\n          resources:\n            requests:\n              cpu: 50m\n              memory: 128Mi\n            limits:\n              memory: 256Mi\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: search\n  namespace: debug-lab\nspec:\n  selector:\n    app: search-api\n  ports:\n    - name: http\n      port: 80\n      targetPort: http",
+    "run": "kubectl apply -f k8s-broken/"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s-broken/04-reports.yaml",
+    "src": "# reports: builds the daily sales report.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: reports\n  namespace: debug-lab\n  labels:\n    app: reports\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: reports\n  template:\n    metadata:\n      labels:\n        app: reports\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.0\n          imagePullPolicy: IfNotPresent\n          ports:\n            - name: http\n              containerPort: 8000\n          env:\n            - name: GREETING\n              value: \"Daily report\"\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: http\n            periodSeconds: 5\n          resources:\n            requests:\n              cpu: 50m\n              memory: 40Mi\n            limits:\n              memory: 40Mi",
+    "run": "kubectl apply -f k8s-broken/"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s-broken/05-profile.yaml",
+    "src": "# profile: shows the customer's account page.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: profile\n  namespace: debug-lab\n  labels:\n    app: profile\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: profile\n  template:\n    metadata:\n      labels:\n        app: profile\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.0\n          imagePullPolicy: IfNotPresent\n          ports:\n            - name: http\n              containerPort: 8000\n          env:\n            - name: GREETING\n              value: \"Your profile\"\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: http\n            periodSeconds: 5\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 8080\n            initialDelaySeconds: 5\n            periodSeconds: 10\n          resources:\n            requests:\n              cpu: 50m\n              memory: 128Mi\n            limits:\n              memory: 256Mi",
+    "run": "kubectl apply -f k8s-broken/"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "kubectl get pods -n debug-lab -o wide",
+    "what": "Show STATUS, READY, RESTARTS and the node of each Pod."
+   },
+   {
+    "cmd": "kubectl describe pod <pod> -n debug-lab",
+    "what": "Show a Pod's settings, Last State and Events; read the Events first."
+   },
+   {
+    "cmd": "kubectl logs <pod> -n debug-lab --previous",
+    "what": "Show what the crashed container printed before it died."
+   },
+   {
+    "cmd": "kubectl get events -n debug-lab --sort-by=.metadata.creationTimestamp",
+    "what": "List the namespace's events, oldest first."
+   },
+   {
+    "cmd": "kubectl events -n debug-lab --for pod/<pod> --types=Warning",
+    "what": "Show only the warnings for one Pod, sorted by time."
+   },
+   {
+    "cmd": "kubectl get endpointslices -n debug-lab -l kubernetes.io/service-name=search",
+    "what": "Show which Pod IPs a Service sends traffic to; `<unset>` means none."
+   },
+   {
+    "cmd": "kubectl get pods -n debug-lab --show-labels",
+    "what": "Show each Pod's labels, to compare with a Service's selector."
+   },
+   {
+    "cmd": "kubectl port-forward pod/<pod> 8095:8000 -n debug-lab",
+    "what": "Reach one Pod directly, skipping the Service."
+   },
+   {
+    "cmd": "kubectl exec -it <pod> -n debug-lab -- sh",
+    "what": "Open a shell in a running container, if its image has one."
+   },
+   {
+    "cmd": "kubectl debug -it <pod> -n debug-lab --image=busybox:1.37 --target=web",
+    "what": "Add an ephemeral busybox container to a running Pod for checks."
+   },
+   {
+    "cmd": "kubectl run net-test -n debug-lab --rm -it --image=busybox:1.37 --restart=Never -- wget -qO- -T 3 http://search",
+    "what": "Call a Service from a throwaway Pod inside the cluster."
+   },
+   {
+    "cmd": "kubectl run tmp-shell --rm -it --image=nicolaka/netshoot",
+    "what": "Start a throwaway Pod with many network tools (dig, curl, tcpdump)."
+   },
+   {
+    "cmd": "kubectl auth can-i delete pods -n debug-lab --as=system:serviceaccount:debug-lab:viewer",
+    "what": "Ask whether a ServiceAccount may do something; prints yes or no."
+   },
+   {
+    "cmd": "kubectl create role pod-reader -n debug-lab --verb=get,list,watch --resource=pods",
+    "what": "Create a Role that may only read Pods in one namespace."
+   },
+   {
+    "cmd": "kubectl create rolebinding viewer-reads-pods -n debug-lab --role=pod-reader --serviceaccount=debug-lab:viewer",
+    "what": "Give that Role to the ServiceAccount viewer."
+   },
+   {
+    "cmd": "brew install derailed/k9s/k9s",
+    "what": "Install k9s, a terminal UI for Kubernetes."
+   }
+  ],
+  "mistake": "Deleting or restarting the broken Pod first, to see if it helps. A new Pod wipes the evidence you needed: the crashed container's logs, its Last State and often the newest Events. Run describe and `logs --previous` before you delete anything, and write down what you saw.",
+  "real_world": "PayLite's on-call runbook starts with the same ladder: get, describe, logs `--previous`, events, endpoints. Most engineers have read-only RBAC in production, and the images are distroless, so `kubectl debug` with an ephemeral container is the normal way to look inside. Fixes go through git and Argo CD; a `kubectl patch` in production is only for emergencies and is written up afterwards.",
+  "task": {
+   "title": "Break-and-fix: five broken services",
+   "steps": [
+    "Check that `hello-devops:1.0.0` is loaded into kind and metrics-server is running. Copy the `k8s-broken/` folder into your repo.",
+    "Apply the whole folder with `kubectl apply -f k8s-broken/` and watch `kubectl get pods -n debug-lab -w` for two minutes. Note each Pod's STATUS and RESTARTS.",
+    "For each of the five services, follow the method from the README: get, describe with the Events first, `logs --previous`, events. Write one sentence per service: the cause, and the line of output that proves it.",
+    "For search, show that the Service has no endpoints, and compare its selector with the Pods' labels.",
+    "For reports, use `kubectl top pods` on a healthy hello-devops Pod to choose a sensible memory limit.",
+    "Fix one file at a time, apply it, and wait until that Pod is healthy before you move to the next.",
+    "Prove that search works with the `net-test` busybox command from the README.",
+    "RBAC: create a ServiceAccount `viewer` in `debug-lab`, a Role that may only get, list and watch Pods, and a RoleBinding. Check with `kubectl auth can-i` that it may list Pods but not delete them, then trigger the Forbidden error with `--as`.",
+    "Compare your notes with `SOLUTIONS.md` in the lab folder, then delete the `debug-lab` namespace."
+   ],
+   "hints": [
+    "If `kubectl logs` shows nothing, ask whether the container ever started. If it never did, the answer is in the Events.",
+    "`kubectl get pod <pod> -n debug-lab -o jsonpath='{.status.containerStatuses[0].lastState}'` prints the last crash on one line.",
+    "For RBAC you need three commands: `kubectl create serviceaccount`, `kubectl create role` and `kubectl create rolebinding`. The commands list has the last two."
+   ],
+   "done_when": "All five Pods in `debug-lab` are Running and 1/1 Ready with no new restarts, `net-test` gets JSON from search, and `kubectl auth can-i delete pods -n debug-lab --as=system:serviceaccount:debug-lab:viewer` says no."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences how you would find out why a Pod is in CrashLoopBackOff. Mention which commands you run, in which order, and what each one can tell you.",
+   "answer": "First `kubectl get pods` to see the status and how many restarts there have been. Then `kubectl describe pod` and read the Events and `Last State`: the exit code tells me whether it was the app's own error, an OOM kill (137) or a failed liveness probe. Then `kubectl logs --previous`, because the current container may have printed nothing yet, while the crashed one has the error. If that is still not enough, I compare the config the Pod got, such as env vars, ConfigMaps and probes, with what the app expects."
+  },
+  "recap": [
+   "Debug bottom-up: Pod, then Service, then route, then node. Change one thing at a time.",
+   "Pending, ContainerCreating, ImagePullBackOff and CreateContainerConfigError: no logs yet, read the Events.",
+   "CrashLoopBackOff is a symptom; `logs --previous` and the exit code in Last State show the cause.",
+   "Healthy Pods but a failing Service usually means a selector or targetPort mismatch: check EndpointSlices.",
+   "`kubectl debug` adds an ephemeral container with tools; a throwaway busybox Pod checks DNS.",
+   "Forbidden is RBAC, not a bug: read the message, ask `kubectl auth can-i`, grant the smallest Role."
+  ],
+  "check": [
+   {
+    "q": "A new Pod stays Pending. Its event says `0/3 nodes are available: 1 node(s) had untolerated taint(s), 2 Insufficient memory`. What is the most likely fix?",
+    "options": [
+     "Raise the Pod's memory limit",
+     "Remove the taint from every node",
+     "Lower the Pod's memory request, or free up room on the workers",
+     "Add a readiness probe so the scheduler can test it"
+    ],
+    "answer": 2,
+    "why": "The two workers lack free memory for the request, and scheduling uses requests, so the request must shrink or room must appear."
+   },
+   {
+    "q": "A Pod shows `CreateContainerConfigError` and `kubectl logs` prints nothing. Why are the logs empty?",
+    "options": [
+     "The container never started, so there is nothing to log; the Events explain why",
+     "The logs were deleted when the Pod restarted",
+     "The app writes logs to a file instead of standard output",
+     "kubectl needs `--previous` for every Pod with an error"
+    ],
+    "answer": 0,
+    "why": "The kubelet could not build the container's settings, usually because a ConfigMap or Secret is missing, so no process ever ran."
+   },
+   {
+    "q": "A CI job's ServiceAccount `deployer` in namespace `ci` gets Forbidden when it applies a Deployment to namespace `shop`. Which command checks the permission directly?",
+    "options": [
+     "`kubectl describe deployment -n shop`",
+     "`kubectl get events -n ci`",
+     "`kubectl logs -n ci deployer`",
+     "`kubectl auth can-i create deployments -n shop --as=system:serviceaccount:ci:deployer`"
+    ],
+    "answer": 3,
+    "why": "`auth can-i` with `--as` asks the API server whether that exact subject may do that exact action in that namespace."
+   }
+  ],
+  "interview": [
+   {
+    "q": "A Pod is in CrashLoopBackOff. Walk me through how you debug it.",
+    "a": "I start with `kubectl get pods` for the restart count, then `kubectl describe pod` for the Events and the Last State with its exit code. Exit code 137 with OOMKilled points at memory, a failed liveness probe shows up in the Events, and a small code like 1 means the app exited with its own error. Then `kubectl logs --previous` shows what the crashed container printed. If the image has no tools, I use `kubectl debug` with an ephemeral container to check config, DNS or files from inside the Pod."
+   },
+   {
+    "q": "The Pods are healthy, but requests to the Service fail. What do you check?",
+    "a": "First the Service's endpoints with `kubectl get endpointslices -l kubernetes.io/service-name=<svc>`; empty endpoints mean the selector matches no ready Pods. Then I compare the selector with `kubectl get pods --show-labels`, and check that `targetPort` matches the container's port. Next I test from inside the cluster with a throwaway busybox Pod, using the Service's DNS name, to rule out DNS. If all of that works, I look at NetworkPolicies and then at the Gateway or Ingress route in front of the Service."
+   },
+   {
+    "q": "What is RBAC in Kubernetes, and how do you debug a Forbidden error?",
+    "a": "RBAC is role-based access control: Roles and ClusterRoles list allowed verbs on resources, and bindings give them to users, groups or ServiceAccounts. Permissions only add up; there are no deny rules. The Forbidden message names the subject, verb, resource and namespace, and `kubectl auth can-i` with `--as` confirms it. Then I add the smallest Role and RoleBinding that allow exactly that action, rather than a broad ClusterRole."
+   }
+  ],
+  "deeper": {
+   "minutes": 12,
+   "body": "Five more failures you will meet sooner or later, each with its first check:\n- `exec format error` in the logs, right at start: the image was built for another CPU. On an Apple Silicon Mac, an image built only for amd64 cannot run on arm64 kind nodes. Build multi-platform images (Part 3) or pick an image that has an arm64 variant.\n- `Init:CrashLoopBackOff` or `Init:0/1` for a long time: an init container fails or waits. Its logs need `-c <init-container-name>`.\n- `Terminating` that never ends: something holds the object, often a finalizer waiting for a controller that is gone. `kubectl get pod <name> -o jsonpath='{.metadata.finalizers}'` shows it. Do not force-delete before you know what the finalizer protects.\n- `Evicted` or `ContainerStatusUnknown` Pods left behind: the node ran short of memory or disk and evicted them (Day 35). The Deployment already replaced them; read the eviction message, then delete the leftovers.\n- `Unable to connect to the server` from kubectl itself: the cluster is down or you are on the wrong context. `kubectl config current-context` should say `kind-devops`, and `docker ps` should show the kind node containers.\n\nWhen the problem looks like the network, check in order: the name, the endpoints, the port, and then policy. A NetworkPolicy (Day 33) that selects a Pod blocks all traffic its rules do not allow. If `nslookup` works and the endpoints are there but connections time out, look for a policy with `kubectl get networkpolicy -n <ns>`.\n\nAt work, two more habits help. Write each incident down: the symptom, the command that showed the cause, the fix. After a few months that file is your team's best runbook. And automate the boring part: the `kubectl events --types=Warning` view and a few saved k9s shortcuts often find the problem before anyone opens a dashboard.\n\nFinally, know where Kubernetes' own logs live. On kind, `docker exec devops-control-plane crictl ps` lists the control plane containers, and `kind export logs` collects logs from every node into a folder for you to read or attach to a bug report."
+  },
+  "sources": [
+   {
+    "title": "Debug Pods",
+    "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/"
+   },
+   {
+    "title": "Debug running Pods",
+    "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/"
+   },
+   {
+    "title": "Debug Services",
+    "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/"
+   },
+   {
+    "title": "Using RBAC authorization",
+    "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"
+   }
+  ]
+ }
+]

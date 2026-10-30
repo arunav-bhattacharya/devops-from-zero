@@ -99,6 +99,8 @@ With `uses:`, it calls an action: packaged code that someone published, such as 
 
 Each runner starts empty. Your code is not on it until a step puts it there, so nearly every job begins with `actions/checkout`, which copies your repository into the job's working folder. Forget it and the next step fails because `requirements-dev.txt` does not exist.
 
+By default checkout fetches only the one commit the run is about, with no history and no other branches. That keeps it fast, and it is all a test run needs. A step that needs history, such as `git describe` or a changelog script, needs `fetch-depth: 0` under `with:`.
+
 An action is other people's code running inside your job. Prefer actions from GitHub (`actions/...`) and from the tool's own company (`docker/...`), and look at an action's repository before you use it. Day 21 shows how to pin an action so its code cannot change under you.
 """)
 
@@ -267,7 +269,7 @@ LESSON = {
         {"cmd": "git push origin --delete try-actions", "what": "Delete a branch on GitHub."},
     ],
     "mistake": "If you save the workflow in the wrong folder, such as `.github/workflow/` or `github/workflows/`, GitHub ignores it. Nothing runs, and no error appears anywhere. The folder must be exactly `.github/workflows/` at the root of the repository; if no run appears after a push, check that path first.",
-    "real_world": "PayLoop starts every new service from the same CI template, so tests run on every push from the service's first day. When everything is green, engineers rarely open the Actions tab. When a pull request shows a red cross, they go straight to the failed step's log, and they keep the pipeline under ten minutes so nobody is tempted to skip it.",
+    "real_world": "PayLoop starts every new service from the same CI template, so tests run on every push from the service's first day. When everything is green, engineers rarely open the Actions tab. When a pull request shows a red cross, they go straight to the failed step's log. They keep the pipeline under ten minutes, so nobody is tempted to skip it.",
     "task": {
         "title": "Run pytest on every push",
         "steps": [

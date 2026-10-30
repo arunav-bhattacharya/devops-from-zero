@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+"""Build Part 7a (Days 30 to 34) of the second edition.
+
+Writes:
+  content/parts/p7a.json         the five lessons, as a JSON array
+  content/parts/p7a-extras.json  proposed part-level items for the lead to merge
+  brief/scratch/v2/p7a/p7-full.json  a temporary full part file, only for validate.py
+"""
+import json
+import pathlib
+import sys
+
+HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+
+import d30, d31, d32, d33, d34  # noqa: E402
+
+ROOT = pathlib.Path("/home/user/devops-from-zero")
+LESSONS = [d30.L, d31.L, d32.L, d33.L, d34.L]
+
+EXTRAS = {
+    "intro": "Part 7 moves hello-devops from Docker on one machine to Kubernetes, the system most teams use to run containers across many machines. You build a real three-node cluster on your Mac with kind and learn how its parts work together. Then you add one object at a time: Pods, Deployments, Services, config and Secrets, health checks, traffic, packaging and debugging. Everything runs locally and costs nothing.",
+    "recap": [
+        "Kubernetes stores your desired state and runs control loops that keep the cluster matching it.",
+        "Every component talks only to the API server: etcd stores state, the scheduler places Pods, kubelets run them.",
+        "A Pod is one or more containers with one IP address; Deployments create, replace and roll out Pods through ReplicaSets.",
+        "Services give changing Pods a stable name and address, and NetworkPolicies decide who may connect.",
+        "ConfigMaps and Secrets keep settings out of the image; env vars need a restart, and base64 is not encryption.",
+    ],
+    "flashcards": [
+        {"front": "What does a Kubernetes controller do?", "back": "It compares desired state with actual state, again and again, and acts to close the gap."},
+        {"front": "Which component is the only one that talks to etcd?", "back": "The API server."},
+        {"front": "A Pod stays Pending with no node assigned. Which component should have acted?", "back": "The scheduler."},
+        {"front": "Label or annotation: which one do selectors use?", "back": "Labels. Annotations are notes for people and tools."},
+        {"front": "How do you declare a native sidecar container?", "back": "As an init container with `restartPolicy: Always`."},
+        {"front": "Which Deployment changes create a new revision?", "back": "Only changes to the Pod template, `spec.template`. Scaling does not."},
+        {"front": "In a NodePort Service, what are port, targetPort and nodePort?", "back": "port is the Service's port, targetPort is the Pod's port, nodePort is opened on every node."},
+        {"front": "What is the DNS name of Service `redis` in namespace `hello`?", "back": "`redis.hello.svc.cluster.local` (or just `redis` from inside `hello`)."},
+        {"front": "You changed a ConfigMap that Pods read through envFrom. What else must you do?", "back": "Restart the Pods, for example with `kubectl rollout restart deployment/NAME`."},
+        {"front": "Does base64 protect a Secret?", "back": "No. Anyone can decode it; encryption at rest and RBAC protect Secrets."},
+    ],
+    "quiz": [
+        {
+            "q": "On Day 15, Docker Compose ran hello-devops and Redis on your laptop. Which job can Kubernetes do that Compose cannot?",
+            "options": [
+                "Start several containers from one YAML file",
+                "Run the containers of a failed machine on another machine",
+                "Give containers DNS names on a shared network",
+                "Restart a container after it crashes",
+            ],
+            "answer": 1,
+            "why": "Compose knows one machine; Kubernetes controllers notice lost Pods and the scheduler places replacements on healthy nodes.",
+            "from": "Part 3",
+        },
+        {
+            "q": "A Service's Pods are Running and Ready, but `kubectl get endpointslices` for it lists no addresses. What is the most likely cause?",
+            "options": [
+                "kube-proxy is in iptables mode",
+                "The Service type is ClusterIP",
+                "CoreDNS has crashed",
+                "The selector does not match the Pod labels",
+            ],
+            "answer": 3,
+            "why": "EndpointSlices list ready Pods that match the selector, so ready Pods with no endpoints point to a label mismatch.",
+        },
+        {
+            "q": "A setup step must finish before the app starts, and both need the same files. What fits best?",
+            "options": [
+                "An init container and an emptyDir volume shared with the app",
+                "A second Deployment that starts a minute earlier",
+                "A sidecar that runs the setup step every few minutes",
+                "A readiness probe that runs the setup script",
+            ],
+            "answer": 0,
+            "why": "Init containers run to completion before app containers start, and an emptyDir volume lets them hand files to the app.",
+        },
+        {
+            "q": "You roll out a new image, then run `kubectl rollout undo`. Which revision number does the restored version get?",
+            "options": [
+                "Its old number, which moves to the top of the list",
+                "Revision 0, the special number for rollbacks",
+                "A new, higher number, because the undo is itself a rollout",
+                "No number, because rollbacks are not recorded",
+            ],
+            "answer": 2,
+            "why": "An undo copies the old template back as a new rollout, so the old revision reappears under the next number.",
+        },
+        {
+            "q": "A teammate pushed a Secret manifest with base64 values to a shared repo. What should happen first?",
+            "options": [
+                "Nothing, because base64 values are encrypted",
+                "Rotate the leaked values, then delete the file from the repo",
+                "Re-encode the values twice, so they are harder to read",
+                "Make the repo private, then carry on as before",
+            ],
+            "answer": 1,
+            "why": "Base64 is readable and git keeps history, so the values must be treated as public and rotated.",
+        },
+    ],
+    "resources": [
+        {"title": "Kubernetes documentation: concepts", "url": "https://kubernetes.io/docs/concepts/", "kind": "docs", "why": "The official explanations of every object in this part, written by the people who build Kubernetes."},
+        {"title": "kind quick start", "url": "https://kind.sigs.k8s.io/docs/user/quick-start/", "kind": "docs", "why": "How to create, load images into and delete the local clusters you use all through this part."},
+        {"title": "kubectl quick reference", "url": "https://kubernetes.io/docs/reference/kubectl/quick-reference/", "kind": "docs", "why": "A one-page cheat sheet of kubectl commands to keep open while you work."},
+        {"title": "Kubernetes tutorial for beginners, full course (KubeAcademy)", "url": "https://www.youtube.com/watch?v=JB3bP1RXqYo", "kind": "watch", "why": "A long video course that covers the same ground with a different teacher, good for a second angle."},
+        {"title": "Kubernetes Services explained (TechWorld with Nana)", "url": "https://www.youtube.com/watch?v=T4Z7visMM4E", "kind": "watch", "why": "A clear walk through Service types, selectors and ports, the part people mix up most."},
+        {"title": "Kubernetes The Hard Way (Kelsey Hightower)", "url": "https://github.com/kelseyhightower/kubernetes-the-hard-way", "kind": "read", "why": "Builds a cluster by hand, component by component, for when you want to see every moving part."},
+    ],
+}
+
+
+def main():
+    out = ROOT / "content/parts"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "p7a.json").write_text(json.dumps(LESSONS, indent=1, ensure_ascii=False) + "\n")
+    (out / "p7a-extras.json").write_text(json.dumps(EXTRAS, indent=1, ensure_ascii=False) + "\n")
+    full = {"part": 7, "title": "Kubernetes", **{k: EXTRAS[k] for k in ("intro",)}, "lessons": LESSONS,
+            "recap": EXTRAS["recap"], "flashcards": EXTRAS["flashcards"], "resources": EXTRAS["resources"], "quiz": EXTRAS["quiz"]}
+    (HERE / "p7-full.json").write_text(json.dumps(full, indent=1, ensure_ascii=False) + "\n")
+    print("wrote", out / "p7a.json", out / "p7a-extras.json", HERE / "p7-full.json")
+
+
+if __name__ == "__main__":
+    main()

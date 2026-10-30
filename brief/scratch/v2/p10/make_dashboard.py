@@ -159,7 +159,7 @@ def var(name, label, metric, match, multi):
 
 dash = {
     "uid": "hello-red",
-    "title": "hello-devops: RED",
+    "title": "hello-devops RED",
     "description": "Rate, errors and duration for hello-devops. Provisioned from grafana/dashboards/hello-red.json.",
     "tags": ["hello-devops", "red"],
     "timezone": "browser",

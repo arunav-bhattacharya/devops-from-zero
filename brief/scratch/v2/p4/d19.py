@@ -1,7 +1,7 @@
 """Day 19: A real CI pipeline: test, lint, cache, matrix (first edition d11)."""
 from common import T, box, cap, line, link, refs, scratch, sources, svg
 
-DIAGRAM = svg(216, "A pull request starts a lint job and two test jobs, one per Python version; the build job needs all three; the merge is allowed only when every check is green", [
+DIAGRAM = svg(232, "A pull request starts a lint job and two test jobs, one per Python version; the build job needs all three; the merge is allowed only when every check is green", [
     box(8, 88, 128, 44, "bxo", "Pull request"),
     line(136, 110, 172, 42),
     line(136, 110, 172, 110),
@@ -17,7 +17,7 @@ DIAGRAM = svg(216, "A pull request starts a lint job and two test jobs, one per 
     line(416, 110, 444, 110),
     box(448, 88, 104, 44, "bxg", "Can merge"),
     cap(500, 152, "all checks green"),
-    cap(372, 34, "run in parallel"),
+    cap(232, 220, "run in parallel"),
 ])
 
 S1 = T("""
@@ -42,7 +42,7 @@ A linter reads your code without running it and flags problems such as unused im
 
 Both exit with code 1 when they find a problem, so they fail the step the same way `pytest` does.
 
-Next comes a test report. `pytest --junitxml=reports/junit.xml` also writes the results as JUnit XML, a format most CI tools can read. The runner is deleted after the job, so you keep the report as an artifact: a file a job uploads and you download later, from the run page or with `gh run download`. Artifacts stay 90 days by default. The lab keeps test reports for 7.
+Next comes a test report. `pytest --junitxml=reports/junit.xml` also writes the results as JUnit XML, a format most CI tools can read. The runner is deleted after the job, so you keep the report as an artifact. That is a file a job uploads and you download later, from the run page or with `gh run download`. Artifacts stay 90 days by default. The lab keeps test reports for 7.
 
 Since version 4, `actions/upload-artifact` has two rules worth knowing. An artifact cannot be changed after upload, and names must be unique within a run. Two matrix jobs that both upload `junit` would clash, so the lab puts the Python version in the name. The upload step also has `if: ${{ !cancelled() }}`. Normally GitHub skips every step after one fails; this condition still uploads the report after a test failure, which is when you need it most. Day 20 explains these conditions properly.
 """)
@@ -82,7 +82,7 @@ The `build` job uses Docker's own actions:
 - `docker/build-push-action` builds the image; with `push: false` it only builds.
 - `cache-from: type=gha` and `cache-to: type=gha,mode=max` keep image layers in the Actions cache.
 
-The layer cache works like the one on your laptop from Day 13. If `requirements.txt` did not change, the `pip install` layer comes back from the cache and the build takes seconds. `mode=max` also saves the layers of the build stage of your multi-stage Dockerfile, not only the final image.
+The layer cache works like the one on your laptop from Day 13. If `requirements.txt` did not change, the `pip install` layer comes back from the cache and the build takes seconds. With `mode=max`, the cache also keeps the layers of the build stage of your multi-stage Dockerfile, not only the final image.
 
 Since June 2026, runs started by untrusted triggers, such as `pull_request_target` and `issue_comment`, may read the default branch's cache but not write to it. Docker's docs say to keep `cache-from` and drop `cache-to` in such workflows. Your `pull_request` workflow is not affected, because its cache never reaches `main` anyway. On Day 21, a second workflow uses the same actions with `push: true`.
 """)
@@ -100,7 +100,7 @@ Most people get caught by at least one of these details:
 
 - On the Free plan, rulesets are only enforced on public repositories.
 - A new ruleset starts as Disabled. Set its enforcement status to Active.
-- A check only shows up in the ruleset's search after it ran in the repository during the last seven days.
+- A check only shows up in the ruleset's search after it has run successfully in the repository during the last seven days.
 - A job skipped because its `needs` failed counts as passed. That is why you require the lint and test checks too, and not only `build`.
 
 You work alone, so leave required approvals at zero. GitHub does not let you approve your own pull request.
@@ -116,9 +116,9 @@ Slow CI changes how people work. They stop waiting for it, or they bundle many c
 
 On `main` the lab lets every run finish, so each merge gets a full result. And never put path filters on `pull_request` when its checks are required. A workflow skipped by a filter never reports, so its checks stay Pending and block the merge.
 
-For deploys, cancelling is the wrong move. By default a concurrency group holds one running and one waiting run, and a newer waiting run replaces the older one. `queue: max` lets up to 100 runs wait in line instead. The Terraform workflow on Day 29 uses a group that never cancels.
+For deploys, cancelling is the wrong move. By default a concurrency group holds one running and one waiting run. A newer waiting run replaces the older one. `queue: max` lets up to 100 runs wait in line instead. The Terraform workflow on Day 29 uses a group that never cancels.
 
-Two tools help before you push. {actionlint} checks workflow files for mistakes such as typos in keys, bad expressions and unsafe use of untrusted input. {act} runs workflows on your laptop in Docker containers. It is handy for quick tries, but it does not match GitHub's runners exactly, so the real test is still a push.
+Two tools help before you push. The linter {actionlint} checks workflow files for mistakes such as typos in keys, bad expressions and unsafe use of untrusted input. And {act} runs workflows on your laptop in Docker containers. It is handy for quick tries, but it does not match GitHub's runners exactly, so the real test is still a push.
 """).format(actionlint=link("actionlint", "actionlint"), act=link("act", "act"))
 
 LESSON = {
@@ -303,10 +303,10 @@ LESSON = {
         {
             "q": "You bump flask in requirements.txt. On the next PR run, what does the setup-python pip cache do?",
             "options": [
-                "Finds no exact key, restores the older pip cache by prefix, and pip downloads only what changed",
+                "Restores the older cache by prefix; pip fetches only the change",
                 "Fails the job, because the cache no longer matches",
-                "Restores the exact old cache, so the new flask is never installed",
-                "Skips caching for the rest of the week",
+                "Restores the exact old cache, so new flask is never installed",
+                "Turns caching off until the old cache expires",
             ],
             "answer": 0,
             "why": "The hash of the requirements files changed, so the exact key misses. The restore key with the same OS and Python matches, and pip fetches only the new package.",
@@ -343,7 +343,7 @@ LESSON = {
 
             For a small repository with four checks, a gate is overkill and listing the checks is clearer, so the lab does that. Reach for a gate when your matrix grows or when some jobs only run sometimes.
 
-            Caches deserve one more look, because they are shared between runs. Anything a job writes into a cached folder, a later run restores and may execute. That is why GitHub limits who can write caches for the default branch, and why the docs tell you never to cache secrets. Since 2026 you can also set a `cache-mode` key on a job (`read`, `write`, `write-only` or `none`) to give it only the cache access it needs, for example `read` for a job that handles untrusted input. See the {ref}.
+            Caches deserve one more look, because they are shared between runs. Anything a job writes into a cached folder, a later run restores and may execute. That is why GitHub limits who can write caches for the default branch, and why the docs tell you never to cache secrets. Since 2026 you can also set a `cache-mode` key on a job: `read`, `write`, `write-only` or `none`. It gives the job only the cache access it needs, for example `read` for a job that handles untrusted input. See the {ref}.
 
             Read more about required checks in {checks}.
         """).format(ref=link("caching_ref", "dependency caching reference"), checks=link("req_checks", "Troubleshooting required status checks")),

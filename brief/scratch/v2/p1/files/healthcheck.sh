@@ -26,8 +26,9 @@ check() {
   for ((attempt = 1; attempt <= retries; attempt++)); do
     # -s: no progress bar. -o /dev/null: throw the body away.
     # -w '%{http_code}': print only the status code (000 if nothing answered).
+    # --max-time 5: give up on this try after 5 seconds.
     # || true: curl fails when it cannot connect; we handle that ourselves.
-    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "${base_url}${path}" || true)
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "${base_url}${path}" || true)
     if [[ "$code" == "200" ]]; then
       log "OK   ${path} answered 200"
       return 0

@@ -1,0 +1,14 @@
+{"message":"Hello, JVM!","version":"1.0.0","host":"f73881d4e004","visits":1}
+{"status":"ok"}
+hello-jvm 1.0.0 listening on port 8080
+uid=10001(appuser) gid=10001(appuser) groups=10001(appuser)
+/app:
+bin
+lib
+
+/app/lib:
+annotations-13.0.jar
+app.jar
+greeting.jar
+kotlin-stdlib-2.4.21.jar
+-XX:MaxRAMPercentage=75.0

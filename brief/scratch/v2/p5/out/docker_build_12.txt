@@ -92,3 +92,62 @@
 #22 12.47 > Task :build-logic:processResources
 #22 12.47 > Task :build-logic:classes
 #22 12.67 > Task :build-logic:jar
+#22 19.47 
+#22 19.47 1 problem was found storing the configuration cache.
+#22 19.47 - Task `:app:compileKotlin` of type `org.jetbrains.kotlin.gradle.tasks.KotlinCompile`: error writing value of type 'org.gradle.api.internal.DefaultNamedDomainObjectCollection$ExistingNamedDomainObjectProvider'
+#22 19.47 
+#22 19.47 See the complete report at file:///src/build/reports/configuration-cache/4j6c1fzvca1peig9dupm7a0s0/d5mqlkwqb0axwpg36p1fqd14d/configuration-cache-report.html
+#22 19.47 
+#22 19.47 
+#22 19.47 FAILURE: Build failed with an exception.
+#22 19.47 
+#22 19.47 * What went wrong:
+#22 19.47 [Incubating] Problems report is available at: file:///src/build/reports/problems/problems-report.html
+#22 19.47 Configuration cache state could not be cached: field `provider` of `org.gradle.internal.serialize.codecs.core.ProviderBackedFileCollectionSpec` bean found in field `__classpath$kotlin_gradle_plugin_common__` of `org.jetbrains.kotlin.gradle.internal.transforms.ClasspathEntrySnapshotTransform$Parameters_Decorated` bean found in field `transformChain` of `org.gradle.internal.serialize.codecs.dm.TransformMapping` bean found in field `element` of `java.util.Collections$SingletonList` bean found in field `elements` of `org.gradle.internal.serialize.codecs.core.ResolutionBackedFileCollectionSpec` bean found in field `__classpathSnapshot__` of `org.jetbrains.kotlin.gradle.tasks.KotlinCompile$ClasspathSnapshotProperties_Decorated` bean found in field `__classpathSnapshotProperties__` of task `:app:compileKotlin` of type `org.jetbrains.kotlin.gradle.tasks.KotlinCompile`: error writing value of type 'org.gradle.api.internal.DefaultNamedDomainObjectCollection$ExistingNamedDomainObjectProvider'
+#22 19.47 > Could not resolve all files for configuration ':app:kotlinBuildToolsApiClasspath'.
+#22 19.47    > Could not resolve org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21.
+#22 19.47      Required by:
+#22 19.47          project ':app' > org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21
+#22 19.47       > Could not resolve org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21.
+#22 19.47          > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.21/kotlin-compiler-embeddable-2.4.21.pom'.
+#22 19.47             > Could not GET 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.21/kotlin-compiler-embeddable-2.4.21.pom'.
+#22 19.47                > Received status code 429 from server: Too Many Requests
+#22 19.47    > Could not resolve org.jetbrains.kotlin:kotlin-compiler-runner:2.4.21.
+#22 19.47      Required by:
+#22 19.47          project ':app' > org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21
+#22 19.47       > Could not resolve org.jetbrains.kotlin:kotlin-compiler-runner:2.4.21.
+#22 19.47          > Could not get resource 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-runner/2.4.21/kotlin-compiler-runner-2.4.21.pom'.
+#22 19.47             > Could not HEAD 'https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compiler-runner/2.4.21/kotlin-compiler-runner-2.4.21.pom'.
+#22 19.47                > Received status code 429 from server: Too Many Requests
+#22 19.47 
+#22 19.47 * Try:
+#22 19.47 > Run with --stacktrace option to get the stack trace.
+#22 19.47 > Run with --info or --debug option to get more log output.
+#22 19.47 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+#22 19.47 > Get more help at https://help.gradle.org.
+#22 19.47 
+#22 19.47 BUILD FAILED in 19s
+#22 19.47 9 actionable tasks: 3 executed, 6 from cache
+#22 19.47 Configuration cache entry discarded due to serialization error.
+#22 ERROR: process "/bin/sh -c ./gradlew --no-daemon --console=plain :app:installDist" did not complete successfully: exit code: 1
+------
+ > [build 13/13] RUN --mount=type=cache,target=/root/.gradle/caches     ./gradlew --no-daemon --console=plain :app:installDist:
+19.47 
+19.47 * Try:
+19.47 > Run with --stacktrace option to get the stack trace.
+19.47 > Run with --info or --debug option to get more log output.
+19.47 > Run with --scan to get full insights from a Build Scan (powered by Develocity).
+19.47 > Get more help at https://help.gradle.org.
+19.47 
+19.47 BUILD FAILED in 19s
+19.47 9 actionable tasks: 3 executed, 6 from cache
+19.47 Configuration cache entry discarded due to serialization error.
+------
+Dockerfile.sandbox:25
+--------------------
+  24 |     #    builds, even when the source code changed. Tests already ran in CI.
+  25 | >>> RUN --mount=type=cache,target=/root/.gradle/caches \
+  26 | >>>     ./gradlew --no-daemon --console=plain :app:installDist
+  27 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c ./gradlew --no-daemon --console=plain :app:installDist" did not complete successfully: exit code: 1

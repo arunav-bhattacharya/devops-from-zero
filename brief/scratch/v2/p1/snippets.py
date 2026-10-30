@@ -141,20 +141,20 @@ S("d06.jobs", [{"cmd": "sleep 300", "keys": [(1, "\x1a", "^Z")]}, "jobs", "bg", 
                "sleep 300 &", "kill -9 %1", "jobs", "sleep 300 &", "kill %1", "wait %1", "echo $?"], group="d06x")
 S("d06.nohup", ["nohup sleep 1", "ls", "kill -l | head -n 3"], group="d06x", cwd="/tmp")
 S("d06.worker", [{"cmd": "cd /tmp", "hide": True}, {"cmd": WORKER, "hide": True}, "chmod +x worker.sh",
-                 "./worker.sh > worker.log &", "sleep 5", "kill %1", "wait %1", "echo $?", "cat worker.log",
-                 "./worker.sh > worker.log &", "sleep 3", "kill -9 %1", "wait %1", "echo $?", "cat worker.log"], group="d06x")
+                 "./worker.sh > worker.log &", "sleep 5", "kill $!", "wait $!", "echo $?", "cat worker.log",
+                 "./worker.sh > worker.log &", "sleep 3", "kill -9 $!", "wait $!", "echo $?", "cat worker.log"], group="d06x")
 S("d06.top", ["top -b -n 1 | head -n 12", "uptime", "free -h", "df -h /", "du -sh server/*", "du -sh server/var/* | sort -h", "nproc"], group="d06x")
 NGINX = {"cmd": "apt-get install -y -qq nginx > /dev/null 2>&1; sed -i '/listen \\[::\\]/d' /etc/nginx/sites-enabled/default", "hide": True, "timeout": 180}
 S("d06.w", [NGINX, "nginx", "ps -o user,pid,ppid,cmd -C nginx", "---",
-            "ss -tlnp", "curl -sI localhost | head -n 1", "---",
+            "ss -tlnp", "lsof -iTCP -sTCP:LISTEN -n -P", "curl -sI localhost | head -n 1", "---",
             "cat /run/nginx.pid", "kill -HUP $(cat /run/nginx.pid)", "sleep 1", "ps -o user,pid,ppid,cmd -C nginx", "---",
             "kill $(cat /run/nginx.pid)", "sleep 1", "pgrep nginx", "echo $?", "curl -s localhost", "echo $?", "---",
             "systemctl status nginx",
-            {"cmd": "apt-get install -y -qq systemd > /dev/null 2>&1", "hide": True, "timeout": 240},
+            {"cmd": "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq systemd > /dev/null 2>&1", "hide": True, "timeout": 240},
             "systemctl status nginx", "---", "head -n 3 /usr/lib/systemd/system/nginx.service",
             "grep -E '^(\\[|Exec|Wanted)' /usr/lib/systemd/system/nginx.service"], group="d06w")
 UNIT = heredoc("hello-worker.service")
-S("d06.unit", [{"cmd": "apt-get install -y -qq systemd > /dev/null 2>&1; useradd -m ubuntu; cd /tmp", "hide": True, "timeout": 240},
+S("d06.unit", [{"cmd": "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq systemd > /dev/null 2>&1; useradd -m ubuntu; cd /tmp", "hide": True, "timeout": 240},
                {"cmd": WORKER, "hide": True}, {"cmd": UNIT, "hide": True},
                {"cmd": "install -m 755 worker.sh /usr/local/bin/worker.sh && cp hello-worker.service /etc/systemd/system/", "hide": True},
                "systemd-analyze verify /etc/systemd/system/hello-worker.service", "echo $?",
@@ -198,7 +198,7 @@ SSHD_SETUP = ("docker network create v2p1-net >/dev/null 2>&1; docker rm -f v2p1
 S("d07.ssh", [{"cmd": "apt-get install -y -qq openssh-client rsync > /dev/null 2>&1; mkdir -p /keys", "hide": True, "timeout": 120},
               {"cmd": "ssh-keygen -q -t ed25519 -C you@example.com -f ~/.ssh/id_ed25519 -N '' && cp ~/.ssh/id_ed25519.pub /keys/", "hide": True},
               {"host": "docker cp v2p1-cap-d07-ssh:/keys/id_ed25519.pub /tmp/claude-0/v2p1-key.pub && docker cp /tmp/claude-0/v2p1-key.pub v2p1-devbox:/home/ubuntu/.ssh/authorized_keys && docker exec v2p1-devbox chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys && rm -f /tmp/claude-0/v2p1-key.pub"},
-              {"cmd": "ssh ubuntu@devbox 'whoami; hostname'", "keys": [(3, "yes\n", "yes\n")]},
+              {"cmd": "ssh ubuntu@devbox 'whoami; hostname'", "keys": [(3, "yes\n", "yes")]},
               "ssh ubuntu@devbox 'whoami; hostname'", "---",
               {"cmd": "printf 'Host devbox\\n    HostName devbox\\n    User ubuntu\\n    IdentityFile ~/.ssh/id_ed25519\\n' > ~/.ssh/config", "hide": True},
               "ssh devbox uptime", "scp app.log devbox:/tmp/", "ssh devbox 'ls -l /tmp/app.log'", "---",
@@ -206,16 +206,23 @@ S("d07.ssh", [{"cmd": "apt-get install -y -qq openssh-client rsync > /dev/null 2
   group="d07s", docker=["--network", "v2p1-net"], host_before=[SSHD_SETUP],
   host_after=["docker rm -f v2p1-devbox >/dev/null 2>&1; docker network rm v2p1-net >/dev/null 2>&1"])
 HELLO_UP = "docker rm -f v2p1-hello >/dev/null 2>&1; docker run -d --name v2p1-hello hello-devops:1.0.0 >/dev/null; sleep 4"
-HELLO_REDIS = "docker rm -f v2p1-hello >/dev/null 2>&1; docker run -d --name v2p1-hello -e REDIS_HOST=nowhere hello-devops:1.0.0 >/dev/null; sleep 4"
+HELLO_REDIS = "docker rm -f v2p1-hello >/dev/null 2>&1; docker run -d --name v2p1-hello -e REDIS_HOST=127.0.0.1 hello-devops:1.0.0 >/dev/null; sleep 4"
 HELLO_DOWN = "docker rm -f v2p1-hello >/dev/null 2>&1"
 S("d07.w1", [{"cmd": heredoc("healthcheck.sh"), "hide": True}, "chmod +x healthcheck.sh", "shellcheck healthcheck.sh", "echo $?",
              "bash -n healthcheck.sh && echo 'syntax OK'"], group="d07w")
-S("d07.w2", [{"cmd": heredoc("healthcheck.sh") + "\nchmod +x healthcheck.sh", "hide": True},
+S("d07.w2", [{"cmd": heredoc("healthcheck.sh"), "hide": True}, {"cmd": "chmod +x healthcheck.sh", "hide": True},
              "curl -s localhost:8000/healthz", "echo $?", "RETRIES=3 DELAY=1 ./healthcheck.sh", "echo $?"], group="d07w")
-S("d07.w3", [{"cmd": heredoc("healthcheck.sh") + "\nchmod +x healthcheck.sh", "hide": True},
-             "curl -s localhost:8000/healthz", "./healthcheck.sh", "echo $?", "./healthcheck.sh 2> /dev/null && echo 'smoke test passed: carry on with the deploy'",
+S("d07.w3", [{"cmd": heredoc("healthcheck.sh"), "hide": True}, {"cmd": "chmod +x healthcheck.sh", "hide": True},
+             "curl -s localhost:8000/healthz", "./healthcheck.sh", "echo $?", "./healthcheck.sh 2> /dev/null && echo 'smoke test passed: carry on with the deploy'", "---",
              "./healthcheck.sh http://localhost:8000 extra", "echo $?"],
   group="d07w", docker=["--network", "container:v2p1-hello"], host_before=[HELLO_UP], host_after=[HELLO_DOWN])
-S("d07.w4", [{"cmd": heredoc("healthcheck.sh") + "\nchmod +x healthcheck.sh", "hide": True},
+S("d07.w4", [{"cmd": heredoc("healthcheck.sh"), "hide": True}, {"cmd": "chmod +x healthcheck.sh", "hide": True},
              "curl -s localhost:8000/readyz", "RETRIES=3 DELAY=1 ./healthcheck.sh", "echo $?"],
   group="d07w", docker=["--network", "container:v2p1-hello"], host_before=[HELLO_REDIS], host_after=[HELLO_DOWN])
+
+S("d04.tailhelp", ["tail --help | grep -E -- '^ +-(f|F)'"], group="d04x")
+S("d05.deep", ["jq -s 'length' events.jsonl", "jq -s '[.[] | select(.event == \"order.created\") | .amount] | add' events.jsonl",
+               "jq -r -s 'group_by(.service)[] | \"\\(.[0].service) \\(length)\"' events.jsonl",
+               "jq -r '[.ts, .service, .level] | @tsv' events.jsonl | head -n 3",
+               "jq -r 'select(.duration_ms > 1000) | \"\\(.duration_ms) \\(.service) \\(.event)\"' events.jsonl | sort -rn"], group="d05x")
+S("d07.profile", ["grep -n -A 3 'BASH_VERSION' /etc/skel/.profile"], group="d07x")

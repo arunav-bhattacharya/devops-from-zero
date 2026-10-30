@@ -7,45 +7,45 @@
 // 1. Ask Docker which containers exist. Keep only this Compose project.
 //    compose.loki.yaml passes the project name in COMPOSE_PROJECT.
 discovery.docker "containers" {
-  host = "unix:///var/run/docker.sock"
+	host = "unix:///var/run/docker.sock"
 
-  filter {
-    name   = "label"
-    values = ["com.docker.compose.project=" + sys.env("COMPOSE_PROJECT")]
-  }
+	filter {
+		name   = "label"
+		values = ["com.docker.compose.project=" + sys.env("COMPOSE_PROJECT")]
+	}
 }
 
 // 2. Choose the labels each log stream gets in Loki. Keep them few:
 //    every new label value makes a new stream.
 discovery.relabel "containers" {
-  targets = []
+	targets = []
 
-  // service="web", "prometheus", "grafana", ... (the Compose service name).
-  // Loki also copies it into service_name.
-  rule {
-    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-    target_label  = "service"
-  }
+	// service="web", "prometheus", "grafana", ... (the Compose service name).
+	// Loki also copies it into service_name.
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		target_label  = "service"
+	}
 
-  // container="observability-web-1" (Docker puts a "/" in front; drop it).
-  rule {
-    source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
-    target_label  = "container"
-  }
+	// container="observability-web-1" (Docker puts a "/" in front; drop it).
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
 }
 
 // 3. Follow each container's output (stdout and stderr), like docker logs -f.
 loki.source.docker "containers" {
-  host          = "unix:///var/run/docker.sock"
-  targets       = discovery.docker.containers.targets
-  relabel_rules = discovery.relabel.containers.rules
-  forward_to    = [loki.write.local.receiver]
+	host          = "unix:///var/run/docker.sock"
+	targets       = discovery.docker.containers.targets
+	relabel_rules = discovery.relabel.containers.rules
+	forward_to    = [loki.write.local.receiver]
 }
 
 // 4. Push the lines to Loki's API.
 loki.write "local" {
-  endpoint {
-    url = "http://loki:3100/loki/api/v1/push"
-  }
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
 }

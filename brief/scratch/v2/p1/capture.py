@@ -74,8 +74,10 @@ class Session:
 
 
 def clean(text):
-    text = ANSI.sub("", text).replace("\r\n", "\n").replace("\r", "")
-    return "\n".join(line.rstrip() for line in text.split("\n"))
+    text = ANSI.sub("", text).replace("\r\n", "\n")
+    # a lone carriage return redraws the line (progress meters): keep what is left on screen
+    lines = [[seg for seg in line.split("\r") if seg.strip()][-1:] for line in text.split("\n")]
+    return "\n".join((seg[0] if seg else "").rstrip() for seg in lines)
 
 
 def run_snippet(name, spec, workdir):

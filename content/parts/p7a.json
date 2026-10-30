@@ -1,0 +1,1892 @@
+[
+ {
+  "id": "d30",
+  "title": "Why Kubernetes, and how a cluster works",
+  "minutes": 45,
+  "goal": "By the end you can explain what each part of a Kubernetes cluster does, follow one `kubectl apply` from your terminal to a running container, and run the course's three-node cluster on your Mac with kind.",
+  "guess": {
+   "q": "You run `kubectl apply -f app.yaml` and it prints `deployment.apps/web created` in under a second. What has happened at that moment?",
+   "options": [
+    "The containers are already running on a node",
+    "The request is stored, and other parts start the containers soon after",
+    "kubectl has copied the image to every node in the cluster",
+    "The scheduler has picked a node and waits for your approval"
+   ],
+   "answer": 1,
+   "why": "The API server checks your request, saves it in etcd and answers straight away. Controllers, the scheduler and the kubelet act on it over the next seconds, which is why you check with `kubectl get pods` afterwards."
+  },
+  "terms": [
+   {
+    "term": "Cluster",
+    "plain": "A group of machines that Kubernetes runs and manages as one system."
+   },
+   {
+    "term": "Node",
+    "plain": "One machine in a cluster that runs containers. On kind, each node is a Docker container."
+   },
+   {
+    "term": "Control plane",
+    "plain": "The part of a cluster that stores what you asked for and decides what runs where."
+   },
+   {
+    "term": "Desired state",
+    "plain": "What you ask for in a manifest, such as three copies of an image. Kubernetes keeps working to match it."
+   },
+   {
+    "term": "Controller",
+    "plain": "A program that keeps comparing desired state with actual state and acts to close any gap."
+   },
+   {
+    "term": "kubelet",
+    "plain": "The agent on each node that starts the containers assigned to that node and reports their status."
+   },
+   {
+    "term": "kind",
+    "plain": "A tool that runs a real Kubernetes cluster on your laptop, using Docker containers as nodes."
+   }
+  ],
+  "sections": [
+   {
+    "h": "The problem Kubernetes solves",
+    "body": "On Day 15 you ran hello-devops and Redis with Docker Compose. One `docker compose up` on one laptop, and it worked. Now picture a real product: 40 services, several copies of each, spread over 20 servers.\n\nSomeone has to answer these questions all day:\n- Which server has room for this container?\n- A container crashed at 3 in the morning. Who starts it again?\n- A server died. Who moves its containers somewhere else?\n- Traffic doubled. Who adds copies, and who removes them later?\n- How do you replace version 1 with version 2 without downtime?\n- Copies come and go. How does one service find another?\n\nCompose cannot answer them. It knows one machine, and it only acts when you run it. **Kubernetes** answers all of them. It is an open-source system that runs containers across a group of machines called a cluster. People often write it K8s: a K, eight letters, then an s.\n\nGoogle built Kubernetes from what it learned running its internal system, Borg, and released it as open source in 2014. Today the Cloud Native Computing Foundation (CNCF) looks after it, and every big cloud sells it.\n\nThe real change is in how you work. You stop logging in to servers and starting things. You write down the result you want, and Kubernetes keeps making it true.",
+    "refs": [
+     {
+      "title": "Kubernetes overview",
+      "url": "https://kubernetes.io/docs/concepts/overview/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes tutorial for beginners, full course (KubeAcademy)",
+      "url": "https://www.youtube.com/watch?v=JB3bP1RXqYo",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Desired state and control loops",
+    "body": "With `docker run` you give an order, and Docker carries it out once. Kubernetes works the other way round. You describe the end state, and Kubernetes stores that description as your **desired state**.\n\nSmall programs called controllers then run the same loop forever:\n1. Read the desired state: what you asked for.\n2. Observe the actual state: what is really running.\n3. If the two differ, act to make them match.\n4. Repeat.\n\nThis loop is called reconciliation. The [Kubernetes docs](https://kubernetes.io/docs/concepts/architecture/controller/) compare it to a thermostat. You set 21 degrees, and the thermostat keeps reading the room and switches the heating on or off. You never tell it to heat for ten minutes.\n\nYou can see the loop in every object. Each object you write has a `spec` field: your wish. Kubernetes fills in a `status` field: its report on what is real. Controllers work to make status match spec.\n\nTwo things follow from this, and both surprise people at first:\n- Kubernetes fixes problems you never told it about. A crashed container or a dead node is just one more gap to close.\n- A change made behind Kubernetes' back does not stick. Stop a container directly on a node, and Kubernetes sees the gap and starts it again.\n\nTerraform (Part 6) also compares code with reality, but only when you run `terraform apply`. Kubernetes checks all the time, with nobody at the keyboard.",
+    "refs": [
+     {
+      "title": "Controllers",
+      "url": "https://kubernetes.io/docs/concepts/architecture/controller/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "The control plane decides",
+    "body": "A cluster has two kinds of parts. The control plane stores your desired state and makes decisions. The nodes run your containers.\n\nOne word before we go on. Kubernetes never runs a bare container. It runs Pods. A Pod wraps one container, sometimes a few, and gives it an IP address. Tomorrow is all about Pods.\n\nThe control plane has four main components. For each one, it helps to ask what breaks if it stops:\n- API server (`kube-apiserver`): the front door. Every request goes through it, from `kubectl` and from the other components. If it stops, `kubectl` fails, but containers that already run keep running.\n- etcd: a key-value database that holds the whole cluster state. Only the API server talks to it. Lose etcd without a backup, and the cluster forgets every object.\n- Scheduler (`kube-scheduler`): picks a node for each new Pod. If it stops, new Pods wait in `Pending` forever.\n- Controller manager (`kube-controller-manager`): runs the built-in control loops, such as the one that keeps three copies running. If it stops, nothing heals itself any more.\n\nClusters in a cloud add a fifth part, the cloud controller manager. It talks to the cloud provider, for example to create a load balancer.\n\nThese components never call each other. They all read and write objects through the API server, and they watch it for changes. This design is why a component can crash, restart, read the current state again and carry on as if nothing happened.",
+    "refs": [
+     {
+      "title": "Kubernetes components",
+      "url": "https://kubernetes.io/docs/concepts/overview/components/",
+      "kind": "docs"
+     },
+     {
+      "title": "Cluster architecture",
+      "url": "https://kubernetes.io/docs/concepts/architecture/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "The nodes do the work",
+    "body": "Every node runs a few programs:\n- kubelet: an agent that watches the API server for Pods assigned to its node. It starts their containers, checks on them and reports their status.\n- A container runtime, usually containerd: it pulls images and starts containers. The kubelet talks to it through a standard called the CRI (Container Runtime Interface).\n- kube-proxy: sets up network rules so traffic sent to a Service reaches the right Pods. Day 33 explains Services.\n\nYour Docker images run here even though the node has no Docker. A Docker image follows the OCI image standard, and containerd runs any OCI image. Kubernetes removed its built-in Docker support (called dockershim) in version 1.24, and image builds did not change at all.\n\nA cluster also runs a few add-ons as ordinary Pods:\n- CoreDNS: the cluster's DNS server, so Pods can find Services by name.\n- A network plugin (CNI, Container Network Interface): it gives every Pod an IP address and connects Pods across nodes. kind uses a small one called kindnet.\n\nOne current detail matters if a cluster ever refuses to start. Linux limits the CPU and memory of containers with a feature called cgroups, which comes in two versions. Since Kubernetes 1.35, the kubelet refuses by default to start on hosts that still use the old cgroup v1. Docker Desktop on a Mac uses cgroup v2, so you are fine, and `docker info | grep -i cgroup` confirms it in seconds.",
+    "refs": [
+     {
+      "title": "Nodes",
+      "url": "https://kubernetes.io/docs/concepts/architecture/nodes/",
+      "kind": "docs"
+     },
+     {
+      "title": "The cgroups v2 shift (Kubernetes blog)",
+      "url": "https://kubernetes.io/blog/2026/10/06/kubernetes-cgroups-v2-shift/",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "What happens when you run kubectl apply",
+    "body": "This is the most useful picture to carry around, and a classic interview question. Say you apply a Deployment that asks for two copies of nginx. A Deployment is an object that keeps a set number of Pods running (Day 32 covers it). Here is the chain:\n\n1. kubectl reads `~/.kube/config` to find the cluster and your credentials. It sends the YAML to the API server over HTTPS.\n2. The API server checks who you are and whether you may do this. It validates the object and stores it in etcd. Then it answers `created`, and kubectl exits.\n3. The Deployment controller sees the new Deployment through its watch. It creates a ReplicaSet, a helper object that keeps a set number of identical Pods.\n4. The ReplicaSet controller sees the ReplicaSet and creates two Pod objects. They have no node yet.\n5. The scheduler sees two Pods without a node. It filters out nodes that cannot take them, scores the rest, and writes a node name into each Pod.\n6. The kubelet on each chosen node sees a Pod assigned to it. It asks containerd to pull the image and start the container.\n7. The kubelet reports back: the Pod is running, and here is its IP address. The API server stores that in the Pod's status.\n\nNotice who talks to whom. Every arrow goes through the API server, and each component acts on what it sees there. Nobody sends orders to anybody. Each step also leaves a short record called an event, so you can watch the whole chain with `kubectl get events`. The worked example below does exactly that.",
+    "refs": [
+     {
+      "title": "Kubernetes scheduler",
+      "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/",
+      "kind": "docs"
+     },
+     {
+      "title": "Objects in Kubernetes",
+      "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Managed Kubernetes, and when to skip Kubernetes",
+    "body": "In production, few teams run the control plane themselves. Keeping etcd safe, upgrading the cluster a few times a year and patching security holes is real work. Cloud providers sell managed Kubernetes instead. They run and upgrade the control plane, and you run your apps on the nodes:\n- Amazon EKS (Elastic Kubernetes Service) on AWS.\n- AKS (Azure Kubernetes Service) on Microsoft Azure.\n- GKE (Google Kubernetes Engine) on Google Cloud.\n\nEach one also has a mode where the provider runs the nodes too: EKS Auto Mode, AKS Automatic and GKE Autopilot.\n\nKubernetes still costs people time. Someone must learn it, keep it upgraded and keep it secure. Skip it when:\n- You run one or a few services with steady traffic.\n- Your small team has nobody to own the platform.\n- A simpler service fits, such as a PaaS or serverless containers (Day 10).\n\nA useful test: can you name the person who will upgrade the cluster next spring? If not, start with something simpler.\n\nYour manifests work the same on kind, EKS, AKS and GKE, so practice on a laptop is real practice. The differences sit at the edges: load balancers, disks and identity.",
+    "refs": [
+     {
+      "title": "What is Amazon EKS?",
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html",
+      "kind": "docs"
+     },
+     {
+      "title": "What is Azure Kubernetes Service (AKS)?",
+      "url": "https://learn.microsoft.com/en-us/azure/aks/what-is-aks",
+      "kind": "docs"
+     },
+     {
+      "title": "GKE overview",
+      "url": "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/kubernetes-engine-overview",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "A real cluster on your laptop with kind",
+    "body": "kind stands for Kubernetes in Docker. Each node is a Docker container that runs its own containerd and kubelet inside. The kind tool uses kubeadm, the official setup tool, to start a real control plane in the first node. So you get the same Kubernetes as a cloud cluster, minus the cloud parts.\n\nThe course uses one config file, `kind-config.yaml`, in the root of your repo. It asks for:\n- One control-plane node and two workers, so you can watch Pods spread over machines.\n- A port mapping from port 30080 on the control-plane node to port 8081 on your Mac. On Day 33 a Service listens on node port 30080, and `curl localhost:8081` reaches it.\n\nWhen kind creates a cluster called `devops`, it writes a context called `kind-devops` into `~/.kube/config` and switches kubectl to it. A context is a saved pair of cluster and user (Day 31 shows how to list and switch them).\n\nkind has a few limits worth knowing now:\n- No cloud load balancers. A Service of type LoadBalancer waits forever unless you add a helper (Day 33).\n- The nodes live inside Docker Desktop's Linux VM. Their 172.18.x.x addresses are not reachable from your Mac, so you use port mappings and `kubectl port-forward`.\n- It shares your laptop's memory. If nodes turn `NotReady` or Pods get evicted, give Docker Desktop more memory in its settings.\n\nCreating the cluster takes a minute or two, and deleting it takes seconds. You can always start fresh.",
+    "refs": [
+     {
+      "title": "kind quick start",
+      "url": "https://kind.sigs.k8s.io/docs/user/quick-start/",
+      "kind": "docs"
+     },
+     {
+      "title": "kind configuration",
+      "url": "https://kind.sigs.k8s.io/docs/user/configuration/",
+      "kind": "docs"
+     }
+    ]
+   }
+  ],
+  "analogy": "Think of a busy restaurant kitchen. Waiters never talk to cooks: they pin order tickets on a rail (the API server, with etcd as the rail's memory). The head chef reads new tickets and assigns each dish to a station (the scheduler). Each station cook makes only the dishes assigned to them (the kubelet). A manager keeps checking that every table got what it ordered, and has dropped plates remade (the controllers). The picture breaks on judgment: a real kitchen improvises when it runs out of something, while Kubernetes only ever works toward exactly what the ticket says.",
+  "diagram": "<svg viewBox=\"0 0 560 300\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"How kubectl apply flows from the API server to a Pod on a worker node\"><rect class=\"bx\" x=\"16\" y=\"36\" width=\"116\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"74\" y=\"63\" font-size=\"13\" text-anchor=\"middle\">kubectl</text><rect class=\"bxo\" x=\"172\" y=\"36\" width=\"116\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"230\" y=\"63\" font-size=\"13\" text-anchor=\"middle\">API server</text><rect class=\"bxg\" x=\"328\" y=\"36\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"384\" y=\"63\" font-size=\"13\" text-anchor=\"middle\">etcd</text><text class=\"ts\" x=\"500\" y=\"62\" font-size=\"11\" text-anchor=\"middle\">Control plane</text><rect class=\"bxp\" x=\"16\" y=\"132\" width=\"116\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"74\" y=\"159\" font-size=\"13\" text-anchor=\"middle\">Scheduler</text><rect class=\"bxp\" x=\"328\" y=\"132\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"384\" y=\"159\" font-size=\"13\" text-anchor=\"middle\">Controllers</text><rect class=\"bxt\" x=\"172\" y=\"236\" width=\"116\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"230\" y=\"263\" font-size=\"13\" text-anchor=\"middle\">kubelet</text><rect class=\"bxt\" x=\"328\" y=\"236\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"384\" y=\"263\" font-size=\"13\" text-anchor=\"middle\">containerd</text><rect class=\"bx\" x=\"472\" y=\"236\" width=\"72\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"508\" y=\"263\" font-size=\"13\" text-anchor=\"middle\">Pod</text><text class=\"ts\" x=\"74\" y=\"262\" font-size=\"11\" text-anchor=\"middle\">Worker node</text><line class=\"ln\" x1=\"132\" y1=\"58\" x2=\"170\" y2=\"58\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"288\" y1=\"58\" x2=\"326\" y2=\"58\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"110\" y1=\"132\" x2=\"190\" y2=\"82\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"350\" y1=\"132\" x2=\"270\" y2=\"82\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"230\" y1=\"80\" x2=\"230\" y2=\"234\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"288\" y1=\"258\" x2=\"326\" y2=\"258\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"440\" y1=\"258\" x2=\"470\" y2=\"258\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"100\" y=\"108\" font-size=\"11\" text-anchor=\"middle\">watch</text><text class=\"ts\" x=\"372\" y=\"110\" font-size=\"11\" text-anchor=\"middle\">watch</text><text class=\"ts\" x=\"266\" y=\"200\" font-size=\"11\" text-anchor=\"middle\">watch</text></svg>",
+  "diagram_caption": "kubectl talks only to the API server. The scheduler, the controllers and the kubelet all watch the API server and act on what they see.",
+  "worked": {
+   "title": "Watch one apply travel through a cluster",
+   "steps": [
+    {
+     "say": "Create a small throwaway cluster with one node, named `demo`. The first run downloads the node image, which can take a few minutes. kind then points kubectl at the new cluster.",
+     "code": "$ kind create cluster --name demo\n...\nSet kubectl context to \"kind-demo\"\n$ kubectl get nodes\nNAME                 STATUS   ROLES           AGE   VERSION\ndemo-control-plane   Ready    control-plane   48s   v1.37.0",
+     "lang": "console"
+    },
+    {
+     "say": "Find the control plane. In kind its parts run as Pods in the `kube-system` namespace: the API server, etcd, the scheduler and the controller manager. You also see kube-proxy, CoreDNS and kindnet.",
+     "code": "$ kubectl get pods -n kube-system\nNAME                                         READY   STATUS    RESTARTS   AGE\ncoredns-7d764666f9-8xk2v                     1/1     Running   0          95s\ncoredns-7d764666f9-tq9bl                     1/1     Running   0          95s\netcd-demo-control-plane                      1/1     Running   0          101s\nkindnet-5wq8h                                1/1     Running   0          95s\nkube-apiserver-demo-control-plane            1/1     Running   0          101s\nkube-controller-manager-demo-control-plane   1/1     Running   0          101s\nkube-proxy-7lq2c                             1/1     Running   0          95s\nkube-scheduler-demo-control-plane            1/1     Running   0          101s",
+     "lang": "console"
+    },
+    {
+     "say": "Ask for two copies of nginx, then look straight away. kubectl came back at once, but the containers are still being created. That is the guess from the top of the page.",
+     "code": "$ kubectl create deployment hello-nginx --image=nginx:1.28 --replicas=2\ndeployment.apps/hello-nginx created\n$ kubectl get pods\nNAME                          READY   STATUS              RESTARTS   AGE\nhello-nginx-5d8f6b7c9-qm4zt   0/1     ContainerCreating   0          2s\nhello-nginx-5d8f6b7c9-x7k2p   0/1     ContainerCreating   0          2s",
+     "lang": "console"
+    },
+    {
+     "say": "Now read the events in the order they were created, with a column for the component that wrote each one. You can see the chain from the lesson: Deployment controller, ReplicaSet controller, scheduler, then the kubelet. The output below keeps the kubelet lines for one Pod only.",
+     "code": "$ kubectl get events --sort-by=.metadata.creationTimestamp \\\n    -o custom-columns=FROM:.reportingComponent,REASON:.reason,MESSAGE:.message\nFROM                    REASON              MESSAGE\ndeployment-controller   ScalingReplicaSet   Scaled up replica set hello-nginx-5d8f6b7c9 from 0 to 2\nreplicaset-controller   SuccessfulCreate    Created pod: hello-nginx-5d8f6b7c9-x7k2p\nreplicaset-controller   SuccessfulCreate    Created pod: hello-nginx-5d8f6b7c9-qm4zt\ndefault-scheduler       Scheduled           Successfully assigned default/hello-nginx-5d8f6b7c9-x7k2p to demo-control-plane\ndefault-scheduler       Scheduled           Successfully assigned default/hello-nginx-5d8f6b7c9-qm4zt to demo-control-plane\nkubelet                 Pulling             Pulling image \"nginx:1.28\"\nkubelet                 Pulled              Successfully pulled image \"nginx:1.28\" in 6.1s (6.1s including waiting). Image size: 72218103 bytes.\nkubelet                 Created             Container created\nkubelet                 Started             Container started",
+     "lang": "console"
+    },
+    {
+     "say": "Watch the control loop work. Delete one Pod. The ReplicaSet now counts one Pod where it wants two, so it creates a replacement with a new name.",
+     "code": "$ kubectl delete pod hello-nginx-5d8f6b7c9-x7k2p\npod \"hello-nginx-5d8f6b7c9-x7k2p\" deleted from default namespace\n$ kubectl get pods\nNAME                          READY   STATUS    RESTARTS   AGE\nhello-nginx-5d8f6b7c9-qm4zt   1/1     Running   0          2m10s\nhello-nginx-5d8f6b7c9-w9tn6   1/1     Running   0          5s",
+     "lang": "console"
+    },
+    {
+     "say": "Delete the practice cluster. This removes the node container and the `kind-demo` context, so kubectl no longer points at it.",
+     "code": "$ kind delete cluster --name demo\nDeleting cluster \"demo\" ...",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "kind-config.yaml",
+    "src": "# The course cluster: 1 control-plane node and 2 worker nodes. Each node is a Docker container.\n# Create it with: kind create cluster --name devops --config kind-config.yaml\n# kind then adds the kubectl context \"kind-devops\" and switches to it (Day 30).\nkind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\nnodes:\n  - role: control-plane\n    extraPortMappings:\n      - containerPort: 30080 # the NodePort of the hello-devops Service (k8s/service.yaml, Day 33)\n        hostPort: 8081 # so http://localhost:8081 on your Mac reaches that Service\n  - role: worker\n  - role: worker",
+    "run": "kind create cluster --name devops --config kind-config.yaml"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "docker info | grep -i cgroup",
+    "what": "Check that Docker uses cgroup v2. You want to see `Cgroup Version: 2`."
+   },
+   {
+    "cmd": "kind create cluster --name devops --config kind-config.yaml",
+    "what": "Create the course cluster: one control-plane node and two workers."
+   },
+   {
+    "cmd": "kind get clusters",
+    "what": "List the kind clusters on this machine."
+   },
+   {
+    "cmd": "kubectl config current-context",
+    "what": "Show which cluster kubectl talks to right now, such as `kind-devops`."
+   },
+   {
+    "cmd": "kubectl cluster-info",
+    "what": "Print the address of the API server for the current context."
+   },
+   {
+    "cmd": "kubectl get nodes -o wide",
+    "what": "List the nodes with their status, version, internal IP and container runtime."
+   },
+   {
+    "cmd": "docker ps --filter name=devops",
+    "what": "Show the Docker containers that are the nodes of the `devops` cluster."
+   },
+   {
+    "cmd": "kubectl get pods -n kube-system -o wide",
+    "what": "List the control plane and add-on Pods, with the node each one runs on."
+   },
+   {
+    "cmd": "docker exec devops-control-plane crictl ps",
+    "what": "List the containers that containerd runs inside one node."
+   },
+   {
+    "cmd": "kubectl get events --sort-by=.metadata.creationTimestamp",
+    "what": "List recent events in the namespace, oldest first."
+   },
+   {
+    "cmd": "kubectl api-resources",
+    "what": "List every kind of object this cluster knows, with short names."
+   },
+   {
+    "cmd": "kind delete cluster --name demo",
+    "what": "Delete a kind cluster, its node containers and its kubectl context."
+   }
+  ],
+  "mistake": "Reaching past Kubernetes to fix things: `docker exec` into a kind node and stopping a container with `crictl`, or restarting a process by hand on a server. The kubelet sees the gap between desired and actual state and undoes your change, or your fix quietly disappears with the next Pod. Change the desired state through the API instead: edit the manifest and apply it.",
+  "real_world": "At PayLite, a made-up payments company, the platform team runs three managed clusters on EKS: dev, staging and production. Product teams never touch the control plane. When a release misbehaves, the first thing anyone runs is `kubectl get events` in the team's namespace, because the events say which component gave up and why.",
+  "task": {
+   "title": "Build the course cluster and look inside it",
+   "steps": [
+    "Run `docker info | grep -i cgroup` and confirm Docker uses cgroup v2.",
+    "Save `kind-config.yaml` in the root of `~/code/hello-devops` and create a cluster named `devops` with it.",
+    "Confirm that kubectl now uses the `kind-devops` context and that `kubectl get nodes` shows three nodes, all `Ready`.",
+    "Find the three node containers with `docker ps`. Which one publishes port 8081, and why that one?",
+    "List the `kube-system` Pods with `-o wide`. Which node runs the API server? Which Pods run once on every node?",
+    "Go one level down: list the containers that containerd runs inside the control-plane node.",
+    "In one terminal, watch the `kube-system` Pods with `-w`. In a second terminal, delete the CoreDNS Pods by their label `k8s-app=kube-dns`.",
+    "Commit `kind-config.yaml` and push it. Keep the cluster running for tomorrow."
+   ],
+   "hints": [
+    "`docker exec <node-container> crictl ps` runs crictl inside a node; the node container names start with `devops-`.",
+    "`kubectl delete pod -n kube-system -l k8s-app=kube-dns` deletes every Pod with that label at once.",
+    "If `kind create cluster` hangs or nodes stay `NotReady`, give Docker Desktop more memory and try again after `kind delete cluster --name devops`."
+   ],
+   "done_when": "`kubectl get nodes` lists `devops-control-plane`, `devops-worker` and `devops-worker2` as Ready, and you watched new CoreDNS Pods replace the ones you deleted."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences what happens between `kubectl apply` of a Deployment and a container running. Mention the API server, etcd, a controller, the scheduler and the kubelet.",
+   "answer": "kubectl sends the manifest to the API server, which checks it, stores it in etcd and answers straight away. Controllers watching the API server see the new Deployment and create a ReplicaSet and then Pod objects. The scheduler sees Pods without a node and assigns each one to a node that has room. The kubelet on that node sees the Pod, asks containerd to pull the image and start the container, and reports the status back to the API server."
+  },
+  "recap": [
+   "Kubernetes runs containers across many machines and keeps them the way you described.",
+   "Controllers run control loops: compare desired state with actual state, then act on the difference.",
+   "The control plane (API server, etcd, scheduler, controller manager) decides; nodes (kubelet, containerd, kube-proxy) run Pods.",
+   "Every component talks only to the API server and watches it for changes.",
+   "Managed services such as EKS, AKS and GKE run the control plane for you; small, steady apps may not need Kubernetes at all.",
+   "kind runs a real cluster on your Mac, with each node as a Docker container."
+  ],
+  "check": [
+   {
+    "q": "The API server of a test cluster crashes for ten minutes. What happens to the web app that was already running there?",
+    "options": [
+     "It stops at once, because Pods need the API server",
+     "It keeps serving, but nothing new can be scheduled or changed",
+     "It moves to another cluster until the API server is back",
+     "It restarts every Pod as soon as the API server returns"
+    ],
+    "answer": 1,
+    "why": "Kubelets keep running the containers they already have; only changes, scheduling and kubectl need the API server."
+   },
+   {
+    "q": "A container inside a Pod crashes. Which component notices and starts it again on the same node?",
+    "options": [
+     "The scheduler",
+     "The controller manager",
+     "kube-proxy",
+     "The kubelet"
+    ],
+    "answer": 3,
+    "why": "The kubelet runs and watches the containers on its own node, so it restarts a crashed container in place."
+   },
+   {
+    "q": "A worker node loses power. Which chain of components gets its Pods running again somewhere else?",
+    "options": [
+     "Controllers create new Pods, then the scheduler places them on healthy nodes",
+     "The kubelet on the dead node moves its Pods before it shuts down",
+     "etcd copies the Pods to the node with the most free memory",
+     "kube-proxy sends the Pods' traffic to another node, so no new Pods are needed"
+    ],
+    "answer": 0,
+    "why": "Controllers notice that Pods are lost and create replacements, and the scheduler assigns those new Pods to nodes that are still up."
+   }
+  ],
+  "interview": [
+   {
+    "q": "Walk me through what happens when you run kubectl apply for a Deployment.",
+    "a": "kubectl sends the object to the API server, which authenticates and authorizes the request, validates the object and stores it in etcd. The Deployment controller sees it through a watch and creates a ReplicaSet, and the ReplicaSet controller creates the Pod objects. The scheduler assigns each unscheduled Pod to a node, and the kubelet on that node tells the container runtime to pull the image and start the containers. Every step goes through the API server; no component calls another directly."
+   },
+   {
+    "q": "What is the difference between the control plane and the worker nodes?",
+    "a": "The control plane makes decisions and stores state. The API server is its front door, etcd holds the data, the scheduler places Pods and the controller manager runs the control loops. Worker nodes run the workloads: the kubelet starts and watches Pods, a runtime such as containerd runs containers, and kube-proxy programs Service routing. In EKS, AKS or GKE the provider runs the control plane for you."
+   },
+   {
+    "q": "What does declarative mean in Kubernetes, and why does it matter?",
+    "a": "You describe the end state you want, not the steps to get there. Controllers compare that desired state with what is running and keep closing the gap, so the cluster heals itself after crashes. Applying the same file twice gives the same result, which makes changes repeatable and reviewable in git. GitOps tools such as Argo CD build on exactly this idea."
+   }
+  ],
+  "deeper": {
+   "minutes": 12,
+   "body": "Every component you met today talks only to the API server. So how does the scheduler learn about a new Pod when nobody calls it?\n\nIt uses a watch. A component asks the API server for a list of objects and keeps the connection open. The API server then streams every change (added, modified, deleted) as it happens:\n- The scheduler watches Pods that have no node yet.\n- Each kubelet watches Pods assigned to its own node.\n- Each controller watches the kinds of objects it cares about.\n\nControllers are also level-triggered. They act on the current state, not on a list of past events. If a controller crashes and restarts, it lists everything again and carries on. Nothing is lost, because the state lives in etcd, not in the controller's memory. This is why Kubernetes copes so well with its own parts failing.\n\nTwo fields in `metadata` will come up again:\n- Every object has a `resourceVersion`. If two clients update the same object at once, the second one gets a conflict error and must read the object again. This is called optimistic concurrency.\n- Objects can have owners. A Pod made by a ReplicaSet points to it in `metadata.ownerReferences`. Delete the owner, and the garbage collector deletes what it owns.\n\nIn production the control plane itself is made highly available. Teams run three (or five) control-plane nodes. The API servers are all active behind a load balancer. etcd keeps working while a majority of its members agree, so three members survive the loss of one. The scheduler and controller manager run on every control-plane node, but only one copy of each is active at a time. They pick the leader with a lock stored in the API server.\n\nkind builds a cluster like this:\n1. It starts one Docker container per node from the `kindest/node` image.\n2. Inside each container, systemd starts containerd and the kubelet.\n3. kind runs kubeadm, which starts the control plane parts as static Pods: Pods the kubelet runs straight from files on disk.\n4. It installs kindnet and a small storage provisioner.\n5. It writes a context into `~/.kube/config` so kubectl can connect.\n\nYou can watch the stream yourself. Run `kubectl get pods -w` in one terminal, then create and delete a Pod in another. Each new line is an event the API server pushed to kubectl, the same way it pushes events to controllers.\n\nIf you want to see every moving part, [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way) by Kelsey Hightower builds a cluster by hand. It needs four machines and an afternoon, so treat it as optional reading."
+  },
+  "sources": [
+   {
+    "title": "Kubernetes components",
+    "url": "https://kubernetes.io/docs/concepts/overview/components/"
+   },
+   {
+    "title": "Controllers",
+    "url": "https://kubernetes.io/docs/concepts/architecture/controller/"
+   },
+   {
+    "title": "kind quick start",
+    "url": "https://kind.sigs.k8s.io/docs/user/quick-start/"
+   },
+   {
+    "title": "Kubernetes v1.37 release",
+    "url": "https://kubernetes.io/blog/2026/08/26/kubernetes-v1-37-release/"
+   }
+  ]
+ },
+ {
+  "id": "d31",
+  "title": "Pods, kubectl and YAML",
+  "minutes": 50,
+  "goal": "By the end you can read and generate a Pod manifest, run your own image in a Pod on kind, explain its phase and restarts, and use the everyday kubectl commands to inspect, reach and remove it.",
+  "guess": {
+   "q": "A Pod's STATUS column shows `CrashLoopBackOff`. What is the Pod's phase, the value Kubernetes stores in `status.phase`?",
+   "options": [
+    "CrashLoopBackOff",
+    "Failed",
+    "Running",
+    "Unknown"
+   ],
+   "answer": 2,
+   "why": "`CrashLoopBackOff` is a word kubectl shows for a container that keeps crashing and waits longer between restarts. The phase stays `Running`, because the Pod is on a node and the kubelet keeps restarting its container."
+  },
+  "terms": [
+   {
+    "term": "Pod",
+    "plain": "The smallest unit Kubernetes runs: one or more containers that share one IP address and can share files."
+   },
+   {
+    "term": "Manifest",
+    "plain": "A YAML file that describes an object, with apiVersion, kind, metadata and spec."
+   },
+   {
+    "term": "Init container",
+    "plain": "A container that runs to completion before the app containers in its Pod start."
+   },
+   {
+    "term": "Sidecar container",
+    "plain": "A helper container that starts before the app container and runs beside it for the Pod's whole life."
+   },
+   {
+    "term": "Label",
+    "plain": "A key=value tag on an object, such as app=web, that selectors use to find it."
+   },
+   {
+    "term": "Annotation",
+    "plain": "A key=value note on an object for people and tools; selectors ignore it."
+   },
+   {
+    "term": "Namespace",
+    "plain": "A named group of objects inside a cluster, like a folder; names must be unique inside it."
+   },
+   {
+    "term": "Context",
+    "plain": "A saved cluster, user and default namespace that kubectl sends its commands to."
+   }
+  ],
+  "sections": [
+   {
+    "h": "A manifest, and how to get one without typing it",
+    "body": "Everything in Kubernetes is an object: a Pod, a Service, a Namespace. You describe objects in a manifest, a YAML file with four top-level fields:\n- `apiVersion`: which version of the API defines this kind. A Pod is `v1`, a Deployment is `apps/v1`.\n- `kind`: the type of object, such as `Pod` or `Service`.\n- `metadata`: identity. The `name` and `namespace`, plus `labels` and `annotations`.\n- `spec`: your desired state. Its shape depends on the kind.\n\nYou never write the fifth field, `status`. Kubernetes fills it in. A typo in a field name does not slip through, either. kubectl validates strictly by default, so `imagePullPolicyy` fails with an error that names the unknown field.\n\nNobody types manifests from memory. Three tricks do most of the work:\n1. `--dry-run=client -o yaml` prints the object kubectl would create, without creating it. Redirect it to a file and edit from there.\n2. `kubectl explain pod.spec.restartPolicy` prints the docs for one field, straight from your cluster's API, so it always matches your version. For this field it shows the type (`<string>`), the allowed values `Always`, `Never` and `OnFailure`, and a description. Add `--recursive` to see a whole tree.\n3. `kubectl get pod hello -o yaml` shows a live object in full. It is longer than what you wrote, because the API server fills in defaults and `status`.\n\nYAML has a few traps. Indent with spaces, never tabs. A `- ` starts a list item, and `containers:` is a list even with one container. Some bare words change type: `yes` and `on` can become true, and `8000` is a number. An environment variable value must be a string, so write `\"8000\"` in quotes.\n\nKubernetes 1.37 made KYAML stable for exactly this reason. It is a stricter style of YAML that quotes every string and uses brackets, so indentation cannot break it, and it is still valid YAML. Try `kubectl get pod hello -o kyaml`.",
+    "refs": [
+     {
+      "title": "Objects in Kubernetes",
+      "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/",
+      "kind": "docs"
+     },
+     {
+      "title": "kubectl explain",
+      "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_explain/",
+      "kind": "docs"
+     },
+     {
+      "title": "How to pretty-print Kubernetes YAML as KYAML (Kubernetes blog)",
+      "url": "https://kubernetes.io/blog/2026/08/11/how-to-pretty-print-kubernetes-yaml-as-kyaml/",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "Pods: the smallest thing Kubernetes runs",
+    "body": "Kubernetes never runs a bare container. It runs Pods. A **Pod** is one or more containers that are placed on one node together and share a few things:\n- One IP address and one set of ports. Containers in a Pod reach each other on `localhost`.\n- Volumes, if the Pod defines them. Two containers can read and write the same folder.\n- One life. They start on the same node and are removed together.\n\nMost Pods hold exactly one container. Think of the Pod as a thin wrapper that gives your container an address and a place in the cluster. Inside the Pod, the host name is the Pod's name. That is why the `host` field in hello-devops' JSON will show the Pod name.\n\nPods are disposable. If a node dies, its Pods die with it, and nothing brings a bare Pod back. Delete a Pod and it is gone. A new Pod made from the same YAML is a different Pod, with a new IP address.\n\nSo you rarely create Pods yourself. You create a controller, usually a Deployment (Day 32), and it creates and replaces Pods for you. Today you make bare Pods anyway, because that is the clearest way to see what a Pod is.",
+    "refs": [
+     {
+      "title": "Pods",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/",
+      "kind": "docs"
+     },
+     {
+      "title": "Complete Kubernetes course, beginner to pro (DevOps Directive)",
+      "url": "https://www.youtube.com/watch?v=2T86xAtR6Fo",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Phases, container states and restarts",
+    "body": "A Pod's life is summed up in `status.phase`. There are only five phases:\n- `Pending`: accepted, but not running yet. It may be waiting for a node or pulling an image.\n- `Running`: on a node, containers created, at least one running or restarting.\n- `Succeeded`: all containers exited with code 0 and will not restart.\n- `Failed`: all containers have stopped, and at least one failed.\n- `Unknown`: the node stopped reporting, so nobody knows.\n\nA normal start shows up in STATUS as `Pending` (no node yet), then `ContainerCreating` (node chosen, image being pulled, phase still `Pending`), then `Running`.\n\nEach container also has a state of its own: `Waiting`, `Running` or `Terminated`, with a reason such as `ImagePullBackOff` or `Completed`. The STATUS column of `kubectl get pods` squeezes all this into one word. `CrashLoopBackOff` and `Terminating` show up there, but they are not phases. Most people mix these up at first, so when STATUS looks odd, read `kubectl describe pod`.\n\nWhat happens when a container exits depends on the Pod's `restartPolicy`:\n- `Always` (the default): restart it, whatever the exit code. Right for servers.\n- `OnFailure`: restart it only after a non-zero exit code. Right for batch work.\n- `Never`: leave it stopped.\n\nThe kubelet restarts the container inside the same Pod, on the same node. It waits longer each time: 10 seconds, then 20, then 40, up to five minutes. That growing wait is the back-off in `CrashLoopBackOff`. If the container then runs for ten minutes without trouble, the wait resets.",
+    "refs": [
+     {
+      "title": "Pod lifecycle",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Init containers and sidecars",
+    "body": "Sometimes your container needs a helper. Kubernetes has two kinds of extra containers for that.\n\nInit containers run first, one at a time, in order. Each must exit with code 0 before the next one starts. Only when all of them have finished do the app containers start. Use them for setup:\n- Wait until a database answers.\n- Download or render a config file into a shared volume.\n- Fix file permissions on a volume.\n\nA sidecar is a helper that runs beside your app for the Pod's whole life. Typical sidecars ship logs, add TLS in front of the app, or refresh certificates. Native sidecars have been stable since Kubernetes 1.33. You declare one as an init container with `restartPolicy: Always`, and Kubernetes then:\n1. Starts it in init order, before the app containers.\n2. Moves on as soon as it is running, without waiting for it to exit.\n3. Restarts it if it crashes.\n4. Stops it only after the app containers have stopped.\n\nThat order fixes two old problems. A log shipper that started late missed the first lines, and one that stopped early lost the last ones. The READY column of kubectl counts sidecars too, so a Pod with one sidecar and one app shows `2/2`.\n\nPut containers in one Pod only when they must share a node, an IP address or files. An app and its database belong in separate Pods, so you can scale and replace each one on its own.",
+    "refs": [
+     {
+      "title": "Init containers",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/init-containers/",
+      "kind": "docs"
+     },
+     {
+      "title": "Sidecar containers",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/",
+      "kind": "docs"
+     },
+     {
+      "title": "Multi-container Pods: an overview (Kubernetes blog)",
+      "url": "https://kubernetes.io/blog/2025/04/22/multi-container-pods-overview/",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "Labels, annotations and selectors",
+    "body": "Labels are how Kubernetes objects find each other. A label is a key=value pair in `metadata.labels`, such as `app: hello-devops` or `tier: frontend`. A selector is a query over labels. Deployments find their Pods with selectors, and so do Services and NetworkPolicies (Day 33).\n\nYou use selectors with kubectl too:\n- `kubectl get pods -l app=web` matches one label exactly.\n- `kubectl get pods -l 'app=web,tier!=db'` combines rules, and all must hold.\n- `kubectl get pods -l 'env in (dev,test)'` matches a set of values.\n- `kubectl get pods --show-labels` prints every label, and `-L app` adds one label as a column.\n\nAnnotations look the same but have a different job. They hold notes for people and tools, and selectors ignore them. You will meet these soon:\n- `kubernetes.io/change-cause`, the reason shown in a Deployment's rollout history (Day 32).\n- `kubectl.kubernetes.io/last-applied-configuration`, which `kubectl apply` writes to remember what you applied.\n- Argo CD's tracking annotation, which marks the objects it manages (Day 39).\n\nA simple rule: if you will ever select by it, make it a label. If it is long, or only a tool reads it, make it an annotation. Kubernetes also recommends a shared set of labels, such as `app.kubernetes.io/name`, that many tools understand.",
+    "refs": [
+     {
+      "title": "Labels and selectors",
+      "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/",
+      "kind": "docs"
+     },
+     {
+      "title": "Annotations",
+      "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/",
+      "kind": "docs"
+     },
+     {
+      "title": "Recommended labels",
+      "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Namespaces, kubeconfig and contexts",
+    "body": "A namespace is a named group of objects inside one cluster. Names must be unique inside a namespace, not across the cluster. A new cluster starts with four:\n- `default`: where objects go when you name no namespace.\n- `kube-system`: the cluster's own parts, such as CoreDNS.\n- `kube-public` and `kube-node-lease`: used by the system. Leave them alone.\n\nThink of namespaces as folders, not walls. A Pod in one namespace can still reach a Pod in another over the network, and blocking that takes a NetworkPolicy (Day 33). Teams attach access rules and quotas to namespaces. Deleting a namespace deletes everything in it, which makes cleanup easy and mistakes expensive.\n\nWhich cluster does kubectl talk to? It reads a kubeconfig file: `~/.kube/config` by default, or the files listed in the `KUBECONFIG` variable. The file has three lists:\n- clusters: each API server's address and certificate.\n- users: your credentials.\n- contexts: a cluster plus a user plus a default namespace, under one name.\n\nOne context is current, and every kubectl command goes there. `kubectl config get-contexts` lists them all and marks the current one with a star. Check it before anything risky with `kubectl config current-context`. This matters more than it sounds. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters. To stop typing `-n hello` on every command, set a default namespace with `kubectl config set-context --current --namespace=hello`.",
+    "refs": [
+     {
+      "title": "Namespaces",
+      "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/",
+      "kind": "docs"
+     },
+     {
+      "title": "Organizing cluster access using kubeconfig files",
+      "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Everyday kubectl, and getting your image into kind",
+    "body": "Most days you need about a dozen kubectl commands. Here they are, grouped by the question they answer:\n- What is there? `kubectl get pods`. Add `-o wide` for IPs and nodes, `-w` to keep watching, `-l` to filter by label, `-A` for all namespaces.\n- What happened? `kubectl describe pod hello` shows details, with recent Events at the bottom. Read the Events first.\n- What did it print? `kubectl logs hello`. Add `-f` to follow, `-c` to pick a container, and `--previous` for the last crashed run.\n- Let me in: `kubectl exec -it hello -- sh` opens a shell inside the container, if the image has one.\n- Let me reach it: `kubectl port-forward pod/hello 8000:8000` tunnels a port on your Mac to the Pod until you press Ctrl+C.\n- Remove it: `kubectl delete pod hello`, or `kubectl delete -f pod.yaml`.\n- Just one field, please: `-o jsonpath='{.status.phase}'` prints a single value, which is handy in scripts.\n\n`kubectl create -f` and `kubectl apply -f` both make objects from a file, but they think differently. The `create` command is a one-time order, and it fails if the object already exists. The `apply` command is declarative: it creates the object or updates it to match the file, so you can run it again and again. Use `apply` for anything you keep in git.\n\nYour own image needs one more step. Each kind node runs its own containerd with its own image store, separate from Docker on your Mac. So `docker build` alone is not enough. Copy the image in with `kind load docker-image hello-devops:1.0.0 --name devops`.\n\nGive it a real tag. With `:latest` or no tag, Kubernetes sets `imagePullPolicy: Always`, tries Docker Hub, and the Pod ends in `ImagePullBackOff`.",
+    "refs": [
+     {
+      "title": "kubectl quick reference",
+      "url": "https://kubernetes.io/docs/reference/kubectl/quick-reference/",
+      "kind": "docs"
+     },
+     {
+      "title": "Images and imagePullPolicy",
+      "url": "https://kubernetes.io/docs/concepts/containers/images/",
+      "kind": "docs"
+     },
+     {
+      "title": "kind quick start: loading an image",
+      "url": "https://kind.sigs.k8s.io/docs/user/quick-start/",
+      "kind": "docs"
+     }
+    ]
+   }
+  ],
+  "analogy": "A Pod is like a shared hotel room. Everyone in it has the same room number (one IP address), can use the same desk (shared volumes) and checks in and out together. The init container is the cleaner who must finish before guests enter, and the sidecar is the assistant who arrives first and leaves last. The picture breaks on moving: a hotel guest can change rooms, but a Pod never moves. Kubernetes throws it away and builds a new one with a new number.",
+  "diagram": "<svg viewBox=\"0 0 560 232\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A Pod starts its init container, then its sidecar, then the app container; all share one IP and volumes\"><text class=\"ts\" x=\"86\" y=\"28\" font-size=\"11\" text-anchor=\"middle\">runs once, exits 0</text><text class=\"ts\" x=\"262\" y=\"28\" font-size=\"11\" text-anchor=\"middle\">starts, keeps running</text><text class=\"ts\" x=\"438\" y=\"28\" font-size=\"11\" text-anchor=\"middle\">your app</text><rect class=\"bxp\" x=\"16\" y=\"40\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"86\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">init container</text><rect class=\"bxo\" x=\"192\" y=\"40\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"262\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">sidecar</text><rect class=\"bxt\" x=\"368\" y=\"40\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"438\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">app container</text><line class=\"ln\" x1=\"156\" y1=\"62\" x2=\"190\" y2=\"62\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"332\" y1=\"62\" x2=\"366\" y2=\"62\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"86\" y1=\"84\" x2=\"86\" y2=\"138\"/><line class=\"lnd\" x1=\"262\" y1=\"84\" x2=\"262\" y2=\"138\"/><line class=\"lnd\" x1=\"438\" y1=\"84\" x2=\"438\" y2=\"138\"/><rect class=\"bxg\" x=\"16\" y=\"140\" width=\"492\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"262\" y=\"167\" font-size=\"13\" text-anchor=\"middle\">Pod: one IP, shared volumes</text><text class=\"ts\" x=\"262\" y=\"210\" font-size=\"11\" text-anchor=\"middle\">The kubelet starts them left to right on one node</text></svg>",
+  "diagram_caption": "Init containers finish first, the sidecar starts next and keeps running, then the app starts. All of them share the Pod's IP and volumes.",
+  "worked": {
+   "title": "Watch an init container and a sidecar start",
+   "steps": [
+    {
+     "say": "Make a scratch namespace for experiments, so cleanup is one command later. Apply the example Pod from the lab repo. It has an init container that writes a web page, a sidecar that tails the access log, and nginx.",
+     "code": "$ kubectl create namespace scratch\nnamespace/scratch created\n$ kubectl apply -n scratch -f k8s/examples/pod-sidecar.yaml\npod/web created",
+     "lang": "console"
+    },
+    {
+     "say": "Watch the Pod start. `Init:0/2` means the first of two init containers is running. When it finishes, the sidecar starts and counts as ready (`1/2`) while nginx is still being created. Then nginx starts and READY becomes `2/2`, because READY counts the sidecar.",
+     "code": "$ kubectl get pod web -n scratch -w\nNAME   READY   STATUS            RESTARTS   AGE\nweb    0/2     Init:0/2          0          1s\nweb    0/2     Init:1/2          0          4s\nweb    1/2     PodInitializing   0          5s\nweb    2/2     Running           0          11s",
+     "lang": "console"
+    },
+    {
+     "say": "Ask nginx for its page from inside the Pod. Because the Pod has three containers, say which one with `-c`. The page is the file the init container wrote into the shared volume before nginx existed.",
+     "code": "$ kubectl exec -n scratch web -c nginx -- curl -s localhost\nhello from the init container",
+     "lang": "console"
+    },
+    {
+     "say": "Next, request a page that does not exist and read the sidecar's logs. Both requests went into `access.log` in the shared volume, and the sidecar printed them.",
+     "code": "$ kubectl exec -n scratch web -c nginx -- curl -s -o /dev/null localhost/nope\n$ kubectl logs -n scratch web -c log-tailer\n127.0.0.1 - - [30/Oct/2026:09:14:02 +0000] \"GET / HTTP/1.1\" 200 30 \"-\" \"curl/8.14.1\" \"-\"\n127.0.0.1 - - [30/Oct/2026:09:14:20 +0000] \"GET /nope HTTP/1.1\" 404 153 \"-\" \"curl/8.14.1\" \"-\"",
+     "lang": "console"
+    },
+    {
+     "say": "Look at how kubectl sees the Pod as data. The labels and the annotation from the manifest are there, plus everything Kubernetes added. KYAML quotes every string, so a value like `on` can never turn into true by accident.",
+     "code": "$ kubectl get pod web -n scratch --show-labels\nNAME   READY   STATUS    RESTARTS   AGE   LABELS\nweb    2/2     Running   0          3m    app=web\n$ kubectl get pod web -n scratch -o kyaml | head -6\n{\n  apiVersion: \"v1\",\n  kind: \"Pod\",\n  metadata: {\n    annotations: {\n      example.com/owner: \"team-a\",",
+     "lang": "console"
+    },
+    {
+     "say": "Clean up. Deleting the file's objects removes the Pod. Keep the `scratch` namespace; you will use it again.",
+     "code": "$ kubectl delete -n scratch -f k8s/examples/pod-sidecar.yaml\npod \"web\" deleted from scratch namespace",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "k8s/examples/pod-sidecar.yaml",
+    "src": "# Day 31: one Pod with an init container, a sidecar and the main container.\n# Try it in a scratch namespace:\n#   kubectl create namespace scratch\n#   kubectl apply -n scratch -f k8s/examples/pod-sidecar.yaml\n#   kubectl get pod web -n scratch -w\napiVersion: v1\nkind: Pod\nmetadata:\n  name: web\n  labels:\n    app: web # identifying: selectors find the Pod by this\n  annotations:\n    example.com/owner: \"team-a\" # a note for people and tools; selectors ignore it\nspec:\n  initContainers:\n    # 1. A normal init container: runs once and must exit 0 before the next one starts.\n    - name: write-page\n      image: busybox:1.37\n      command: [\"sh\", \"-c\", \"echo 'hello from the init container' > /work/index.html\"]\n      volumeMounts:\n        - name: work\n          mountPath: /work\n    # 2. A sidecar: an init container with restartPolicy Always.\n    #    It starts before nginx, keeps running, and stops after nginx stops.\n    - name: log-tailer\n      image: busybox:1.37\n      restartPolicy: Always\n      command: [\"sh\", \"-c\", \"touch /logs/access.log && tail -F /logs/access.log\"]\n      volumeMounts:\n        - name: logs\n          mountPath: /logs\n  containers:\n    # 3. The main container: serves the page that the init container wrote.\n    - name: nginx\n      image: nginx:1.28\n      ports:\n        - containerPort: 80\n      volumeMounts:\n        - name: work\n          mountPath: /usr/share/nginx/html\n        - name: logs\n          mountPath: /var/log/nginx # nginx writes access.log here, and the sidecar reads it\n  volumes:\n    - name: work\n      emptyDir: {} # an empty folder that lives as long as the Pod\n    - name: logs\n      emptyDir: {}",
+    "run": "kubectl apply -n scratch -f k8s/examples/pod-sidecar.yaml"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "kind load docker-image hello-devops:1.0.0 --name devops",
+    "what": "Copy an image from Docker on your Mac into every node of the `devops` cluster."
+   },
+   {
+    "cmd": "kubectl run hello --image=hello-devops:1.0.0 --port=8000 --dry-run=client -o yaml > pod.yaml",
+    "what": "Write a Pod manifest to a file without creating anything."
+   },
+   {
+    "cmd": "kubectl explain pod.spec.containers",
+    "what": "Show the built-in docs for a field, straight from the cluster's API."
+   },
+   {
+    "cmd": "kubectl apply -f pod.yaml",
+    "what": "Create the objects in a file, or update them to match it."
+   },
+   {
+    "cmd": "kubectl get pods -o wide",
+    "what": "List Pods with their IP address and the node each one runs on."
+   },
+   {
+    "cmd": "kubectl get pods -A",
+    "what": "List Pods in every namespace."
+   },
+   {
+    "cmd": "kubectl get pods -w",
+    "what": "Keep watching Pods and print a new line whenever one changes."
+   },
+   {
+    "cmd": "kubectl get pods -l app=web --show-labels",
+    "what": "List only Pods with the label app=web, and show all their labels."
+   },
+   {
+    "cmd": "kubectl describe pod hello",
+    "what": "Show a Pod's details and recent events. Read the Events at the bottom first."
+   },
+   {
+    "cmd": "kubectl logs hello -f",
+    "what": "Follow what the Pod's container prints. Add `-c NAME` in a Pod with several containers."
+   },
+   {
+    "cmd": "kubectl logs crashy --previous",
+    "what": "Show the output of the last run that crashed, not the current one."
+   },
+   {
+    "cmd": "kubectl exec -it hello -- sh",
+    "what": "Open a shell inside the Pod's container."
+   },
+   {
+    "cmd": "kubectl port-forward pod/hello 8000:8000",
+    "what": "Forward localhost:8000 on your Mac to port 8000 in the Pod until you press Ctrl+C."
+   },
+   {
+    "cmd": "kubectl get pod hello -o kyaml",
+    "what": "Print the live object as KYAML, a stricter style of YAML."
+   },
+   {
+    "cmd": "kubectl config get-contexts",
+    "what": "List your contexts; the current one has a star."
+   },
+   {
+    "cmd": "kubectl config set-context --current --namespace=hello",
+    "what": "Make `hello` the default namespace for the current context."
+   }
+  ],
+  "mistake": "Running kubectl against the wrong cluster. A new laptop often has a `docker-desktop` context too, and at work you will have real clusters in the same kubeconfig. One `kubectl delete` can then land somewhere you did not mean. Run `kubectl config current-context` before anything that changes or deletes, and give production contexts names that stand out.",
+  "real_world": "At PayLite, the checkout Pod runs the app plus a native sidecar that ships logs to the central log system. An init container waits for the database during start-up. Engineers rarely write YAML from scratch. They copy a template from the team's repo, check unknown fields with `kubectl explain`, and diff it against `kubectl get -o yaml` when something behaves differently than expected.",
+  "task": {
+   "title": "Run hello-devops in a Pod, then break one on purpose",
+   "steps": [
+    "In `~/code/hello-devops`, build the image with its version baked in: `docker build --build-arg APP_VERSION=1.0.0 -t hello-devops:1.0.0 .` Then load it into the `devops` cluster.",
+    "Generate `pod.yaml` for a Pod named `hello` with `--dry-run=client -o yaml`. Change its label to `app: hello`, add `imagePullPolicy: IfNotPresent`, delete `resources: {}` and `status: {}`, and apply it.",
+    "Check the Pod with `-o wide`. Which worker did the scheduler pick, and what IP did the Pod get?",
+    "Port-forward port 8000 to the Pod and `curl localhost:8000` from a second terminal. Follow the logs in a third terminal and watch each request appear.",
+    "Open a shell in the Pod and run `hostname` and `printenv APP_VERSION`. Why does the `host` field in the JSON show `hello`?",
+    "Start a Pod that crashes: `kubectl run crashy --image=busybox:1.37 -- sh -c \"echo starting; sleep 3; exit 1\"`. Watch it for two minutes with `-w`. How do STATUS and RESTARTS change?",
+    "Read the crashed run's output with `logs --previous`, and print the Pod's phase with a jsonpath query.",
+    "Repeat with `--restart=Never` and the name `once`. What are its STATUS and phase now, and why?",
+    "Delete all three Pods. Keep `pod.yaml` out of git (it was practice); the cluster stays for tomorrow."
+   ],
+   "hints": [
+    "`kubectl get pod crashy -o jsonpath='{.status.phase}'` prints only the phase.",
+    "If `kind load` fails with `content digest ... not found`, Docker is using its containerd image store. Save the image with `docker image save --platform linux/arm64 -o hello.tar hello-devops:1.0.0`, then run `kind load image-archive hello.tar --name devops`.",
+    "Pod stuck in `ErrImagePull`? Check the tag, `imagePullPolicy`, and that you loaded the image into the `devops` cluster, not another one."
+   ],
+   "done_when": "With port-forward running, `curl localhost:8000` returns JSON with `host` `hello` and `version` `1.0.0`, and you can name the phase of `crashy` (Running) and of `once` (Failed)."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences what a Pod is and why you rarely create one by hand. Mention the shared IP address, init containers or sidecars, and what happens when a node dies.",
+   "answer": "A Pod is the smallest thing Kubernetes runs: one or more containers on one node that share an IP address and can share volumes. Most Pods have one container, and helpers come as init containers that finish before the app starts or sidecars that run beside it. Pods are disposable: if a node dies, its bare Pods are gone, and nothing recreates them. That is why you normally let a controller such as a Deployment create and replace Pods for you."
+  },
+  "recap": [
+   "A manifest has apiVersion, kind, metadata and spec; Kubernetes adds status.",
+   "Generate YAML with `--dry-run=client -o yaml` and look up fields with `kubectl explain`.",
+   "A Pod is one or more containers with one IP address; bare Pods are not replaced when they die.",
+   "Phase is one of five values; `CrashLoopBackOff` is a container state shown in STATUS, not a phase.",
+   "Init containers run first and must succeed; sidecars are init containers with `restartPolicy: Always`.",
+   "Labels are for selecting, annotations are notes, and the current context decides which cluster kubectl changes."
+  ],
+  "check": [
+   {
+    "q": "A Pod has two init containers and one app container. The second init container exits with code 1. What do you expect?",
+    "options": [
+     "The app container starts anyway, and the error shows in its logs",
+     "The first init container runs again, then the app starts",
+     "The init container is retried, and the app never starts until it succeeds",
+     "Kubernetes deletes the Pod and schedules a new one"
+    ],
+    "answer": 2,
+    "why": "App containers start only after every init container exits with 0; with the default restart policy the kubelet keeps retrying the failed init container."
+   },
+   {
+    "q": "You want a log shipper that starts before your app and is still running when the app writes its last lines on shutdown. How do you declare it?",
+    "options": [
+     "As a second entry under `containers`",
+     "As an init container with `restartPolicy: Always`",
+     "As a separate Pod with the same labels",
+     "As an init container with `restartPolicy: OnFailure`"
+    ],
+    "answer": 1,
+    "why": "A native sidecar is an init container with `restartPolicy: Always`, which Kubernetes starts before and stops after the app containers."
+   },
+   {
+    "q": "`kubectl get pods` shows nothing, but a teammate swears their Pod is running. They use namespace `payments`. What do you run first?",
+    "options": [
+     "`kubectl describe nodes`",
+     "`kubectl logs payments`",
+     "`kind load docker-image payments`",
+     "`kubectl get pods -n payments`"
+    ],
+    "answer": 3,
+    "why": "Without `-n`, kubectl only looks in the current context's default namespace, so you must ask for the right namespace (or use `-A`)."
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is a Pod, and why does Kubernetes not just run containers?",
+    "a": "A Pod is a group of one or more containers that are scheduled together on one node and share a network namespace and volumes. It gives tightly coupled helpers, such as a log shipper or a proxy, a way to run next to the app with the same IP address and shared files. It also gives Kubernetes one unit to schedule, track and replace. In practice most Pods have one container and are managed by a controller such as a Deployment."
+   },
+   {
+    "q": "What is the difference between an init container and a sidecar container?",
+    "a": "An init container runs to completion before the app containers start, in order, and must exit with code 0; it is for setup work. A sidecar runs for the Pod's whole life beside the app. Native sidecars have been stable since Kubernetes 1.33. You declare them as init containers with `restartPolicy: Always`. They start before the app, are restarted if they crash, and stop after the app. That ordering avoids losing logs or proxy traffic at start-up and shutdown."
+   },
+   {
+    "q": "What is the difference between kubectl create and kubectl apply?",
+    "a": "The `kubectl create` command is imperative: it creates the object and fails if it already exists. The `kubectl apply` command is declarative. It creates the object if needed, or updates it to match the file. It also records what you applied in an annotation, so it can work out the changes next time. You can run apply repeatedly with the same result, which is why files in git are applied, not created. For large teams and GitOps tools, server-side apply does the same tracking on the API server."
+   }
+  ],
+  "deeper": {
+   "minutes": 12,
+   "body": "How do two containers in a Pod share one IP address? Linux namespaces, the same feature that isolates Docker containers.\n\nWhen the kubelet starts a Pod, containerd first creates a tiny sandbox container, often called the pause container. Its only job is to hold the Pod's network namespace: one network interface, one IP address, one set of ports. Every container in the Pod then joins that namespace. So they share `localhost`, and two of them cannot both listen on port 80. Each container still has its own file system and its own processes. Files are shared only through volumes.\n\nYou can see the sandboxes on a kind node:\n- `docker exec devops-worker crictl pods` lists Pod sandboxes.\n- `docker exec devops-worker crictl ps` lists the containers inside them.\n\nRestarts happen inside this sandbox. When a container crashes, the kubelet starts a new container in the same Pod, with the same IP address and the same volumes. An `emptyDir` volume survives a container restart, but not the Pod. That is why `kubectl logs --previous` can still find the last run: the old container's log file stays on the node until the next restart.\n\nThe STATUS column is built from several fields, in roughly this order of priority:\n1. Is the Pod being deleted? Then `Terminating`.\n2. Is an init container failing or still running? Then `Init:Error`, `Init:CrashLoopBackOff` or `Init:1/2`.\n3. Is an app container waiting? Then its reason, such as `ImagePullBackOff` or `CrashLoopBackOff`.\n4. Otherwise the phase, such as `Running` or `Completed`.\n\nSo STATUS is a summary for humans. Scripts and alerts should read the real fields: `status.phase`, `status.conditions` and `status.containerStatuses`. The `Ready` condition is what Services use to decide whether a Pod gets traffic (Day 33).\n\nOne more current detail. Kubernetes 1.35 added finer restart rules as a beta feature. A single container can have its own `restartPolicy`, plus rules such as \"restart only if the exit code is 42\". You will not need it for hello-devops. It helps batch jobs where some exit codes mean \"try again\" and others mean \"give up\".\n\nTo go further, read the [Pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) page. It is long, but it defines every word you see in the STATUS column."
+  },
+  "sources": [
+   {
+    "title": "Pods",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/"
+   },
+   {
+    "title": "Pod lifecycle",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/"
+   },
+   {
+    "title": "Sidecar containers",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/"
+   },
+   {
+    "title": "kubectl quick reference",
+    "url": "https://kubernetes.io/docs/reference/kubectl/quick-reference/"
+   }
+  ]
+ },
+ {
+  "id": "d32",
+  "title": "Deployments and rollouts",
+  "minutes": 50,
+  "goal": "By the end you can run hello-devops as a Deployment, explain how its ReplicaSets heal and scale it, roll a new version out step by step, and roll back when a version is bad.",
+  "guess": {
+   "q": "A Deployment runs 4 Pods of version 1 with the default settings. You switch the image to version 2, but version 2 can never start. What do users notice?",
+   "options": [
+    "Downtime: all old Pods stop before any new one starts",
+    "Errors: Kubernetes sends traffic to the broken Pods",
+    "Nothing: Kubernetes rolls back to version 1 on its own",
+    "Little: most old Pods keep serving, and the rollout stalls"
+   ],
+   "answer": 3,
+   "why": "A rolling update removes old Pods only as far as maxUnavailable allows, and broken Pods never become ready, so they get no traffic. Kubernetes does not roll back by itself; the rollout waits until you fix it or run `kubectl rollout undo`."
+  },
+  "terms": [
+   {
+    "term": "Deployment",
+    "plain": "An object that keeps a set number of identical Pods running and replaces them step by step when you change them."
+   },
+   {
+    "term": "ReplicaSet",
+    "plain": "The object a Deployment creates for each version of its Pod template, to keep exactly N of those Pods running."
+   },
+   {
+    "term": "Replicas",
+    "plain": "The number of identical Pods you want, set in `spec.replicas`."
+   },
+   {
+    "term": "Rollout",
+    "plain": "The process of moving a Deployment's Pods from one version of the Pod template to the next."
+   },
+   {
+    "term": "Rolling update",
+    "plain": "A rollout that replaces old Pods with new ones a few at a time, so the app stays up."
+   },
+   {
+    "term": "maxSurge",
+    "plain": "How many Pods above the desired count a rolling update may create at once."
+   },
+   {
+    "term": "maxUnavailable",
+    "plain": "How many Pods below the desired count may be unavailable during a rolling update."
+   },
+   {
+    "term": "Revision",
+    "plain": "A numbered version of a Deployment's Pod template that you can roll back to."
+   }
+  ],
+  "sections": [
+   {
+    "h": "From a bare Pod to a Deployment",
+    "body": "Yesterday's Pod had no guardian. Delete it and it was gone, and a dead node would take it along. Real apps run under a **Deployment** instead. You give it a Pod template (image, ports, settings) and a number of copies. The Deployment does not create Pods itself. It works through a chain:\n- Deployment: owns the update strategy and the list of past versions.\n- ReplicaSet: keeps exactly N Pods from one template running.\n- Pod: runs your container.\n\nEach object points to its owner in `metadata.ownerReferences`. Delete the Deployment and the garbage collector removes its ReplicaSets and Pods too. You can follow the chain yourself: `kubectl get pod NAME -o jsonpath='{.metadata.ownerReferences[0].name}'` prints the ReplicaSet that owns a Pod.\n\nThe names tell the story. A Pod called `hello-devops-698679bfb-7l7h8` belongs to the ReplicaSet `hello-devops-698679bfb`, which belongs to the Deployment `hello-devops`. The middle part is a hash of the Pod template. Kubernetes also stores it as a label, `pod-template-hash`, on the ReplicaSet and its Pods. That label keeps the Pods of two versions apart, so their ReplicaSets never fight over each other's Pods.\n\nYou will rarely touch ReplicaSets yourself. Think of them as the Deployment's shift supervisors: one per version of the template.",
+    "refs": [
+     {
+      "title": "Deployments",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes course, full beginners tutorial (freeCodeCamp)",
+      "url": "https://www.youtube.com/watch?v=d6WC5n9G_sM",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Self-healing and scaling are one loop",
+    "body": "A ReplicaSet runs the control loop from Day 30 with one number in it. It counts the Pods that match its selector and compares the count with `replicas`. Too few, and it creates Pods. Too many, and it deletes some. Everything else follows from that:\n- Delete a Pod by hand, and a new one appears within seconds, with a new name and a new IP address.\n- Change `replicas` from 3 to 5, and two Pods appear. That is all scaling is.\n- A container crashes, and the kubelet restarts it in place. The Pod still exists, so the ReplicaSet does nothing.\n\nA dead node takes longer than most people expect. The node stops reporting, and Kubernetes marks it not ready. By default, its Pods stay bound to it for five more minutes, in case the node comes back. Only then are they evicted, and the ReplicaSet creates replacements on healthy nodes. So spread replicas over several nodes, and do not expect instant failover.\n\nThe count uses labels, not names. Remove the `app` label from one running Pod, and the ReplicaSet no longer counts it. It creates a replacement, while the relabelled Pod keeps running with no owner. Handy for pulling a Pod aside to debug it, and confusing if done by accident. For the same reason, a Deployment's `selector` cannot be changed after creation.",
+    "refs": [
+     {
+      "title": "ReplicaSet",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/",
+      "kind": "docs"
+     },
+     {
+      "title": "Taints and tolerations (the 5-minute default)",
+      "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "What starts a rollout",
+    "body": "A rollout happens if, and only if, you change the Pod template: anything under `spec.template`. These all start one:\n- A new image tag, the everyday case.\n- A changed environment variable, port, probe or resource setting.\n- A new label or annotation inside the template.\n\nThese do not:\n- Changing `replicas`. Scaling is not a new version.\n- Changing labels or annotations on the Deployment itself, outside the template.\n- Changing a ConfigMap that the Pods read. The template did not change, so nothing rolls (Day 34 shows the fix).\n\nFor each new template, the Deployment creates a new ReplicaSet and moves Pods from the old one to the new one. The old ReplicaSet is not deleted. It stays, scaled to 0, as a record of that version. That record is what makes rollback fast. By default the Deployment keeps the last 10 old ReplicaSets, set by `revisionHistoryLimit`.\n\nTo know before you apply whether a change will roll, run `kubectl diff -k k8s`. If the diff touches lines under `template:`, expect new Pods.\n\nEach ReplicaSet gets a revision number in an annotation. `kubectl rollout history` lists them. Only template changes create revisions, so the history stays a clean list of versions you actually shipped.",
+    "refs": [
+     {
+      "title": "Updating a Deployment",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Rolling updates, step by step",
+    "body": "The default strategy is `RollingUpdate`. Two settings control its pace:\n- `maxSurge`: how many extra Pods may exist above `replicas` during the update.\n- `maxUnavailable`: how many Pods may be missing below `replicas`.\n\nBoth default to 25%. Percentages are turned into whole Pods: surge rounds up, unavailable rounds down. With 4 replicas, that is 1 extra and 1 missing. So during the update you have at least 3 available Pods and at most 5 Pods in total. Both cannot be 0, or nothing could ever move.\n\nThe lab picks `maxSurge: 1` and `maxUnavailable: 0` for its 3 replicas. In words: add one new Pod, wait until it is ready, then remove one old Pod. Here is the whole update:\n1. The new ReplicaSet scales to 1. There are 4 Pods: 3 old, 1 new.\n2. The new Pod becomes ready. The old ReplicaSet scales to 2.\n3. The new ReplicaSet scales to 2, and waits for that Pod to be ready.\n4. The old ReplicaSet scales to 1, the new one to 3, and finally the old one to 0.\n\nYou never have fewer than 3 ready Pods. The price is speed and room: one extra Pod at a time needs spare CPU and memory on some node. With a big Deployment, a larger surge such as 25% finishes faster.\n\nDuring the update, both versions serve traffic at once. A Service (Day 33) sends requests to every ready Pod with the right label, old or new. So version 2 must work alongside version 1, for example with the same database schema.",
+    "refs": [
+     {
+      "title": "Performing a rolling update",
+      "url": "https://kubernetes.io/docs/tasks/run-application/update-deployment-rolling/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Readiness decides when each step happens",
+    "body": "\"Wait until the new Pod is ready\" carries the whole safety of a rolling update. A Pod is ready when all its containers are running and pass their readiness checks. Day 35 adds a readiness probe to hello-devops, a URL that the kubelet calls every few seconds.\n\nWithout a readiness probe, a Pod counts as ready as soon as its container starts. The app may still be loading, or broken in a way that only shows on the first request. The Deployment cannot tell, and it moves on. This is the main reason to add readiness probes before you rely on rolling updates.\n\nWhen new Pods never become ready, because of a bad image or a crash at start, the rollout stalls:\n- The old Pods keep serving. With `maxUnavailable: 0`, none of them is removed.\n- After `progressDeadlineSeconds` (600 seconds by default), the Deployment reports the condition `ProgressDeadlineExceeded`.\n- `kubectl rollout status` then exits with an error, so a CI job can notice and act.\n- Kubernetes does not roll back on its own. You fix the image or run `kubectl rollout undo`.\n\nFor hello-devops, a version that crashes on start never becomes ready, and you get the stuck rollout from the worked example. A version that starts but answers every request with an error is worse. Without a probe it looks ready, and the rollout completes.\n\n`minReadySeconds` adds one more guard. A new Pod must stay ready for that many seconds before it counts as available. That catches apps that start fine and crash a few seconds later.",
+    "refs": [
+     {
+      "title": "Deployment status and failed rollouts",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "History, undo, and set image versus editing YAML",
+    "body": "Four `kubectl rollout` subcommands cover most days:\n- `rollout status`: follow the rollout until it finishes or fails.\n- `rollout history`: list the revisions. Add `--revision=2` to see one template in full.\n- `rollout undo`: go back to the previous revision, or to any kept revision with `--to-revision=N`.\n- `rollout pause` and `rollout resume`: batch several changes into one rollout.\n\nThe CHANGE-CAUSE column in the history is empty unless you set the annotation `kubernetes.io/change-cause` on the Deployment, for example with `kubectl annotate`. Teams that use it write the ticket or the reason.\n\nAn undo is itself a rollout. Kubernetes copies the old template back, and the old revision moves to a new number. Revision 2 disappears from the list and comes back as revision 4.\n\nThere are two ways to change the image, and they look the same for a minute:\n- `kubectl set image deployment/hello-devops web=hello-devops:1.1.0` changes the live object. Quick, and good for experiments.\n- Edit `image:` in `k8s/deployment.yaml` and apply the file. Slower, but git now records the change, and someone can review it.\n\nMixing them causes drift. The next `kubectl apply` of an old file quietly undoes your `set image`. From Day 39, Argo CD undoes it within minutes. Experiment with `set image`, then make the real change in the file.",
+    "refs": [
+     {
+      "title": "Rolling back a Deployment",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment",
+      "kind": "docs"
+     },
+     {
+      "title": "kubectl rollout",
+      "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Recreate: when two versions must never overlap",
+    "body": "The other strategy is `Recreate`. It stops every old Pod first, and only then starts the new ones. There is always a gap with no Pods at all, so users see downtime.\n\nThat sounds bad, and for most web apps it is. Recreate exists for apps where two versions running side by side would be worse than a short outage:\n- The app holds an exclusive lock, such as a single writer to a file or a queue.\n- Its Pods use a disk that only one Pod can mount at a time (a ReadWriteOnce volume, Day 36).\n- The new version changes the database in a way the old version cannot handle.\n\nFor hello-devops, a rolling update is right. The app is stateless, and Redis holds the shared counter, so any number of versions can run side by side.\n\nRolling update and Recreate are the only two strategies a Deployment has. Canary and blue-green releases need extra tools. A canary shifts traffic to the new version a little at a time, and blue-green flips all traffic at once. Argo Rollouts can do both, and so can traffic rules at a Gateway (Day 36).",
+    "refs": [
+     {
+      "title": "Deployment strategy",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy",
+      "kind": "docs"
+     }
+    ]
+   }
+  ],
+  "analogy": "Think of replacing the staff of a call center during working hours. The supervisor (the Deployment) hires one new operator, waits until they are trained and taking calls, then sends one old operator home, and repeats until the whole team is new. If the new hires keep failing training, the old team keeps working. The picture breaks on memory. A new operator can look up past calls, but a new Pod starts empty. Anything worth keeping must live outside it, the way hello-devops keeps its counter in Redis.",
+  "diagram": "<svg viewBox=\"0 0 560 250\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A Deployment scales a new ReplicaSet up and the old ReplicaSet down, one Pod at a time\"><rect class=\"bxg\" x=\"16\" y=\"103\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"80\" y=\"130\" font-size=\"13\" text-anchor=\"middle\">Deployment</text><text class=\"ts\" x=\"80\" y=\"168\" font-size=\"11\" text-anchor=\"middle\">image: 1.1.0</text><rect class=\"bxp\" x=\"208\" y=\"36\" width=\"144\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"63\" font-size=\"13\" text-anchor=\"middle\">ReplicaSet v1</text><rect class=\"bxt\" x=\"208\" y=\"170\" width=\"144\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"197\" font-size=\"13\" text-anchor=\"middle\">ReplicaSet v2</text><line class=\"ln\" x1=\"144\" y1=\"118\" x2=\"206\" y2=\"64\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"132\" x2=\"206\" y2=\"186\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"280\" y=\"100\" font-size=\"11\" text-anchor=\"middle\">pods: 3, 2, 1, 0</text><text class=\"ts\" x=\"280\" y=\"234\" font-size=\"11\" text-anchor=\"middle\">pods: 0, 1, 2, 3</text><rect class=\"bx\" x=\"408\" y=\"36\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"476\" y=\"63\" font-size=\"13\" text-anchor=\"middle\">old Pods</text><rect class=\"bx\" x=\"408\" y=\"170\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"476\" y=\"197\" font-size=\"13\" text-anchor=\"middle\">new Pods</text><line class=\"lnd\" x1=\"352\" y1=\"58\" x2=\"406\" y2=\"58\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"352\" y1=\"192\" x2=\"406\" y2=\"192\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"476\" y=\"128\" font-size=\"11\" text-anchor=\"middle\">Service sends</text><text class=\"ts\" x=\"476\" y=\"142\" font-size=\"11\" text-anchor=\"middle\">traffic to ready</text><text class=\"ts\" x=\"476\" y=\"156\" font-size=\"11\" text-anchor=\"middle\">Pods of both</text></svg>",
+  "diagram_caption": "During a rollout the Deployment scales the new ReplicaSet up and the old one down. The Service sends traffic to ready Pods of both versions.",
+  "worked": {
+   "title": "Roll out a good version, then a broken one",
+   "steps": [
+    {
+     "say": "In the scratch namespace, create a Deployment of nginx 1.27 with 4 replicas. One ReplicaSet appears, named after the Deployment plus the template hash.",
+     "code": "$ kubectl create deployment web --image=nginx:1.27 --replicas=4 -n scratch\ndeployment.apps/web created\n$ kubectl get rs -n scratch\nNAME             DESIRED   CURRENT   READY   AGE\nweb-6d8c7fb5d9   4         4         4       25s",
+     "lang": "console"
+    },
+    {
+     "say": "Change the image. `kubectl create deployment` named the container after the image, so it is `nginx`. Follow the rollout: with the defaults for 4 replicas (1 extra, 1 missing), two new Pods start at once.",
+     "code": "$ kubectl set image deployment/web nginx=nginx:1.28 -n scratch\ndeployment.apps/web image updated\n$ kubectl rollout status deployment/web -n scratch\nWaiting for deployment \"web\" rollout to finish: 2 out of 4 new replicas have been updated...\nWaiting for deployment \"web\" rollout to finish: 3 out of 4 new replicas have been updated...\nWaiting for deployment \"web\" rollout to finish: 1 old replicas are pending termination...\ndeployment \"web\" successfully rolled out",
+     "lang": "console"
+    },
+    {
+     "say": "Two ReplicaSets now exist. The old one is kept at 0 for rollback. Record why you made the change, then look at the history.",
+     "code": "$ kubectl get rs -n scratch\nNAME             DESIRED   CURRENT   READY   AGE\nweb-6d8c7fb5d9   0         0         0       3m\nweb-7b9f4c8d6c   4         4         4       40s\n$ kubectl annotate deployment/web -n scratch kubernetes.io/change-cause=\"nginx 1.28\"\ndeployment.apps/web annotated\n$ kubectl rollout history deployment/web -n scratch\ndeployment.apps/web\nREVISION  CHANGE-CAUSE\n1         <none>\n2         nginx 1.28",
+     "lang": "console"
+    },
+    {
+     "say": "Now ship a tag that does not exist. The new Pods cannot pull their image. The Deployment removed only one old Pod (maxUnavailable is 1), so three old Pods keep serving.",
+     "code": "$ kubectl set image deployment/web nginx=nginx:1.99-typo -n scratch\ndeployment.apps/web image updated\n$ kubectl annotate deployment/web -n scratch kubernetes.io/change-cause=\"typo on purpose\" --overwrite\ndeployment.apps/web annotated\n$ kubectl get pods -n scratch\nNAME                   READY   STATUS             RESTARTS   AGE\nweb-5f6d9c7b8d-h2l5m   0/1     ImagePullBackOff   0          40s\nweb-5f6d9c7b8d-tq9wz   0/1     ErrImagePull       0          40s\nweb-7b9f4c8d6c-4kq8z   1/1     Running            0          3m\nweb-7b9f4c8d6c-9sd2w   1/1     Running            0          3m\nweb-7b9f4c8d6c-xv7nt   1/1     Running            0          3m",
+     "lang": "console"
+    },
+    {
+     "say": "`rollout status` with a timeout fails instead of waiting, which is what a CI job wants. Kubernetes will not fix this by itself, so roll back.",
+     "code": "$ kubectl rollout status deployment/web -n scratch --timeout=30s\nWaiting for deployment \"web\" rollout to finish: 2 out of 4 new replicas have been updated...\nerror: timed out waiting for the condition\n$ kubectl rollout undo deployment/web -n scratch\ndeployment.apps/web rolled back\n$ kubectl rollout status deployment/web -n scratch\ndeployment \"web\" successfully rolled out",
+     "lang": "console"
+    },
+    {
+     "say": "Read the history once more. Revision 2 moved to the new number 4, because the undo copied its template back as a new rollout. Delete the Deployment when you are done; its ReplicaSets and Pods go with it.",
+     "code": "$ kubectl rollout history deployment/web -n scratch\ndeployment.apps/web\nREVISION  CHANGE-CAUSE\n1         <none>\n3         typo on purpose\n4         nginx 1.28\n$ kubectl delete deployment web -n scratch\ndeployment.apps \"web\" deleted from scratch namespace",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "k8s/namespace.yaml",
+    "src": "# A namespace is a named folder for objects. Everything for hello-devops lives in \"hello\" (Day 32).\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: hello",
+    "run": "kubectl apply -f k8s/namespace.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/deployment.yaml (first version; Day 34 adds config, Day 35 adds probes and resources)",
+    "src": "# Runs 3 copies (pods) of hello-devops and replaces any that die.\n# Day 32 writes this first version, Day 34 adds envFrom, Day 35 adds probes and resources.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hello-devops\n  namespace: hello\n  labels:\n    app: hello-devops\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: hello-devops # must match the pod labels below\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 0 # never drop below 3 ready pods during an update\n      maxSurge: 1 # add at most 1 extra pod at a time\n  template:\n    metadata:\n      labels:\n        app: hello-devops\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.0\n          imagePullPolicy: IfNotPresent # use the image kind loaded; do not pull it\n          ports:\n            - name: http\n              containerPort: 8000",
+    "run": "kubectl apply -f k8s/deployment.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/kustomization.yaml (Day 32 version)",
+    "src": "# The list of files that make up the app. Apply them all with: kubectl apply -k k8s\n# Day 32 version: Days 33 to 35 add one file at a time.\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - namespace.yaml\n  - deployment.yaml",
+    "run": "kubectl apply -k k8s"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "kubectl apply -k k8s",
+    "what": "Apply every file listed in `k8s/kustomization.yaml`."
+   },
+   {
+    "cmd": "kubectl get deploy,rs,pods -n hello",
+    "what": "Show the Deployment, its ReplicaSets and its Pods together."
+   },
+   {
+    "cmd": "kubectl get pods -n hello -l app=hello-devops --show-labels",
+    "what": "List the app's Pods with all labels, including `pod-template-hash`."
+   },
+   {
+    "cmd": "kubectl scale deployment hello-devops --replicas=5 -n hello",
+    "what": "Change the desired number of Pods (for experiments; the file should say the same)."
+   },
+   {
+    "cmd": "kubectl set image deployment/hello-devops web=hello-devops:1.1.0 -n hello",
+    "what": "Change the image of container `web`, which starts a rollout."
+   },
+   {
+    "cmd": "kubectl rollout status deployment/hello-devops -n hello",
+    "what": "Follow a rollout until it finishes or fails."
+   },
+   {
+    "cmd": "kubectl rollout history deployment/hello-devops -n hello",
+    "what": "List the revisions the Deployment remembers."
+   },
+   {
+    "cmd": "kubectl rollout history deployment/hello-devops -n hello --revision=2",
+    "what": "Show the full Pod template of one revision."
+   },
+   {
+    "cmd": "kubectl rollout undo deployment/hello-devops -n hello",
+    "what": "Go back to the previous revision. Add `--to-revision=N` for an older one."
+   },
+   {
+    "cmd": "kubectl annotate deployment/hello-devops -n hello kubernetes.io/change-cause=\"ship 1.1.0\"",
+    "what": "Record why you changed it, shown in the history's CHANGE-CAUSE column."
+   },
+   {
+    "cmd": "kubectl diff -k k8s",
+    "what": "Show what `apply` would change in the cluster, without changing it."
+   },
+   {
+    "cmd": "kubectl port-forward deployment/hello-devops 8080:8000 -n hello",
+    "what": "Forward localhost:8080 to one of the Deployment's Pods."
+   }
+  ],
+  "mistake": "Pushing every release as `:latest` (or reusing the same tag). The Pod template does not change, so Kubernetes sees nothing to roll out, and the history cannot tell versions apart. Give every build a unique tag, such as the version or the git commit, and change the tag in the manifest to release.",
+  "real_world": "PayLite's checkout service runs as a Deployment with 6 replicas spread over three nodes, `maxUnavailable: 0` and a readiness probe, so card payments keep flowing during a release. The CI job runs `kubectl rollout status --timeout=5m` and fails the release if the rollout stalls. The on-call rule is simple: if errors jump after a release, roll back first and investigate afterwards.",
+  "task": {
+   "title": "Ship hello-devops 1.1.0 with a Deployment, and roll back",
+   "steps": [
+    "Write `k8s/namespace.yaml`, the first `k8s/deployment.yaml` (3 replicas, `maxSurge: 1`, `maxUnavailable: 0`) and `k8s/kustomization.yaml`. Apply them with `kubectl apply -k k8s`.",
+    "Look at the Deployment, ReplicaSet and Pods together, and find the `pod-template-hash` in the names and labels.",
+    "In a second terminal, watch the Pods with `-w`. Delete one Pod by name and watch the replacement appear. Then scale to 5 and back to 3.",
+    "Build `hello-devops:1.1.0` with `--build-arg APP_VERSION=1.1.0` and load it into the `devops` cluster.",
+    "Roll out 1.1.0 with `kubectl set image` while you watch the ReplicaSets with `kubectl get rs -n hello -w` in the second terminal. Count how many Pods exist at most.",
+    "Port-forward to the Deployment and confirm with `curl` that `version` is now `1.1.0`. Then read the rollout history.",
+    "Roll back with `kubectl rollout undo` and confirm the version is `1.0.0` again.",
+    "Now ship 1.1.0 the declarative way: change the tag in `k8s/deployment.yaml`, check `kubectl diff -k k8s`, apply, and follow `rollout status`.",
+    "Set the tag back to `1.0.0` in the file, apply it, and commit the three files."
+   ],
+   "hints": [
+    "The container in the lab Deployment is named `web`, so `set image` needs `web=hello-devops:1.1.0`.",
+    "`kubectl port-forward deployment/hello-devops 8080:8000 -n hello` picks one Pod; that is fine for checking the version.",
+    "If new Pods sit in `ErrImagePull`, the 1.1.0 image is not in the cluster yet: run `kind load docker-image` again with `--name devops`."
+   ],
+   "done_when": "`kubectl rollout history deployment/hello-devops -n hello` shows several revisions, `curl` through port-forward returns `version` `1.0.0`, and `k8s/deployment.yaml` in git says `1.0.0`."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences how a Deployment rolls out a new image without downtime. Mention ReplicaSets, maxSurge or maxUnavailable, and readiness.",
+   "answer": "When the Pod template changes, the Deployment creates a new ReplicaSet for the new template. It scales the new ReplicaSet up and the old one down a few Pods at a time, staying within maxSurge extra Pods and maxUnavailable missing Pods. It only removes old Pods once new ones are ready, so if the new version never becomes ready, the rollout stalls while the old Pods keep serving. The old ReplicaSet stays at zero replicas, which makes `kubectl rollout undo` quick."
+  },
+  "recap": [
+   "A Deployment owns ReplicaSets, and each ReplicaSet keeps N Pods of one template running.",
+   "Self-healing and scaling are the same loop: count matching Pods, then fix the difference.",
+   "Only changes to `spec.template` start a rollout and create a revision.",
+   "maxSurge and maxUnavailable set the pace; readiness decides when each step may happen.",
+   "Stuck rollouts do not roll back on their own: use `rollout status` with a timeout and `rollout undo`.",
+   "Use `set image` to experiment, but make real changes in the YAML in git."
+  ],
+  "check": [
+   {
+    "q": "A Deployment has `replicas: 4`, `maxSurge: 1` and `maxUnavailable: 0`. During a rollout, what is the largest number of Pods that can exist at once?",
+    "options": [
+     "4",
+     "5",
+     "6",
+     "8"
+    ],
+    "answer": 1,
+    "why": "maxSurge 1 allows one Pod above the desired 4, and maxUnavailable 0 means no old Pod leaves until a new one is ready."
+   },
+   {
+    "q": "You run `kubectl scale deployment web --replicas=10`. What does `kubectl rollout history deployment/web` show afterwards?",
+    "options": [
+     "The same revisions as before",
+     "A new revision with the CHANGE-CAUSE `scale`",
+     "Ten new revisions, one per Pod",
+     "Only revision 1, because history resets on scale"
+    ],
+    "answer": 0,
+    "why": "Scaling changes `replicas`, not the Pod template, so no new ReplicaSet or revision is created."
+   },
+   {
+    "q": "A new version starts, passes no readiness probe (there is none), and then fails every real request. What happens during the rolling update?",
+    "options": [
+     "The rollout stalls after the first Pod, so users are safe",
+     "Kubernetes notices the errors and rolls back by itself",
+     "The rollout finishes and every Pod runs the broken version",
+     "The Service skips the new Pods because they return errors"
+    ],
+    "answer": 2,
+    "why": "Without a readiness probe a Pod counts as ready once its container starts, so the Deployment keeps replacing old Pods with broken ones."
+   }
+  ],
+  "interview": [
+   {
+    "q": "How does a rolling update work in Kubernetes, and how do you roll back?",
+    "a": "Changing the Pod template makes the Deployment create a new ReplicaSet. It scales the new one up and the old one down within maxSurge and maxUnavailable, waiting for new Pods to be ready (and available for minReadySeconds) before going on. Old ReplicaSets are kept at zero replicas, up to revisionHistoryLimit, so `kubectl rollout undo` can scale the previous one back up. In a GitOps setup you would revert the commit instead, so git and the cluster agree."
+   },
+   {
+    "q": "What is the relationship between a Deployment, a ReplicaSet and a Pod?",
+    "a": "A Deployment manages ReplicaSets, one per version of its Pod template, and handles rollouts and history. A ReplicaSet keeps a set number of identical Pods running by counting the Pods its selector matches and creating or deleting Pods to fix the count. Pods carry an ownerReference to their ReplicaSet and a pod-template-hash label that keeps versions apart. You normally work only with the Deployment."
+   },
+   {
+    "q": "When would you use the Recreate strategy instead of RollingUpdate?",
+    "a": "When two versions must never run at the same time. Examples are an app that needs exclusive access to a ReadWriteOnce volume, a single-writer process, or a release that changes data in a way the old version cannot handle. Recreate stops all old Pods before starting new ones, so you accept a short outage. For stateless web services, RollingUpdate with readiness probes is almost always the better choice."
+   }
+  ],
+  "deeper": {
+   "minutes": 12,
+   "body": "How does the Deployment controller decide each step? On every pass of its loop, it works out two numbers.\n\nThe first is how many Pods may exist in total: `replicas + maxSurge`. With 10 replicas and the default 25% surge, that is 10 + 3 (2.5 rounded up) = 13. The new ReplicaSet may grow until the total of old and new Pods reaches 13.\n\nThe second is how many Pods must stay available: `replicas - maxUnavailable`. With the default 25%, that is 10 - 2 (2.5 rounded down) = 8. The old ReplicaSets may shrink only while at least 8 Pods are available.\n\nAvailable is stricter than running. A Pod is available when it is ready and has stayed ready for `minReadySeconds`. So readiness, more than anything else, decides how fast a rollout moves. A rollout of a slow-starting Java service with a startup time of 40 seconds takes much longer than one of a Python service. Teams with big Deployments raise `maxSurge` to finish faster, if the nodes have room.\n\nWhat if you change the template again in the middle of a rollout? The Deployment does not wait for the first rollout to finish. It creates a third ReplicaSet at once and starts scaling down both older ones. The docs call this rollover. It means a hotfix can replace a bad release that is still rolling out.\n\nA few more fields are worth knowing by name:\n- `spec.paused`: set by `kubectl rollout pause`. While paused, template changes pile up without starting a rollout. Resume, and they ship as one revision.\n- `status.conditions`: `Available` and `Progressing` tell you, and your tools, how things stand. Argo CD's health check (Day 39) reads them.\n- `metadata.annotations[\"deployment.kubernetes.io/revision\"]`: the revision number on each ReplicaSet.\n\n`kubectl rollout restart` is also a template change. It writes the current time into the annotation `kubectl.kubernetes.io/restartedAt` inside the Pod template. The template is now different, so a normal rolling update replaces every Pod. Day 34 uses this to make Pods pick up new config.\n\nFinally, where do canary and blue-green releases fit? A Deployment cannot send 10% of traffic to a new version on purpose. During a rolling update the share of traffic follows the share of ready Pods. For controlled traffic shifting, teams use Argo Rollouts or Flagger, or weights on Gateway API routes (Day 36)."
+  },
+  "sources": [
+   {
+    "title": "Deployments",
+    "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"
+   },
+   {
+    "title": "ReplicaSet",
+    "url": "https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/"
+   },
+   {
+    "title": "Performing a rolling update",
+    "url": "https://kubernetes.io/docs/tasks/run-application/update-deployment-rolling/"
+   }
+  ]
+ },
+ {
+  "id": "d33",
+  "title": "Services and cluster networking",
+  "minutes": 50,
+  "goal": "By the end you can explain how a request reaches a Pod in Kubernetes, put a Service in front of hello-devops, find it by its DNS name, and lock a namespace down with NetworkPolicies.",
+  "guess": {
+   "q": "Two Pods run in different namespaces, `shop` and `billing`, and there are no NetworkPolicies. Can the Pod in `shop` open a connection to the Pod in `billing`?",
+   "options": [
+    "No, because a namespace is a network boundary",
+    "Only through a Service of type NodePort",
+    "Only if both namespaces carry the same label",
+    "Yes, by default every Pod can reach every Pod"
+   ],
+   "answer": 3,
+   "why": "The Kubernetes network is flat: every Pod gets its own IP and can reach every other Pod. Namespaces only group names; a NetworkPolicy is what blocks traffic."
+  },
+  "terms": [
+   {
+    "term": "CNI plugin",
+    "plain": "The network plugin that gives every Pod an IP address and connects Pods across nodes."
+   },
+   {
+    "term": "Service",
+    "plain": "An object that gives a changing set of Pods one stable IP address and DNS name."
+   },
+   {
+    "term": "ClusterIP",
+    "plain": "A Service's virtual IP address, reachable only from inside the cluster."
+   },
+   {
+    "term": "NodePort",
+    "plain": "A Service type that also opens the same port, from 30000 to 32767, on every node."
+   },
+   {
+    "term": "EndpointSlice",
+    "plain": "An object that lists the IP addresses and ports of the Pods behind a Service, and which are ready."
+   },
+   {
+    "term": "kube-proxy",
+    "plain": "The program on each node that turns Services into packet rules in the Linux kernel."
+   },
+   {
+    "term": "CoreDNS",
+    "plain": "The cluster's DNS server, which turns Service names into IP addresses."
+   },
+   {
+    "term": "NetworkPolicy",
+    "plain": "A set of firewall rules that says which traffic may reach, or leave, the Pods it selects."
+   }
+  ],
+  "sections": [
+   {
+    "h": "Every Pod gets its own IP address",
+    "body": "On Day 14 you met Docker networks: containers on one machine, on a private network, with ports published to the host. Kubernetes runs Pods on many machines, so its network model is bigger, and simpler to use. The rules:\n- Every Pod gets its own IP address. The containers in a Pod share it.\n- Every Pod can reach every other Pod by that address, on any node, with no address translation (NAT) in between.\n- Programs on a node, such as the kubelet, can reach every Pod on that node.\n\nKubernetes itself does not build this network. A network plugin does, through a standard called CNI (Container Network Interface). The plugin hands out Pod IPs and sets up routes between nodes. kind uses a small plugin called kindnet. Clouds have plugins that give Pods real addresses in your VPC, and Calico and Cilium are popular choices elsewhere.\n\nOn kind, each node gets its own slice of the Pod range 10.244.0.0/16. `kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}'` prints them, for example `10.244.0.0/24 10.244.1.0/24 10.244.2.0/24`. Pods on `devops-worker` might get 10.244.1.x, and Pods on `devops-worker2` 10.244.2.x. Look at `kubectl get pods -o wide`, and you can often tell the node from the IP.\n\nThere is a catch. Pod IPs do not last. Every new Pod gets a new IP, and rollouts, scaling and failures replace Pods all the time. So never put a Pod IP in a config file. That is the problem Services solve.",
+    "refs": [
+     {
+      "title": "Services, load balancing and networking",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/",
+      "kind": "docs"
+     },
+     {
+      "title": "Cluster networking",
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/networking/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes networking explained (KodeKloud)",
+      "url": "https://kodekloud.com/blog/kubernetes-networking-explained/",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "Services: one stable address for many Pods",
+    "body": "A **Service** gives a changing set of Pods one stable virtual IP address and one DNS name. It finds its Pods with a label selector, just like a Deployment. The lab's `service.yaml` says, in plain words: take every ready Pod labeled `app: hello-devops`, and give them the name `hello-devops` and port 80.\n\nThree pieces work together behind every Service:\n1. The Service holds the selector and the ports. The API server gives it a virtual IP from the Service range, 10.96.0.0/16 on kind. That address is its ClusterIP.\n2. A controller keeps EndpointSlices up to date. An EndpointSlice lists the IP addresses and ports of the matching Pods, and marks each one ready or not.\n3. kube-proxy, on every node, reads both and writes packet rules into the node's Linux kernel.\n\nThe virtual IP lives on no network card, so `ping` gets no answer. It exists only as rules that say: traffic for 10.96.171.215 port 80 goes to one of these Pod IPs on port 8000.\n\nOnly ready Pods get traffic. A Pod that fails its readiness check keeps running, but its endpoint is marked not ready and the rules skip it (Day 35). If the selector matches no Pods, for example because of a typo in a label, the Service exists but leads nowhere. Run `kubectl get endpointslices -l kubernetes.io/service-name=hello-devops` to see which case you are in. It is the first thing to check when a Service \"does not work\".",
+    "refs": [
+     {
+      "title": "Service",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/service/",
+      "kind": "docs"
+     },
+     {
+      "title": "EndpointSlices",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes Services explained (TechWorld with Nana)",
+      "url": "https://www.youtube.com/watch?v=T4Z7visMM4E",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Three ports: port, targetPort and nodePort",
+    "body": "A NodePort Service has three port numbers, and mixing them up is the most common Service bug. Here is the lab's Service, from the outside in:\n- `nodePort: 30080`: the port opened on every node. NodePorts come from the range 30000 to 32767.\n- `port: 80`: the Service's own port on its ClusterIP. Other Pods call `http://hello-devops`, which means port 80.\n- `targetPort: 8000`: the port on the Pod where the app listens. Leave it out and it equals `port`.\n\nThere is also `containerPort` in the Deployment. It mostly documents the port, and it lets you name it. The lab names it `http`, so a Service could say `targetPort: http` and keep working if the number ever changed.\n\nNow follow one `curl localhost:8081` from your Mac to a Pod:\n1. Docker Desktop forwards localhost:8081 into the control-plane node container, on port 30080. That is the `extraPortMappings` entry in `kind-config.yaml`.\n2. kube-proxy's rules on that node catch port 30080 and pick one ready endpoint of the Service.\n3. The packet goes to that Pod's IP on port 8000, possibly on another node.\n4. gunicorn answers, and the reply travels back the same way.\n\nSo one mapped port on one node reaches Pods on every node. That is why kind needs only a single port mapping.",
+    "refs": [
+     {
+      "title": "Service: port definitions",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports",
+      "kind": "docs"
+     },
+     {
+      "title": "kind configuration: extra port mappings",
+      "url": "https://kind.sigs.k8s.io/docs/user/configuration/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Service types: who can reach it",
+    "body": "The `type` field decides who can reach a Service:\n- `ClusterIP` (the default): a virtual IP reachable only inside the cluster. Right for most services, such as Redis in the lab.\n- `NodePort`: a ClusterIP, plus the same port opened on every node. Fine for labs and simple setups.\n- `LoadBalancer`: a NodePort, plus a request to a cloud controller for an external load balancer with its own address.\n- `ExternalName`: no proxying at all, only a DNS alias for an outside name, such as a managed database.\n\nA headless Service sets `clusterIP: None`. It gets no virtual IP and no kube-proxy rules. Its DNS name returns the Pod IPs themselves, one record per ready Pod. Clients that must talk to each member, such as database replicas, use it. StatefulSets need one (Day 36).\n\nLoadBalancer on a laptop needs a note. kind has no cloud, so `EXTERNAL-IP` shows `<pending>` forever. The kind project's add-on cloud-provider-kind fills that gap. On a Mac, though, the address it hands out (172.18.x.x) lives inside Docker Desktop's VM, and your Mac cannot reach it. The tool works around this with a proxy container named `kindccm-...` that publishes a port on localhost. It must run with `sudo`. For one app on your laptop, the NodePort or `kubectl port-forward` is simpler.\n\nFor HTTP traffic from users, teams rarely give every app its own load balancer. They put one Gateway in front of many ClusterIP Services (Day 36).",
+    "refs": [
+     {
+      "title": "Service types",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types",
+      "kind": "docs"
+     },
+     {
+      "title": "kind LoadBalancer guide",
+      "url": "https://kind.sigs.k8s.io/docs/user/loadbalancer/",
+      "kind": "docs"
+     },
+     {
+      "title": "cloud-provider-kind",
+      "url": "https://github.com/kubernetes-sigs/cloud-provider-kind",
+      "kind": "read"
+     }
+    ]
+   },
+   {
+    "h": "How kube-proxy turns Services into packet rules",
+    "body": "kube-proxy runs on every node as a DaemonSet, an object that runs one Pod per node. It does not carry traffic itself. It watches Services and EndpointSlices and programs the Linux kernel, which then sends each new connection to one Pod. It has a few modes:\n- `iptables`: the long-time default, and still kind's default.\n- `nftables`: the newer kernel firewall, stable since Kubernetes 1.33 and the recommended mode on new Linux nodes.\n- `ipvs`: deprecated since 1.35. The plan is to switch it off by default around 1.40 and remove it around 1.43, so do not build new clusters on it.\n\nSome network plugins, such as Cilium, replace kube-proxy and do the same job with eBPF programs in the kernel.\n\nTwo consequences matter in practice:\n- Balancing happens per connection, not per request. A client that keeps a connection open (HTTP keep-alive, gRPC) can talk to one Pod for a long time. A `curl` loop opens a new connection each time, so it spreads.\n- If one client must keep talking to the same Pod, set `sessionAffinity: ClientIP` on the Service. kube-proxy then pins each client IP to one Pod for a while.\n- `kubectl port-forward svc/hello-devops` skips all of it. kubectl picks one Pod and tunnels to it through the API server. Good for debugging, useless for testing balance.\n\nOn kind you can see the mode in the kube-proxy ConfigMap with `kubectl -n kube-system get configmap kube-proxy -o yaml | grep mode`.",
+    "refs": [
+     {
+      "title": "Virtual IPs and service proxies",
+      "url": "https://kubernetes.io/docs/reference/networking/virtual-ips/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "CoreDNS and Service names",
+    "body": "Inside the cluster, Pods find Services by name. CoreDNS runs as a Deployment in `kube-system`, behind a Service that is still called `kube-dns` for historical reasons. Its ClusterIP is 10.96.0.10 on kind. The kubelet writes that address into every Pod's `/etc/resolv.conf`.\n\nEvery Service gets a DNS name of this form: `<service>.<namespace>.svc.cluster.local`. The lab's Service is `hello-devops.hello.svc.cluster.local`. You rarely type all of it, because each Pod's resolv.conf has a search list. For a Pod in namespace `hello` the list is `hello.svc.cluster.local svc.cluster.local cluster.local`. So:\n- From the same namespace, the short name works: `http://hello-devops`. That is how the app finds Redis tomorrow, with `REDIS_HOST=redis`.\n- From another namespace, add the namespace: `http://hello-devops.hello`.\n- The full name works from anywhere in the cluster.\n\nA normal Service name resolves to its one ClusterIP. A headless Service name resolves to every ready Pod IP behind it, which the worked example shows. With a StatefulSet, each Pod also gets its own stable name, such as `db-0.db.hello.svc.cluster.local` (Day 36).\n\n`cluster.local` is only a default, and a cluster admin can change it. So in app config, prefer the short name or `name.namespace`.",
+    "refs": [
+     {
+      "title": "DNS for Services and Pods",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "NetworkPolicies: firewall rules for Pods",
+    "body": "By default every Pod accepts traffic from anywhere in the cluster, and namespaces do not change that. A NetworkPolicy is a set of firewall rules for the Pods it selects. Here is how the rules work. The second one is the one people miss:\n- A Pod that no policy selects allows all traffic.\n- Once any policy selects a Pod for `Ingress` (incoming traffic), that Pod accepts only what some policy allows. `Egress` (outgoing traffic) works the same way.\n- Policies only add permissions. There is no deny rule. You get \"deny\" by selecting Pods and allowing nothing.\n- Rules match sources by Pod labels, namespace labels or IP ranges, plus ports. Every namespace carries the label `kubernetes.io/metadata.name` with its own name, so a rule can allow, say, the whole `monitoring` namespace.\n\nThe usual pattern has two steps. First, one deny-all policy: `podSelector: {}` selects every Pod in the namespace, with `policyTypes: [Ingress]` and no rules. Then small allow policies, one per real need. The lab's examples let anyone reach the app on port 8000 and let only the app reach Redis on 6379.\n\nThe port in a policy is the Pod's port (8000), not the Service's (80). Policies check traffic after the Service has picked a Pod.\n\nPolicies need a network plugin that enforces them. Some plugins accept the objects and silently ignore them. The kindnet plugin that kind installs does enforce them, so you can test the real thing on your laptop. Traffic from a Pod's own node is always allowed, which keeps probes working. If you ever restrict egress, allow DNS (port 53) to CoreDNS, or every name lookup fails.",
+    "refs": [
+     {
+      "title": "Network policies",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes Services explained: ClusterIP, NodePort, LoadBalancer (video)",
+      "url": "https://www.youtube.com/watch?v=BYZgA2BBt4s",
+      "kind": "watch"
+     }
+    ]
+   }
+  ],
+  "analogy": "A Service is like a company's main phone number. Callers dial one number and get whichever agent is free. Agents can join, leave or change desks, and nobody updates a phone book. CoreDNS is the phone book that maps the company name to that one number. A NetworkPolicy is the receptionist's list of who may be put through. The picture breaks on fairness. A phone system can route each call to the least busy agent, while kube-proxy picks a Pod per connection and does not know how busy each Pod is.",
+  "diagram": "<svg viewBox=\"0 0 560 236\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A request from the Mac goes through the kind port mapping and the NodePort to the Service, then to one ready Pod\"><rect class=\"bx\" x=\"8\" y=\"92\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"64\" y=\"119\" font-size=\"13\" text-anchor=\"middle\">curl :8081</text><rect class=\"bxo\" x=\"152\" y=\"92\" width=\"120\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"212\" y=\"119\" font-size=\"13\" text-anchor=\"middle\">node :30080</text><rect class=\"bxg\" x=\"304\" y=\"92\" width=\"116\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"362\" y=\"119\" font-size=\"13\" text-anchor=\"middle\">Service :80</text><rect class=\"bxt\" x=\"448\" y=\"36\" width=\"104\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"500\" y=\"63\" font-size=\"13\" text-anchor=\"middle\">Pod :8000</text><rect class=\"bxt\" x=\"448\" y=\"148\" width=\"104\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"500\" y=\"175\" font-size=\"13\" text-anchor=\"middle\">Pod :8000</text><line class=\"ln\" x1=\"120\" y1=\"114\" x2=\"150\" y2=\"114\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"272\" y1=\"114\" x2=\"302\" y2=\"114\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"420\" y1=\"106\" x2=\"446\" y2=\"62\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"420\" y1=\"122\" x2=\"446\" y2=\"166\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"64\" y=\"160\" font-size=\"11\" text-anchor=\"middle\">your Mac</text><text class=\"ts\" x=\"212\" y=\"160\" font-size=\"11\" text-anchor=\"middle\">port mapping</text><text class=\"ts\" x=\"212\" y=\"174\" font-size=\"11\" text-anchor=\"middle\">in kind-config</text><text class=\"ts\" x=\"362\" y=\"160\" font-size=\"11\" text-anchor=\"middle\">kube-proxy rules</text><text class=\"ts\" x=\"362\" y=\"174\" font-size=\"11\" text-anchor=\"middle\">pick a ready Pod</text><text class=\"ts\" x=\"430\" y=\"216\" font-size=\"11\" text-anchor=\"middle\">chosen from the EndpointSlice</text></svg>",
+  "diagram_caption": "curl on your Mac reaches node port 30080 through kind's port mapping. kube-proxy's rules send it to one ready Pod from the Service's EndpointSlice.",
+  "worked": {
+   "title": "Look at a Service from inside the cluster",
+   "steps": [
+    {
+     "say": "With the lab Service applied, list the Service and its EndpointSlice together. The Service has a ClusterIP and maps port 80 to node port 30080. The slice lists the three Pod IPs on port 8000.",
+     "code": "$ kubectl get svc,endpointslices -n hello\nNAME                   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE\nservice/hello-devops   NodePort   10.96.171.215   <none>        80:30080/TCP   2m\n\nNAME                                                ADDRESSTYPE   PORTS   ENDPOINTS                          AGE\nendpointslice.discovery.k8s.io/hello-devops-kgnk9   IPv4          8000    10.244.1.3,10.244.2.4,10.244.1.5   2m",
+     "lang": "console"
+    },
+    {
+     "say": "Look at DNS from inside an app Pod. Its resolv.conf points at CoreDNS and lists the search domains. The app image has Python, so Python can resolve the short name, which comes back as the full name and the ClusterIP.",
+     "code": "$ kubectl exec -n hello deploy/hello-devops -- cat /etc/resolv.conf\nsearch hello.svc.cluster.local svc.cluster.local cluster.local\nnameserver 10.96.0.10\noptions ndots:5\n$ kubectl exec -n hello deploy/hello-devops -- python -c \"import socket; print(socket.gethostbyname_ex('hello-devops'))\"\n('hello-devops.hello.svc.cluster.local', [], ['10.96.171.215'])",
+     "lang": "console"
+    },
+    {
+     "say": "Add the headless Service from the examples folder and resolve its name the same way. There is no virtual IP, so DNS returns one address per ready Pod.",
+     "code": "$ kubectl apply -f k8s/examples/headless-service.yaml\nservice/hello-devops-headless created\n$ kubectl exec -n hello deploy/hello-devops -- python -c \"import socket; print(socket.gethostbyname_ex('hello-devops-headless'))\"\n('hello-devops-headless.hello.svc.cluster.local', [], ['10.244.1.3', '10.244.1.5', '10.244.2.4'])",
+     "lang": "console"
+    },
+    {
+     "say": "Scale the Deployment to 5 and read the EndpointSlice again. The controller added the two new Pods as soon as they were ready. kubectl shows the first three addresses and counts the rest.",
+     "code": "$ kubectl scale deployment hello-devops -n hello --replicas=5\ndeployment.apps/hello-devops scaled\n$ kubectl get endpointslices -n hello -l kubernetes.io/service-name=hello-devops\nNAME                 ADDRESSTYPE   PORTS   ENDPOINTS                                      AGE\nhello-devops-kgnk9   IPv4          8000    10.244.1.3,10.244.2.4,10.244.1.5 + 2 more...   4m",
+     "lang": "console"
+    },
+    {
+     "say": "Call the Service from a throwaway Pod in another namespace. The short name fails there, because the search list starts with `default`. Adding the namespace works. `--rm` deletes the Pod when you leave the shell.",
+     "code": "$ kubectl run tmp -n default --rm -it --restart=Never --image=busybox:1.37 -- sh\n/ # wget -qO- -T 3 http://hello-devops\nwget: bad address 'hello-devops'\n/ # wget -qO- -T 3 http://hello-devops.hello\n{\"host\":\"hello-devops-698679bfb-qjd64\",\"message\":\"Hello, DevOps!\",\"version\":\"1.0.0\",\"visits\":3}\n/ # exit\npod \"tmp\" deleted from default namespace",
+     "lang": "console"
+    },
+    {
+     "say": "Tidy up: scale back to 3 and remove the headless Service. The `visits` number above only counts calls to that one Pod; tomorrow Redis makes the counter shared.",
+     "code": "$ kubectl scale deployment hello-devops -n hello --replicas=3\ndeployment.apps/hello-devops scaled\n$ kubectl delete -f k8s/examples/headless-service.yaml\nservice \"hello-devops-headless\" deleted from hello namespace",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "k8s/service.yaml",
+    "src": "# One stable name and address in front of all hello-devops pods (Day 33).\napiVersion: v1\nkind: Service\nmetadata:\n  name: hello-devops\n  namespace: hello\n  labels:\n    app: hello-devops\nspec:\n  type: NodePort\n  selector:\n    app: hello-devops # send traffic to every ready pod with this label\n  ports:\n    - name: http\n      port: 80 # other pods call http://hello-devops (port 80)\n      targetPort: 8000 # the port the app listens on inside its container\n      nodePort: 30080 # open on every node; kind-config.yaml maps it to localhost:8081",
+    "run": "kubectl apply -k k8s"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/kustomization.yaml (Day 33 version)",
+    "src": "# The list of files that make up the app. Apply them all with: kubectl apply -k k8s\n# Day 33 version: adds the Service.\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - namespace.yaml\n  - deployment.yaml\n  - service.yaml",
+    "run": "kubectl apply -k k8s"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/examples/headless-service.yaml",
+    "src": "# Day 33: a headless Service for the same Pods as k8s/service.yaml.\n# It has no virtual IP. Its DNS name returns the IP of every ready Pod instead.\n#   kubectl apply -f k8s/examples/headless-service.yaml\napiVersion: v1\nkind: Service\nmetadata:\n  name: hello-devops-headless\n  namespace: hello\nspec:\n  clusterIP: None # headless: no ClusterIP and no kube-proxy load balancing\n  selector:\n    app: hello-devops\n  ports:\n    - name: http\n      port: 8000\n      targetPort: 8000",
+    "run": "kubectl apply -f k8s/examples/headless-service.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/examples/netpol-deny-all.yaml",
+    "src": "# Day 33: block all incoming traffic to every Pod in namespace hello.\n# Once a policy selects a Pod for Ingress, only traffic that some policy allows gets in.\n#   Apply: kubectl apply -f k8s/examples/netpol-deny-all.yaml\n#   Undo:  kubectl delete -f k8s/examples/netpol-deny-all.yaml\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: default-deny-ingress\n  namespace: hello\nspec:\n  podSelector: {} # an empty selector picks every Pod in the namespace, new ones too\n  policyTypes:\n    - Ingress # and there are no ingress rules, so nothing is allowed in",
+    "run": "kubectl apply -f k8s/examples/netpol-deny-all.yaml"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/examples/netpol-allow.yaml",
+    "src": "# Day 33: the allow rules that go with netpol-deny-all.yaml.\n#   allow-web:            anyone may reach the app on port 8000 (your Mac through the NodePort, too).\n#   allow-redis-from-app: only the app's Pods may reach Redis on port 6379 (Redis arrives on Day 34).\n# Ports here are Pod ports (8000), not Service ports (80): policies see traffic after the Service picks a Pod.\n#   Apply: kubectl apply -f k8s/examples/netpol-allow.yaml\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-web\n  namespace: hello\nspec:\n  podSelector:\n    matchLabels:\n      app: hello-devops\n  policyTypes:\n    - Ingress\n  ingress:\n    - ports: # no \"from\" list, so any source may connect on this port\n        - protocol: TCP\n          port: 8000\n---\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-redis-from-app\n  namespace: hello\nspec:\n  podSelector:\n    matchLabels:\n      app: redis\n  policyTypes:\n    - Ingress\n  ingress:\n    - from:\n        - podSelector:\n            matchLabels:\n              app: hello-devops # only Pods with this label, in this same namespace\n      ports:\n        - protocol: TCP\n          port: 6379",
+    "run": "kubectl apply -f k8s/examples/netpol-allow.yaml"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "kubectl get svc -n hello",
+    "what": "List Services with their type, ClusterIP and ports."
+   },
+   {
+    "cmd": "kubectl get endpointslices -n hello -l kubernetes.io/service-name=hello-devops",
+    "what": "Show the Pod IPs and ports behind one Service."
+   },
+   {
+    "cmd": "kubectl describe svc hello-devops -n hello",
+    "what": "Show a Service's selector, ports, ClusterIP and endpoints."
+   },
+   {
+    "cmd": "for i in {1..6}; do curl -s localhost:8081; done",
+    "what": "Call the app six times through the NodePort; each call can land on another Pod."
+   },
+   {
+    "cmd": "kubectl run tmp -n hello --rm -it --restart=Never --image=busybox:1.37 -- sh",
+    "what": "Start a throwaway Pod with a shell for network tests; it is deleted when you exit."
+   },
+   {
+    "cmd": "wget -qO- -T 3 http://hello-devops",
+    "what": "Inside a busybox Pod: fetch a URL, giving up after 3 seconds."
+   },
+   {
+    "cmd": "kubectl exec -n hello deploy/hello-devops -- cat /etc/resolv.conf",
+    "what": "Show the DNS server and search list a Pod uses."
+   },
+   {
+    "cmd": "kubectl port-forward svc/hello-devops 8080:80 -n hello",
+    "what": "Tunnel localhost:8080 to the Service (kubectl picks one Pod)."
+   },
+   {
+    "cmd": "kubectl run whoami -n hello --image=nginx:1.28 --port=80 --expose",
+    "what": "Start a test Pod and a ClusterIP Service for it in one command."
+   },
+   {
+    "cmd": "kubectl get networkpolicy -n hello",
+    "what": "List the NetworkPolicies in a namespace."
+   },
+   {
+    "cmd": "kubectl describe networkpolicy allow-web -n hello",
+    "what": "Explain in words which Pods a policy selects and what it allows."
+   },
+   {
+    "cmd": "kubectl -n kube-system get configmap kube-proxy -o yaml | grep mode",
+    "what": "Show which mode kube-proxy runs in; kind uses iptables unless you ask for nftables."
+   }
+  ],
+  "mistake": "When a Service \"does not work\", people blame the network. Most of the time the selector does not match the Pod labels exactly, or `targetPort` is not the port the app listens on. Check `kubectl get endpointslices` first: no addresses means a selector or readiness problem, and addresses that refuse connections mean a port problem.",
+  "real_world": "At PayLite, every app gets a ClusterIP Service, and only the Gateway is exposed outside the cluster. Each team's namespace starts with a deny-all ingress policy, and the payments database accepts connections only from Pods labeled `app: payments-api`, which auditors like to see. Apps call each other by `service.namespace` names, so the same config works in dev, staging and production clusters.",
+  "task": {
+   "title": "Put a Service in front of the app, then lock the namespace",
+   "steps": [
+    "Write `k8s/service.yaml` (NodePort 30080), add it to `k8s/kustomization.yaml`, and apply with `kubectl apply -k k8s`.",
+    "Call `curl localhost:8081` six times in a loop. Watch `host` change between Pods. Why do the `visits` numbers jump around?",
+    "Break the Service on purpose: change its selector to `app: hello-devop` and apply. What does curl do now, and what do the EndpointSlices show? Fix it and apply again.",
+    "Start a test web server in the namespace with `kubectl run whoami -n hello --image=nginx:1.28 --port=80 --expose`. From a throwaway busybox Pod, fetch both `http://whoami` and `http://hello-devops`.",
+    "Apply `k8s/examples/netpol-deny-all.yaml`. Try `curl -m 3 localhost:8081` from your Mac and `wget -T 3 http://whoami` from a busybox Pod. What happened to each, and why does the deny-all block your Mac too?",
+    "Apply `k8s/examples/netpol-allow.yaml`. Which of the two calls works again, and which stays blocked?",
+    "Read the policies in plain words with `kubectl describe networkpolicy -n hello`.",
+    "Clean up: delete the `whoami` Pod and Service and both policy files, so later days start with an open namespace. Commit `service.yaml` and the kustomization."
+   ],
+   "hints": [
+    "In zsh: `for i in {1..6}; do curl -s localhost:8081; done` (the app ends each answer with a new line).",
+    "A wrong selector gives an EndpointSlice with no endpoints. The Service object itself still looks fine in `kubectl get svc`.",
+    "Policies can take a few seconds to take effect. If nothing changes at all, check that the policy's namespace is `hello`."
+   ],
+   "done_when": "With both policies applied, `curl localhost:8081` answers while `wget -T 3 http://whoami` from a busybox Pod times out; after cleanup, `kubectl get networkpolicy -n hello` shows nothing."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences how a request from `curl localhost:8081` on your Mac reaches a hello-devops Pod. Mention the port mapping, the NodePort, kube-proxy and the EndpointSlice.",
+   "answer": "The port mapping in kind-config.yaml forwards localhost:8081 on the Mac to port 30080 on the control-plane node container. On every node, kube-proxy has written kernel rules that catch traffic on the NodePort and on the Service's ClusterIP. Those rules pick one ready Pod from the Service's EndpointSlice. The packet goes to that Pod's IP on port 8000, even if the Pod runs on another node, and the reply comes back the same way."
+  },
+  "recap": [
+   "Every Pod gets its own IP from the CNI plugin, and by default every Pod can reach every other Pod.",
+   "A Service selects Pods by label and gives them a stable ClusterIP and DNS name; EndpointSlices list the ready Pods.",
+   "nodePort is on every node, port is on the Service, targetPort is on the Pod.",
+   "kube-proxy turns Services into kernel rules and balances per connection, not per request.",
+   "DNS names follow `<service>.<namespace>.svc.cluster.local`; short names work inside the same namespace.",
+   "A NetworkPolicy that selects a Pod blocks everything it does not allow; kind's kindnet enforces them."
+  ],
+  "check": [
+   {
+    "q": "A Service for `api` exists, but calls to it fail. `kubectl get endpointslices -l kubernetes.io/service-name=api` shows no endpoints, while the Pods are Running. What is the most likely cause?",
+    "options": [
+     "kube-proxy runs in iptables mode",
+     "The nodePort is outside 30000 to 32767",
+     "CoreDNS is down in kube-system",
+     "The selector does not match the Pod labels"
+    ],
+    "answer": 3,
+    "why": "Endpoints come from Pods that match the selector and are ready; Running Pods with no endpoints point to a label mismatch (or failing readiness)."
+   },
+   {
+    "q": "A Pod in namespace `web` must call the Service `orders` in namespace `shop` on port 8080. Which URL works?",
+    "options": [
+     "http://orders:8080",
+     "http://shop.orders:8080",
+     "http://orders.shop:8080",
+     "http://orders.svc:8080"
+    ],
+    "answer": 2,
+    "why": "From another namespace you need at least `<service>.<namespace>`, here `orders.shop`; the short name only works inside `shop`."
+   },
+   {
+    "q": "You apply a deny-all ingress policy and an allow rule for Pods labeled `app: api` on port 8080. Next week a teammate deploys a new `worker` Pod into the same namespace. Who can connect to the worker?",
+    "options": [
+     "Nobody, because the deny-all policy selects every Pod, new ones included",
+     "Everybody, because the policies were written before the Pod existed",
+     "Only Pods labeled `app: api`, because of the allow rule",
+     "Only Pods in other namespaces"
+    ],
+    "answer": 0,
+    "why": "`podSelector: {}` matches every Pod in the namespace at any time, and nothing allows traffic to the worker."
+   }
+  ],
+  "interview": [
+   {
+    "q": "What Service types does Kubernetes have, and when do you use each?",
+    "a": "ClusterIP is the default and is reachable only inside the cluster; most internal services use it. NodePort opens the same port on every node, which suits labs and simple setups. LoadBalancer asks a cloud controller for an external load balancer, the usual way to expose one TCP service in a cloud. ExternalName is only a DNS alias, and a headless Service (`clusterIP: None`) returns Pod IPs directly, which StatefulSets need. For HTTP traffic to many apps, teams put a Gateway in front of ClusterIP Services."
+   },
+   {
+    "q": "How does a Service actually route traffic to Pods?",
+    "a": "The EndpointSlice controller watches the Pods matching the Service's selector and records their IPs, ports and readiness in EndpointSlices. On every node, kube-proxy watches Services and EndpointSlices. It programs kernel rules (iptables or nftables) that rewrite traffic for the ClusterIP or NodePort to one ready Pod. The choice is made per connection, so long-lived connections stick to one Pod. Some CNIs, such as Cilium, replace kube-proxy with eBPF."
+   },
+   {
+    "q": "How do NetworkPolicies work, and what is a common pitfall?",
+    "a": "A NetworkPolicy selects Pods and lists allowed ingress or egress traffic by Pod labels, namespace labels, IP blocks and ports. Pods not selected by any policy allow everything; once selected for a direction, only allowed traffic passes, and policies only add permissions. A common pitfall is a default-deny egress policy that forgets DNS, so every lookup fails. Another is a CNI that does not enforce policies at all, so the YAML is accepted but has no effect."
+   }
+  ],
+  "deeper": {
+   "minutes": 13,
+   "body": "Look again at the resolv.conf from the worked example. The last line says `options ndots:5`. It changes how every name lookup in the Pod works.\n\nndots means: if a name has fewer than 5 dots, try the search list first. So when the app looks up `api.github.com` (two dots), the resolver first asks for:\n1. `api.github.com.hello.svc.cluster.local`\n2. `api.github.com.svc.cluster.local`\n3. `api.github.com.cluster.local`\n4. Then, finally, `api.github.com` itself.\n\nEach try is a round trip to CoreDNS, often twice (for IPv4 and IPv6 addresses). For an app that calls outside APIs all the time, this adds load and a little latency. Two common fixes:\n- Write outside names with a trailing dot, `api.github.com.`, which means the name is complete.\n- Lower `ndots` for that Pod with `spec.dnsConfig.options`.\n\nKubernetes sets 5 so that names like `orders.shop.svc` still go through the search list. Most apps never need to touch it. It is worth knowing when someone says DNS in the cluster is slow.\n\nA second detail: where does the client's IP address go? With a NodePort and the default `externalTrafficPolicy: Cluster`, a request can arrive on one node and be sent to a Pod on another. To make the reply come back the same way, kube-proxy replaces the source address with the node's address. Your app then logs a node IP, not the real client IP. Setting `externalTrafficPolicy: Local` keeps the client IP. The cost is that traffic only goes to Pods on the node that received it, and nodes without such a Pod drop it. Cloud load balancers handle this with health checks.\n\nA third: Services can be dual-stack, with both IPv4 and IPv6 addresses, if the cluster supports it. The kind tool can create IPv6 and dual-stack clusters from its config file. That is a cheap way to test an app before a real IPv6 rollout.\n\nFinally, the old `Endpoints` object still exists but has been deprecated since 1.33 in favor of EndpointSlices. A slice holds at most 100 endpoints by default, so a Service with 250 Pods has three slices. Tools that read endpoints should read slices. `kubectl get endpoints` still works and prints a deprecation warning.\n\nTo see the whole picture with diagrams, read [Virtual IPs and Service proxies](https://kubernetes.io/docs/reference/networking/virtual-ips/) in the Kubernetes docs."
+  },
+  "sources": [
+   {
+    "title": "Service",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/service/"
+   },
+   {
+    "title": "DNS for Services and Pods",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/"
+   },
+   {
+    "title": "Network policies",
+    "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/"
+   },
+   {
+    "title": "kind configuration",
+    "url": "https://kind.sigs.k8s.io/docs/user/configuration/"
+   }
+  ]
+ },
+ {
+  "id": "d34",
+  "title": "ConfigMaps and Secrets",
+  "minutes": 45,
+  "goal": "By the end you can give hello-devops its settings from a ConfigMap, predict when a running Pod sees a changed value, roll the Deployment to pick changes up, and explain what does and does not protect a Secret.",
+  "guess": {
+   "q": "Your Deployment reads `GREETING` from a ConfigMap through `envFrom`. You change the value in the ConfigMap and apply it. What do the running Pods see?",
+   "options": [
+    "The old value, until the Pods are restarted",
+    "The new value, within about a minute",
+    "The new value at once, because apply restarts the Pods",
+    "No value at all, until you delete the old ConfigMap"
+   ],
+   "answer": 0,
+   "why": "Environment variables are set once, when the container starts. Only files mounted from a ConfigMap are updated in place; for env vars you restart the Pods, for example with `kubectl rollout restart`."
+  },
+  "terms": [
+   {
+    "term": "ConfigMap",
+    "plain": "An object that stores plain settings as key-value pairs, for Pods to read as env vars or files."
+   },
+   {
+    "term": "Secret",
+    "plain": "An object like a ConfigMap, meant for passwords, tokens and keys; its values are base64-encoded."
+   },
+   {
+    "term": "envFrom",
+    "plain": "A container setting that turns every key of a ConfigMap or Secret into an environment variable."
+   },
+   {
+    "term": "Base64",
+    "plain": "A way to write any bytes as plain letters and digits; anyone can decode it, so it hides nothing."
+   },
+   {
+    "term": "Encryption at rest",
+    "plain": "Encrypting data where it is stored, here Secrets inside etcd, so a copy of the disk reveals nothing."
+   },
+   {
+    "term": "Immutable ConfigMap",
+    "plain": "A ConfigMap with `immutable: true`, whose data can never be changed, only deleted and recreated."
+   },
+   {
+    "term": "Rollout restart",
+    "plain": "A kubectl command that replaces a Deployment's Pods gradually, so they start with fresh config."
+   },
+   {
+    "term": "External Secrets Operator",
+    "plain": "A tool that copies secrets from a vault, such as AWS Secrets Manager, into Kubernetes Secrets."
+   }
+  ],
+  "sections": [
+   {
+    "h": "Settings belong outside the image",
+    "body": "Since Part 3 you have built one image and changed its behavior with environment variables. hello-devops reads `GREETING` and `REDIS_HOST` this way. The same image then runs on your laptop, in staging and in production, and only the settings differ. That is the twelve-factor rule: store config in the environment.\n\nIn Kubernetes, settings live in a **ConfigMap**. It is a small object with a `data` section of keys and string values. Typical keys:\n- Plain settings, such as a greeting, a log level or a feature flag.\n- Addresses of other services, such as `REDIS_HOST: redis`.\n- Whole config files, such as an `application.yaml` for a JVM service or an `nginx.conf`, stored as one long value.\n\nTwo limits to remember. A ConfigMap holds at most 1 MiB of data. And it is not secret at all: anyone who can read objects in the namespace can read it. Passwords go in a Secret, later in this lesson.\n\nYou can write a ConfigMap as YAML, or let kubectl build it from what you have:\n- `--from-literal=GREETING=hi` for single values.\n- `--from-file=app.yaml` for a whole file, with the file name as the key.\n- `--from-env-file=.env` for a file of KEY=value lines.\n\nAdd `--dry-run=client -o yaml` to any of them, and you get a file to keep in git instead of a change made only in the cluster.",
+    "refs": [
+     {
+      "title": "ConfigMaps",
+      "url": "https://kubernetes.io/docs/concepts/configuration/configmap/",
+      "kind": "docs"
+     },
+     {
+      "title": "Kubernetes components explained, with ConfigMap and Secret (TechWorld with Nana)",
+      "url": "https://www.youtube.com/watch?v=Krpb44XR0bk",
+      "kind": "watch"
+     }
+    ]
+   },
+   {
+    "h": "Three ways to hand a ConfigMap to a container",
+    "body": "A Pod can use a ConfigMap in three ways, and you can mix them:\n- `env` with `configMapKeyRef`: one key becomes one environment variable, and you can rename it on the way.\n- `envFrom` with `configMapRef`: every key becomes an environment variable with the same name. The lab uses this, so `GREETING` and `REDIS_HOST` arrive as env vars.\n- A volume: every key becomes a file in a folder you choose. `items` picks only some keys, and `mountPath` says where the folder appears.\n\nEnv vars suit short values your code reads at start. Files suit whole config files and anything your code may read again later. A Spring Boot service, for example, can read a mounted `application.yaml` from a folder.\n\nWhat if the ConfigMap does not exist? The Pod cannot start. Its STATUS shows `CreateContainerConfigError`, and `kubectl describe pod` names the missing ConfigMap. Mark a reference `optional: true` if the app can live without it. Day 38 returns to this error.\n\nThe lab's `configmap.yaml` holds two keys, and `deployment.yaml` gains four lines of `envFrom`. Adding `envFrom` changes the Pod template, so applying it starts a normal rolling update. After it, every Pod has both env vars, and `REDIS_HOST=redis` makes all Pods share one counter in Redis.",
+    "refs": [
+     {
+      "title": "Configure a Pod to use a ConfigMap",
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "What happens when a ConfigMap changes",
+    "body": "Most people get this wrong the first time. Changing a ConfigMap never restarts anything, and what a running Pod sees depends on how it reads the value:\n- Environment variables are set once, when the container starts. They never change while it runs.\n- Mounted files are updated in place. The kubelet notices the change on its next sync and swaps the files, usually within a minute or so.\n- A file mounted with `subPath` (one file into an existing folder) is never updated.\n- Even an updated file only helps if your app reads it again. Most apps read config once at start.\n\nSo for hello-devops, which uses env vars, a new greeting needs new Pods. The tool for that is `kubectl rollout restart deployment/hello-devops`. It writes the current time into an annotation in the Pod template. The template changed, so the Deployment does a normal rolling update, and every new Pod starts with the new values.\n\nThere is a neater trick that tools use. Put something that changes with the config into the Pod template:\n- Kustomize's `configMapGenerator` adds a hash of the content to the ConfigMap's name, such as `hello-config-7g2m9dfk8t`. New content means a new name and a new template, so a rollout happens by itself.\n- Helm charts often put a checksum of the config into a template annotation, with the same effect.\n\nDay 37 covers both tools.",
+    "refs": [
+     {
+      "title": "ConfigMaps: mounted ConfigMaps are updated automatically",
+      "url": "https://kubernetes.io/docs/concepts/configuration/configmap/#mounted-configmaps-are-updated-automatically",
+      "kind": "docs"
+     },
+     {
+      "title": "Managing objects with Kustomize (generators)",
+      "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Immutable ConfigMaps and versioned names",
+    "body": "Editing a ConfigMap in place has a hidden cost. A Deployment rollback brings back the old Pod template, but not the old ConfigMap. If you changed both and then roll back, the old code runs with the new settings.\n\nThe fix is to treat config like images: never change a version, make a new one.\n1. Create `hello-config-v2` next to `hello-config-v1`.\n2. Point the Deployment's `envFrom` at `hello-config-v2`. That is a template change, so a rollout starts.\n3. To roll back, `kubectl rollout undo` brings back the template that points at `v1`, and `v1` still exists.\n\nKubernetes helps you keep that promise with `immutable: true`. Once set, nobody can change the data, and it cannot be switched off again. You can only delete the object and create a new one. Immutable ConfigMaps and Secrets also save work for the API server, because kubelets stop watching them for changes. That matters in clusters with thousands of them.\n\nThis is exactly what Kustomize's hash suffix does for you: every content change is a new, versioned name. For the lab, one plain ConfigMap and `rollout restart` are enough. Know the pattern for when config changes start causing incidents.",
+    "refs": [
+     {
+      "title": "Immutable ConfigMaps",
+      "url": "https://kubernetes.io/docs/concepts/configuration/configmap/#configmap-immutable",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Secrets, and why base64 is not encryption",
+    "body": "A **Secret** looks like a ConfigMap, but it is meant for sensitive values: passwords, API tokens, TLS keys. Pods use it the same three ways: `env` with `secretKeyRef`, `envFrom` with `secretRef`, or a volume.\n\nIts values sit in `data`, encoded in base64. Base64 is a way to write any bytes as plain letters, so binary keys fit in YAML. It is not encryption. Anyone can reverse it with one command, as the worked example shows. You can also write plain text in a `stringData` field, and the API server encodes it for you.\n\nSecrets have a `type` that tells tools what keys to expect:\n- `Opaque`: anything you like. The default.\n- `kubernetes.io/dockerconfigjson`: login details for a private registry such as GHCR, used through `imagePullSecrets`.\n- `kubernetes.io/tls`: a certificate and its private key, used by Gateways (Day 36).\n- `kubernetes.io/basic-auth` and `kubernetes.io/ssh-auth`: a user and password, or an SSH key.\n\nSo what is different about a Secret? A few real things:\n- Kubernetes sends a Secret only to nodes that run a Pod that needs it.\n- On the node, the kubelet keeps mounted Secrets in memory (tmpfs), never on disk.\n- `kubectl describe` shows the size of each value, not the value.\n- Access rules (RBAC) can allow reading ConfigMaps but not Secrets.\n\nBy default, though, Secrets are stored unencrypted in etcd. And anyone who can create a Pod in a namespace can mount, and so read, every Secret in it.",
+    "refs": [
+     {
+      "title": "Secrets",
+      "url": "https://kubernetes.io/docs/concepts/configuration/secret/",
+      "kind": "docs"
+     },
+     {
+      "title": "Secret types",
+      "url": "https://kubernetes.io/docs/concepts/configuration/secret/#secret-types",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Protecting Secrets inside the cluster",
+    "body": "The Kubernetes docs list the steps that actually protect Secrets. Here they are, plus one that people often forget (number 3):\n1. Turn on encryption at rest. The API server then encrypts Secrets before writing them to etcd, so a stolen backup or disk shows nothing.\n2. Limit who can read Secrets with RBAC (role-based access control, Day 38). Very few people and programs need `get` or `list` on Secrets.\n3. Limit who can create Pods in namespaces that hold important Secrets, because a Pod can mount any Secret in its namespace.\n4. Give each container only the Secrets it needs.\n\nOn a cluster you run yourself, encryption at rest means an `EncryptionConfiguration` file for the API server. The best setups use a KMS provider, where a cloud key service holds the real key. Managed clusters such as EKS, AKS and GKE offer this with their own key services, and some turn it on by default. Check your provider's docs.\n\nHow the app reads a Secret matters too. Many teams prefer mounted files to env vars. Env vars are easy to leak: a crash report, a debug page or a `printenv` in a support session can print them all. A file is read only when the code asks for it.\n\nNone of this changes one rule. A Secret manifest with real values must never go into git, not even in a private repo. Base64 in git is plain text that stays in the history forever.",
+    "refs": [
+     {
+      "title": "Encrypting confidential data at rest",
+      "url": "https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/",
+      "kind": "docs"
+     },
+     {
+      "title": "Good practices for Kubernetes Secrets",
+      "url": "https://kubernetes.io/docs/concepts/security/secrets-good-practices/",
+      "kind": "docs"
+     }
+    ]
+   },
+   {
+    "h": "Keeping Secrets out of git",
+    "body": "If Secrets cannot live in git, where do they come from when you deploy from git? Teams pick one of a few patterns:\n- External Secrets Operator: the real value lives in a vault, such as AWS Secrets Manager, Google Secret Manager or HashiCorp Vault. You commit an `ExternalSecret` object that says which value to fetch. A controller in the cluster fetches it and writes a normal Secret, and refreshes it when the vault changes.\n- Sealed Secrets: you encrypt a Secret with the cluster's public key, using the `kubeseal` tool, and commit the resulting `SealedSecret`. Only the controller in the cluster holds the private key, so only it can decrypt.\n- SOPS: you encrypt the values inside YAML files with a cloud key or an age key. The files go into git, and your deploy tool decrypts them on the way in.\n- The Secrets Store CSI Driver: the vault's values are mounted straight into the Pod as files, often without creating a Kubernetes Secret at all.\n\nWhich one? If your company already has a vault, External Secrets Operator is the common choice, because the vault stays the single place to rotate a password. For a small team without one, Sealed Secrets is the simplest to start with.\n\nhello-devops has no real secrets yet, so the lab has no Secret file. Day 40 shows how these tools fit into GitOps, and Day 53 goes deeper into secrets and access.",
+    "refs": [
+     {
+      "title": "External Secrets Operator",
+      "url": "https://github.com/external-secrets/external-secrets",
+      "kind": "read"
+     },
+     {
+      "title": "Sealed Secrets",
+      "url": "https://github.com/bitnami-labs/sealed-secrets",
+      "kind": "read"
+     },
+     {
+      "title": "SOPS",
+      "url": "https://github.com/getsops/sops",
+      "kind": "read"
+     }
+    ]
+   }
+  ],
+  "analogy": "A ConfigMap read as env vars is like a note in a new employee's locker on their first day. They read it once and never look again, so a changed note only reaches the next new hire. A mounted file is the notice board in the hallway, which people see whenever they walk past. A Secret is the same note in an envelope marked confidential, but the envelope is not sealed, which is why base64 hides nothing. The comparison breaks on reach. Anyone who can create Pods in a namespace can read all its Secrets, as if anyone allowed to hire staff could open every envelope the team holds.",
+  "diagram": "<svg viewBox=\"0 0 560 244\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"ConfigMaps and Secrets reach a container as environment variables, read once at start, or as mounted files that the kubelet updates\"><rect class=\"bxg\" x=\"16\" y=\"40\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"80\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">ConfigMap</text><rect class=\"bxp\" x=\"16\" y=\"156\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"80\" y=\"183\" font-size=\"13\" text-anchor=\"middle\">Secret</text><rect class=\"bx\" x=\"208\" y=\"40\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"276\" y=\"67\" font-size=\"13\" text-anchor=\"middle\">env vars</text><rect class=\"bx\" x=\"208\" y=\"156\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"276\" y=\"183\" font-size=\"13\" text-anchor=\"middle\">mounted files</text><rect class=\"bxt\" x=\"416\" y=\"98\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"480\" y=\"125\" font-size=\"13\" text-anchor=\"middle\">container</text><line class=\"ln\" x1=\"144\" y1=\"62\" x2=\"206\" y2=\"62\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"72\" x2=\"206\" y2=\"168\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"168\" x2=\"206\" y2=\"72\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"178\" x2=\"206\" y2=\"178\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"344\" y1=\"62\" x2=\"414\" y2=\"112\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"344\" y1=\"178\" x2=\"414\" y2=\"128\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"276\" y=\"28\" font-size=\"11\" text-anchor=\"middle\">read once at start</text><text class=\"ts\" x=\"276\" y=\"222\" font-size=\"11\" text-anchor=\"middle\">updated in place</text><text class=\"ts\" x=\"480\" y=\"166\" font-size=\"11\" text-anchor=\"middle\">restart for new env</text></svg>",
+  "diagram_caption": "Both objects reach a container as env vars (set once at start) or as mounted files (kept up to date by the kubelet).",
+  "worked": {
+   "title": "Watch a ConfigMap change reach a Pod, or not",
+   "steps": [
+    {
+     "say": "Apply the demo from the examples folder in the scratch namespace (create it again with `kubectl create namespace scratch` if you deleted it). It creates a ConfigMap with `COLOR: blue` and a Pod that prints the value as an env var and as a file every 5 seconds.",
+     "code": "$ kubectl apply -n scratch -f k8s/examples/config-demo.yaml\nconfigmap/demo-config created\npod/config-demo created\n$ kubectl logs -n scratch config-demo\nenv=blue file=blue\nenv=blue file=blue",
+     "lang": "console"
+    },
+    {
+     "say": "Change the value in the ConfigMap, then follow the logs. For a while nothing changes. After the kubelet's next sync, the file shows the new value. The env var never does.",
+     "code": "$ kubectl patch configmap demo-config -n scratch --type merge -p '{\"data\":{\"COLOR\":\"green\"}}'\nconfigmap/demo-config patched\n$ kubectl logs -n scratch config-demo -f --tail=3\nenv=blue file=blue\nenv=blue file=blue\nenv=blue file=green\nenv=blue file=green\n^C",
+     "lang": "console"
+    },
+    {
+     "say": "See how the kubelet swaps the file safely. The real data sits in a timestamped folder, and `..data` is a link to it. On a change, the kubelet writes a new folder and moves the link in one step, so the app never reads half a file. This link trick is also why `subPath` mounts never update.",
+     "code": "$ kubectl exec -n scratch config-demo -- ls -la /config\ntotal 12\ndrwxrwxrwx    3 root     root          4096 Oct 30 09:41 .\ndrwxr-xr-x    1 root     root          4096 Oct 30 09:38 ..\ndrwxr-xr-x    2 root     root          4096 Oct 30 09:41 ..2026_10_30_09_41_07.2716545396\nlrwxrwxrwx    1 root     root            32 Oct 30 09:41 ..data -> ..2026_10_30_09_41_07.2716545396\nlrwxrwxrwx    1 root     root            12 Oct 30 09:38 COLOR -> ..data/COLOR",
+     "lang": "console"
+    },
+    {
+     "say": "A bare Pod has no `rollout restart`, so replace it: `replace --force` deletes the Pod and creates it again from the same spec. The new container starts with the new env var.",
+     "code": "$ kubectl get pod config-demo -n scratch -o yaml | kubectl replace --force -f -\npod \"config-demo\" deleted from scratch namespace\npod/config-demo replaced\n$ kubectl logs -n scratch config-demo\nenv=green file=green",
+     "lang": "console"
+    },
+    {
+     "say": "Now a Secret. Create one from a literal value, read the stored field, then decode it. Base64 kept the value out of sight for exactly one command.",
+     "code": "$ kubectl create secret generic demo-secret -n scratch --from-literal=password='s3cr3t!'\nsecret/demo-secret created\n$ kubectl get secret demo-secret -n scratch -o jsonpath='{.data.password}'\nczNjcjN0IQ==\n$ kubectl get secret demo-secret -n scratch -o jsonpath='{.data.password}' | base64 --decode\ns3cr3t!",
+     "lang": "console"
+    },
+    {
+     "say": "Delete the scratch namespace. Everything in it goes: the demo ConfigMap, the Pod and the Secret.",
+     "code": "$ kubectl delete namespace scratch\nnamespace \"scratch\" deleted",
+     "lang": "console"
+    }
+   ]
+  },
+  "code": [
+   {
+    "lang": "yaml",
+    "title": "k8s/configmap.yaml",
+    "src": "# Settings for the app (Day 34). Each key becomes an environment variable (see envFrom in deployment.yaml).\n# Env vars are read once at start: after you change a value, run\n#   kubectl rollout restart deployment/hello-devops -n hello\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: hello-config\n  namespace: hello\ndata:\n  GREETING: \"Hello from Kubernetes!\"\n  REDIS_HOST: \"redis\" # the name of the Redis Service in this namespace",
+    "run": "kubectl apply -k k8s"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/redis.yaml",
+    "src": "# Redis keeps the visit counter, shared by all app pods (Day 34).\n# No disk here: the count resets if the Redis pod restarts (Day 36 covers storage).\n# Day 35 explains the readiness probe and the resources below.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: redis\n  namespace: hello\n  labels:\n    app: redis\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: redis\n  template:\n    metadata:\n      labels:\n        app: redis\n    spec:\n      containers:\n        - name: redis\n          image: redis:8-alpine\n          ports:\n            - containerPort: 6379\n          readinessProbe:\n            exec:\n              command: [\"redis-cli\", \"ping\"]\n            periodSeconds: 5\n          resources:\n            requests:\n              cpu: 50m\n              memory: 64Mi\n            limits:\n              memory: 128Mi\n---\n# A ClusterIP Service: reachable only inside the cluster, as \"redis\" from namespace hello.\napiVersion: v1\nkind: Service\nmetadata:\n  name: redis\n  namespace: hello\n  labels:\n    app: redis\nspec:\n  selector:\n    app: redis\n  ports:\n    - name: redis\n      port: 6379\n      targetPort: 6379",
+    "run": "kubectl apply -k k8s"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/deployment.yaml (Day 34 version; Day 35 adds probes and resources)",
+    "src": "# Runs 3 copies (pods) of hello-devops and replaces any that die.\n# Day 34 version: adds envFrom. Day 35 adds probes and resources.\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: hello-devops\n  namespace: hello\n  labels:\n    app: hello-devops\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: hello-devops # must match the pod labels below\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 0 # never drop below 3 ready pods during an update\n      maxSurge: 1 # add at most 1 extra pod at a time\n  template:\n    metadata:\n      labels:\n        app: hello-devops\n    spec:\n      containers:\n        - name: web\n          image: hello-devops:1.0.0\n          imagePullPolicy: IfNotPresent # use the image kind loaded; do not pull it\n          ports:\n            - name: http\n              containerPort: 8000\n          envFrom:\n            - configMapRef:\n                name: hello-config # every key in the ConfigMap becomes an env var",
+    "run": "kubectl apply -k k8s"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/kustomization.yaml (Day 34 version)",
+    "src": "# The list of files that make up the app. Apply them all with: kubectl apply -k k8s\n# Day 34 version: adds the ConfigMap and Redis. Day 35 adds hpa.yaml.\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - namespace.yaml\n  - configmap.yaml\n  - redis.yaml\n  - deployment.yaml\n  - service.yaml",
+    "run": "kubectl apply -k k8s"
+   },
+   {
+    "lang": "yaml",
+    "title": "k8s/examples/config-demo.yaml",
+    "src": "# Day 34: watch one ConfigMap value reach a container twice: as an env var and as a file.\n#   kubectl apply -n scratch -f k8s/examples/config-demo.yaml\n#   kubectl logs -n scratch config-demo -f\n#   kubectl patch configmap demo-config -n scratch --type merge -p '{\"data\":{\"COLOR\":\"green\"}}'\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: demo-config\ndata:\n  COLOR: \"blue\"\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: config-demo\nspec:\n  containers:\n    - name: show\n      image: busybox:1.37\n      # Every 5 seconds, print the env var and the file side by side.\n      command: [\"sh\", \"-c\", \"while true; do echo \\\"env=$COLOR file=$(cat /config/COLOR)\\\"; sleep 5; done\"]\n      envFrom:\n        - configMapRef:\n            name: demo-config # COLOR becomes an env var, set once when the container starts\n      volumeMounts:\n        - name: config\n          mountPath: /config # COLOR also becomes the file /config/COLOR, which the kubelet keeps up to date\n  volumes:\n    - name: config\n      configMap:\n        name: demo-config",
+    "run": "kubectl apply -n scratch -f k8s/examples/config-demo.yaml"
+   }
+  ],
+  "commands": [
+   {
+    "cmd": "kubectl create configmap hello-config -n hello --from-literal=GREETING=hi --dry-run=client -o yaml",
+    "what": "Print a ConfigMap as YAML from values on the command line, without creating it."
+   },
+   {
+    "cmd": "kubectl get configmap hello-config -n hello -o yaml",
+    "what": "Show a ConfigMap's data as stored in the cluster."
+   },
+   {
+    "cmd": "kubectl describe configmap hello-config -n hello",
+    "what": "Show a ConfigMap's keys and values in readable form."
+   },
+   {
+    "cmd": "kubectl exec -n hello deploy/hello-devops -- printenv GREETING",
+    "what": "Print the value one running container actually has."
+   },
+   {
+    "cmd": "kubectl rollout restart deployment/hello-devops -n hello",
+    "what": "Replace all Pods gradually, so they start with the current config."
+   },
+   {
+    "cmd": "kubectl patch configmap demo-config -n scratch --type merge -p '{\"data\":{\"COLOR\":\"green\"}}'",
+    "what": "Change one key of a live ConfigMap (for experiments; real changes go in the file)."
+   },
+   {
+    "cmd": "kubectl create secret generic demo-secret -n scratch --from-literal=password='s3cr3t!'",
+    "what": "Create a Secret from a value on the command line (for practice only)."
+   },
+   {
+    "cmd": "kubectl get secret demo-secret -n scratch -o jsonpath='{.data.password}' | base64 --decode",
+    "what": "Read a Secret value back, which shows that base64 hides nothing."
+   },
+   {
+    "cmd": "kubectl describe secret demo-secret -n scratch",
+    "what": "Show a Secret's type and the size of each value, without the values."
+   },
+   {
+    "cmd": "kubectl get secrets -n hello",
+    "what": "List Secrets with their type and number of keys."
+   },
+   {
+    "cmd": "kubectl get pod config-demo -n scratch -o yaml | kubectl replace --force -f -",
+    "what": "Delete a bare Pod and create it again from the same spec."
+   },
+   {
+    "cmd": "kubectl delete namespace scratch",
+    "what": "Delete a namespace and everything inside it."
+   }
+  ],
+  "mistake": "Committing a Secret manifest to git because \"it is encoded\". Base64 is not encryption, and git keeps every old version, so the value is public to anyone who can read the repo, forever. If it happens, rotate the password or token at once, then switch to External Secrets Operator, Sealed Secrets or SOPS so real values never reach git.",
+  "real_world": "At PayLite, each service's non-secret settings live in a ConfigMap generated by Kustomize, so every config change rolls the Pods automatically and can be rolled back with the code. Database passwords live in AWS Secrets Manager. External Secrets Operator syncs them into the cluster every hour, and the clusters have KMS encryption at rest turned on.",
+  "task": {
+   "title": "Give hello-devops its config, then change it",
+   "steps": [
+    "Write `k8s/configmap.yaml` and `k8s/redis.yaml`. Add `envFrom` to `k8s/deployment.yaml`, add both new files to `k8s/kustomization.yaml`, and run `kubectl apply -k k8s`.",
+    "Follow the rollout that `envFrom` started. Then call `curl localhost:8081` several times: the greeting comes from the ConfigMap, and `visits` now counts up by one on every call, whichever Pod answers.",
+    "Check what one container really has with `kubectl exec ... -- printenv GREETING`.",
+    "Change `GREETING` in `configmap.yaml` and apply again. Call curl. Which greeting do you get, and why?",
+    "Pick up the change with `kubectl rollout restart` and follow the rollout. Confirm that curl shows the new greeting.",
+    "Find what `rollout restart` changed in the Pod template: print the template's annotations with a jsonpath query.",
+    "Create a Secret named `hello-secret` in namespace `hello` with a key `API_TOKEN` and any fake value. Read it back with `-o yaml`, then decode it. Compare with what `kubectl describe secret` shows.",
+    "Write down who in a real cluster could read that token. Then delete the Secret and commit the four files (not the Secret)."
+   ],
+   "hints": [
+    "`kubectl get deploy hello-devops -n hello -o jsonpath='{.spec.template.metadata.annotations}'` prints the template's annotations.",
+    "Pods stuck in `CreateContainerConfigError`? The name in `envFrom` must match the ConfigMap's `metadata.name` exactly, in the same namespace.",
+    "`visits` still jumps around? Check that `REDIS_HOST` reached the Pods and that the Redis Pod is Running."
+   ],
+   "done_when": "After a rollout restart, `curl localhost:8081` shows your new greeting, and `visits` goes up by exactly one on each call no matter which Pod answers."
+  },
+  "explain_back": {
+   "prompt": "Explain in 3 to 4 sentences what happens to a running Deployment when you change its ConfigMap, and how you make the Pods use the new values. Mention env vars, mounted files and rollout restart.",
+   "answer": "Changing a ConfigMap does not restart any Pod. Containers that read it as environment variables keep the old values, because env vars are set only when a container starts. Containers that mount it as files see the new content after the kubelet's next sync, if the app reads the file again. To make every Pod use new env values, run `kubectl rollout restart`, which changes the Pod template and starts a normal rolling update. Tools like Kustomize get the same effect by giving each config version a new name."
+  },
+  "recap": [
+   "ConfigMaps hold plain settings outside the image; Pods read them as env vars, envFrom or files.",
+   "Env vars never change in a running container; mounted files update, except with subPath.",
+   "`kubectl rollout restart` or a new ConfigMap name in the template rolls Pods onto new config.",
+   "Immutable, versioned ConfigMaps make config changes safe to roll back with the code.",
+   "Secrets are base64-encoded, not encrypted; protect them with encryption at rest, RBAC and care about who can create Pods.",
+   "Keep real secret values out of git with External Secrets Operator, Sealed Secrets or SOPS."
+  ],
+  "check": [
+   {
+    "q": "An nginx Pod mounts `nginx.conf` from a ConfigMap as a whole folder. You change the ConfigMap. What happens?",
+    "options": [
+     "nginx notices the change and restarts with the new config",
+     "The file changes soon, but nginx uses it only after a reload",
+     "Nothing changes until someone deletes and recreates the Pod",
+     "The Pod fails, because mounted ConfigMap files are read-only"
+    ],
+    "answer": 1,
+    "why": "Mounted files are updated in place, but a program that read its config at start must reload it (or be restarted) to use the new file."
+   },
+   {
+    "q": "A teammate says: \"Our Secrets are safe, the YAML shows only base64.\" What is the best answer?",
+    "options": [
+     "True, as long as the cluster runs Kubernetes 1.30 or newer",
+     "True, because kubectl hides Secret values from every user",
+     "False, because Secrets cannot hold binary data like keys",
+     "False: anyone can decode base64; encryption and access rules protect them"
+    ],
+    "answer": 3,
+    "why": "Base64 is an encoding anyone can reverse; real protection is encrypting etcd and limiting who can read Secrets or create Pods."
+   },
+   {
+    "q": "You change both the image and the ConfigMap data of a Deployment, then roll back with `kubectl rollout undo`. Which combination runs now?",
+    "options": [
+     "Old image with the old ConfigMap data",
+     "New image with the old ConfigMap data",
+     "Old image with the new ConfigMap data",
+     "Nothing, because undo refuses to run"
+    ],
+    "answer": 2,
+    "why": "Undo restores the old Pod template, but a ConfigMap edited in place is not part of it, so the old code meets the new settings."
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the difference between a ConfigMap and a Secret?",
+    "a": "Both store key-value data that Pods consume as environment variables or files. ConfigMaps are for non-sensitive settings and are shown in plain text. Secrets are for sensitive data: values are base64-encoded, sent only to nodes that need them, kept in tmpfs on nodes and can be restricted separately with RBAC. They are not encrypted by default, so production clusters enable encryption at rest, often with a KMS provider."
+   },
+   {
+    "q": "How do you make Pods pick up a changed ConfigMap?",
+    "a": "Env vars are fixed at container start, so the Pods must be recreated, usually with `kubectl rollout restart`, which changes a template annotation and triggers a rolling update. Mounted files update in place after the kubelet syncs, but the app has to reload them, and subPath mounts never update. A cleaner pattern is versioned or hash-suffixed ConfigMap names, as Kustomize's configMapGenerator does, so a config change is a template change and can be rolled back."
+   },
+   {
+    "q": "How would you manage secrets for apps deployed with GitOps?",
+    "a": "Never commit plain Secret manifests, because base64 is readable and git history is permanent. With an existing vault, I would use External Secrets Operator: git holds an ExternalSecret reference, and the controller syncs the real value from AWS Secrets Manager or Vault. Without one, Sealed Secrets or SOPS let you commit encrypted values that only the cluster or the deploy tool can decrypt. On top of that: encryption at rest, tight RBAC on Secrets and on Pod creation, and rotation when anything leaks."
+   }
+  ],
+  "deeper": {
+   "minutes": 12,
+   "body": "How long does a mounted ConfigMap take to update? The docs give a formula rather than a number: the kubelet's sync period plus the delay of its cache. By default the kubelet watches ConfigMaps, so the cache delay is small, and the sync period is about a minute. In practice, plan for up to a minute or two, and never for \"instantly\".\n\nProjected volumes let one folder hold data from several sources. A `projected` volume can combine keys from ConfigMaps, Secrets, the Downward API (facts about the Pod itself, such as its name and labels) and a short-lived ServiceAccount token. It all appears as files in one place, which is tidy for apps that expect a single config folder.\n\nSecrets have a few more corners worth knowing:\n- Environment variables from a Secret are visible to anything that can read the process environment. Inside the container that includes every child process. On the node, it includes anyone who can inspect the container.\n- `kubectl get secret -o yaml` prints the values for anyone with `get` permission. The `describe` output hides them, but that is a convenience, not a control.\n- A ServiceAccount used to get a long-lived token Secret automatically. Since Kubernetes 1.24 that no longer happens. Pods get short-lived tokens through a projected volume, and those expire and rotate on their own.\n\nEncryption at rest works like this on a self-managed cluster. You give the API server an `EncryptionConfiguration` file that lists providers for the `secrets` resource:\n- `identity` means no encryption, which is the default.\n- `aescbc`, `aesgcm` and `secretbox` encrypt with a key kept in the same file on the control-plane node.\n- `kms` (version 2) asks an outside key service to wrap the data keys, so the real key never sits on the node.\n\nThe first provider in the list encrypts new writes, and all listed providers can decrypt. Existing Secrets stay as they were until they are written again. So after you turn encryption on, you rewrite every Secret once, for example with `kubectl get secrets -A -o json | kubectl replace -f -`.\n\nOn kind you could try this by mounting a config file into the control-plane node with `extraMounts` and a kubeadm patch. It is a good weekend exercise, not something you need for this course.\n\nFinally, a word on size and count. A Secret, like a ConfigMap, is limited to 1 MiB. If you find yourself storing large files in either, a volume or an object store is usually the better place."
+  },
+  "sources": [
+   {
+    "title": "ConfigMaps",
+    "url": "https://kubernetes.io/docs/concepts/configuration/configmap/"
+   },
+   {
+    "title": "Secrets",
+    "url": "https://kubernetes.io/docs/concepts/configuration/secret/"
+   },
+   {
+    "title": "Encrypting confidential data at rest",
+    "url": "https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/"
+   },
+   {
+    "title": "Good practices for Kubernetes Secrets",
+    "url": "https://kubernetes.io/docs/concepts/security/secrets-good-practices/"
+   }
+  ]
+ }
+]

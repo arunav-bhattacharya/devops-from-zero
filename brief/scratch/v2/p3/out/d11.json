@@ -29,5 +29,6 @@
  "alprel": "$ docker run --rm alpine cat /etc/alpine-release\n3.24.3",
  "ver": "$ docker version --format '{{.Server.Os}}/{{.Server.Arch}}'\nlinux/amd64",
  "capped": "$ docker run -d --name capped -m 64m redis:8-alpine\n1d3e674dbc818e7ca51cf6c87c1f1aa30993d00d74266708e3bc87731336227b",
- "stats": "$ docker stats --no-stream capped\nCONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O     BLOCK I/O   PIDS\n1d3e674dbc81   capped    0.23%     8.633MiB / 64MiB    13.49%    0B / 126B   0B / 0B     6"
+ "stats": "$ docker stats --no-stream capped\nCONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O     BLOCK I/O   PIDS\n1d3e674dbc81   capped    0.23%     8.633MiB / 64MiB    13.49%    0B / 126B   0B / 0B     6",
+ "lifecycle": "$ docker create --name life alpine sleep 300\n831635a0bd9d5802f2c836c9ceda101a3a4987dd102bcf760ed0bc32f49d918d\n$ docker inspect -f '{{.State.Status}}' life\ncreated\n$ docker start life\nlife\n$ docker pause life\nlife\n$ docker inspect -f '{{.State.Status}}' life\npaused\n$ docker unpause life\nlife\n$ time docker stop life\nlife\n\nreal\t0m10.194s\nuser\t0m0.005s\nsys\t0m0.026s\n$ docker inspect -f '{{.State.Status}} {{.State.ExitCode}}' life\nexited 137"
 }

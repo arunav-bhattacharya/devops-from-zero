@@ -30,8 +30,8 @@ So `run: echo "Branch ${{ github.ref_name }}"` never reaches the shell in that f
 
 Two consequences follow, and both trip people up:
 
-- Pasted text becomes code. If an expression holds text that someone else controls, such as a pull request title, a title with a quote mark in it can end your string and add its own commands. Put such values in `env:` and use `"$TITLE"` in the script, so the shell treats them as data.
-- A job-level `if:` is checked before any runner exists. It can only use what GitHub knows at that moment: the `github`, `needs`, `vars` and `inputs` contexts. `env`, `steps` and `runner` do not exist yet, so `if: env.DEPLOY == 'yes'` on a job is an error.
+- Pasted text becomes code. Say an expression holds text that someone else controls, such as a pull request title. A title with a quote mark in it can end your string and add its own commands. Put such values in `env:` and use `"$TITLE"` in the script, so the shell treats them as data.
+- A job-level `if:` is checked before any runner exists. It can only use what GitHub knows at that moment, which is the `github`, `needs`, `vars` and `inputs` contexts. The `env`, `steps` and `runner` contexts do not exist yet, so `if: env.DEPLOY == 'yes'` on a job is an error.
 
 When something behaves strangely, ask which of the two moments you are in.
 """)
@@ -49,7 +49,7 @@ A **context** is a named set of facts that GitHub fills in for each run. You rea
 
 Expressions have the usual operators: `==`, `!=`, `&&`, `||` and `!`. Strings go in single quotes, and comparisons ignore upper and lower case. A few functions help: `contains()`, `startsWith()`, `format()`, `toJSON()`, `fromJSON()` and `hashFiles()`.
 
-A property that does not exist gives an empty string, not an error. So a typo such as `github.event_nmae` fails quietly on GitHub, and actionlint is the tool that catches it. To see what a context really holds, print it once: put `CTX: ${{ toJSON(github) }}` under a step's `env:` and run `echo "$CTX"`. It is the fastest way to learn what an event carries.
+A property that does not exist gives an empty string, not an error. So a typo such as `github.event_nmae` fails quietly on GitHub, and actionlint is the tool that catches it. To see what a context really holds, print it once: put `CTX: ${{ toJSON(github) }}` under a step's `env:` and run `echo "$CTX"`. It is the fastest way to learn what an event carries. Do it in a practice workflow only: the `github` context includes `github.token`, and although GitHub masks it in logs, the docs ask you to be careful.
 """)
 
 S3 = T("""
@@ -64,7 +64,7 @@ There are four status functions:
 - `cancelled()`: the run was cancelled.
 - `always()`: true no matter what, even during a cancel.
 
-To run after a failure, say so: `if: ${{ failure() && steps.smoke.outcome == 'failure' }}` runs only when that one step failed. To run whatever happened, prefer `!cancelled()`. GitHub's docs warn against `always()` on important steps: the step then also runs while the run is being cancelled, and a stuck step can hang until the timeout. `always()` fits small jobs that only report, like the one in today's worked example.
+To run after a failure, say so: `if: ${{ failure() && steps.smoke.outcome == 'failure' }}` runs only when that one step failed. To run whatever happened, prefer `!cancelled()`. GitHub's docs warn against `always()` on important steps. Such a step also runs while the run is being cancelled, and if it gets stuck, it hangs until the timeout. The `always()` function fits small jobs that only report, like the one in today's worked example.
 
 A step can also be allowed to fail with `continue-on-error: true`. Then `steps.<id>.outcome` says `failure`, while `steps.<id>.conclusion` says `success`, and the job carries on.
 """)
@@ -156,7 +156,7 @@ LESSON = {
     "sections": [
         {"h": "Two moments: GitHub reads, then the runner runs", "body": S1, "refs": refs("contexts", "script_injection")},
         {"h": "Contexts and expressions", "body": S2, "refs": refs("contexts", "expressions", "v_kk2")},
-        {"h": "if, and the four status functions", "body": S3, "refs": refs("expressions", "conditions")},
+        {"h": "Conditions: if and the four status functions", "body": S3, "refs": refs("expressions", "conditions")},
         {"h": "Passing values: outputs, GITHUB_ENV and the run summary", "body": S4, "refs": refs("workflow_commands", "pass_outputs")},
         {"h": "Inputs for the Run workflow button", "body": S5, "refs": refs("manual_run", "events")},
         {"h": "Reuse: composite actions and reusable workflows", "body": S6, "refs": refs("reuse", "composite", "v_composite")},
@@ -169,7 +169,7 @@ LESSON = {
         "title": "A three-job pipeline on your laptop, with act",
         "steps": [
             {
-                "say": "Practise in a scratch repository, so hello-devops stays clean. act (from Day 19) runs workflows in Docker on your Mac, and for shell-only jobs the `ubuntu:24.04` image you pulled on Day 2 is all it needs. Create the folder and paste `logic-demo.yml` from the Files section, then commit, because act takes `GITHUB_SHA` from your last commit.",
+                "say": "Practise in a scratch repository, so hello-devops stays clean. The tool act (Day 19) runs workflows in Docker on your Mac. For shell-only jobs, the `ubuntu:24.04` image you pulled on Day 2 is all it needs. Create the folder and paste `logic-demo.yml` from the Files section, then commit, because act takes `GITHUB_SHA` from your last commit.",
                 "code": T("""
                     mkdir -p ~/code/logic-demo/.github/workflows
                     cd ~/code/logic-demo
@@ -225,7 +225,7 @@ LESSON = {
                 "lang": "yaml",
             },
             {
-                "say": "Commit and run again. The result is the same, and the build line now comes from `build/build/build`: the called workflow, the calling job and the called job. On GitHub the called job's check gets a new, longer name in the same way, which is why a ruleset may need updating after this kind of refactor.",
+                "say": "Commit and run again. The result is the same, but act now labels the build line `build/build/build`, a name built from the reusable workflow and its jobs. On GitHub, too, the called job's check gets a new name, which is why a ruleset may need updating after this kind of refactor.",
                 "code": "$ git add -A && git commit -m \"Move build into a reusable workflow\"\n$ act workflow_dispatch -P ubuntu-latest=ubuntu:24.04 2>&1 | grep -F ' | '\n" + OUT["reusable"],
                 "lang": "console",
             },
@@ -270,7 +270,7 @@ LESSON = {
         {"cmd": "actionlint", "what": "Check workflows, including expressions, context names and the inputs of local actions."},
     ],
     "mistake": "The most common mistake is expecting a step to run after a failure because its condition looks true, such as `if: github.ref == 'refs/heads/main'` on a cleanup or notify step. The hidden `success()` skips it every time something earlier fails, which is exactly when you wanted it. Write the status function yourself: `failure()` for 'only after a failure', `!cancelled()` for 'whatever happened'.",
-    "real_world": "PayLoop's platform team keeps a few composite actions, such as one that sets up the JVM and Gradle caches, and two reusable workflows: one that builds and scans an image, and one that deploys through an environment with approvals. Each service's own workflow is about thirty lines of calls. When the team fixes the scan step, every service picks up the fix on its next run, and the team pins the reusable workflows to a commit so a bad change cannot spread at once.",
+    "real_world": "PayLoop's platform team keeps a few composite actions, such as one that sets up the JVM and the Gradle cache. It also keeps two reusable workflows: one builds and scans an image, and one deploys through an environment with approvals. Each service's own workflow is about thirty lines of calls. When the team fixes the scan step, every service picks up the fix on its next run. Services pin the reusable workflows to a commit, so a bad change cannot spread everywhere at once.",
     "task": {
         "title": "Teach the lab's CI three new tricks",
         "steps": [
@@ -292,7 +292,7 @@ LESSON = {
     },
     "explain_back": {
         "prompt": "Explain how a value made in one job reaches another job, in 3 to 4 sentences. Mention GITHUB_OUTPUT, the job's outputs block and needs, and say why GITHUB_ENV is not enough.",
-        "answer": "A step appends a line like version=1.4.0 to the file in $GITHUB_OUTPUT, and because the step has an id, later steps can read it as steps.make.outputs.version. The job's outputs block maps a job output to that step output. Another job that lists the first one under needs then reads it as needs.version.outputs.version. GITHUB_ENV only sets variables for later steps on the same runner, and every job runs on a fresh machine, so it cannot carry a value across jobs.",
+        "answer": "A step appends a line like version=1.4.0 to the file in $GITHUB_OUTPUT. Because the step has an id, later steps can read it as steps.make.outputs.version. The job's outputs block maps a job output to that step output. Another job that lists the first one under needs then reads it as needs.version.outputs.version. GITHUB_ENV only sets variables for later steps on the same runner, and every job runs on a fresh machine, so it cannot carry a value across jobs.",
     },
     "recap": [
         "GitHub works out ${{ }} expressions before the shell runs, so pass untrusted text through env.",
@@ -365,7 +365,7 @@ LESSON = {
 
             Now the shell receives the text as data in a variable, and no quote in it can change the script. The same rule applies to `actions/github-script` and any other place where an expression lands inside code.
 
-            You do not have to spot these by eye. actionlint reports them. On a test file with that greeting step it printed: "github.event.pull_request.title" is potentially untrusted. avoid using it directly in inline scripts. instead, pass it through an environment variable. Run it before every push, and add it to CI later if you like.
+            You do not have to spot these by eye. actionlint reports them. For that greeting step it prints `"github.event.pull_request.title" is potentially untrusted. avoid using it directly in inline scripts.` and tells you to use an environment variable. Run it before every push, and add it to CI later if you like.
 
             Two more facts make the risk smaller for you today. A pull request from a fork gets no secrets and only a read-only token in a `pull_request` workflow, so the damage is limited. The dangerous combination is untrusted text plus a privileged trigger, such as `pull_request_target`. Day 21 looks at that trigger and why GitHub is starting to block it by default in public repositories. Read GitHub's page on {inj} for more examples.
         """).format(inj=link("script_injection", "script injections")),

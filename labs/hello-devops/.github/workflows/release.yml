@@ -20,8 +20,8 @@ jobs:
     permissions:
       contents: read
       packages: write # push images to GHCR
-      id-token: write # ask GitHub for an OIDC token, used for keyless signing (Day 22)
-      attestations: write # store provenance and SBOM attestations (Day 22)
+      id-token: write # ask GitHub for an OIDC token, used for keyless signing (Day 52)
+      attestations: write # store provenance and SBOM attestations (Day 52)
     steps:
       - uses: actions/checkout@v7
 
@@ -53,7 +53,7 @@ jobs:
             type=semver,pattern={{version}}
             type=sha
 
-      # Day 22, step 1: build for this runner only and load the image into
+      # Day 52, step 1: build for this runner only and load the image into
       # the local Docker engine. Nothing is pushed yet.
       - name: Build the image for scanning
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -64,7 +64,7 @@ jobs:
           build-args: APP_VERSION=${{ steps.meta.outputs.version }}
           cache-from: type=gha
 
-      # Day 22, step 2: stop the release on HIGH or CRITICAL issues that have a fix.
+      # Day 52, step 2: stop the release on HIGH or CRITICAL issues that have a fix.
       - name: Scan the image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -87,7 +87,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Day 22, step 3: write the ingredient list (SBOM) of the pushed image.
+      # Day 52, step 3: write the ingredient list (SBOM) of the pushed image.
       - name: Create an SBOM (SPDX format)
         uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
@@ -95,7 +95,7 @@ jobs:
           format: spdx-json
           output-file: sbom.spdx.json
 
-      # Day 22, step 4: sign the image by its digest. Keyless: no private key to
+      # Day 52, step 4: sign the image by its digest. Keyless: no private key to
       # store or leak. The signature is tied to this workflow's identity.
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -104,7 +104,7 @@ jobs:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: cosign sign --yes "${IMAGE}@${DIGEST}"
 
-      # Day 22, step 5: record how the image was built (SLSA provenance) and
+      # Day 52, step 5: record how the image was built (SLSA provenance) and
       # attach the SBOM. Free for public repositories. Storage records only
       # work for repositories owned by an organization, so they are off here.
       - name: Attest build provenance

@@ -93,7 +93,7 @@ L = {
 - ReplicaSet: keeps exactly N Pods from one template running.
 - Pod: runs your container.
 
-Each object points to its owner in `metadata.ownerReferences`. Delete the Deployment and the garbage collector removes its ReplicaSets and Pods too.
+Each object points to its owner in `metadata.ownerReferences`. Delete the Deployment and the garbage collector removes its ReplicaSets and Pods too. You can follow the chain yourself: `kubectl get pod NAME -o jsonpath='{.metadata.ownerReferences[0].name}'` prints the ReplicaSet that owns a Pod.
 
 The names tell the story. A Pod called `hello-devops-698679bfb-7l7h8` belongs to the ReplicaSet `hello-devops-698679bfb`, which belongs to the Deployment `hello-devops`. The middle part is a hash of the Pod template. Kubernetes also stores it as a label, `pod-template-hash`, on the ReplicaSet and its Pods. That label keeps the Pods of two versions apart, so their ReplicaSets never fight over each other's Pods.
 
@@ -110,7 +110,7 @@ You will rarely touch ReplicaSets yourself. Think of them as the Deployment's sh
 - Change `replicas` from 3 to 5, and two Pods appear. That is all scaling is.
 - A container crashes, and the kubelet restarts it in place. The Pod still exists, so the ReplicaSet does nothing.
 
-A dead node takes longer, and this surprises people. The node stops reporting, and Kubernetes marks it not ready. By default, its Pods stay bound to it for five more minutes, in case the node comes back. Only then are they evicted, and the ReplicaSet creates replacements on healthy nodes. So spread replicas over several nodes, and do not expect instant failover.
+A dead node takes longer than most people expect. The node stops reporting, and Kubernetes marks it not ready. By default, its Pods stay bound to it for five more minutes, in case the node comes back. Only then are they evicted, and the ReplicaSet creates replacements on healthy nodes. So spread replicas over several nodes, and do not expect instant failover.
 
 The count uses labels, not names. Remove the `app` label from one running Pod, and the ReplicaSet no longer counts it. It creates a replacement, while the relabelled Pod keeps running with no owner. Handy for pulling a Pod aside to debug it, and confusing if done by accident. For the same reason, a Deployment's `selector` cannot be changed after creation.""",
             "refs": [
@@ -131,6 +131,8 @@ These do not:
 - Changing a ConfigMap that the Pods read. The template did not change, so nothing rolls (Day 34 shows the fix).
 
 For each new template, the Deployment creates a new ReplicaSet and moves Pods from the old one to the new one. The old ReplicaSet is not deleted. It stays, scaled to 0, as a record of that version. That record is what makes rollback fast. By default the Deployment keeps the last 10 old ReplicaSets, set by `revisionHistoryLimit`.
+
+To know before you apply whether a change will roll, run `kubectl diff -k k8s`. If the diff touches lines under `template:`, expect new Pods.
 
 Each ReplicaSet gets a revision number in an annotation. `kubectl rollout history` lists them. Only template changes create revisions, so the history stays a clean list of versions you actually shipped.""",
             "refs": [
@@ -170,6 +172,8 @@ When new Pods never become ready, because of a bad image or a crash at start, th
 - `kubectl rollout status` then exits with an error, so a CI job can notice and act.
 - Kubernetes does not roll back on its own. You fix the image or run `kubectl rollout undo`.
 
+For hello-devops, a version that crashes on start never becomes ready, and you get the stuck rollout from the worked example. A version that starts but answers every request with an error is worse. Without a probe it looks ready, and the rollout completes.
+
 `minReadySeconds` adds one more guard. A new Pod must stay ready for that many seconds before it counts as available. That catches apps that start fine and crash a few seconds later.""",
             "refs": [
                 {"title": "Deployment status and failed rollouts", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status", "kind": "docs"},
@@ -208,13 +212,13 @@ That sounds bad, and for most web apps it is. Recreate exists for apps where two
 
 For hello-devops, a rolling update is right. The app is stateless, and Redis holds the shared counter, so any number of versions can run side by side.
 
-Rolling update and Recreate are the only two strategies a Deployment has. Blue-green and canary releases, where you shift traffic gradually or flip it all at once, need extra tools such as Argo Rollouts, or traffic rules at a Gateway (Day 36).""",
+Rolling update and Recreate are the only two strategies a Deployment has. Canary and blue-green releases need extra tools. A canary shifts traffic to the new version a little at a time, and blue-green flips all traffic at once. Argo Rollouts can do both, and so can traffic rules at a Gateway (Day 36).""",
             "refs": [
                 {"title": "Deployment strategy", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy", "kind": "docs"},
             ],
         },
     ],
-    "analogy": "Think of replacing the staff of a call center during working hours. The supervisor (the Deployment) hires one new operator, waits until they are trained and taking calls, then sends one old operator home, and repeats until the whole team is new. If the new hires keep failing training, the old team simply keeps working. The picture breaks on memory: a new operator can look up past calls, but a new Pod starts empty, so anything worth keeping must live outside it, the way hello-devops keeps its counter in Redis.",
+    "analogy": "Think of replacing the staff of a call center during working hours. The supervisor (the Deployment) hires one new operator, waits until they are trained and taking calls, then sends one old operator home, and repeats until the whole team is new. If the new hires keep failing training, the old team keeps working. The picture breaks on memory. A new operator can look up past calls, but a new Pod starts empty. Anything worth keeping must live outside it, the way hello-devops keeps its counter in Redis.",
     "diagram": DIAGRAM,
     "diagram_caption": "During a rollout the Deployment scales the new ReplicaSet up and the old one down. The Service sends traffic to ready Pods of both versions.",
     "worked": {
@@ -330,23 +334,23 @@ Rolling update and Recreate are the only two strategies a Deployment has. Blue-g
         {
             "q": "You run `kubectl scale deployment web --replicas=10`. What does `kubectl rollout history deployment/web` show afterwards?",
             "options": [
+                "The same revisions as before",
                 "A new revision with the CHANGE-CAUSE `scale`",
                 "Ten new revisions, one per Pod",
-                "The same revisions as before",
                 "Only revision 1, because history resets on scale",
             ],
-            "answer": 2,
+            "answer": 0,
             "why": "Scaling changes `replicas`, not the Pod template, so no new ReplicaSet or revision is created.",
         },
         {
             "q": "A new version starts, passes no readiness probe (there is none), and then fails every real request. What happens during the rolling update?",
             "options": [
-                "The rollout finishes and every Pod runs the broken version",
                 "The rollout stalls after the first Pod, so users are safe",
                 "Kubernetes notices the errors and rolls back by itself",
+                "The rollout finishes and every Pod runs the broken version",
                 "The Service skips the new Pods because they return errors",
             ],
-            "answer": 0,
+            "answer": 2,
             "why": "Without a readiness probe a Pod counts as ready once its container starts, so the Deployment keeps replacing old Pods with broken ones.",
         },
     ],
@@ -383,7 +387,7 @@ A few more fields are worth knowing by name:
 
 `kubectl rollout restart` is also a template change. It writes the current time into the annotation `kubectl.kubernetes.io/restartedAt` inside the Pod template. The template is now different, so a normal rolling update replaces every Pod. Day 34 uses this to make Pods pick up new config.
 
-Finally, where do canary and blue-green releases fit? A Deployment cannot send 10% of traffic to a new version on purpose. During a rolling update the share of traffic simply follows the share of ready Pods. For controlled traffic shifting, teams use Argo Rollouts or Flagger, or weights on Gateway API routes (Day 36).""",
+Finally, where do canary and blue-green releases fit? A Deployment cannot send 10% of traffic to a new version on purpose. During a rolling update the share of traffic follows the share of ready Pods. For controlled traffic shifting, teams use Argo Rollouts or Flagger, or weights on Gateway API routes (Day 36).""",
     },
     "sources": [
         {"title": "Deployments", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"},

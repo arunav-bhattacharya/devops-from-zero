@@ -13,9 +13,20 @@ LAB = ROOT / "labs/hello-devops"
 FILES = pathlib.Path(__file__).resolve().parent / "files"
 
 
+class Txt(str):
+    """A str whose format() fills only the named {placeholders} it is given,
+    so workflow text such as ${{ github.sha }} or bash -e {0} stays as it is."""
+
+    def format(self, **kw):
+        out = str(self)
+        for k, v in kw.items():
+            out = out.replace("{" + k + "}", v)
+        return out
+
+
 def T(s):
     """Dedent and strip a triple-quoted block."""
-    return textwrap.dedent(s).strip("\n").rstrip()
+    return Txt(textwrap.dedent(s).strip("\n").rstrip())
 
 
 def lab(path):

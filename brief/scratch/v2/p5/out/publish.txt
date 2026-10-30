@@ -1,0 +1,28 @@
+Starting a Gradle Daemon, 4 stopped Daemons could not be reused, use --status for details
+Calculating task graph as no cached configuration is available for tasks: :greeting:publishToMavenLocal
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :build-logic:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :build-logic:compilePluginsBlocks UP-TO-DATE
+> Task :build-logic:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :build-logic:generateScriptPluginAdapters UP-TO-DATE
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :greeting:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :greeting:processResources NO-SOURCE
+> Task :greeting:generatePomFileForMavenPublication
+> Task :greeting:compileKotlin
+> Task :greeting:compileJava NO-SOURCE
+> Task :greeting:classes UP-TO-DATE
+> Task :greeting:jar
+> Task :greeting:generateMetadataFileForMavenPublication
+> Task :greeting:publishMavenPublicationToMavenLocal
+> Task :greeting:publishToMavenLocal
+
+BUILD SUCCESSFUL in 38s
+14 actionable tasks: 5 executed, 9 up-to-date
+Configuration cache entry stored.

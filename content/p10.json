@@ -1,0 +1,1077 @@
+{
+ "part": 10,
+ "title": "Dashboards with Grafana",
+ "intro": "Part 9 put the lab's metrics into Prometheus. This part puts them in front of people. Day 45 builds a Grafana dashboard that an on-call engineer can read in seconds, and keeps it as code in git. Day 46 adds Grafana alerting, collects logs with Alloy and Loki, and tours the rest of the Grafana stack.",
+ "lessons": [
+  {
+   "id": "d45",
+   "title": "Grafana dashboards",
+   "minutes": 50,
+   "goal": "By the end you can build Grafana panels from PromQL with the right units, thresholds and variables, lay out a RED dashboard an on-call engineer can read in seconds, and provision it from files in git.",
+   "guess": {
+    "q": "A Grafana dashboard shows the last 7 days of request rates for hello-devops. Where do those numbers live?",
+    "options": [
+     "In Grafana's own database, copied over from Prometheus every 15 seconds",
+     "In Prometheus; each panel sends its query there when the page loads",
+     "In the dashboard's JSON file, which saves the values of every panel",
+     "In your browser's cache, filled the first time you open the page"
+    ],
+    "answer": 1,
+    "why": "Grafana stores dashboards, users and settings, but not your metrics. Each panel asks a data source, here Prometheus, every time it loads or refreshes."
+   },
+   "terms": [
+    {
+     "term": "Data source",
+     "plain": "A connection from Grafana to a system that stores data, such as Prometheus for metrics or Loki for logs."
+    },
+    {
+     "term": "Panel",
+     "plain": "One box on a Grafana dashboard: one or more queries plus a visualization that draws the result."
+    },
+    {
+     "term": "Visualization",
+     "plain": "How a panel draws its data, for example as a time series graph, a single stat, a gauge, a table or a heatmap."
+    },
+    {
+     "term": "Unit",
+     "plain": "A panel setting that says what a number means, so a ratio of 0.034 can show as 3.4% and 0.2 seconds as 200 ms."
+    },
+    {
+     "term": "Threshold",
+     "plain": "A value at which a panel changes color, for example red once the error ratio reaches 5%."
+    },
+    {
+     "term": "Transformation",
+     "plain": "A step inside Grafana that reshapes query results (rename, sort, join, filter) before the panel draws them."
+    },
+    {
+     "term": "Dashboard variable",
+     "plain": "A dropdown at the top of a dashboard; its value is put into every query that uses $name."
+    },
+    {
+     "term": "Provisioning",
+     "plain": "Grafana loading data sources, dashboards and alerts from files at start, so they can live in git."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Grafana draws, Prometheus remembers",
+     "body": "Grafana is a web app for looking at data that lives somewhere else. In the lab, Prometheus scrapes and stores the metrics (Days 42 to 44). Grafana asks Prometheus questions in PromQL and draws the answers. It has a small database of its own for dashboards, users and alert rules, but the numbers stay in Prometheus.\n\nEach system Grafana can ask is a **data source**. One Grafana can talk to many at once:\n- Prometheus and Mimir, for metrics.\n- Loki (Day 46) and Elasticsearch (Part 11), for logs.\n- Tempo and Jaeger, for traces.\n- PostgreSQL, MySQL and many hosted services, for everything else.\n\nHere is what happens when you open a dashboard:\n1. Your browser loads the dashboard's JSON from the Grafana server.\n2. For each panel, the browser sends the panel's query to Grafana.\n3. Grafana passes it on to Prometheus. That is what `access: proxy` means in the data source file.\n4. Prometheus answers, and the browser draws the result.\n\nTwo things follow from this. Grafana can't show anything Prometheus never scraped, so an empty graph is usually a scrape or query problem. And every open dashboard runs all its queries again on each refresh. A wall screen with 30 heavy panels that refreshes every 10 seconds is real load on Prometheus.\n\nThe lab's Grafana is already in `observability/compose.yaml`: the `grafana/grafana:13.3.0` image on http://localhost:3000, user `admin`, password `admin`. Many older tutorials use the `grafana/grafana-oss` image. It stopped getting updates at version 12.4, so skip it.",
+     "refs": [
+      {
+       "title": "Grafana docs: data sources",
+       "url": "https://grafana.com/docs/grafana/latest/datasources/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana docs: run Grafana in Docker (source on GitHub)",
+       "url": "https://github.com/grafana/grafana/blob/main/docs/sources/setup-grafana/installation/docker/index.md",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana tutorial for beginners (video)",
+       "url": "https://www.youtube.com/watch?v=vf5MJLoXUG0",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Panels: pick the chart from the question",
+     "body": "A panel is one box on a dashboard: a query and a visualization. Start from the question the panel answers, then pick how to draw it:\n- How does it change over time? Time series, the line chart. Right most of the time.\n- What is the number right now? Stat: one big number with a small trend line behind it.\n- How close are we to a limit? Gauge: a dial from a minimum to a maximum, like disk use from 0 to 100%.\n- How do these things compare? Bar chart or bar gauge: one bar per path, pod or region.\n- What are the exact values? Table: rows and columns you can sort.\n- How are the values spread out? Heatmap: time across, buckets up the side, color for how many.\n\nA panel can hold several queries, named A, B, C and so on (the refId). The lab's latency panel has three: p50 in A, p95 in B and p99 in C. Each query can return many series, and the legend names them. Write `{{status}}` in the legend field and each line is named `200` or `500` from its labels.\n\nA stat panel squeezes a whole series into one number. A setting called Calculation decides how: Last, Mean, Max and others. This trips people up. A stat that shows the mean of the last 7 days hides a 10-minute outage. For \"right now\", use Last *, which means the last value that is not empty.\n\nGrafana 13 also suggests visualizations. It looks at the shape of your query result and offers a few charts that fit. Treat that as a first draft, and check it against your question.",
+     "refs": [
+      {
+       "title": "Grafana docs: panel overview",
+       "url": "https://grafana.com/docs/grafana/latest/visualizations/panels-visualizations/panel-overview/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana docs: all visualizations",
+       "url": "https://grafana.com/docs/grafana/latest/visualizations/panels-visualizations/visualizations/",
+       "kind": "docs"
+      },
+      {
+       "title": "Creating visualizations with Grafana (Grafana for Beginners series)",
+       "url": "https://www.youtube.com/watch?v=yNRnLyVntUw",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Queries: PromQL plus Grafana's helpers",
+     "body": "The query editor has two modes. Builder lets you click a metric, labels and functions together. Code is a text box for PromQL. Both produce the same query, so use Builder to explore and Code once you know what you want.\n\nGrafana adds a few variables of its own to PromQL. The one you will use most is `$__rate_interval`. It goes where you would write the range in `rate()`:\n\n`sum(rate(hello_responses_total[$__rate_interval]))`\n\nWhy not write `[1m]`? Because the right range depends on how far you zoom out. On a 30-minute graph, Grafana asks Prometheus for a point every 15 seconds, and `[1m]` is fine. On a 7-day graph the points are many minutes apart. A one-minute window then looks at one minute out of every ten and misses the spikes in between. The `$__rate_interval` variable grows with the gap between points. Grafana takes the larger of two values:\n- the gap between points plus one scrape interval;\n- four scrape intervals, the Prometheus advice from Day 43.\n\nIt only works if Grafana knows the scrape interval. That is the `timeInterval: 15s` line in the lab's data source file, and it must match `scrape_interval` in `prometheus.yml`.\n\nTwo more settings matter:\n- Range or instant. A range query returns many points, for graphs. An instant query returns one value per series, which is all a stat or a table needs.\n- Empty results. Before any request has failed, the 5xx series doesn't exist. An error ratio built on it shows \"No data\" instead of 0%. Adding `or vector(0)` gives you a real zero. The worked example shows both.",
+     "refs": [
+      {
+       "title": "Grafana docs: Prometheus template variables and $__rate_interval",
+       "url": "https://grafana.com/docs/grafana/latest/datasources/prometheus/template-variables/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana blog: $__rate_interval for rate queries that just work",
+       "url": "https://grafana.com/blog/new-in-grafana-7-2-rate-interval-for-prometheus-rate-queries-that-just-work/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Units, thresholds and overrides",
+     "body": "Prometheus stores base units: seconds, bytes, and ratios between 0 and 1 (Day 42). That is right for storage and hard on a tired human. The unit setting fixes the display without touching the data:\n- 0.0347 with unit \"Percent (0.0-1.0)\" shows as 3.47%.\n- 0.231 with unit \"seconds\" shows as 231 ms.\n- 3.76 with unit \"requests/sec\" shows as 3.76 req/s.\n- 1610612736 with unit \"bytes (IEC)\" shows as 1.50 GiB.\n\nSo don't multiply by 100 in PromQL to get a percentage. Keep the ratio and set the unit. In the JSON these are short codes: `percentunit`, `s`, `reqps`, `bytes`.\n\nA threshold is a value where the color changes. The list starts with a base color, then adds steps upward. The lab's error ratio stat is green below 1%, orange from 1% and red from 5%. On a time series, thresholds can also draw a line or a shaded area, so you see the moment a line crossed into red.\n\nTwo related tools:\n- Value mappings turn numbers into words. The lab shows `up` = 1 as UP and 0 as DOWN.\n- Overrides change settings for some series only. The lab's rate graph paints the `500` line red, whatever color the palette would give it.\n\nUse color for what someone should act on, and leave the rest neutral. If every panel is red or green all day, people stop looking at the colors.",
+     "refs": [
+      {
+       "title": "Grafana docs: standard options and units",
+       "url": "https://grafana.com/docs/grafana/latest/visualizations/panels-visualizations/configure-standard-options/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana docs: configure thresholds",
+       "url": "https://grafana.com/docs/grafana/latest/visualizations/panels-visualizations/configure-thresholds/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana docs: field overrides",
+       "url": "https://grafana.com/docs/grafana/latest/visualizations/panels-visualizations/configure-overrides/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Transformations: reshape the result inside Grafana",
+     "body": "Sometimes the query returns the right numbers in the wrong shape. A transformation reshapes the result inside Grafana, after the query and before the drawing. You can chain several, and each one works on the output of the one before.\n\nThe lab's table \"Requests by path and status\" is an example. Its query is an instant query with Format set to Table:\n\n`sum by (path, status) (increase(hello_responses_total{job=~\"$job\"}[5m]))`\n\nPrometheus returns one row per path and status, with the columns Time, path, status and Value. Two transformations make it readable:\n1. Organize fields by name: hide Time, rename Value to Requests and put the columns in order.\n2. Sort by: Requests, largest first.\n\nOther transformations you will meet:\n- Reduce: turn each series into one row (last, mean, max). Good for top-10 tables.\n- Labels to fields: turn series labels into table columns.\n- Join by field: line up two queries on a shared column, such as time or path.\n- Filter data by values: drop rows, for example everything under 1 request.\n- Add field from calculation: a new column computed from the others.\n\nMy rule: if PromQL can do the math, do it in PromQL. A query runs on the Prometheus server and also works in recording rules and alerts. A transformation exists only in this one panel. Use transformations for layout, and for joining data that PromQL can't see together, such as a metric and a SQL table.",
+     "refs": [
+      {
+       "title": "Grafana docs: transform data",
+       "url": "https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Variables, annotations and a layout for on-call",
+     "body": "A **dashboard variable** is a dropdown at the top of the dashboard. Its value goes into every query that mentions it. The lab's dashboard has two:\n- `job` is a Query variable. Grafana asks Prometheus for every value of the `job` label on `hello_responses_total`. Today that is only `hello-devops`; with 40 services, the same dashboard would serve all 40.\n- `path` depends on `job`. It lists the paths of the chosen job, allows several at once and has an All option.\n\nWith several values selected, Grafana inserts a regular expression such as `/|/healthz`. So queries must use `=~`, not `=`: `{job=~\"$job\", path=~\"$path\"}`. Forgetting this is the most common variable bug.\n\nAnnotations mark events on every time series panel, as a vertical line or a shaded band with a note. You can add one by hand (Ctrl or Cmd and click on a graph) or let a query find the events. The lab's dashboard marks when Prometheus alerts fire, using the `ALERTS` series. Real teams add a mark for every deploy, so \"errors went up at 14:02\" becomes \"errors went up right after version 1.4 shipped\".\n\nNow the layout. Picture the engineer who opens this at 3 a.m. after a page. They need three answers fast: is it broken, since when, and where. So the lab's dashboard has three bands:\n1. Top: four stats. Requests per second, error ratio, p95 latency and whether Prometheus can reach the app.\n2. Middle: the same signals over time. Rate on the left, errors in the middle, duration on the right.\n3. Bottom: a collapsed Details row with a table per path and a latency heatmap, for when the top says something is wrong.\n\nGrafana's own [dashboard best practices](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/best-practices/) put it simply: \"A dashboard should tell a story or answer a question.\" A 40-panel dashboard answers none. If you need more, build a second dashboard and link to it.",
+     "refs": [
+      {
+       "title": "Grafana docs: dashboard best practices",
+       "url": "https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/best-practices/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana docs: annotate visualizations",
+       "url": "https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/annotate-visualizations/",
+       "kind": "docs"
+      },
+      {
+       "title": "The RED Method: how to instrument your services (talk by Tom Wilkie)",
+       "url": "https://www.youtube.com/watch?v=zk77VS98Em8",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Dashboards are JSON, so keep them in git",
+     "body": "Every dashboard is a JSON document. Open the dashboard settings, find JSON Model, and you see something like the lab's `hello-red.json`:\n- `uid` and `title`. The uid is part of the URL, `/d/hello-red/...`, so keep it fixed and links never break.\n- `templating.list`: the variables.\n- `panels`: one object per panel, with `type`, `title`, `gridPos` (its place on a grid 24 columns wide), `targets` (the queries) and `fieldConfig` (units, thresholds, overrides).\n\nIf the JSON is the dashboard, you can keep it in git and review changes like code. Provisioning loads such files when Grafana starts. Grafana reads `/etc/grafana/provisioning/`, and the lab mounts its own folder there:\n- `datasources/`: YAML files that create data sources.\n- `dashboards/`: a provider file that says \"load every JSON file in this folder\".\n- `alerting/`: alert rules and contact points (Day 46).\n\nTwo provider settings are worth knowing. With `allowUiUpdates: false`, the Save button refuses, because the file is the truth. With `updateIntervalSeconds: 30`, Grafana checks the folder for changed files every 30 seconds. Keep that above 10 on a Mac: at 10 or less, Grafana waits for file change events, and Docker bind mounts may never pass them on.\n\nThe everyday loop:\n1. Change the dashboard in the UI until you like it.\n2. Use Export to copy its JSON, and paste it over the file.\n3. Commit and open a pull request.\n4. Grafana picks up the file within 30 seconds.\n\nOne trap: in provisioning YAML files, Grafana replaces `$NAME` with environment variables, so a real dollar sign must be written `$$`. Dashboard JSON files are left alone, so `$job` in a query is safe there.\n\nGrafana 12 and 13 added a second dashboard format (v2) for dynamic dashboards with tabs and automatic layout. To provision a v2 dashboard from a file, it must use a Kubernetes-style wrapper. Classic JSON still works everywhere, and this course uses it.",
+     "refs": [
+      {
+       "title": "Grafana docs: provision Grafana",
+       "url": "https://grafana.com/docs/grafana/latest/administration/provisioning/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana docs: dashboard JSON model",
+       "url": "https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/view-dashboard-json-model/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana tutorial: provision dashboards and data sources",
+       "url": "https://grafana.com/tutorials/provision-dashboards-and-data-sources/",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "A Grafana dashboard is like a spreadsheet whose cells hold formulas that pull live numbers from a database. The file saves the formulas, the chart types and the colors, and the numbers arrive fresh each time you open it. A dashboard variable is the cell at the top that every formula reads, so changing it changes every chart. Where it breaks: a spreadsheet can keep a copy of the data, but a panel keeps nothing. When Prometheus deletes old samples (after 7 days in the lab), that part of every graph goes empty.",
+   "diagram": "<svg viewBox=\"0 0 560 232\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"The browser asks Grafana for each panel; Grafana sends PromQL to Prometheus, which scrapes hello-devops; provisioning files in git load dashboards into Grafana\"><rect class=\"bx\" x=\"16\" y=\"24\" width=\"124\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"78\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">Browser</text><rect class=\"bxg\" x=\"16\" y=\"164\" width=\"140\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"86\" y=\"191\" font-size=\"13\" text-anchor=\"middle\">Files in git</text><rect class=\"bxo\" x=\"214\" y=\"94\" width=\"120\" height=\"48\" rx=\"10\"/><text class=\"tk\" x=\"274\" y=\"123\" font-size=\"13\" text-anchor=\"middle\">Grafana</text><rect class=\"bxt\" x=\"404\" y=\"94\" width=\"132\" height=\"48\" rx=\"10\"/><text class=\"tk\" x=\"470\" y=\"123\" font-size=\"13\" text-anchor=\"middle\">Prometheus</text><rect class=\"bx\" x=\"398\" y=\"176\" width=\"144\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"470\" y=\"201\" font-size=\"13\" text-anchor=\"middle\">hello-devops</text><line class=\"ln\" x1=\"140\" y1=\"56\" x2=\"212\" y2=\"102\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"192\" y=\"68\" font-size=\"11\" text-anchor=\"middle\">panel query</text><line class=\"ln\" x1=\"156\" y1=\"176\" x2=\"212\" y2=\"136\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"196\" y=\"174\" font-size=\"11\" text-anchor=\"middle\">provisioning</text><line class=\"ln\" x1=\"334\" y1=\"118\" x2=\"400\" y2=\"118\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"367\" y=\"110\" font-size=\"11\" text-anchor=\"middle\">PromQL</text><line class=\"lnd\" x1=\"470\" y1=\"142\" x2=\"470\" y2=\"172\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"420\" y=\"162\" font-size=\"11\" text-anchor=\"middle\">scrape</text></svg>",
+   "diagram_caption": "Grafana stores dashboards, not metrics: every panel asks Prometheus again.",
+   "worked": {
+    "title": "From a raw counter to a number on-call can read",
+    "steps": [
+     {
+      "say": "Start from the running lab: `docker compose up -d` in `observability/`, and the curl loop from the Commands list in a second terminal. First check that Grafana answers. The health endpoint needs no login.",
+      "code": "$ curl -s localhost:3000/api/health\n{\n  \"database\": \"ok\",\n  \"version\": \"13.3.0\",\n  \"commit\": \"6f8ce3c693b493043ebcd4787566d2b6b118b0f0\"\n}",
+      "lang": "console"
+     },
+     {
+      "say": "Every panel sends its query to Grafana's `/api/ds/query` endpoint, the same one your browser uses. The shell function `q` sends one instant query there and prints each series' labels and value. Start with the raw counter: totals since the app started.",
+      "code": "$ q() { jq -n --arg e \"$1\" '{queries:[{refId:\"A\",datasource:{uid:\"prometheus\"},expr:$e,instant:true}],from:\"now-5m\",to:\"now\"}' \\\n    | curl -s -u admin:admin -H 'Content-Type: application/json' localhost:3000/api/ds/query -d @- \\\n    | jq -c '.results.A.frames[] | {labels: (.schema.fields[1].labels | del(.__name__, .job, .instance)), value: .data.values[1][0]}'; }\n$ q 'hello_responses_total{job=\"hello-devops\"}'\n{\"labels\":{\"path\":\"/\",\"status\":\"200\"},\"value\":563}\n{\"labels\":{\"path\":\"/healthz\",\"status\":\"200\"},\"value\":4}",
+      "lang": "console"
+     },
+     {
+      "say": "On a graph those totals only climb, so you can't spot a spike. The `rate()` function turns each total into requests per second over the last minute. Wrapping it in `sum by (status)` adds the paths together, and that is the query behind the Rate panel. (The `/healthz` requests come from Docker's health check every 30 seconds.)",
+      "code": "$ q 'rate(hello_responses_total{job=\"hello-devops\"}[1m])'\n{\"labels\":{\"path\":\"/\",\"status\":\"200\"},\"value\":4.377777777777777}\n{\"labels\":{\"path\":\"/healthz\",\"status\":\"200\"},\"value\":0.04444444444444444}\n$ q 'sum by (status) (rate(hello_responses_total{job=\"hello-devops\"}[1m]))'\n{\"labels\":{\"status\":\"200\"},\"value\":4.422222222222222}",
+      "lang": "console"
+     },
+     {
+      "say": "Now the error ratio. Nothing has failed yet, so no 5xx series exists. The plain division returns an empty frame, which a stat panel shows as No data. With `or vector(0)` the same question returns a real 0.",
+      "code": "$ q 'sum(rate(hello_responses_total{job=\"hello-devops\", status=~\"5..\"}[1m])) / sum(rate(hello_responses_total{job=\"hello-devops\"}[1m]))'\n{\"labels\":null,\"value\":null}\n$ q '(sum(rate(hello_responses_total{job=\"hello-devops\", status=~\"5..\"}[1m])) or vector(0)) / sum(rate(hello_responses_total{job=\"hello-devops\"}[1m]))'\n{\"labels\":{},\"value\":0}",
+      "lang": "console"
+     },
+     {
+      "say": "Break the app: stop Redis. The `/` page needs it, so it returns 500, and each failing request now hangs for seconds while the app tries to reach Redis. After a minute, ask again. A ratio of 0.917 shows as 91.7% with the unit Percent (0.0-1.0), on red, because it is above the 0.05 threshold. Notice the traffic too: it fell from 4.4 to 0.27 requests per second, because the curl loop waits for every slow error.",
+      "code": "$ docker compose stop redis\n$ q '(sum(rate(hello_responses_total{job=\"hello-devops\", status=~\"5..\"}[1m])) or vector(0)) / sum(rate(hello_responses_total{job=\"hello-devops\"}[1m]))'\n{\"labels\":{},\"value\":0.9166666666666667}\n$ q 'sum by (status) (rate(hello_responses_total{job=\"hello-devops\"}[1m]))'\n{\"labels\":{\"status\":\"200\"},\"value\":0.02222222222222222}\n{\"labels\":{\"status\":\"500\"},\"value\":0.2444444444444444}",
+      "lang": "console"
+     },
+     {
+      "say": "Start Redis again. Then look at what `$__rate_interval` turns into. Send the Rate panel's query as a range query over the last 30 minutes, and Grafana reports the query it really ran. With a 15-second scrape interval the range became one minute: four scrapes.",
+      "code": "$ docker compose start redis\n$ jq -n '{queries:[{refId:\"A\",datasource:{uid:\"prometheus\"},expr:\"sum(rate(hello_responses_total[$__rate_interval]))\",range:true,intervalMs:15000,maxDataPoints:800}],from:\"now-30m\",to:\"now\"}' \\\n    | curl -s -u admin:admin -H 'Content-Type: application/json' localhost:3000/api/ds/query -d @- \\\n    | jq -r '.results.A.frames[0].schema.meta.executedQueryString'\nExpr: sum(rate(hello_responses_total[1m0s]))\nStep: 15s",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "yaml",
+     "title": "observability/grafana/provisioning/datasources/prometheus.yaml",
+     "src": "# Grafana data source for the monitoring lab (Day 45).\n# Grafana reads every file in this folder once, when it starts.\n# After an edit: docker compose restart grafana\napiVersion: 1\n\ndatasources:\n  - name: Prometheus\n    type: prometheus\n    uid: prometheus # a fixed ID: dashboards point at this, not at the name\n    access: proxy # the Grafana server sends the queries, not your browser\n    url: http://prometheus:9090 # the Compose service name, inside the Docker network\n    isDefault: true\n    jsonData:\n      # Must match scrape_interval in prometheus/prometheus.yml.\n      # Grafana uses it to work out $__rate_interval (at least 4 scrapes).\n      timeInterval: 15s",
+     "run": "docker compose restart grafana"
+    },
+    {
+     "lang": "yaml",
+     "title": "observability/grafana/provisioning/dashboards/provider.yaml",
+     "src": "# Tells Grafana where to find dashboard files (Day 45).\n# compose.yaml mounts ./grafana/dashboards at /var/lib/grafana/dashboards.\napiVersion: 1\n\nproviders:\n  - name: hello-devops\n    folder: hello-devops # the Grafana folder the dashboards go into (created if missing)\n    type: file\n    # The JSON file in git is the truth. The UI can't save over it:\n    # change the file instead (export from the UI, then paste).\n    allowUiUpdates: false\n    # Look for changed files every 30 seconds. Over 10 means Grafana polls the\n    # folder, which works with Docker bind mounts on a Mac (10 or less relies\n    # on file system events, which may never arrive).\n    updateIntervalSeconds: 30\n    options:\n      path: /var/lib/grafana/dashboards",
+     "run": "docker compose restart grafana"
+    },
+    {
+     "lang": "json",
+     "title": "observability/grafana/dashboards/hello-red.json",
+     "src": "{\n  \"uid\": \"hello-red\",\n  \"title\": \"hello-devops RED\",\n  \"description\": \"Rate, errors and duration for hello-devops. Provisioned from grafana/dashboards/hello-red.json.\",\n  \"tags\": [\"hello-devops\", \"red\"],\n  \"timezone\": \"browser\",\n  \"editable\": true,\n  \"graphTooltip\": 1,\n  \"refresh\": \"30s\",\n  \"time\": {\"from\": \"now-30m\", \"to\": \"now\"},\n  \"schemaVersion\": 42,\n  \"templating\": {\n    \"list\": [\n      {\n        \"name\": \"job\",\n        \"label\": \"Job\",\n        \"type\": \"query\",\n        \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n        \"definition\": \"label_values(hello_responses_total,job)\",\n        \"query\": {\n          \"qryType\": 1,\n          \"query\": \"label_values(hello_responses_total,job)\",\n          \"refId\": \"PrometheusVariableQueryEditor-VariableQuery\"\n        },\n        \"refresh\": 1,\n        \"sort\": 1,\n        \"regex\": \"\",\n        \"multi\": false,\n        \"includeAll\": false\n      },\n      {\n        \"name\": \"path\",\n        \"label\": \"Path\",\n        \"type\": \"query\",\n        \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n        \"definition\": \"label_values(hello_responses_total{job=~\\\"$job\\\"},path)\",\n        \"query\": {\n          \"qryType\": 1,\n          \"query\": \"label_values(hello_responses_total{job=~\\\"$job\\\"},path)\",\n          \"refId\": \"PrometheusVariableQueryEditor-VariableQuery\"\n        },\n        \"refresh\": 1,\n        \"sort\": 1,\n        \"regex\": \"\",\n        \"multi\": true,\n        \"includeAll\": true,\n        \"allValue\": \".*\",\n        \"current\": {\"text\": \"All\", \"value\": \"$__all\"}\n      }\n    ]\n  },\n  \"annotations\": {\n    \"list\": [\n      {\n        \"builtIn\": 1,\n        \"name\": \"Annotations & Alerts\",\n        \"type\": \"dashboard\",\n        \"enable\": true,\n        \"hide\": true,\n        \"iconColor\": \"rgba(0, 211, 255, 1)\",\n        \"datasource\": {\"type\": \"grafana\", \"uid\": \"-- Grafana --\"}\n      },\n      {\n        \"name\": \"Prometheus alerts\",\n        \"enable\": true,\n        \"iconColor\": \"red\",\n        \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n        \"expr\": \"ALERTS{alertstate=\\\"firing\\\", job=~\\\"$job\\\"}\",\n        \"step\": \"15s\",\n        \"titleFormat\": \"{{alertname}}\",\n        \"textFormat\": \"{{severity}}\",\n        \"tagKeys\": \"severity\"\n      }\n    ]\n  },\n  \"panels\": [\n    {\n      \"id\": 1,\n      \"type\": \"stat\",\n      \"title\": \"Requests per second\",\n      \"description\": \"Rate: all responses per second, summed over the selected paths.\",\n      \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n      \"gridPos\": {\"h\": 4, \"w\": 6, \"x\": 0, \"y\": 0},\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"reqps\",\n          \"thresholds\": {\"mode\": \"absolute\", \"steps\": [{\"color\": \"green\", \"value\": null}]},\n          \"color\": {\"mode\": \"thresholds\"},\n          \"decimals\": 2\n        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"colorMode\": \"background\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n        \"reduceOptions\": {\"calcs\": [\"lastNotNull\"], \"fields\": \"\", \"values\": false},\n        \"textMode\": \"value\"\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"sum(rate(hello_responses_total{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval]))\",\n          \"legendFormat\": \"Requests per second\",\n          \"range\": true,\n          \"instant\": false\n        }\n      ]\n    },\n    {\n      \"id\": 2,\n      \"type\": \"stat\",\n      \"title\": \"Error ratio (5xx)\",\n      \"description\": \"Errors: the share of responses with a 5xx status. Green under 1%, orange from 1%, red from 5%.\",\n      \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n      \"gridPos\": {\"h\": 4, \"w\": 6, \"x\": 6, \"y\": 0},\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"percentunit\",\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\"color\": \"green\", \"value\": null},\n              {\"color\": \"orange\", \"value\": 0.01},\n              {\"color\": \"red\", \"value\": 0.05}\n            ]\n          },\n          \"color\": {\"mode\": \"thresholds\"},\n          \"decimals\": 1\n        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"colorMode\": \"background\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n        \"reduceOptions\": {\"calcs\": [\"lastNotNull\"], \"fields\": \"\", \"values\": false},\n        \"textMode\": \"value\"\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"(sum(rate(hello_responses_total{job=~\\\"$job\\\", path=~\\\"$path\\\", status=~\\\"5..\\\"}[$__rate_interval])) or vector(0))\\n/\\nsum(rate(hello_responses_total{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval]))\",\n          \"legendFormat\": \"Error ratio (5xx)\",\n          \"range\": true,\n          \"instant\": false\n        }\n      ]\n    },\n    {\n      \"id\": 3,\n      \"type\": \"stat\",\n      \"title\": \"p95 latency\",\n      \"description\": \"Duration: 95% of requests finished faster than this. Orange from 250 ms, red from 1 s.\",\n      \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n      \"gridPos\": {\"h\": 4, \"w\": 6, \"x\": 12, \"y\": 0},\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"s\",\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\"color\": \"green\", \"value\": null},\n              {\"color\": \"orange\", \"value\": 0.25},\n              {\"color\": \"red\", \"value\": 1}\n            ]\n          },\n          \"color\": {\"mode\": \"thresholds\"},\n          \"decimals\": 3\n        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"colorMode\": \"background\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n        \"reduceOptions\": {\"calcs\": [\"lastNotNull\"], \"fields\": \"\", \"values\": false},\n        \"textMode\": \"value\"\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"histogram_quantile(0.95, sum by (le) (rate(hello_request_duration_seconds_bucket{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval])))\",\n          \"legendFormat\": \"p95 latency\",\n          \"range\": true,\n          \"instant\": false\n        }\n      ]\n    },\n    {\n      \"id\": 4,\n      \"type\": \"stat\",\n      \"title\": \"Scrape target\",\n      \"description\": \"Is Prometheus able to scrape the app? 1 means yes (UP), 0 means no (DOWN).\",\n      \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n      \"gridPos\": {\"h\": 4, \"w\": 6, \"x\": 18, \"y\": 0},\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"none\",\n          \"thresholds\": {\"mode\": \"absolute\", \"steps\": [{\"color\": \"red\", \"value\": null}, {\"color\": \"green\", \"value\": 1}]},\n          \"color\": {\"mode\": \"thresholds\"},\n          \"mappings\": [\n            {\n              \"type\": \"value\",\n              \"options\": {\n                \"0\": {\"text\": \"DOWN\", \"color\": \"red\", \"index\": 0},\n                \"1\": {\"text\": \"UP\", \"color\": \"green\", \"index\": 1}\n              }\n            }\n          ]\n        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"colorMode\": \"background\",\n        \"graphMode\": \"area\",\n        \"justifyMode\": \"auto\",\n        \"reduceOptions\": {\"calcs\": [\"lastNotNull\"], \"fields\": \"\", \"values\": false},\n        \"textMode\": \"value\"\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"min(up{job=~\\\"$job\\\"})\",\n          \"legendFormat\": \"Scrape target\",\n          \"range\": true,\n          \"instant\": false\n        }\n      ]\n    },\n    {\n      \"id\": 5,\n      \"type\": \"timeseries\",\n      \"title\": \"Rate: requests per second by status\",\n      \"description\": \"Responses per second, one line per HTTP status code.\",\n      \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n      \"gridPos\": {\"h\": 8, \"w\": 8, \"x\": 0, \"y\": 4},\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"reqps\",\n          \"custom\": {\n            \"drawStyle\": \"line\",\n            \"lineWidth\": 2,\n            \"fillOpacity\": 10,\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"thresholdsStyle\": {\"mode\": \"off\"}\n          },\n          \"min\": 0,\n          \"color\": {\"mode\": \"palette-classic\"}\n        },\n        \"overrides\": [\n          {\n            \"matcher\": {\"id\": \"byRegexp\", \"options\": \"5..\"},\n            \"properties\": [{\"id\": \"color\", \"value\": {\"mode\": \"fixed\", \"fixedColor\": \"red\"}}]\n          }\n        ]\n      },\n      \"options\": {\n        \"legend\": {\"displayMode\": \"list\", \"placement\": \"bottom\", \"showLegend\": true},\n        \"tooltip\": {\"mode\": \"multi\", \"sort\": \"desc\"}\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"sum by (status) (rate(hello_responses_total{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval]))\",\n          \"legendFormat\": \"{{status}}\",\n          \"range\": true,\n          \"instant\": false\n        }\n      ]\n    },\n    {\n      \"id\": 6,\n      \"type\": \"timeseries\",\n      \"title\": \"Errors: share of requests failing\",\n      \"description\": \"The 5xx error ratio over time. The red area starts at 5%.\",\n      \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n      \"gridPos\": {\"h\": 8, \"w\": 8, \"x\": 8, \"y\": 4},\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"percentunit\",\n          \"custom\": {\n            \"drawStyle\": \"line\",\n            \"lineWidth\": 2,\n            \"fillOpacity\": 10,\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"thresholdsStyle\": {\"mode\": \"line+area\"}\n          },\n          \"min\": 0,\n          \"color\": {\"mode\": \"palette-classic\"},\n          \"thresholds\": {\"mode\": \"absolute\", \"steps\": [{\"color\": \"green\", \"value\": null}, {\"color\": \"red\", \"value\": 0.05}]}\n        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"legend\": {\"displayMode\": \"list\", \"placement\": \"bottom\", \"showLegend\": true},\n        \"tooltip\": {\"mode\": \"multi\", \"sort\": \"desc\"}\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"(sum(rate(hello_responses_total{job=~\\\"$job\\\", path=~\\\"$path\\\", status=~\\\"5..\\\"}[$__rate_interval])) or vector(0))\\n/\\nsum(rate(hello_responses_total{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval]))\",\n          \"legendFormat\": \"5xx ratio\",\n          \"range\": true,\n          \"instant\": false\n        }\n      ]\n    },\n    {\n      \"id\": 7,\n      \"type\": \"timeseries\",\n      \"title\": \"Duration: p50, p95 and p99 latency\",\n      \"description\": \"How long requests take. Each line is a percentile from the histogram.\",\n      \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n      \"gridPos\": {\"h\": 8, \"w\": 8, \"x\": 16, \"y\": 4},\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"s\",\n          \"custom\": {\n            \"drawStyle\": \"line\",\n            \"lineWidth\": 2,\n            \"fillOpacity\": 10,\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"thresholdsStyle\": {\"mode\": \"off\"}\n          },\n          \"min\": 0,\n          \"color\": {\"mode\": \"palette-classic\"}\n        },\n        \"overrides\": []\n      },\n      \"options\": {\n        \"legend\": {\"displayMode\": \"list\", \"placement\": \"bottom\", \"showLegend\": true},\n        \"tooltip\": {\"mode\": \"multi\", \"sort\": \"desc\"}\n      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"histogram_quantile(0.5, sum by (le) (rate(hello_request_duration_seconds_bucket{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval])))\",\n          \"legendFormat\": \"p50\",\n          \"range\": true,\n          \"instant\": false\n        },\n        {\n          \"refId\": \"B\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"histogram_quantile(0.95, sum by (le) (rate(hello_request_duration_seconds_bucket{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval])))\",\n          \"legendFormat\": \"p95\",\n          \"range\": true,\n          \"instant\": false\n        },\n        {\n          \"refId\": \"C\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"expr\": \"histogram_quantile(0.99, sum by (le) (rate(hello_request_duration_seconds_bucket{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval])))\",\n          \"legendFormat\": \"p99\",\n          \"range\": true,\n          \"instant\": false\n        }\n      ]\n    },\n    {\n      \"id\": 10,\n      \"type\": \"row\",\n      \"title\": \"Details\",\n      \"collapsed\": true,\n      \"gridPos\": {\"h\": 1, \"w\": 24, \"x\": 0, \"y\": 12},\n      \"panels\": [\n        {\n          \"id\": 8,\n          \"type\": \"table\",\n          \"title\": \"Requests by path and status (last 5 minutes)\",\n          \"description\": \"One row per path and status. Built from one instant query plus two transformations.\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"gridPos\": {\"h\": 8, \"w\": 12, \"x\": 0, \"y\": 13},\n          \"fieldConfig\": {\"defaults\": {\"unit\": \"short\", \"decimals\": 0}, \"overrides\": []},\n          \"options\": {\"showHeader\": true, \"sortBy\": [{\"displayName\": \"Requests\", \"desc\": true}]},\n          \"targets\": [\n            {\n              \"refId\": \"A\",\n              \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n              \"expr\": \"sum by (path, status) (increase(hello_responses_total{job=~\\\"$job\\\", path=~\\\"$path\\\"}[5m]))\",\n              \"legendFormat\": \"__auto\",\n              \"range\": false,\n              \"instant\": true,\n              \"format\": \"table\"\n            }\n          ],\n          \"transformations\": [\n            {\n              \"id\": \"organize\",\n              \"options\": {\n                \"excludeByName\": {\"Time\": true},\n                \"indexByName\": {\"path\": 0, \"status\": 1, \"Value\": 2},\n                \"renameByName\": {\"path\": \"Path\", \"status\": \"Status\", \"Value\": \"Requests\"}\n              }\n            },\n            {\"id\": \"sortBy\", \"options\": {\"sort\": [{\"field\": \"Requests\", \"desc\": true}]}}\n          ]\n        },\n        {\n          \"id\": 9,\n          \"type\": \"heatmap\",\n          \"title\": \"Latency heatmap\",\n          \"description\": \"How many requests fell into each latency bucket, over time. Darker means more requests.\",\n          \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n          \"gridPos\": {\"h\": 8, \"w\": 12, \"x\": 12, \"y\": 13},\n          \"fieldConfig\": {\"defaults\": {}, \"overrides\": []},\n          \"options\": {\n            \"calculate\": false,\n            \"yAxis\": {\"unit\": \"s\"},\n            \"cellGap\": 1,\n            \"color\": {\"mode\": \"scheme\", \"scheme\": \"Oranges\", \"steps\": 64},\n            \"tooltip\": {\"mode\": \"single\", \"yHistogram\": false}\n          },\n          \"targets\": [\n            {\n              \"refId\": \"A\",\n              \"datasource\": {\"type\": \"prometheus\", \"uid\": \"prometheus\"},\n              \"expr\": \"sum by (le) (rate(hello_request_duration_seconds_bucket{job=~\\\"$job\\\", path=~\\\"$path\\\"}[$__rate_interval]))\",\n              \"legendFormat\": \"{{le}}\",\n              \"range\": true,\n              \"instant\": false,\n              \"format\": \"heatmap\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}",
+     "run": "curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/dashboards/reload"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "docker compose up -d",
+     "what": "Start the monitoring lab from the observability folder: the app, Prometheus, Alertmanager and Grafana."
+    },
+    {
+     "cmd": "open http://localhost:3000",
+     "what": "Open Grafana in your browser (user admin, password admin)."
+    },
+    {
+     "cmd": "curl -s localhost:3000/api/health",
+     "what": "Check that Grafana is up and see its version. No login needed."
+    },
+    {
+     "cmd": "curl -s -u admin:admin localhost:3000/api/datasources | jq '.[].name'",
+     "what": "List the data sources Grafana knows about."
+    },
+    {
+     "cmd": "curl -s -u admin:admin 'localhost:3000/api/search?query=hello' | jq '.[].title'",
+     "what": "Find dashboards and folders by name."
+    },
+    {
+     "cmd": "curl -s -u admin:admin localhost:3000/api/dashboards/uid/hello-red | jq '.meta.provisioned'",
+     "what": "Prints true when the dashboard was loaded from a file."
+    },
+    {
+     "cmd": "docker compose restart grafana",
+     "what": "Restart Grafana so it reads changed provisioning files, such as a data source."
+    },
+    {
+     "cmd": "curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/dashboards/reload",
+     "what": "Read the dashboard files again now, without waiting 30 seconds."
+    },
+    {
+     "cmd": "docker compose logs grafana | grep -i provision",
+     "what": "See what Grafana provisioned at start, and any errors in your files."
+    },
+    {
+     "cmd": "jq empty grafana/dashboards/hello-red.json",
+     "what": "Check that the dashboard file is valid JSON. Silence means it is."
+    },
+    {
+     "cmd": "while true; do curl -s -o /dev/null localhost:8000/; sleep 0.2; done",
+     "what": "Send steady traffic so the panels have something to show. Stop it with Ctrl+C."
+    },
+    {
+     "cmd": "docker compose stop redis",
+     "what": "Break the app on purpose: its / page returns 500 while Redis is gone. Bring it back with docker compose start redis."
+    }
+   ],
+   "mistake": "Editing a provisioned dashboard in the browser and expecting the change to stick. With `allowUiUpdates: false` Grafana refuses to save it. If you set it to true, the next change to the file quietly overwrites your edit. Make the change in the UI, export the JSON, paste it into the file in git, and let provisioning load it.",
+   "real_world": "At a fake payments company, PayFlow, each service team owns one RED dashboard in its repo, built from a shared template, and CI checks the JSON on every pull request. The on-call runbook links straight to `/d/<uid>` URLs, which is why nobody changes a uid. Dashboards made by hand in the UI are allowed for exploring, and they get cleaned up after 30 days.",
+   "task": {
+    "title": "Provision the RED dashboard, then add a panel the git way",
+    "steps": [
+     "In `observability/`, create the two provisioning files and `grafana/dashboards/hello-red.json` from this lesson's Files section.",
+     "Start the lab with `docker compose up -d` (or `docker compose restart grafana` if it already runs). Check the Grafana logs for provisioning errors.",
+     "Start the traffic loop in a second terminal, open http://localhost:3000 and find the RED dashboard in the hello-devops folder. Try the Path dropdown with one path, then All.",
+     "Change a panel title and try to save. Read Grafana's message and say in one sentence why it refuses.",
+     "Create a new, empty dashboard and build a bar gauge panel: requests per second for each path, with unit requests/sec and one threshold of your choice.",
+     "Copy that panel's JSON (panel menu, Inspect, Panel JSON) and add it to the `panels` list in `hello-red.json`, with a new `id` and a free `gridPos`.",
+     "Check the file with `jq`, call the dashboards reload API (or wait 30 seconds) and refresh the browser.",
+     "Stop Redis for two minutes and note which panels change first. Then start it again and delete the scratch dashboard."
+    ],
+    "hints": [
+     "A bar gauge wants one value per path: an instant query such as `sum by (path) (rate(hello_responses_total{job=~\"$job\"}[$__rate_interval]))` with the legend `{{path}}`.",
+     "Put the new panel in the list just before the Details row and give it `\"gridPos\": {\"h\": 6, \"w\": 24, \"x\": 0, \"y\": 12}`. Grafana pushes the row down.",
+     "Nothing changed? Run `docker compose logs grafana | grep -i dashboard` and look for a JSON error or a duplicate panel id."
+    ],
+    "done_when": "`curl -s -u admin:admin localhost:3000/api/dashboards/uid/hello-red | jq '.meta.provisioned, [.dashboard.panels[].title]'` prints `true` and a list that includes your new panel's title."
+   },
+   "explain_back": {
+    "prompt": "Explain to a teammate, in 3 to 4 sentences, how a number gets from hello-devops onto your RED dashboard, and why the dashboard lives in a file in git. Mention data source, panel and provisioning.",
+    "answer": "Prometheus scrapes the app's /metrics page every 15 seconds and stores the samples. Grafana stores no metrics. Each panel holds a PromQL query; when the page loads, Grafana sends it to the Prometheus data source and draws the answer with the panel's units and thresholds. The dashboard itself is a JSON document, so we keep it in git, review changes in pull requests and let provisioning load it when Grafana starts. That way a new Grafana gets the same dashboards and nobody's quick edit in the browser is lost or slips in unreviewed."
+   },
+   "recap": [
+    "Grafana stores dashboards, not data: every panel asks a data source such as Prometheus each time it loads.",
+    "Pick the visualization from the question: time series for change over time, stat for now, table for exact values, heatmap for spread.",
+    "Use `$__rate_interval` in `rate()`, set the data source scrape interval, and add `or vector(0)` where an empty result should read as 0.",
+    "Keep base units in PromQL and set the panel unit; color only what someone must act on.",
+    "Lay out for on-call: RED numbers on top, the same signals over time below, details collapsed at the bottom.",
+    "A dashboard is JSON: provision it from files in git with a fixed uid, and change the file, not the UI."
+   ],
+   "check": [
+    {
+     "q": "A stat panel shows the error ratio as 0.021. The team wants it to read 2.1% and turn red from 2%. What do you change?",
+     "options": [
+      "Multiply the PromQL by 100 and add a threshold at 2",
+      "Set the unit to Percent (0.0-1.0) and add a red threshold at 0.02",
+      "Add a transformation that multiplies the value field by 100",
+      "Set the unit to Percent (0-100) and add a red threshold at 2"
+     ],
+     "answer": 1,
+     "why": "Keep the base ratio from Prometheus; the percentunit unit displays 0.021 as 2.1%, and thresholds compare against the raw value, 0.02."
+    },
+    {
+     "q": "Your `$instance` variable allows several values. With two instances picked, every panel shows No data. The query has `{instance=\"$instance\"}`. What is wrong?",
+     "options": [
+      "Variables can't be used inside label matchers",
+      "The variable needs the Include All option turned on",
+      "Several values become a regex, so the matcher must use =~",
+      "The data source needs a shorter scrape interval setting"
+     ],
+     "answer": 2,
+     "why": "Grafana inserts something like a|b for several values, which only matches with the regex matcher =~."
+    },
+    {
+     "q": "You change `hello-red.json` on your Mac. Five minutes later Grafana in Docker still shows the old version, and `updateIntervalSeconds` is 5. What is the likely cause?",
+     "options": [
+      "Below 10 seconds Grafana relies on file change events, which Docker bind mounts may not deliver",
+      "Grafana only reads dashboard files once, so it always needs a full restart",
+      "The uid in the file must change whenever the dashboard content changes",
+      "Provisioned dashboards are cached by the browser for ten minutes"
+     ],
+     "answer": 0,
+     "why": "With 10 seconds or less Grafana waits for file system events; set it above 10 so Grafana polls the folder instead."
+    }
+   ],
+   "interview": [
+    {
+     "q": "How would you design a dashboard for a service you are on call for?",
+     "a": "I start from the questions on-call has during a page: is it broken, since when, and where. The top row shows the RED numbers as stats: request rate, error ratio and a latency percentile, plus whether the target is up. Below them are the same signals as time series, with deploy annotations, so you can see when things changed. Details such as per-endpoint tables, heatmaps and machine metrics go in collapsed rows or linked dashboards. I use one variable for the service so the same dashboard works for every service, and I keep it in git."
+    },
+    {
+     "q": "Why manage Grafana dashboards as code, and how do you do it?",
+     "a": "Dashboards made by hand drift, get copied and are lost when an instance is rebuilt. As code, each dashboard is JSON in git with a fixed uid, reviewed in pull requests and loaded by Grafana's file provisioning, the Terraform provider or Git Sync. I set the provider so the UI can't save over provisioned dashboards, which makes the file the single source of truth. The workflow is to edit in the UI, export the JSON, commit it and let CI check that it parses."
+    },
+    {
+     "q": "What is $__rate_interval and why use it instead of a fixed range?",
+     "a": "It is a Grafana variable for the range in rate() and increase(). Grafana sets it to the larger of the step between graph points plus one scrape interval, and four scrape intervals. A fixed range like [1m] is fine zoomed in but skips data when each graph point is many minutes apart, and a range under four scrapes can return nothing. It only works if the data source's scrape interval setting matches Prometheus."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "One dashboard per service is a good start. With 30 services, people want a single page that says which one is unhappy. That is a different dashboard with a different job, and Grafana's best practices call it a drill-down.\n\nBuild an overview first. Make one table panel with three instant queries, all grouped `by (job)`: request rate, error ratio and p95 latency. Then add these transformations:\n1. Join by field on `job`, so each service becomes one row with three columns.\n2. Organize fields, to rename the columns and hide the Time columns.\n3. Sort by error ratio, worst first.\n\nAdd thresholds to the error column, and the unhappy service turns red at the top of the table.\n\nNext, link each row to the service dashboard. A data link on the table can point to `/d/hello-red?var-job=${__data.fields.job}`. Grafana fills in the job from the row you click, and `var-job` sets the dashboard variable from the URL. So one click takes on-call from \"something is red\" to the RED dashboard for exactly that service.\n\nThen cover the machines. RED describes how users experience a service. The USE method describes resources: utilization, saturation and errors for each CPU, disk and network card. node_exporter from Day 42 already gives you the numbers:\n- Utilization: the share of CPU time not idle, from `node_cpu_seconds_total`.\n- Saturation: load average compared with the number of CPUs (`node_load1`).\n- Errors: network errors from `node_network_receive_errs_total`.\n\nKeep RED and USE on separate dashboards and link them. They answer different questions, and mixing them makes both harder to read.\n\nGrafana's best practices page describes three maturity levels. Low means copied dashboards and one-offs that never go away. Medium means template variables instead of copies, drill-downs, and dashboard JSON in version control. High means no editing in the browser at all: scripts generate the dashboards, and viewers change what they see with variables. Day 46 shows the tools for that last step: Terraform, the Foundation SDK and Git Sync.\n\nFinally, watch the cost. Every panel is at least one query, every refresh runs them all, and every viewer multiplies that. Set a sensible refresh (30 seconds, not 5), avoid huge time ranges by default, and move heavy expressions into recording rules (Day 43) that the panels read."
+   },
+   "sources": [
+    {
+     "title": "Grafana docs: provision Grafana",
+     "url": "https://grafana.com/docs/grafana/latest/administration/provisioning/"
+    },
+    {
+     "title": "Grafana docs: dashboard best practices",
+     "url": "https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/best-practices/"
+    },
+    {
+     "title": "Grafana docs: Prometheus template variables",
+     "url": "https://grafana.com/docs/grafana/latest/datasources/prometheus/template-variables/"
+    },
+    {
+     "title": "Grafana docs: transform data",
+     "url": "https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/"
+    }
+   ]
+  },
+  {
+   "id": "d46",
+   "title": "Grafana beyond dashboards: alerting, Loki and the LGTM stack",
+   "minutes": 50,
+   "goal": "By the end you can provision a Grafana alert with a contact point, add Loki and Alloy to the lab, query hello-devops logs with LogQL, and say what each part of the LGTM stack does.",
+   "guess": {
+    "q": "Loki stores the logs of every container in the lab. What does it put in its index so it can find lines fast?",
+    "options": [
+     "Only the labels on each stream, such as service and container",
+     "Every word of every line, like a search engine does",
+     "Only the lines whose level is WARNING or ERROR",
+     "Nothing: every query reads all the stored logs"
+    ],
+    "answer": 0,
+    "why": "Loki indexes only the labels. A query uses them to pick a few streams, then scans the compressed text of just those streams."
+   },
+   "terms": [
+    {
+     "term": "Grafana alert rule",
+     "plain": "Queries plus a condition that Grafana checks on a schedule; it fires when the condition stays true for the pending period."
+    },
+    {
+     "term": "Contact point",
+     "plain": "Where Grafana sends an alert notification, such as email, Slack, PagerDuty or a webhook."
+    },
+    {
+     "term": "Notification policy",
+     "plain": "A rule in a tree that matches alert labels and decides which contact point gets the alert, and when."
+    },
+    {
+     "term": "Loki",
+     "plain": "Grafana Labs' log store: it indexes only the labels of each log stream and keeps the text compressed."
+    },
+    {
+     "term": "Log stream",
+     "plain": "All the log lines in Loki that share exactly the same set of labels."
+    },
+    {
+     "term": "LogQL",
+     "plain": "Loki's query language: a stream selector in braces, then filters and parsers joined by a pipe."
+    },
+    {
+     "term": "Grafana Alloy",
+     "plain": "Grafana Labs' collector, built on the OpenTelemetry Collector, that gathers logs, metrics, traces and profiles and sends them on."
+    },
+    {
+     "term": "LGTM stack",
+     "plain": "Loki, Grafana, Tempo and Mimir: Grafana Labs' open-source tools for logs, dashboards, traces and metrics."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Grafana alerting: rules, contact points and policies",
+     "body": "Day 44 built alerting from Prometheus rules and Alertmanager. Grafana has alerting of its own, built on the same model, and it can watch any data source Grafana can query. The parts:\n- An alert rule: one or more queries, a condition, and how often to check. Grafana runs it on a schedule, every 30 seconds in the lab.\n- Alert instances: each series the query returns gets its own instance. A rule over `sum by (job)` makes one instance per job.\n- A **contact point**: where the message goes, such as email, Slack, PagerDuty or a webhook.\n- Notification policies: a tree that sends firing instances to contact points by their labels, like the Alertmanager routing tree.\n\nThe lab's rule lives in `grafana/provisioning/alerting/hello-alerts.yaml` and has two steps. Query A asks Prometheus for the error ratio over 2 minutes. Expression C is a threshold: is A above 0.05? The rule fires when C is true.\n\nEach instance moves through states:\n1. Normal: C is false.\n2. Pending: C is true, but not yet for the whole pending period (`for: 1m`).\n3. Alerting: C stayed true for the period. The notification goes out, and the rule shows as Firing.\n4. Normal again: Grafana sends a resolved message.\n\nGrafana also needs to know what to do when the query returns nothing or fails. By default it raises separate `DatasourceNoData` and `DatasourceError` alerts. For an error ratio, no 5xx series at all is good news, so the lab sets `noDataState: OK`. Decide this for every rule, or the default can wake someone up because a query found no rows.",
+     "refs": [
+      {
+       "title": "Grafana docs: introduction to Grafana Alerting",
+       "url": "https://grafana.com/docs/grafana/latest/alerting/fundamentals/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana docs: notification policies",
+       "url": "https://grafana.com/docs/grafana/latest/alerting/fundamentals/notifications/notification-policies/",
+       "kind": "docs"
+      },
+      {
+       "title": "Get started with Grafana Alerting: multi-dimensional alerts and how to route them (Grafana tutorial video)",
+       "url": "https://www.youtube.com/watch?v=nI-_MEnFBQs",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Grafana alerting or Alertmanager?",
+     "body": "The lab now has two alerting systems, and both send to the same webhook. Which should a team use? The facts first:\n- Prometheus rules run next to the data. They keep working when Grafana is down, and they live as YAML in git, or as PrometheusRule objects on Kubernetes (Day 44).\n- Grafana-managed rules can query any data source, and even mix several in one rule. Think of a log count from Loki next to a metric from Prometheus, or a row from a SQL database.\n- Grafana rules have the no-data and error handling above, and a UI that people without PromQL can use.\n- Grafana can import Prometheus rule files (since 12.1) and an Alertmanager configuration (since 13.3), so you can move later.\n\nMy default for a setup like this lab: keep the paging alerts that protect your SLO in Prometheus and Alertmanager, close to the data and independent of Grafana. Use Grafana alerting for what only Grafana can see, such as alerts on logs or on data in other databases. If a team keeps all its data in one hosted Grafana stack, putting every rule in Grafana is a fair choice too.\n\nWhatever you pick, don't define the same alert in both systems. One incident would then page twice, and people learn to ignore pages.",
+     "refs": [
+      {
+       "title": "Grafana docs: configure Grafana-managed alert rules",
+       "url": "https://grafana.com/docs/grafana/latest/alerting/alerting-rules/create-grafana-managed-rule/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana tutorial: multi-dimensional alerts and routing",
+       "url": "https://grafana.com/tutorials/alerting-get-started-pt2/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Loki: labels pick the stream, the text stays cheap",
+     "body": "Loki is Grafana Labs' log store, and its main idea comes from Prometheus. Each log line carries a few labels, such as `service=\"web\"` and `container=\"observability-web-1\"`. All lines with the same labels form one **log stream**. Loki indexes only the labels. The text of each line is compressed into chunks and not indexed at all.\n\nThat makes Loki cheap to run and quick at one kind of question: give me the lines from these streams in this time range, then search inside them. A query uses the labels to pick a few streams, then scans just their text. Elasticsearch (Part 11) indexes every word instead. That costs more disk and memory, and in return finds a word across all logs faster.\n\nThe cardinality rule from Day 42 applies here too, because every new label value makes a new stream:\n- Good labels: service, environment, cluster, container.\n- Bad labels: request ID, user ID, IP address, anything with endless values.\n- Keep those values in the line itself, where a filter finds them.\n\nLoki's docs suggest no more than 10 to 15 labels, each with a small number of values.\n\nLoki also adds a `service_name` label by itself. It copies the value from a label such as `service`, `app` or `container`. The lab's Alloy sets `service` to the Compose service name, so `{service_name=\"web\"}` finds the app's logs.",
+     "refs": [
+      {
+       "title": "Loki docs: understand labels",
+       "url": "https://grafana.com/docs/loki/latest/get-started/labels/",
+       "kind": "docs"
+      },
+      {
+       "title": "Loki docs: label best practices",
+       "url": "https://grafana.com/docs/loki/latest/get-started/labels/bp-labels/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "LogQL, one step at a time",
+     "body": "LogQL is Loki's query language, and it borrows a lot from PromQL. A query starts with a stream selector in braces, then an optional pipeline of steps joined by `|`. All of these ran against the lab:\n1. `{service_name=\"web\"}` returns every line from the app.\n2. `{service_name=\"web\"} != \"/healthz\"` drops lines containing `/healthz`. The `|=` filter keeps lines containing a string, and `|~` takes a regular expression.\n3. `{service_name=\"web\"} | json` parses each JSON line, so `method`, `path`, `status` and `duration_ms` become labels for this query only.\n4. `{service_name=\"web\"} | json | status >= 500` keeps only the failed requests.\n5. Adding `| line_format \"{{.method}} {{.path}} -> {{.status}}\"` rewrites each line as `GET / -> 500`, easier to scan.\n\nPut line filters before the parser. A plain text filter is the cheapest step, and every line it drops is a line the parser never touches.\n\nLogQL can also turn logs into numbers, which you can graph next to the Prometheus panels:\n- `count_over_time({service_name=\"web\"}[5m])` counts lines per stream over 5 minutes.\n- `rate({service_name=\"web\"}[5m])` gives lines per second.\n- `sum by (status) (count_over_time({service_name=\"web\"} | json | __error__=\"\" [5m]))` counts requests by status code.\n- `quantile_over_time(0.95, {service_name=\"web\"} | json | __error__=\"\" | unwrap duration_ms [5m])` reads a number out of each line and gives a p95.\n\nThe `__error__=\"\"` part matters in the lab. When Redis is down, the app prints a Python traceback, and those lines are not JSON. The parser marks them with an `__error__` label, and a metric query refuses to run until you drop them.",
+     "refs": [
+      {
+       "title": "Loki docs: log queries",
+       "url": "https://grafana.com/docs/loki/latest/query/log_queries/",
+       "kind": "docs"
+      },
+      {
+       "title": "Loki docs: metric queries",
+       "url": "https://grafana.com/docs/loki/latest/query/metric_queries/",
+       "kind": "docs"
+      },
+      {
+       "title": "How to query Grafana Loki with LogQL (Grafana Labs video)",
+       "url": "https://www.youtube.com/watch?v=57dQwcmqkpQ",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Alloy: the collector in the middle",
+     "body": "Something has to read the logs and push them to Loki. In the lab that is Grafana Alloy, Grafana Labs' collector. It is a distribution of the OpenTelemetry Collector with Prometheus pipelines built in, and it handles metrics, logs, traces and profiles. Promtail, the older log shipper in many tutorials, reached [end of life](https://github.com/grafana/loki/blob/main/docs/sources/send-data/promtail/_index.md) on 2 March 2026, so new setups use Alloy.\n\nAn Alloy config is a set of components wired together. Each block has a type and a name and passes its output to the next. The lab's `loki/config.alloy` has four:\n1. `discovery.docker` asks Docker which containers run, and keeps only this Compose project.\n2. `discovery.relabel` picks the labels: `service` from the Compose service name, `container` from the container name.\n3. `loki.source.docker` follows each container's output, like `docker logs -f`.\n4. `loki.write` pushes the lines to Loki's API.\n\nAlloy talks to Docker through its socket, `/var/run/docker.sock`, mounted into the container. On a Mac this needs the Docker Desktop option \"Allow the default Docker socket to be used\", which you turned on during Day 2. The Alloy UI on http://localhost:12345 draws the pipeline and shows whether each component is healthy. Look there first when logs don't arrive.\n\nOne more change makes the logs worth having. Gunicorn doesn't log requests by default. The override file `compose.loki.yaml` sets `GUNICORN_CMD_ARGS` on the `web` service, which turns on the access log. You get one JSON line per request, in the same format as the Part 11 logging lab. Compose merges that setting into the `web` service from `compose.yaml`, so you don't edit the Part 9 file.",
+     "refs": [
+      {
+       "title": "Grafana Alloy docs: introduction",
+       "url": "https://grafana.com/docs/alloy/latest/introduction/",
+       "kind": "docs"
+      },
+      {
+       "title": "Alloy reference: loki.source.docker",
+       "url": "https://github.com/grafana/alloy/blob/main/docs/sources/reference/components/loki/loki.source.docker.md",
+       "kind": "docs"
+      },
+      {
+       "title": "Introducing Grafana Alloy, a distribution of the OTel Collector (video)",
+       "url": "https://www.youtube.com/watch?v=d9zLeFuIFIk",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Traces, profiles and the LGTM stack",
+     "body": "Grafana Labs builds an open-source backend for each signal from Day 41. Together they are called the LGTM stack:\n- Loki for logs.\n- Grafana for dashboards, exploring and alerting.\n- Tempo for traces. It needs only object storage to run, and you find traces by ID or with its query language, TraceQL.\n- Mimir for metrics. It speaks the Prometheus API and keeps long-term data for many Prometheus servers (Day 44).\n\nPyroscope adds profiles. A profile shows which functions use the CPU and memory, drawn as a flame graph: the wider a function's bar, the more time it took. A trace tells you which service is slow, and a profile tells you which code inside it.\n\nThe signals are worth most when you can jump between them. If the app writes its trace ID into each log line, Grafana can link a slow span in Tempo to its log lines in Loki, and back. Day 49 adds tracing with OpenTelemetry, which is how trace IDs get into the app.\n\nTo see everything on a laptop without building a stack, Grafana publishes one container with all of it inside, `grafana/otel-lgtm`. It serves Grafana on port 3000 and takes OpenTelemetry data on ports 4317 and 4318. It is meant for development and demos, not production.\n\nIf you'd rather run nothing, Grafana Cloud hosts the whole stack. Its free tier currently lists 10,000 active metric series, 50 GB of logs, 14 days of retention and 3 users. Those limits change, so check the [pricing page](https://grafana.com/pricing/?pg=pricing) before you rely on them.",
+     "refs": [
+      {
+       "title": "docker-otel-lgtm: the whole stack in one container",
+       "url": "https://github.com/grafana/docker-otel-lgtm",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana Tempo docs",
+       "url": "https://grafana.com/docs/tempo/latest/",
+       "kind": "docs"
+      },
+      {
+       "title": "OpenTelemetry Looks Good To Me: Loki, Grafana, Tempo, Mimir (video)",
+       "url": "https://www.youtube.com/watch?v=0MPDPFt-t4I",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Dashboards and alerts as code, and what changed in Grafana 12 and 13",
+     "body": "Day 45 provisioned dashboards from files. That works well for a Grafana you start yourself. Teams with many instances, or a hosted one, use one of these:\n- Terraform. The `grafana/grafana` provider manages folders, data sources, alert rules and dashboards. A `grafana_dashboard` resource can read your JSON with `config_json = file(\"hello-red.json\")`, so Part 6 carries over.\n- The Foundation SDK. Typed builders in Go, TypeScript, Python, Java and PHP that write dashboard JSON for you, with autocomplete instead of hand-edited JSON.\n- Git Sync, generally available since Grafana 13.0. Grafana connects to a GitHub, GitLab or Bitbucket repository, saving in the UI can open a pull request, and merged changes flow back. It covers dashboards and folders.\n- gcx, Grafana's new command-line tool for resources as code. It replaces Grizzly and grafanactl, which are deprecated, so skip tutorials that use them.\n- The Grafana Operator, for teams that want dashboards as Kubernetes custom resources.\n\nPick one per team. For this course, file provisioning plus Terraform is plenty.\n\nGrafana 12 and 13 also changed things that make older tutorials wrong:\n- 12.0 removed Angular plugins, so some old panels no longer load.\n- 13.0 removed the `grafana-cli` and `grafana-server` commands. Use `grafana cli` and `grafana server`.\n- 13.0 made dynamic dashboards generally available: tabs, rows that show or hide themselves, and automatic layout, in the v2 dashboard format.\n- 13.3 added Notebooks for investigations, and variables you define once and share across dashboards.\n- The `grafana/grafana-oss` image stopped at 12.4. Use `grafana/grafana`.",
+     "refs": [
+      {
+       "title": "Grafana docs: observability as code",
+       "url": "https://grafana.com/docs/grafana/latest/as-code/observability-as-code/",
+       "kind": "docs"
+      },
+      {
+       "title": "Git Sync: observability as code built for scale (video)",
+       "url": "https://www.youtube.com/watch?v=FBfl9ga5zWs",
+       "kind": "watch"
+      },
+      {
+       "title": "Grafana docs: upgrade to v13.0 (source on GitHub)",
+       "url": "https://github.com/grafana/grafana/blob/main/docs/sources/upgrade-guide/upgrade-v13/upgrade-v13.0/index.md",
+       "kind": "docs"
+      }
+     ]
+    }
+   ],
+   "analogy": "Loki works like a library that catalogs books only by shelf: subject, author and year, never the words inside. To find a quote, you walk to the right shelf and flip through the few books there. The catalog stays tiny, and flipping is fast when the shelf is small. Where it breaks: if you make a shelf for every reader's name, the catalog becomes larger than the books, which is exactly what a user ID label does to Loki.",
+   "diagram": "<svg viewBox=\"0 0 560 228\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Alloy reads container logs and pushes them to Loki; Prometheus scrapes the containers; Grafana queries Loki with LogQL and Prometheus with PromQL, and sends alerts to a webhook\"><rect class=\"bx\" x=\"16\" y=\"32\" width=\"120\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"76\" y=\"59\" font-size=\"13\" text-anchor=\"middle\">Containers</text><rect class=\"bxp\" x=\"168\" y=\"32\" width=\"90\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"213\" y=\"59\" font-size=\"13\" text-anchor=\"middle\">Alloy</text><rect class=\"bxt\" x=\"290\" y=\"32\" width=\"80\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"330\" y=\"59\" font-size=\"13\" text-anchor=\"middle\">Loki</text><rect class=\"bxo\" x=\"410\" y=\"32\" width=\"130\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"475\" y=\"59\" font-size=\"13\" text-anchor=\"middle\">Grafana</text><rect class=\"bxt\" x=\"196\" y=\"164\" width=\"124\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"258\" y=\"191\" font-size=\"13\" text-anchor=\"middle\">Prometheus</text><rect class=\"bx\" x=\"420\" y=\"164\" width=\"110\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"475\" y=\"191\" font-size=\"13\" text-anchor=\"middle\">Webhook</text><line class=\"ln\" x1=\"136\" y1=\"54\" x2=\"165\" y2=\"54\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"152\" y=\"24\" font-size=\"11\" text-anchor=\"middle\">logs</text><line class=\"ln\" x1=\"258\" y1=\"54\" x2=\"287\" y2=\"54\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"274\" y=\"24\" font-size=\"11\" text-anchor=\"middle\">push</text><line class=\"ln\" x1=\"407\" y1=\"54\" x2=\"373\" y2=\"54\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"390\" y=\"24\" font-size=\"11\" text-anchor=\"middle\">LogQL</text><line class=\"ln\" x1=\"440\" y1=\"78\" x2=\"324\" y2=\"166\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"400\" y=\"130\" font-size=\"11\" text-anchor=\"start\">PromQL</text><line class=\"ln\" x1=\"500\" y1=\"78\" x2=\"500\" y2=\"161\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"508\" y=\"124\" font-size=\"11\" text-anchor=\"start\">alerts</text><line class=\"lnd\" x1=\"196\" y1=\"176\" x2=\"90\" y2=\"80\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"112\" y=\"140\" font-size=\"11\" text-anchor=\"middle\">scrape</text></svg>",
+   "diagram_caption": "Logs flow through Alloy into Loki; Grafana queries Loki and Prometheus side by side and sends the alerts.",
+   "worked": {
+    "title": "Watch a Grafana alert go from Normal to Firing and back",
+    "steps": [
+     {
+      "say": "Save `hello-alerts.yaml` from the Files section in `grafana/provisioning/alerting/` and restart Grafana. Then ask Grafana what it loaded. The field `provenance: file` means the rule came from a file, so the UI won't let anyone edit it.",
+      "code": "$ docker compose restart grafana\n$ curl -s -u admin:admin localhost:3000/api/v1/provisioning/alert-rules | jq '.[] | {title, ruleGroup, for, condition, provenance}'\n{\n  \"title\": \"HelloErrorRatioHigh\",\n  \"ruleGroup\": \"hello-devops\",\n  \"for\": \"1m\",\n  \"condition\": \"C\",\n  \"provenance\": \"file\"\n}\n$ curl -s -u admin:admin localhost:3000/api/v1/provisioning/contact-points | jq -c '.[] | {name, type, url: .settings.url}'\n{\"name\":\"lab-webhook\",\"type\":\"webhook\",\"url\":\"http://webhook:5001/grafana\"}",
+      "lang": "console"
+     },
+     {
+      "say": "With the traffic loop running and Redis up, the rule is inactive: almost nothing fails, so condition C is false. Break the app the same way as on Day 45.",
+      "code": "$ curl -s -u admin:admin localhost:3000/api/prometheus/grafana/api/v1/rules | jq -c '.data.groups[].rules[] | {name, state}'\n{\"name\":\"HelloErrorRatioHigh\",\"state\":\"inactive\"}\n$ docker compose stop redis",
+      "lang": "console"
+     },
+     {
+      "say": "Watch the state with a small loop that prints a line only when it changes (times are UTC). Redis stopped at 05:22:30. The rule looks at a 2-minute window and runs every 30 seconds, so the ratio crossed 5% at 05:24:04 and the rule turned Pending. It stayed true for the whole pending period of one minute, and at 05:25:05 it fired.",
+      "code": "$ prev=; while true; do s=$(curl -s -u admin:admin localhost:3000/api/prometheus/grafana/api/v1/rules | jq -c '.data.groups[].rules[] | {name, state}'); [ \"$s\" != \"$prev\" ] && echo \"$(date -u +%T) $s\" && prev=$s; sleep 5; done\n05:23:49 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"inactive\"}\n05:24:04 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"pending\"}\n05:25:05 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"firing\"}",
+      "lang": "console"
+     },
+     {
+      "say": "Stop the loop with Ctrl+C and read the webhook's last few minutes. The `[lab-webhook]` prefix is Grafana's contact point. The summary comes from the rule's annotation template, which turned the value of query A into a percentage. The `[pager]` line is the Day 44 fast-burn alert, sent by Alertmanager to the same webhook. Its 4.5% is the 1-hour error ratio, which moves much slower than Grafana's 2-minute window.",
+      "code": "$ docker compose logs --since 5m webhook\nwebhook-1  | [lab-webhook] FIRING HelloErrorRatioHigh job=hello-devops severity=ticket: 89.66% of hello-devops requests fail\nwebhook-1  | [pager] FIRING HelloErrorBudgetFastBurn job=hello-devops severity=page: 4.463% of hello-devops requests fail (fast burn)",
+      "lang": "console"
+     },
+     {
+      "say": "Start Redis. Once the 2-minute ratio drops back under 5%, the instance returns to Normal and Grafana sends a resolved message. The same thing works for any data source, which is the point of the next sections: the query could just as well count error lines in Loki.",
+      "code": "$ docker compose start redis\n$ docker compose logs --since 5m webhook | grep lab-webhook\nwebhook-1  | [lab-webhook] FIRING HelloErrorRatioHigh job=hello-devops severity=ticket: 89.66% of hello-devops requests fail\nwebhook-1  | [lab-webhook] RESOLVED HelloErrorRatioHigh job=hello-devops severity=ticket: 0% of hello-devops requests fail",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "yaml",
+     "title": "observability/grafana/provisioning/alerting/hello-alerts.yaml",
+     "src": "# Grafana-managed alerting for the monitoring lab (Day 46): one alert rule,\n# one contact point and the notification policy tree, all from this file.\n# Grafana loads it at start. After an edit, reload without a restart:\n#   curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/alerting/reload\n# You can't edit these in the UI: the file is the source of truth.\napiVersion: 1\n\n# Where notifications go: the same webhook service Alertmanager uses (Day 44).\n# Read them with: docker compose logs -f webhook\ncontactPoints:\n  - orgId: 1\n    name: lab-webhook\n    receivers:\n      - uid: lab-webhook\n        type: webhook\n        settings:\n          url: http://webhook:5001/grafana\n          httpMethod: POST\n\n# How notifications are routed. This replaces Grafana's whole policy tree:\n# every alert goes to lab-webhook, grouped by folder and alert name.\npolicies:\n  - orgId: 1\n    receiver: lab-webhook\n    group_by: [\"grafana_folder\", \"alertname\"]\n    group_wait: 10s # wait this long for more alerts before the first message\n    group_interval: 1m # wait this long before telling about changes in a group\n    repeat_interval: 1h # remind about an alert that is still firing\n\n# The rules. Grafana runs each group every \"interval\".\ngroups:\n  - orgId: 1\n    name: hello-devops\n    folder: hello-devops # the same folder as the dashboard\n    interval: 30s\n    rules:\n      - uid: hello-error-ratio\n        title: HelloErrorRatioHigh\n        # The rule fires when C is true. C reads the result of A.\n        condition: C\n        data:\n          # A: the error ratio over the last 2 minutes, one number per job.\n          - refId: A\n            datasourceUid: prometheus\n            relativeTimeRange: { from: 600, to: 0 }\n            model:\n              refId: A\n              instant: true\n              expr: |\n                sum by (job) (rate(hello_responses_total{job=\"hello-devops\", status=~\"5..\"}[2m]))\n                /\n                sum by (job) (rate(hello_responses_total{job=\"hello-devops\"}[2m]))\n          # C: a threshold expression. True when A is above 0.05 (5%).\n          - refId: C\n            datasourceUid: __expr__\n            model:\n              refId: C\n              type: threshold\n              expression: A\n              conditions:\n                - evaluator: { type: gt, params: [0.05] }\n        for: 1m # C must stay true this long (Pending) before the alert fires\n        # No 5xx at all means A returns nothing. That is good news, so OK.\n        noDataState: OK\n        execErrState: Error # Prometheus down or the query broken: show an error\n        labels:\n          severity: ticket\n        annotations:\n          summary: \"{{ if $values.A }}{{ humanizePercentage $values.A.Value }}{{ end }} of hello-devops requests fail\"\n        # Link the rule to the Errors graph on the RED dashboard.\n        dashboardUid: hello-red\n        panelId: 6",
+     "run": "curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/alerting/reload"
+    },
+    {
+     "lang": "yaml",
+     "title": "observability/compose.loki.yaml",
+     "src": "# Adds logs to the monitoring lab (Day 46). Use it on top of compose.yaml:\n#\n#   docker compose -f compose.yaml -f compose.loki.yaml up -d\n#\n# Compose merges the two files: new services are added, and settings for a\n# service that already exists (web) are merged into it.\n#   http://localhost:3100/ready  Loki\n#   http://localhost:12345       Alloy UI (its pipeline, live)\n# Stop:  docker compose -f compose.yaml -f compose.loki.yaml down   (add -v to delete stored logs)\n\nservices:\n  # Stores log lines. Indexes only their labels.\n  loki:\n    image: grafana/loki:3.7.9\n    command: [\"-config.file=/etc/loki/loki.yaml\"]\n    volumes:\n      - ./loki/loki.yaml:/etc/loki/loki.yaml:ro\n      - loki-data:/loki\n    ports:\n      - \"3100:3100\"\n\n  # Collects container logs from Docker and pushes them to Loki.\n  alloy:\n    image: grafana/alloy:v1.21.3\n    command:\n      - run\n      - --server.http.listen-addr=0.0.0.0:12345 # the Alloy UI\n      - --storage.path=/var/lib/alloy/data # remembers how far it read each log\n      - /etc/alloy/config.alloy\n    environment:\n      COMPOSE_PROJECT: ${COMPOSE_PROJECT_NAME} # config.alloy only reads this project's containers\n    volumes:\n      - ./loki/config.alloy:/etc/alloy/config.alloy:ro\n      # Docker's API, to list containers and read their logs. On a Mac this\n      # needs \"Allow the default Docker socket to be used\" (Day 2).\n      - /var/run/docker.sock:/var/run/docker.sock:ro\n    ports:\n      - \"12345:12345\"\n    depends_on:\n      - loki\n\n  # Turn on gunicorn's access log: one JSON line per request, same format as\n  # the logging lab (Day 47). %(m)s method, %(U)s path, %(s)s status code,\n  # %(M)s duration in milliseconds. Gunicorn reads extra flags from this variable.\n  web:\n    environment:\n      GUNICORN_CMD_ARGS: >-\n        --access-logfile=-\n        '--access-logformat={\"level\":\"INFO\",\"logger\":\"access\",\"method\":\"%(m)s\",\"path\":\"%(U)s\",\"status\":%(s)s,\"duration_ms\":%(M)s}'\n\nvolumes:\n  loki-data:",
+     "run": "docker compose -f compose.yaml -f compose.loki.yaml up -d"
+    },
+    {
+     "lang": "yaml",
+     "title": "observability/loki/loki.yaml",
+     "src": "# Loki for the laptop lab (Day 46): one process, logs kept on a local disk.\n# compose.loki.yaml mounts this file at /etc/loki/loki.yaml.\n# Check that Loki is up:  curl localhost:3100/ready\n\nauth_enabled: false # one tenant and no login. Fine on a laptop, never on a server.\n\nserver:\n  http_listen_port: 3100 # push and query API, and /ready\n\ncommon:\n  instance_addr: 127.0.0.1\n  path_prefix: /loki # the loki-data volume\n  storage:\n    filesystem: # chunks (the compressed log lines) and rules go to local folders\n      chunks_directory: /loki/chunks\n      rules_directory: /loki/rules\n  replication_factor: 1 # keep one copy: there is only one Loki\n  ring:\n    kvstore:\n      store: inmemory\n\n# How the index is stored. tsdb with schema v13 is what new installs use.\nschema_config:\n  configs:\n    - from: 2024-01-01\n      store: tsdb\n      object_store: filesystem\n      schema: v13\n      index:\n        prefix: index_\n        period: 24h # one index file per day\n\n# Delete logs older than 7 days. The compactor does the deleting.\nlimits_config:\n  retention_period: 168h\n\ncompactor:\n  working_directory: /loki/compactor\n  retention_enabled: true\n  delete_request_store: filesystem\n\n# Don't send anonymous usage statistics to Grafana Labs.\nanalytics:\n  reporting_enabled: false",
+     "run": "curl localhost:3100/ready"
+    },
+    {
+     "lang": "text",
+     "title": "observability/loki/config.alloy",
+     "src": "// Grafana Alloy for the laptop lab (Day 46): read the logs of this Compose\n// project's containers from Docker and send them to Loki.\n// Each block is a component. Data flows from one to the next:\n//   discovery.docker -> discovery.relabel -> loki.source.docker -> loki.write\n// See it live in the Alloy UI: http://localhost:12345\n\n// 1. Ask Docker which containers exist. Keep only this Compose project.\n//    compose.loki.yaml passes the project name in COMPOSE_PROJECT.\ndiscovery.docker \"containers\" {\n\thost = \"unix:///var/run/docker.sock\"\n\n\tfilter {\n\t\tname   = \"label\"\n\t\tvalues = [\"com.docker.compose.project=\" + sys.env(\"COMPOSE_PROJECT\")]\n\t}\n}\n\n// 2. Choose the labels each log stream gets in Loki. Keep them few:\n//    every new label value makes a new stream.\ndiscovery.relabel \"containers\" {\n\ttargets = []\n\n\t// service=\"web\", \"prometheus\", \"grafana\", ... (the Compose service name).\n\t// Loki also copies it into service_name.\n\trule {\n\t\tsource_labels = [\"__meta_docker_container_label_com_docker_compose_service\"]\n\t\ttarget_label  = \"service\"\n\t}\n\n\t// container=\"observability-web-1\" (Docker puts a \"/\" in front; drop it).\n\trule {\n\t\tsource_labels = [\"__meta_docker_container_name\"]\n\t\tregex         = \"/(.*)\"\n\t\ttarget_label  = \"container\"\n\t}\n}\n\n// 3. Follow each container's output (stdout and stderr), like docker logs -f.\nloki.source.docker \"containers\" {\n\thost          = \"unix:///var/run/docker.sock\"\n\ttargets       = discovery.docker.containers.targets\n\trelabel_rules = discovery.relabel.containers.rules\n\tforward_to    = [loki.write.local.receiver]\n}\n\n// 4. Push the lines to Loki's API.\nloki.write \"local\" {\n\tendpoint {\n\t\turl = \"http://loki:3100/loki/api/v1/push\"\n\t}\n}",
+     "run": "open http://localhost:12345"
+    },
+    {
+     "lang": "yaml",
+     "title": "observability/grafana/provisioning/datasources/loki.yaml",
+     "src": "# Grafana data source for Loki (Day 46).\n# Loki runs only when you start the stack with compose.loki.yaml too.\n# Without it, this data source exists but its queries fail.\napiVersion: 1\n\ndatasources:\n  - name: Loki\n    type: loki\n    uid: loki\n    access: proxy\n    url: http://loki:3100 # the Compose service name\n    jsonData:\n      maxLines: 1000 # the most log lines one query may return to the browser",
+     "run": "curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/datasources/reload"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "docker compose -f compose.yaml -f compose.loki.yaml up -d",
+     "what": "Start the lab with Loki and Alloy added; Compose merges the two files."
+    },
+    {
+     "cmd": "docker compose -f compose.yaml -f compose.loki.yaml config",
+     "what": "Print the merged configuration, to see what the override changed."
+    },
+    {
+     "cmd": "curl localhost:3100/ready",
+     "what": "Check that Loki is ready. Right after a start it says to wait about 15 seconds."
+    },
+    {
+     "cmd": "curl -s localhost:3100/loki/api/v1/labels | jq",
+     "what": "List the label names Loki has seen."
+    },
+    {
+     "cmd": "curl -s -G localhost:3100/loki/api/v1/query_range --data-urlencode 'query={service_name=\"web\"} | json | status >= 500' | jq -r '.data.result[].values[][1]'",
+     "what": "Run a LogQL query from the terminal and print the matching lines."
+    },
+    {
+     "cmd": "open http://localhost:12345",
+     "what": "Open the Alloy UI to see its components and whether each is healthy."
+    },
+    {
+     "cmd": "curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/datasources/reload",
+     "what": "Make Grafana read the data source files again, without a restart."
+    },
+    {
+     "cmd": "curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/alerting/reload",
+     "what": "Make Grafana read the alerting files again after an edit."
+    },
+    {
+     "cmd": "curl -s -u admin:admin localhost:3000/api/prometheus/grafana/api/v1/rules | jq '.data.groups[].rules[] | {name, state}'",
+     "what": "Show each Grafana-managed rule and whether it is inactive, pending or firing."
+    },
+    {
+     "cmd": "docker compose logs -f webhook",
+     "what": "Watch the notifications that Grafana and Alertmanager send to the lab's webhook."
+    },
+    {
+     "cmd": "docker run --rm -p 3001:3000 -p 4317:4317 -p 4318:4318 grafana/otel-lgtm",
+     "what": "Try the whole LGTM stack in one container, with Grafana on port 3001 (for demos only)."
+    },
+    {
+     "cmd": "docker compose -f compose.yaml -f compose.loki.yaml down",
+     "what": "Stop everything, including Loki and Alloy. Add -v to delete stored logs and metrics."
+    }
+   ],
+   "mistake": "Putting a request ID, user ID or full URL into a Loki label to make it easy to search. Each new value makes a new stream, and Loki slows down and fills its index with tiny chunks. Keep labels to a few values such as service and environment, leave the IDs in the line, and find them with a filter such as `|= \"req-42\"` or `| json | user_id=\"42\"`.",
+   "real_world": "At the fake payments company PayFlow, Prometheus and Alertmanager page on-call for the checkout SLO. Grafana alerting handles the rest, such as a rule that counts `card declined` lines in Loki per merchant. Every Grafana rule and contact point lives in Terraform next to the dashboards, so a new team gets its alerts by pull request, not by clicking.",
+   "task": {
+    "title": "Add Loki to the lab and investigate an outage from the logs",
+    "steps": [
+     "Create `compose.loki.yaml`, `loki/loki.yaml`, `loki/config.alloy` and `grafana/provisioning/datasources/loki.yaml` from this lesson's Files section.",
+     "Start the stack with both Compose files, wait until Loki says ready, and open the Alloy UI to check that every component is healthy.",
+     "Make Grafana read the new data source (reload API or restart), then open Explore, pick Loki and run `{service_name=\"web\"}` while your traffic loop runs.",
+     "Write three LogQL queries: all requests except `/healthz`, only failed requests, and requests per second by status code.",
+     "Stop Redis for two minutes. Use Loki to find the exception message that explains the 500s, and note its exact text.",
+     "Add a panel to a scratch dashboard that graphs your requests-by-status query from Loki next to the Prometheus error ratio, and compare the shapes.",
+     "Create a second Grafana alert rule in the UI from a Loki query that fires when more than 5 lines contain `ConnectionError` in 5 minutes. Watch it fire while Redis is down.",
+     "Start Redis again and check that both Grafana alerts resolve in the webhook output."
+    ],
+    "hints": [
+     "If Loki returns nothing, check the Alloy UI first, then `docker compose -f compose.yaml -f compose.loki.yaml logs alloy`.",
+     "A metric query over JSON lines needs `| __error__=\"\"` after `| json`, because the traceback lines are not JSON.",
+     "For the alert, the query is shaped like `sum(count_over_time({service_name=\"web\"} |= \"...\" [5m]))`, with a threshold above 5."
+    ],
+    "done_when": "In Explore, `sum by (status) (count_over_time({service_name=\"web\"} | json | __error__=\"\" [5m]))` shows a `500` series from your outage, and the webhook printed a FIRING and a RESOLVED line from your Loki alert."
+   },
+   "explain_back": {
+    "prompt": "Explain to a teammate, in 3 to 4 sentences, how a log line from hello-devops ends up on your screen in Grafana, and why Loki labels must stay few. Mention Alloy, streams and LogQL.",
+    "answer": "Gunicorn writes one JSON line per request to stdout, and Docker keeps it. Alloy finds the containers through the Docker socket, adds the labels service and container, and pushes the lines to Loki. Loki groups lines with the same labels into a stream and indexes only those labels. In Grafana, a LogQL query like {service_name=\"web\"} | json | status >= 500 picks the stream first and then filters its text. Every new label value creates a new stream, so labels like user IDs would make the index huge and the queries slow."
+   },
+   "recap": [
+    "Grafana alerting: a rule (queries, condition, pending period) makes instances; policies route them by label to contact points.",
+    "Set no-data and error handling on purpose; for an error ratio, no 5xx data means OK.",
+    "Keep SLO pages in Prometheus and Alertmanager; use Grafana alerts for what only Grafana can query, such as logs.",
+    "Loki indexes only labels; keep them few and bounded, and leave IDs in the log line.",
+    "LogQL: stream selector, line filters, then a parser such as `| json`; metric queries turn lines into numbers.",
+    "Alloy collects; Tempo, Mimir and Pyroscope cover traces, metrics and profiles; dashboards as code means Terraform, the Foundation SDK, Git Sync or gcx."
+   ],
+   "check": [
+    {
+     "q": "A teammate wants to search logs by customer, so they add a `customer_id` label in Alloy. There are 80,000 customers. What will happen?",
+     "options": [
+      "Searches by customer get faster with no real downside",
+      "Loki rejects the label because it is longer than ten characters",
+      "Grafana hides the label because it contains an ID",
+      "Loki gets a stream per customer, and its index and queries suffer"
+     ],
+     "answer": 3,
+     "why": "Every label value creates a stream; keep customer IDs in the line and filter with |= or a parser."
+    },
+    {
+     "q": "Your metric query `sum(count_over_time({service_name=\"web\"} | json [5m]))` fails with a JSONParserErr. Some lines are Python tracebacks. What is the smallest fix?",
+     "options": [
+      "Remove `| json` and count every line instead",
+      "Add `| __error__=\"\"` after `| json` to drop lines that failed to parse",
+      "Change `count_over_time` to `rate` so parse errors are ignored",
+      "Switch the stream selector to `{container=~\".+\"}`"
+     ],
+     "answer": 1,
+     "why": "The parser labels bad lines with __error__, and a metric query only runs once those lines are filtered out."
+    },
+    {
+     "q": "You must alert when the share of declined payments in a SQL table rises while Prometheus shows normal traffic. Where does this rule fit best?",
+     "options": [
+      "A Grafana-managed rule, because it can query the SQL data source and Prometheus together",
+      "A Prometheus alerting rule, because Prometheus can read SQL tables directly",
+      "An Alertmanager inhibit rule, because it compares two alerts",
+      "A Loki recording rule, because Loki stores all the payments"
+     ],
+     "answer": 0,
+     "why": "Grafana-managed rules can query any backend data source, and even mix several in one rule; Prometheus only sees what it scrapes."
+    }
+   ],
+   "interview": [
+    {
+     "q": "How is Loki different from Elasticsearch, and when would you pick each?",
+     "a": "Loki indexes only a few labels per stream and keeps the text compressed, usually in object storage, so it is cheap to run and to keep logs in. Queries pick streams by label and then scan their text, which is fast when the labels narrow things down. Elasticsearch indexes every field and word, which costs more storage and memory but makes free-text search across everything fast. I pick Loki when logs mainly support metrics and traces in Grafana, and Elasticsearch when people search logs as their main tool."
+    },
+    {
+     "q": "Would you put your alerts in Grafana or in Prometheus and Alertmanager?",
+     "a": "For SLO alerts that page someone, I prefer Prometheus rules and Alertmanager: they run next to the data and keep working if Grafana is down. Grafana-managed alerts are the better fit when the condition needs data Prometheus doesn't have, such as logs in Loki or a SQL table, or several sources together. Either way the rules live in git, through provisioning files or Terraform. The one thing I avoid is the same alert in both systems, because one incident then pages twice."
+    },
+    {
+     "q": "What is the LGTM stack?",
+     "a": "It is Grafana Labs' open-source observability stack: Loki for logs, Grafana for visualization and alerting, Tempo for traces and Mimir for long-term metrics. Pyroscope adds profiles, and Alloy collects all the signals and sends them in. The parts share labels, so in Grafana you can jump from a metric spike to the matching logs and traces. For a laptop demo, the grafana/otel-lgtm image runs all of it in one container."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "The lab parses the JSON access log at query time with `| json`. That is the Loki way: store lines as they are, and decide what they mean when you ask. Alloy can also do work before the lines reach Loki, with a `loki.process` component between the source and the writer. It is worth knowing what belongs there and what doesn't.\n\nGood jobs for `loki.process`:\n- Join multiline messages. A Python traceback arrives as many lines; a `stage.multiline` block glues them into one entry, so one error is one line in Loki.\n- Drop noise. A `stage.drop` block can throw away `/healthz` lines before they cost storage.\n- Hide secrets. A replace stage can mask anything that looks like a token or a card number.\n- Add structured metadata. Loki 3 can store extra key and value pairs next to each line without indexing them, such as a trace ID or a pod name. They show up in Grafana and can be filtered after the stream selector, and they don't create streams.\n\nA bad job is turning fields such as `status` or `path` into labels. It feels natural because you query them all the time. But status times path times containers multiplies your streams, and Loki doesn't need it: `| json | status >= 500` already filters fast once the stream selector has narrowed things down.\n\nThere is also the other direction: metrics from logs. The LogQL metric queries in this lesson run each time someone opens the panel. When a log-based number matters enough to alert on, Loki's ruler can run the query on a schedule. It can evaluate alerting rules, or recording rules that write the result to Prometheus or Mimir as a normal metric. Then the dashboard and the alert read a cheap metric instead of scanning logs again and again.\n\nFinally, retention. The lab keeps 7 days (`retention_period: 168h`), and the compactor deletes older chunks. In production, log volume grows with traffic, so logs can become a large share of the observability bill. Teams cut it by dropping debug lines in the collector, keeping noisy streams for less time, and sampling successful requests while keeping every error. Day 48 compares this cost model with Elasticsearch."
+   },
+   "sources": [
+    {
+     "title": "Grafana docs: introduction to Grafana Alerting",
+     "url": "https://grafana.com/docs/grafana/latest/alerting/fundamentals/"
+    },
+    {
+     "title": "Loki docs: query Loki (LogQL)",
+     "url": "https://grafana.com/docs/loki/latest/query/"
+    },
+    {
+     "title": "Loki quickstart with Docker Compose and Alloy",
+     "url": "https://grafana.com/docs/loki/latest/get-started/quick-start/tutorial/"
+    },
+    {
+     "title": "Grafana docs: observability as code",
+     "url": "https://grafana.com/docs/grafana/latest/as-code/observability-as-code/"
+    }
+   ]
+  }
+ ],
+ "recap": [
+  "Grafana stores dashboards, users and alert rules; the data stays in data sources such as Prometheus and Loki.",
+  "Choose each panel's visualization from its question, and set units and thresholds instead of rewriting PromQL.",
+  "Use `$__rate_interval` for rate ranges, `=~` with multi-value variables, and `or vector(0)` where empty should mean zero.",
+  "Design for on-call: RED stats on top, the same signals over time below, details collapsed or linked.",
+  "Dashboards and alerts are code: provision them from files in git, with fixed uids, and change the file, not the UI.",
+  "Grafana alerting runs rules on any data source; contact points and notification policies deliver the result.",
+  "Loki indexes only labels, so keep labels few and bounded; LogQL filters and parses the text at query time.",
+  "Alloy collects logs (Promtail has reached end of life); Tempo, Mimir and Pyroscope cover traces, metrics and profiles."
+ ],
+ "flashcards": [
+  {
+   "front": "What does Grafana store, and what does it not store?",
+   "back": "It stores dashboards, users, settings and alert rules. Metrics and logs stay in the data sources."
+  },
+  {
+   "front": "What is `$__rate_interval`?",
+   "back": "A Grafana variable for the range in rate(): the larger of the step plus one scrape interval, and four scrape intervals."
+  },
+  {
+   "front": "Why add `or vector(0)` to an error ratio query?",
+   "back": "Before any error, the 5xx series doesn't exist, so the panel would show No data instead of 0%."
+  },
+  {
+   "front": "Which unit shows a ratio from 0 to 1 as a percentage?",
+   "back": "Percent (0.0-1.0), written `percentunit` in the dashboard JSON."
+  },
+  {
+   "front": "A variable allows several values. Which label matcher must the query use?",
+   "back": "`=~`, because Grafana inserts a regular expression such as a|b."
+  },
+  {
+   "front": "How should a RED dashboard for on-call be laid out?",
+   "back": "Stats on top, the same signals over time below, and details in collapsed rows or linked dashboards."
+  },
+  {
+   "front": "What does `allowUiUpdates: false` do for a provisioned dashboard?",
+   "back": "The UI can't save over it. You change the JSON file in git instead."
+  },
+  {
+   "front": "Why set `updateIntervalSeconds` above 10 when Grafana runs in Docker on a Mac?",
+   "back": "At 10 or less Grafana waits for file events, which bind mounts may not deliver. Above 10 it polls."
+  },
+  {
+   "front": "Name the three main parts of Grafana alerting.",
+   "back": "Alert rules (queries, condition, pending period), contact points and notification policies."
+  },
+  {
+   "front": "What does `noDataState: OK` do on a Grafana alert rule?",
+   "back": "An empty query result counts as Normal instead of raising a DatasourceNoData alert."
+  },
+  {
+   "front": "What does Loki put in its index?",
+   "back": "Only the labels of each stream. The log text is compressed and not indexed."
+  },
+  {
+   "front": "What is the shape of a LogQL query?",
+   "back": "A stream selector in braces, then line filters, a parser and label filters, joined by |."
+  },
+  {
+   "front": "Why does a LogQL metric query over `| json` sometimes fail, and how do you fix it?",
+   "back": "Lines that are not JSON get an __error__ label; add `| __error__=\"\"` to drop them."
+  },
+  {
+   "front": "What replaced Promtail?",
+   "back": "Grafana Alloy. Promtail reached end of life on 2 March 2026."
+  },
+  {
+   "front": "What does LGTM stand for?",
+   "back": "Loki for logs, Grafana, Tempo for traces and Mimir for metrics."
+  },
+  {
+   "front": "Which Grafana tools from older tutorials should you not use any more?",
+   "back": "The grafana-oss image (frozen at 12.4), grafana-cli (now `grafana cli`), and Grizzly or grafanactl (replaced by gcx)."
+  }
+ ],
+ "resources": [
+  {
+   "title": "Grafana docs: dashboard best practices",
+   "url": "https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/best-practices/",
+   "kind": "docs",
+   "why": "Grafana's own advice on what makes a dashboard useful, including RED and USE layouts and maturity levels."
+  },
+  {
+   "title": "Grafana docs: provision Grafana",
+   "url": "https://grafana.com/docs/grafana/latest/administration/provisioning/",
+   "kind": "docs",
+   "why": "Every option for loading data sources, dashboards and alerts from files."
+  },
+  {
+   "title": "Grafana tutorial: provision dashboards and data sources",
+   "url": "https://grafana.com/tutorials/provision-dashboards-and-data-sources/",
+   "kind": "read",
+   "why": "A short hands-on walk-through of dashboards as code with provisioning."
+  },
+  {
+   "title": "Grafana docs: Prometheus template variables",
+   "url": "https://grafana.com/docs/grafana/latest/datasources/prometheus/template-variables/",
+   "kind": "docs",
+   "why": "How query variables and `$__rate_interval` work, with the common mistakes."
+  },
+  {
+   "title": "Grafana docs: transform data",
+   "url": "https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/",
+   "kind": "docs",
+   "why": "The full list of transformations, each with a small before-and-after table."
+  },
+  {
+   "title": "Grafana docs: introduction to Grafana Alerting",
+   "url": "https://grafana.com/docs/grafana/latest/alerting/fundamentals/",
+   "kind": "docs",
+   "why": "The alerting model in one page: rules, instances, contact points and policies."
+  },
+  {
+   "title": "Loki docs: query Loki with LogQL",
+   "url": "https://grafana.com/docs/loki/latest/query/",
+   "kind": "docs",
+   "why": "The reference for log queries and metric queries, with examples."
+  },
+  {
+   "title": "Loki quickstart with Docker Compose and Alloy",
+   "url": "https://grafana.com/docs/loki/latest/get-started/quick-start/tutorial/",
+   "kind": "read",
+   "why": "Grafana's own small Loki stack to practise LogQL on generated logs."
+  },
+  {
+   "title": "docker-otel-lgtm on GitHub",
+   "url": "https://github.com/grafana/docker-otel-lgtm",
+   "kind": "docs",
+   "why": "One container with Grafana, Loki, Tempo, Prometheus and Pyroscope for trying every signal on a laptop."
+  },
+  {
+   "title": "Creating visualizations with Grafana (video)",
+   "url": "https://www.youtube.com/watch?v=yNRnLyVntUw",
+   "kind": "watch",
+   "why": "A beginner walk-through of building panels and choosing visualizations."
+  },
+  {
+   "title": "How to query Grafana Loki with LogQL (Grafana Labs video)",
+   "url": "https://www.youtube.com/watch?v=57dQwcmqkpQ",
+   "kind": "watch",
+   "why": "Filters, parsers and formatting in LogQL, shown step by step."
+  },
+  {
+   "title": "Grafana 13 deep dive from GrafanaCON 2026 (video)",
+   "url": "https://www.youtube.com/watch?v=giocvyAXO28",
+   "kind": "watch",
+   "why": "What dynamic dashboards, suggested dashboards and the other Grafana 13 features look like in use."
+  }
+ ],
+ "quiz": [
+  {
+   "q": "Prometheus CPU jumps every time the team's wall screen refreshes its 30-panel dashboard every 5 seconds. Which change helps most?",
+   "options": [
+    "Use recording rules and refresh every 30 seconds",
+    "Turn every time series panel into a stat panel",
+    "Set `allowUiUpdates: true` in the dashboard provider",
+    "Add a dashboard variable with an All option"
+   ],
+   "answer": 0,
+   "why": "Every refresh runs every panel's query; fewer refreshes and precomputed recording rules cut the load."
+  },
+  {
+   "q": "A panel shows memory use as 1610612736. What is the best fix?",
+   "options": [
+    "Divide by 1024 three times in the PromQL query",
+    "Add a transformation that renames the field to GiB",
+    "Set the panel unit to bytes (IEC)",
+    "Switch the panel to a gauge from 0 to 100"
+   ],
+   "answer": 2,
+   "why": "Keep base units in the query and let the unit format them: 1610612736 bytes shows as 1.50 GiB."
+  },
+  {
+   "q": "You added `grafana/provisioning/datasources/loki.yaml`, but Grafana doesn't list Loki. What do you do?",
+   "options": [
+    "Add the Loki data source to the dashboard JSON file",
+    "Wait 30 seconds for the dashboard provider to poll",
+    "Rename the file to end in .json instead of .yaml",
+    "Restart Grafana or call the data source reload API"
+   ],
+   "answer": 3,
+   "why": "Data source files are read at start; the dashboard provider's polling doesn't cover them."
+  },
+  {
+   "q": "Which LogQL query returns lines from the web service that contain `timeout` but not `healthz`?",
+   "options": [
+    "`{service_name=\"web\", text=\"timeout\"} != \"healthz\"`",
+    "`{service_name=\"web\"} |= \"timeout\" != \"healthz\"`",
+    "`{service_name=\"web\"} | json | timeout != healthz`",
+    "`{service_name=~\"timeout\"} |= \"web\" != \"healthz\"`"
+   ],
+   "answer": 1,
+   "why": "The selector picks the stream by label; |= keeps lines containing a string and != drops lines containing one."
+  },
+  {
+   "q": "A Grafana rule has `for: 5m`. Its condition has been true for 2 minutes. What state is the instance in?",
+   "options": [
+    "Normal, because no notification has been sent yet",
+    "Firing, because the condition is true",
+    "Pending, until the condition has held for 5 minutes",
+    "NoData, because the pending period is not over"
+   ],
+   "answer": 2,
+   "why": "The pending period works like Prometheus's for: the instance waits in Pending before it fires."
+  },
+  {
+   "q": "`docker compose logs web` shows new request lines, but Loki has had nothing from web for 10 minutes. Where do you look first?",
+   "options": [
+    "The Alloy UI, to see which component is unhealthy",
+    "The Grafana dashboard provider settings file",
+    "The Prometheus scrape config for the web job",
+    "The routing tree in the Alertmanager config"
+   ],
+   "answer": 0,
+   "why": "Alloy is the link between Docker and Loki; its UI shows which component is failing."
+  },
+  {
+   "q": "Your company has 40 services that all expose the same RED metrics. How should their dashboards be built?",
+   "options": [
+    "Copy the dashboard 40 times and change the job in each copy",
+    "Build one panel per service on one very large dashboard",
+    "Keep one dashboard in the UI and edit the queries for each service",
+    "Build one dashboard with a job variable, kept as code"
+   ],
+   "answer": 3,
+   "why": "A variable lets one dashboard serve every service; copies drift and become sprawl."
+  },
+  {
+   "q": "Why do the lab's panels use `sum(rate(...))` and never `rate(sum(...))`?",
+   "options": [
+    "Because rate() only accepts a single series as input",
+    "Because rate() must see each raw counter to handle restarts correctly",
+    "Because sum() is slower when it runs before rate()",
+    "Because Grafana can't draw the result of rate(sum())"
+   ],
+   "answer": 1,
+   "why": "Summing first hides the moment one counter resets, so rate() would see a drop and get the speed wrong.",
+   "from": "Part 9"
+  },
+  {
+   "q": "You run `docker compose -f compose.yaml -f compose.loki.yaml up -d`. compose.loki.yaml adds only an environment variable to `web`. What happens to `web`?",
+   "options": [
+    "It loses its build, command and ports, because the second file replaces it",
+    "Nothing, because a service defined twice is ignored",
+    "It keeps its settings from compose.yaml, gains the variable and is recreated",
+    "Compose stops with an error about a duplicate service"
+   ],
+   "answer": 2,
+   "why": "Compose merges files in order: new keys are added to the existing service, and the changed container is recreated.",
+   "from": "Part 3"
+  },
+  {
+   "q": "A trace shows the checkout service is slow, and you want to know which function inside it burns the CPU. Which tool fits?",
+   "options": [
+    "Loki, with a LogQL metric query",
+    "Mimir, with long-term PromQL",
+    "Alloy, with a relabel rule",
+    "Pyroscope, with a flame graph"
+   ],
+   "answer": 3,
+   "why": "Profiles show time per function; traces show time per service call."
+  }
+ ]
+}

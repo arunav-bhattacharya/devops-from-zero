@@ -47,11 +47,11 @@ L = {
 - `metadata`: identity. The `name` and `namespace`, plus `labels` and `annotations`.
 - `spec`: your desired state. Its shape depends on the kind.
 
-You never write the fifth field, `status`. Kubernetes fills it in.
+You never write the fifth field, `status`. Kubernetes fills it in. A typo in a field name does not slip through, either. kubectl validates strictly by default, so `imagePullPolicyy` fails with an error that names the unknown field.
 
 Nobody types manifests from memory. Three tricks do most of the work:
 1. `--dry-run=client -o yaml` prints the object kubectl would create, without creating it. Redirect it to a file and edit from there.
-2. `kubectl explain pod.spec.restartPolicy` prints the docs for one field, straight from your cluster's API, so it always matches your version. Add `--recursive` to see a whole tree.
+2. `kubectl explain pod.spec.restartPolicy` prints the docs for one field, straight from your cluster's API, so it always matches your version. For this field it shows the type (`<string>`), the allowed values `Always`, `Never` and `OnFailure`, and a description. Add `--recursive` to see a whole tree.
 3. `kubectl get pod hello -o yaml` shows a live object in full. It is longer than what you wrote, because the API server fills in defaults and `status`.
 
 YAML has a few traps. Indent with spaces, never tabs. A `- ` starts a list item, and `containers:` is a list even with one container. Some bare words change type: `yes` and `on` can become true, and `8000` is a number. An environment variable value must be a string, so write `\"8000\"` in quotes.
@@ -89,7 +89,9 @@ So you rarely create Pods yourself. You create a controller, usually a Deploymen
 - `Failed`: all containers have stopped, and at least one failed.
 - `Unknown`: the node stopped reporting, so nobody knows.
 
-Each container also has a state of its own: `Waiting`, `Running` or `Terminated`, with a reason such as `ImagePullBackOff` or `Completed`. The STATUS column of `kubectl get pods` squeezes all this into one word. `CrashLoopBackOff` and `Terminating` show up there, but they are not phases. This trips up most people, so when STATUS looks odd, read `kubectl describe pod`.
+A normal start shows up in STATUS as `Pending` (no node yet), then `ContainerCreating` (node chosen, image being pulled, phase still `Pending`), then `Running`.
+
+Each container also has a state of its own: `Waiting`, `Running` or `Terminated`, with a reason such as `ImagePullBackOff` or `Completed`. The STATUS column of `kubectl get pods` squeezes all this into one word. `CrashLoopBackOff` and `Terminating` show up there, but they are not phases. Most people mix these up at first, so when STATUS looks odd, read `kubectl describe pod`.
 
 What happens when a container exits depends on the Pod's `restartPolicy`:
 - `Always` (the default): restart it, whatever the exit code. Right for servers.
@@ -116,7 +118,7 @@ A sidecar is a helper that runs beside your app for the Pod's whole life. Typica
 3. Restarts it if it crashes.
 4. Stops it only after the app containers have stopped.
 
-That order fixes two old problems: a log shipper that started late and missed the first lines, and one that stopped early and lost the last ones. kubectl's READY column counts sidecars too, so a Pod with one sidecar and one app shows `2/2`.
+That order fixes two old problems. A log shipper that started late missed the first lines, and one that stopped early lost the last ones. The READY column of kubectl counts sidecars too, so a Pod with one sidecar and one app shows `2/2`.
 
 Put containers in one Pod only when they must share a node, an IP address or files. An app and its database belong in separate Pods, so you can scale and replace each one on its own.""",
             "refs": [
@@ -161,7 +163,7 @@ Which cluster does kubectl talk to? It reads a kubeconfig file: `~/.kube/config`
 - users: your credentials.
 - contexts: a cluster plus a user plus a default namespace, under one name.
 
-One context is current, and every kubectl command goes there. Check it before anything risky with `kubectl config current-context`. This matters more than it sounds. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters. To stop typing `-n hello` on every command, set a default namespace with `kubectl config set-context --current --namespace=hello`.""",
+One context is current, and every kubectl command goes there. `kubectl config get-contexts` lists them all and marks the current one with a star. Check it before anything risky with `kubectl config current-context`. This matters more than it sounds. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters. To stop typing `-n hello` on every command, set a default namespace with `kubectl config set-context --current --namespace=hello`.""",
             "refs": [
                 {"title": "Namespaces", "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/", "kind": "docs"},
                 {"title": "Organizing cluster access using kubeconfig files", "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/", "kind": "docs"},
@@ -176,8 +178,9 @@ One context is current, and every kubectl command goes there. Check it before an
 - Let me in: `kubectl exec -it hello -- sh` opens a shell inside the container, if the image has one.
 - Let me reach it: `kubectl port-forward pod/hello 8000:8000` tunnels a port on your Mac to the Pod until you press Ctrl+C.
 - Remove it: `kubectl delete pod hello`, or `kubectl delete -f pod.yaml`.
+- Just one field, please: `-o jsonpath='{.status.phase}'` prints a single value, which is handy in scripts.
 
-`kubectl create -f` and `kubectl apply -f` both make objects from a file, but they think differently. `create` is a one-time order, and it fails if the object already exists. `apply` is declarative: it creates the object or updates it to match the file, so you can run it again and again. Use `apply` for anything you keep in git.
+`kubectl create -f` and `kubectl apply -f` both make objects from a file, but they think differently. The `create` command is a one-time order, and it fails if the object already exists. The `apply` command is declarative: it creates the object or updates it to match the file, so you can run it again and again. Use `apply` for anything you keep in git.
 
 Your own image needs one more step. Each kind node runs its own containerd with its own image store, separate from Docker on your Mac. So `docker build` alone is not enough. Copy the image in with `kind load docker-image hello-devops:1.0.0 --name devops`.
 
@@ -211,7 +214,7 @@ Give it a real tag. With `:latest` or no tag, Kubernetes sets `imagePullPolicy: 
                 "lang": "console",
             },
             {
-                "say": "Make one more request for a page that does not exist, then read the sidecar's logs. nginx wrote both requests to `access.log` in the shared volume, and the sidecar printed them.",
+                "say": "Next, request a page that does not exist and read the sidecar's logs. Both requests went into `access.log` in the shared volume, and the sidecar printed them.",
                 "code": "$ kubectl exec -n scratch web -c nginx -- curl -s -o /dev/null localhost/nope\n$ kubectl logs -n scratch web -c log-tailer\n127.0.0.1 - - [30/Oct/2026:09:14:02 +0000] \"GET / HTTP/1.1\" 200 30 \"-\" \"curl/8.14.1\" \"-\"\n127.0.0.1 - - [30/Oct/2026:09:14:20 +0000] \"GET /nope HTTP/1.1\" 404 153 \"-\" \"curl/8.14.1\" \"-\"",
                 "lang": "console",
             },
@@ -253,8 +256,8 @@ Give it a real tag. With `:latest` or no tag, Kubernetes sets `imagePullPolicy: 
         {"cmd": "kubectl config get-contexts", "what": "List your contexts; the current one has a star."},
         {"cmd": "kubectl config set-context --current --namespace=hello", "what": "Make `hello` the default namespace for the current context."},
     ],
-    "mistake": "Running kubectl against the wrong cluster. A new laptop often has a `docker-desktop` context too, and at work you will have real clusters in the same kubeconfig, so a `kubectl delete` can land somewhere you did not mean. Run `kubectl config current-context` before anything that changes or deletes, and give production contexts names that stand out.",
-    "real_world": "At PayLite, the checkout Pod runs the app plus a native sidecar that ships logs to the central log system, and an init container that waits for the database during start-up. Engineers rarely write YAML from scratch. They copy a template from the team's repo, check unknown fields with `kubectl explain`, and diff it against `kubectl get -o yaml` when something behaves differently than expected.",
+    "mistake": "Running kubectl against the wrong cluster. A new laptop often has a `docker-desktop` context too, and at work you will have real clusters in the same kubeconfig. One `kubectl delete` can then land somewhere you did not mean. Run `kubectl config current-context` before anything that changes or deletes, and give production contexts names that stand out.",
+    "real_world": "At PayLite, the checkout Pod runs the app plus a native sidecar that ships logs to the central log system. An init container waits for the database during start-up. Engineers rarely write YAML from scratch. They copy a template from the team's repo, check unknown fields with `kubectl explain`, and diff it against `kubectl get -o yaml` when something behaves differently than expected.",
     "task": {
         "title": "Run hello-devops in a Pod, then break one on purpose",
         "steps": [
@@ -313,12 +316,12 @@ Give it a real tag. With `:latest` or no tag, Kubernetes sets `imagePullPolicy: 
         {
             "q": "`kubectl get pods` shows nothing, but a teammate swears their Pod is running. They use namespace `payments`. What do you run first?",
             "options": [
-                "`kubectl get pods -n payments`",
                 "`kubectl describe nodes`",
                 "`kubectl logs payments`",
                 "`kind load docker-image payments`",
+                "`kubectl get pods -n payments`",
             ],
-            "answer": 0,
+            "answer": 3,
             "why": "Without `-n`, kubectl only looks in the current context's default namespace, so you must ask for the right namespace (or use `-A`).",
         },
     ],
@@ -329,11 +332,11 @@ Give it a real tag. With `:latest` or no tag, Kubernetes sets `imagePullPolicy: 
         },
         {
             "q": "What is the difference between an init container and a sidecar container?",
-            "a": "An init container runs to completion before the app containers start, in order, and must exit with code 0; it is for setup work. A sidecar runs for the Pod's whole life beside the app. Since Kubernetes 1.33 native sidecars are stable: you declare them as init containers with `restartPolicy: Always`, so they start before the app, are restarted if they crash, and stop after the app. That ordering avoids losing logs or proxy traffic at start-up and shutdown.",
+            "a": "An init container runs to completion before the app containers start, in order, and must exit with code 0; it is for setup work. A sidecar runs for the Pod's whole life beside the app. Native sidecars have been stable since Kubernetes 1.33. You declare them as init containers with `restartPolicy: Always`. They start before the app, are restarted if they crash, and stop after the app. That ordering avoids losing logs or proxy traffic at start-up and shutdown.",
         },
         {
             "q": "What is the difference between kubectl create and kubectl apply?",
-            "a": "`kubectl create` is imperative: it creates the object and fails if it already exists. `kubectl apply` is declarative: it creates the object if needed, or updates it to match the file, and records what you applied in an annotation so it can work out changes next time. You can run apply repeatedly with the same result, which is why files in git are applied, not created. For large teams and GitOps tools, server-side apply does the same tracking on the API server.",
+            "a": "The `kubectl create` command is imperative: it creates the object and fails if it already exists. The `kubectl apply` command is declarative. It creates the object if needed, or updates it to match the file. It also records what you applied in an annotation, so it can work out the changes next time. You can run apply repeatedly with the same result, which is why files in git are applied, not created. For large teams and GitOps tools, server-side apply does the same tracking on the API server.",
         },
     ],
     "deeper": {

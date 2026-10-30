@@ -311,7 +311,7 @@ LESSON = {
         },
         {
             "q": "When would you rebase instead of merge?",
-            "a": "I rebase my own short-lived branch onto the newest main before I open or update a pull request, so the history is a straight line and the PR shows only my changes. I never rebase a branch that someone else has pulled, because rebasing rewrites commit IDs and their copy no longer matches. After a rebase I push with --force-with-lease, which refuses to overwrite work I have not seen. For combining shared branches, I merge.",
+            "a": "I rebase my own short-lived branch onto the newest main before I open or update a pull request. The history stays a straight line, and the PR shows only my changes. I never rebase a branch that someone else has pulled, because rebasing rewrites commit IDs and their copy no longer matches. After a rebase I push with --force-with-lease, which refuses to overwrite work I have not seen. For combining shared branches, I merge.",
         },
     ],
     "deeper": {

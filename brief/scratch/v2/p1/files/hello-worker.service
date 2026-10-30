@@ -12,6 +12,9 @@ ExecStart=/usr/local/bin/worker.sh
 Restart=on-failure
 # Run as the normal ubuntu user, not as root.
 User=ubuntu
+# On stop, send SIGTERM to worker.sh only, so it can finish its current job.
+# Any other process left over afterwards gets SIGKILL.
+KillMode=mixed
 
 [Install]
 # Start at boot (when the machine reaches normal multi-user mode).

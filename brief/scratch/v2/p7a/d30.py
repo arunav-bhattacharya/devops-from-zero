@@ -86,7 +86,7 @@ This loop is called reconciliation. The [Kubernetes docs](https://kubernetes.io/
 
 You can see the loop in every object. Each object you write has a `spec` field: your wish. Kubernetes fills in a `status` field: its report on what is real. Controllers work to make status match spec.
 
-Two things follow from this design, and both surprise people at first:
+Two things follow from this, and both surprise people at first:
 - Kubernetes fixes problems you never told it about. A crashed container or a dead node is just one more gap to close.
 - A change made behind Kubernetes' back does not stick. Stop a container directly on a node, and Kubernetes sees the gap and starts it again.
 
@@ -176,8 +176,8 @@ Your manifests work the same on kind, EKS, AKS and GKE, so practice on a laptop 
             ],
         },
         {
-            "h": "kind: a real cluster on your laptop",
-            "body": """kind stands for Kubernetes in Docker. Each node is a Docker container that runs its own containerd and kubelet inside. kind uses kubeadm, the official setup tool, to start a real control plane in the first node. So you get the same Kubernetes as a cloud cluster, minus the cloud parts.
+            "h": "A real cluster on your laptop with kind",
+            "body": """kind stands for Kubernetes in Docker. Each node is a Docker container that runs its own containerd and kubelet inside. The kind tool uses kubeadm, the official setup tool, to start a real control plane in the first node. So you get the same Kubernetes as a cloud cluster, minus the cloud parts.
 
 The course uses one config file, `kind-config.yaml`, in the root of your repo. It asks for:
 - One control-plane node and two workers, so you can watch Pods spread over machines.
@@ -197,7 +197,7 @@ Creating the cluster takes a minute or two, and deleting it takes seconds. You c
             ],
         },
     ],
-    "analogy": "Think of a busy restaurant kitchen. Waiters never talk to cooks: they pin order tickets on a rail (the API server, with etcd as the rail's memory). The head chef reads new tickets and assigns each dish to a station (the scheduler), each station cook makes only the dishes assigned to them (the kubelet), and a manager keeps checking that every table got what it ordered and has dropped plates remade (the controllers). The picture breaks on judgment: a real kitchen improvises when it runs out of something, while Kubernetes only ever works toward exactly what the ticket says.",
+    "analogy": "Think of a busy restaurant kitchen. Waiters never talk to cooks: they pin order tickets on a rail (the API server, with etcd as the rail's memory). The head chef reads new tickets and assigns each dish to a station (the scheduler). Each station cook makes only the dishes assigned to them (the kubelet). A manager keeps checking that every table got what it ordered, and has dropped plates remade (the controllers). The picture breaks on judgment: a real kitchen improvises when it runs out of something, while Kubernetes only ever works toward exactly what the ticket says.",
     "diagram": DIAGRAM,
     "diagram_caption": "kubectl talks only to the API server. The scheduler, the controllers and the kubelet all watch the API server and act on what they see.",
     "worked": {

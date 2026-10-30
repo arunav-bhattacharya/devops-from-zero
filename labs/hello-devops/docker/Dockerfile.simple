@@ -1,0 +1,24 @@
+# Day 13 version: one stage, runs as root. Day 16 replaces it with the
+# multi-stage, non-root Dockerfile at the root of the repo.
+# Build from the repo root: docker build -f docker/Dockerfile.simple -t hello-devops:simple .
+FROM python:3.14-slim
+
+# Work in /app inside the image. Docker creates the folder.
+WORKDIR /app
+
+# Copy the dependency list first, so the slow install step is cached.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Now copy the code. Editing app.py only rebuilds from here down.
+COPY app.py .
+
+# The version is set at build time: docker build --build-arg APP_VERSION=1.0.0 .
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION PYTHONUNBUFFERED=1
+
+# Document the port the app listens on. This does not publish it.
+EXPOSE 8000
+
+# Exec form (a JSON list): gunicorn runs as PID 1 and receives SIGTERM.
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "app:app"]

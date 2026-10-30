@@ -1,0 +1,127 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.sandbox
+#1 transferring dockerfile: 2.03kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.1s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
+#3 CACHED
+
+#4 [internal] load metadata for mirror.gcr.io/library/eclipse-temurin:21-jdk
+#4 DONE 0.4s
+
+#5 [internal] load metadata for mirror.gcr.io/library/eclipse-temurin:21-jre
+#5 DONE 0.5s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 242B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 DONE 0.0s
+
+#8 [stage-1 1/4] FROM mirror.gcr.io/library/eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a
+#8 resolve mirror.gcr.io/library/eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a 0.0s done
+#8 DONE 0.0s
+
+#9 [build  1/13] FROM mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a
+#9 resolve mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a
+#9 resolve mirror.gcr.io/library/eclipse-temurin:21-jdk@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a 0.0s done
+#9 DONE 0.0s
+
+#10 [stage-1 2/4] WORKDIR /app
+#10 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 1.86kB done
+#7 DONE 0.0s
+
+#11 [build  8/13] COPY settings.gradle.kts gradle.properties ./
+#11 CACHED
+
+#12 [build  3/13] RUN keytool -importcert -noprompt -cacerts -storepass changeit -alias sandbox -file /tmp/ca.crt
+#12 CACHED
+
+#13 [build  4/13] WORKDIR /src
+#13 CACHED
+
+#14 [build 11/13] COPY greeting/ greeting/
+#14 CACHED
+
+#15 [build  6/13] COPY gradle/wrapper/ gradle/wrapper/
+#15 CACHED
+
+#16 [build 10/13] COPY build-logic/ build-logic/
+#16 CACHED
+
+#17 [build  9/13] COPY gradle/libs.versions.toml gradle/
+#17 CACHED
+
+#18 [build  7/13] RUN ./gradlew --version --no-daemon
+#18 CACHED
+
+#19 [build  2/13] COPY sandbox-proxy-ca.crt /tmp/ca.crt
+#19 CACHED
+
+#20 [build  5/13] COPY gradlew ./
+#20 CACHED
+
+#21 [build 12/13] COPY app/ app/
+#21 CACHED
+
+#22 [build 13/13] RUN --mount=type=cache,target=/root/.gradle/caches     ./gradlew --no-daemon --console=plain :app:installDist
+#22 0.093 Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=40805
+#22 0.927 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+#22 2.127 Daemon will be stopped at the end of the build 
+#22 4.327 Calculating task graph as no cached configuration is available for tasks: :app:installDist
+#22 10.13 > Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+#22 10.83 > Task :build-logic:generateExternalPluginSpecBuilders FROM-CACHE
+#22 10.93 > Task :build-logic:extractPrecompiledScriptPluginPlugins FROM-CACHE
+#22 11.13 > Task :build-logic:compilePluginsBlocks FROM-CACHE
+#22 11.23 > Task :build-logic:generatePrecompiledScriptPluginAccessors FROM-CACHE
+#22 11.23 > Task :build-logic:generateScriptPluginAdapters FROM-CACHE
+#22 11.63 > Task :build-logic:compileKotlin FROM-CACHE
+#22 11.63 > Task :build-logic:compileJava NO-SOURCE
+#22 11.63 > Task :build-logic:pluginDescriptors
+#22 11.73 > Task :build-logic:processResources
+#22 11.73 > Task :build-logic:classes
+#22 11.93 > Task :build-logic:jar
+#22 15.03 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+#22 15.03 > Task :greeting:checkKotlinGradlePluginConfigurationErrors SKIPPED
+#22 15.03 > Task :app:processResources NO-SOURCE
+#22 15.03 > Task :greeting:processResources NO-SOURCE
+#22 26.13 > Task :greeting:compileKotlin
+#22 26.13 > Task :greeting:compileJava NO-SOURCE
+#22 26.13 > Task :greeting:classes UP-TO-DATE
+#22 26.23 > Task :greeting:jar
+#22 27.63 > Task :app:compileKotlin
+#22 27.63 > Task :app:compileJava NO-SOURCE
+#22 27.63 > Task :app:classes UP-TO-DATE
+#22 27.64 > Task :app:jar
+#22 28.73 > Task :app:startScripts
+#22 28.73 > Task :app:installDist
+#22 28.83 
+#22 28.83 BUILD SUCCESSFUL in 28s
+#22 28.83 15 actionable tasks: 9 executed, 6 from cache
+#22 28.90 Configuration cache entry stored.
+#22 DONE 29.5s
+
+#23 [stage-1 3/4] COPY --from=build /src/app/build/install/app/ ./
+#23 DONE 0.0s
+
+#24 [stage-1 4/4] RUN useradd --uid 10001 --no-create-home appuser
+#24 DONE 0.2s
+
+#25 exporting to image
+#25 exporting layers 0.1s done
+#25 exporting manifest sha256:599a183aff7f61d506a11821112b34ff8d35c50d15edebf4cb4fddaef7a18cce done
+#25 exporting config sha256:b0df612e8747fe9aa1e2ebfbd159969c86ad953a5f0815fc5abc67bd6e1386ec done
+#25 exporting attestation manifest sha256:0f2ce74bdab9f1807ba4d4916fb3539ffeae7e38c4b7a1d5e82d2bf75170ba7a 0.0s done
+#25 exporting manifest list sha256:adff6b5d47a7c31d9531b85d4cff2c743a235c5e00002650934cd770f2ff6976 done
+#25 naming to docker.io/library/p5-hello-jvm:1.0.0 done
+#25 unpacking to docker.io/library/p5-hello-jvm:1.0.0 0.0s done
+#25 DONE 0.2s

@@ -37,7 +37,7 @@ if [[ "$got" == "$VERSION" ]]; then ok "App at $APP_URL reports version $VERSION
 else bad "App at $APP_URL reports version '${got:-no answer}', expected $VERSION"; fi
 
 # 3. Parts 4 and 13: every app Pod runs the released GHCR image, never :latest.
-images=$(kubectl -n hello get pods -l app=hello-devops -o jsonpath='{.items[*].spec.containers[*].image}')
+images=$(kubectl -n hello get pods -l app=hello-devops -o jsonpath='{.items[*].spec.containers[*].image}' 2>/dev/null)
 want="ghcr.io/${owner}/hello-devops"
 if [[ -n "$images" ]] && ! tr ' ' '\n' <<< "$images" | grep -v -q "^${want}[:@]" \
   && ! grep -q ':latest' <<< "$images"; then
@@ -53,9 +53,11 @@ elif [[ -z "$st" ]]; then bad "Argo CD Application hello-devops not found in nam
 else bad "Argo CD: $st"; fi
 
 # 5. Part 13: the cluster refuses a :latest image (Kyverno disallow-latest-tag).
+# --dry-run=server sends the request through admission, but stores nothing.
 out=$(kubectl -n hello run capstone-latest --image=nginx:latest --restart=Never --dry-run=server 2>&1)
-if grep -qi 'latest' <<< "$out" && ! grep -q 'created' <<< "$out"; then ok "Kyverno rejects :latest"
-else bad "A :latest Pod was accepted. Is Kyverno installed and policy/ applied?"; fi
+if grep -q 'created' <<< "$out"; then bad "A :latest Pod was accepted. Is Kyverno installed and policy/ applied?"
+elif grep -qi 'latest' <<< "$out"; then ok "Kyverno rejects :latest"
+else bad "Could not ask the cluster: $(tail -n 1 <<< "$out")"; fi
 
 # 6. Part 13: the image is signed by your release workflow (needs cosign).
 if command -v cosign > /dev/null; then
@@ -90,8 +92,8 @@ docs=$(curl -fs --max-time 5 "${ES_URL}/_count" | jq -r '.count // 0' 2>/dev/nul
 if [[ "${docs:-0}" -gt 0 ]]; then ok "Elasticsearch holds $docs documents"
 else bad "Elasticsearch at $ES_URL has no documents (is Fluent Bit shipping?)"; fi
 
-# 11. Part 11: Jaeger has received traces from at least one service.
-svc=$(curl -fs --max-time 5 "${JAEGER_URL}/api/services" | jq -r '.data // [] | join(", ")' 2>/dev/null)
+# 11. Part 11: Jaeger has received traces from at least one service (Jaeger's v3 HTTP API).
+svc=$(curl -fs --max-time 5 "${JAEGER_URL}/api/v3/services" | jq -r '.services // [] | join(", ")' 2>/dev/null)
 if [[ -n "$svc" ]]; then ok "Jaeger has traces from: $svc"
 else bad "Jaeger at $JAEGER_URL has no services yet (send some requests first)"; fi
 
