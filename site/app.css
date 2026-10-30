@@ -116,8 +116,13 @@ main:focus { outline: none; }
 .side .navlink:hover { background: var(--panel-2); color: var(--ink); }
 .side .navlink.on { border-left-color: var(--orange); font-weight: 700; background: var(--panel-2); }
 .side .grp { border-top: 1px solid var(--rule); margin-top: 10px; padding-top: 6px; }
-.side .grp-h { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 10px 18px 4px; text-decoration: none; color: var(--ink); }
-.side .grp-h:hover { color: var(--orange); }
+.side .grp-h { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 8px 18px 4px 10px; }
+.side .grp-a { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px; align-items: baseline; text-decoration: none; color: var(--ink); min-width: 0; }
+.side .grp-a:hover { color: var(--orange); }
+.side .grp-tg { width: 22px; height: 22px; display: grid; place-items: center; border: 0; background: none; color: var(--faint); cursor: pointer; border-radius: 4px; padding: 0; }
+.side .grp-tg:hover { background: var(--panel-2); color: var(--ink); }
+.side .grp-tg[aria-expanded="true"] svg { transform: rotate(90deg); }
+.side .grp-tg svg { transition: transform 0.15s; }
 .side .grp-n { font: 700 13px var(--f-mono); color: var(--faint); }
 .side .grp-t { font: 700 20px/1.1 var(--f-display); text-transform: uppercase; letter-spacing: 0.02em; }
 .side .grp-c { font: 600 12px var(--f-mono); color: var(--faint); }
@@ -187,8 +192,8 @@ textarea.field:focus, input.field:focus { outline: none; border-color: var(--tea
 
 /* pipeline (the course drawn as a CI run) */
 .pipe-wrap { overflow-x: auto; margin: 0 -4px; padding: 4px 4px 12px; }
-.pipe { display: flex; align-items: flex-start; gap: 0; min-width: max-content; }
-.job { width: 212px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; flex: none; }
+.pipe { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; align-items: start; }
+.job { min-width: 0; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
 .job-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--rule); text-decoration: none; color: var(--ink); }
 .job-h:hover { background: var(--panel-2); color: var(--ink); }
 .job-h .jt { font: 700 19px/1.05 var(--f-display); text-transform: uppercase; letter-spacing: 0.02em; min-width: 0; }
@@ -448,3 +453,21 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 .plate { width: auto; justify-self: start; }
 .plate .pp { min-width: 0; }
 .cmd pre code { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+
+/* plates and resources (second edition) */
+.part-art { margin: 0; }
+.part-art .cv { border-radius: 8px; }
+.prow-art { grid-template-columns: 200px 40px minmax(0, 1fr) 150px; }
+.pthumb { display: block; width: 200px; aspect-ratio: 1200 / 440; overflow: hidden; border-radius: 4px; }
+.pthumb .cv { width: 200px; }
+.prow-art .pn { font-size: 26px; }
+@media (max-width: 760px) { .prow-art { grid-template-columns: 40px minmax(0, 1fr); } .pthumb { display: none; } .prow-art .pp { grid-column: 2; } }
+.res { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.res li { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--rule); }
+.res .rb { display: grid; gap: 2px; min-width: 0; }
+.res .rb > a:first-child { font-weight: 700; text-decoration: none; color: var(--ink); }
+.res .rb > a:first-child:hover { color: var(--orange); }
+.res .host { color: var(--faint); font-size: 13px; }
+.res .why2 { color: var(--mute); font-size: 15.5px; line-height: 1.45; }
+.res .src { font: 600 12.5px var(--f-mono); color: var(--faint); text-decoration: none; }
+.kind svg { vertical-align: -1px; }

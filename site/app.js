@@ -152,21 +152,25 @@ const ICON = {
   check: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   bulb: '<svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M10 2.5a5.5 5.5 0 0 0-3.2 10V15h6.4v-2.5A5.5 5.5 0 0 0 10 2.5zM7.8 17.5h4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   team: '<svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><circle cx="7" cy="7" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="14" cy="8" r="2.1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 16.5c.6-2.8 2.4-4.2 4.5-4.2s3.9 1.4 4.5 4.2M12 12.6c2.3-.4 4.5.8 5.3 3.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  play: '<svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true"><path d="M3 2l7 4-7 4z" fill="currentColor"/></svg>',
   warn: '<svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M10 2.8l7.8 13.7H2.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8v3.8M10 14.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
 };
 
 /* ---------------- chrome: sidebar, badges, theme ---------------- */
 const side = $("#side"), scrim = $("#scrim"), menuBtn = $("#menuBtn");
+const sideOpen = {};
 function route() { return (location.hash || "").slice(1) || "home"; }
 function viewKind() { const r = route(); if (r === "review") return review.active ? "review-live" : "review-idle"; return /^d\d\d$/.test(r) ? "lesson" : r; }
 function sideHTML() {
   const r = route(), nx = nextUp(), dc = dueCount();
   const link = (h, t, extra = "") => `<a class="navlink${r === h ? " on" : ""}" href="#${h}">${t}${extra}</a>`;
-  let s = `<div>${link("home", "Today")}${nx ? `<a class="navlink" href="#${nx}">Up next: Day ${pad(L(nx).day)}</a>` : ""}${link("review", "Review", dc ? ` <span class="due">${dc}</span>` : "")}${link("plan", "Plan and pace")}${link("commands", "Command cheat sheet")}${link("glossary", "Glossary")}${link("labs", "Lab files")}</div>`;
+  let s = `<div>${link("home", "Today")}${nx ? `<a class="navlink" href="#${nx}">Up next: Day ${pad(L(nx).day)}</a>` : ""}${link("review", "Review", dc ? ` <span class="due">${dc}</span>` : "")}${link("plan", "Plan and pace")}${link("commands", "Command cheat sheet")}${link("glossary", "Glossary")}${link("library", "Library: links and videos")}${link("labs", "Lab files")}</div>`;
+  const curPart = L(r) ? L(r).part : /^p\d+$/.test(r) ? +r.slice(1) : nx ? L(nx).part : 0;
   for (const p of C.parts) {
-    const n = p.lessons.filter(isDone).length;
-    s += `<div class="grp"><a class="grp-h" href="#p${p.part}"><span class="grp-n">${p.part}</span><span class="grp-t">${esc(p.title)}</span><span class="grp-c tnum">${n}/${p.lessons.length}</span></a>`;
-    for (const id of p.lessons) s += `<a class="ls${r === id ? " on" : ""}" href="#${id}">${glyph(id)}<span class="d">${pad(L(id).day)}</span><span>${esc(L(id).title)}</span></a>`;
+    const n = p.lessons.filter(isDone).length, open = sideOpen[p.part] ?? p.part === curPart;
+    s += `<div class="grp"><div class="grp-h"><button class="grp-tg" data-act="sidetog" data-p="${p.part}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} part ${p.part}">${ICON.chev}</button><a class="grp-a" href="#p${p.part}"><span class="grp-n">${p.part}</span><span class="grp-t">${esc(p.title)}</span></a><span class="grp-c tnum">${n}/${p.lessons.length}</span></div>`;
+    if (open) for (const id of p.lessons) s += `<a class="ls${r === id ? " on" : ""}" href="#${id}">${glyph(id)}<span class="d">${pad(L(id).day)}</span><span>${esc(L(id).title)}</span></a>`;
     s += "</div>";
   }
   return s + `<p class="foot" id="sideFoot"></p>`;
@@ -256,22 +260,21 @@ function viewHome() {
   C.parts.forEach((p, i) => {
     const n = p.lessons.filter(isDone).length;
     const s = n === p.lessons.length ? "passed" : p.lessons.includes(nx) ? "running" : "queued";
-    if (i) pipe += `<span class="wire${C.parts[i - 1].lessons.every(isDone) ? " ok" : ""}" aria-hidden="true"></span>`;
-    pipe += `<div class="job"><a class="job-h" href="#p${p.part}"><span class="st ${s}">${GLYPH[s]}</span><span class="jt">${esc(p.tool === "Overview" ? "Start here" : p.tool)}</span><span class="jc tnum">${n}/${p.lessons.length}</span></a><ol>${p.lessons.map((id) => `<li><a href="#${id}" class="${id === nx ? "cur" : ""}">${glyph(id)}<span class="tt">${pad(L(id).day)} ${esc(L(id).title)}</span></a></li>`).join("")}</ol></div>`;
+    pipe += `<div class="job"><a class="job-h" href="#p${p.part}"><span class="st ${s}">${GLYPH[s]}</span><span class="jt">${esc(p.tool)}</span><span class="jc tnum">${n}/${p.lessons.length}</span></a><ol>${p.lessons.map((id) => `<li><a href="#${id}" class="${id === nx ? "cur" : ""}">${glyph(id)}<span class="tt">${pad(L(id).day)} ${esc(L(id).title)}</span></a></li>`).join("")}</ol></div>`;
   });
 
   const partsList = C.parts.map((p) => {
     const n = p.lessons.filter(isDone).length;
     const days = p.lessons.map((id) => L(id).day);
-    return `<a class="prow" href="#p${p.part}"><span class="pn">${p.part}</span><span><span class="pt">${esc(p.title)}</span><span class="pd">Days ${days[0]}${days.length > 1 ? `–${days[days.length - 1]}` : ""} · ${p.lessons.length} lessons${p.ready ? "" : " · being written"}</span></span><span class="pp"><span class="label tnum">${n}/${p.lessons.length} passed</span><span class="bar"><i style="width:${(100 * n) / p.lessons.length}%"></i></span></span></a>`;
+    return `<a class="prow prow-art" href="#p${p.part}"><span class="pthumb" aria-hidden="true">${p.art || ""}</span><span class="pn">${p.part}</span><span><span class="pt">${esc(p.title)}</span><span class="pd">${days.length > 1 ? `Days ${days[0]} to ${days[days.length - 1]}` : `Day ${days[0]}`} · ${p.lessons.length} lessons${p.ready ? "" : " · being written"}</span></span><span class="pp"><span class="label tnum">${n}/${p.lessons.length} passed</span><span class="bar"><i style="width:${(100 * n) / p.lessons.length}%"></i></span></span></a>`;
   }).join("");
 
   return `<div class="page">
   <section class="hero">
-    <span class="label">A ${tot}-day course · about 35 minutes a day</span>
+    <span class="label">${tot} lessons · about 45 minutes each · at your own pace</span>
     <h1>DevOps,<em>from zero</em></h1>
-    <p class="sub">Linux, Docker, GitHub Actions, Terraform, Kubernetes, and what teams use now: GitOps, observability and supply-chain security. You ship one small app, <span style="white-space:nowrap">hello-devops</span>, all the way from your laptop to a cluster.</p>
-    <div class="meta"><span>7 parts</span><span>${tot} lessons</span><span>1 project</span><span>Free tools, runs on your laptop</span></div>
+    <p class="sub">Linux, networking, Docker, GitHub Actions, Gradle, Terraform and Kubernetes, then how teams run things today: GitOps with Argo CD, Prometheus, Grafana, ELK and EFK, OpenTelemetry, Dynatrace and supply-chain security. You ship a real app, <span style="white-space:nowrap">hello-devops</span>, from your laptop to a cluster.</p>
+    <div class="meta"><span>${C.parts.length} parts</span><span>${tot} lessons</span><span>2 lab projects</span><span>Free tools, runs on your laptop</span></div>
   </section>
   ${term}
   <section class="stats" aria-label="Your progress">
@@ -281,13 +284,13 @@ function viewHome() {
     <div class="stat"><span class="n tnum" style="font-size:34px;line-height:46px">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label"><a href="#plan">projected finish</a></span></div>
   </section>
   <section class="block"><div class="sec-h"><h2>Your run</h2><span class="label">each part is a job, each lesson a step</span></div>
-    <div class="pipe-wrap"><div class="pipe">${pipe}</div></div></section>
-  <section class="block"><div class="sec-h"><h2>How each day works</h2><span class="label">30 to 40 focused minutes</span></div>
+    <div class="pipe">${pipe}</div></section>
+  <section class="block"><div class="sec-h"><h2>How each day works</h2><span class="label">40 to 50 focused minutes</span></div>
     <ol class="day-plan">
       <li><span class="mins">5 min</span><b>Review</b><span>Flip the cards that are due. Spacing reviews over days is what makes things stick.</span></li>
       <li><span class="mins">1 min</span><b>Guess</b><span>Answer the warm-up before reading. A wrong guess still helps you remember.</span></li>
-      <li><span class="mins">15 min</span><b>Read</b><span>Short sections, one diagram, a worked example with real output.</span></li>
-      <li><span class="mins">12 min</span><b>Do</b><span>The hands-on task on your own laptop, on your own hello-devops repo.</span></li>
+      <li><span class="mins">20 min</span><b>Read</b><span>Short sections, one diagram, a worked example with real output.</span></li>
+      <li><span class="mins">15 min</span><b>Do</b><span>The hands-on task on your own laptop, on your own hello-devops repo.</span></li>
       <li><span class="mins">3 min</span><b>Check</b><span>Explain it back in your words, then 3 questions. 2 right passes the day.</span></li>
     </ol></section>
   <section class="block"><div class="sec-h"><h2>The parts</h2><span class="label">a short course for each tool</span></div><div class="parts">${partsList}</div></section>
@@ -328,7 +331,7 @@ function viewLesson(id) {
     if (si === 0 && l.analogy) b += `<aside class="callout analogy"><div class="ch">${ICON.bulb}Analogy</div><div class="prose">${l.analogy}</div></aside>`;
     if (si === Math.min(1, l.sections.length - 1) && l.realWorld) b += `<aside class="callout world"><div class="ch">${ICON.team}In real teams</div><div class="prose">${l.realWorld}</div></aside>`;
     if (si === l.sections.length - 1 && l.mistake) b += `<aside class="callout mistake"><div class="ch">${ICON.warn}Common mistake</div><div class="prose">${l.mistake}</div></aside>`;
-    if (s.refs.length) b += `<div class="refs"><span class="label">Further learning</span><ul>${s.refs.map((r) => `<li><span class="kind ${esc(r.kind)}">${esc(r.kind)}</span><span><a href="${esc(r.url)}" target="_blank" rel="noopener">${r.title}</a><span class="host">${esc(host(r.url))}</span></span></li>`).join("")}</ul></div>`;
+    if (s.refs.length) b += `<div class="refs"><span class="label">Further learning</span><ul>${s.refs.map((r) => `<li><span class="kind ${esc(r.kind)}">${r.kind === "watch" ? ICON.play + " " : ""}${esc(r.kind)}</span><span><a href="${esc(r.url)}" target="_blank" rel="noopener">${r.title}</a><span class="host">${esc(host(r.url))}</span></span></li>`).join("")}</ul></div>`;
     h += b + "</section>";
   });
   if (l.worked) {
@@ -376,8 +379,9 @@ function viewPart(n) {
   if (!p) return viewHome();
   const nDone = p.lessons.filter(isDone).length;
   const list = p.lessons.map((id) => `<a class="prow" href="#${id}"><span class="pn">${pad(L(id).day)}</span><span><span class="pt" style="font-size:24px">${esc(L(id).title)}</span><span class="pd">${L(id).pending ? "being written" : `${L(id).minutes} min${P.scores[id] != null ? ` · check ${P.scores[id]}/3` : ""}`}</span></span><span class="pp" style="justify-items:end">${glyph(id)}</span></a>`).join("");
-  let h = `<div class="page" style="max-width:860px"><header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
+  let h = `<div class="page" style="max-width:960px">${p.art ? `<figure class="part-art">${p.art}</figure>` : ""}<header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
   if (!p.ready) return h + `<p class="muted">This part is still being written. It will appear here when it's ready.</p></div>`;
+  if (p.resources && p.resources.length) h += `<section class="block"><div class="sec-h"><h2>Go deeper</h2><a class="label" href="#library">the full library</a></div><p class="muted" style="margin:0">Hand-picked for this part: official docs, the best free courses and videos, and the books people keep recommending.</p>${resList(p.resources)}</section>`;
   if (p.recap.length) h += `<section class="recap"><span class="label">Part recap</span><ul>${p.recap.map((r) => `<li>${r}</li>`).join("")}</ul></section>`;
   const cmds = p.lessons.filter(ready).flatMap((id) => L(id).commands);
   if (cmds.length) h += `<section class="block"><div class="sec-h"><h2>Cheat sheet</h2><a class="label" href="#commands">all commands</a></div>${cmdRows(cmds)}</section>`;
@@ -468,6 +472,26 @@ function viewGlossary() {
     <div class="filter"><input class="field" id="glq" type="search" placeholder="Search terms" value="${esc(glQ)}" data-act="glq"></div><dl class="gl" id="glBody" style="margin:0">${body || `<p class="muted">No terms match.</p>`}</dl></div>`;
 }
 
+function resList(items) {
+  return `<ul class="res">${items.map((r) => `<li><span class="kind ${esc(r.kind)}">${r.kind === "watch" ? ICON.play + " " : ""}${esc(r.kind)}</span><span class="rb"><a href="${esc(r.url)}" target="_blank" rel="noopener">${r.title}</a><span class="host">${esc(host(r.url))}</span>${r.why ? `<span class="why2">${r.why}</span>` : ""}${r.from ? `<a class="src" href="#${r.from}">Day ${pad(L(r.from).day)} · ${esc(L(r.from).title)}</a>` : ""}</span></li>`).join("")}</ul>`;
+}
+let libKind = "all", libQ = "";
+function viewLibrary() {
+  const q = libQ.toLowerCase();
+  const kinds = [["all", "All"], ["watch", "Videos"], ["docs", "Docs"], ["read", "Reading"], ["listen", "Listening"]];
+  let body = "", total = 0;
+  for (const p of C.parts) {
+    const seen = new Set(), items = [];
+    for (const r of p.resources || []) { if (!seen.has(r.url)) { seen.add(r.url); items.push(r); } }
+    for (const id of p.lessons) if (ready(id)) for (const s of L(id).sections) for (const r of s.refs) if (!seen.has(r.url)) { seen.add(r.url); items.push({ ...r, from: id }); }
+    const shown = items.filter((r) => (libKind === "all" || r.kind === libKind) && (!q || (r.title + " " + (r.why || "") + " " + r.url).toLowerCase().includes(q)));
+    total += shown.length;
+    if (shown.length) body += `<section class="block"><div class="sec-h" style="border:0;padding:0"><a href="#p${p.part}" style="color:inherit;text-decoration:none"><span class="label">Part ${p.part}</span><h3 style="font:800 26px/1.1 var(--f-display);text-transform:uppercase;margin:0">${esc(p.title)}</h3></a><span class="label tnum">${shown.length}</span></div>${resList(shown)}</section>`;
+  }
+  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">LIB</span><span class="pp">${total} links</span></div><h1>Library</h1><p class="goal">Every link and video in the course in one place, grouped by part. Official docs first, then the best free courses, talks and books.</p></header>
+    <div class="filter"><input class="field" id="libq" type="search" placeholder="Search, for example: PromQL, Helm, grep" value="${esc(libQ)}" data-act="libq">${kinds.map(([k, t]) => `<button class="chip${libKind === k ? " on" : ""}" data-act="libk" data-k="${k}">${esc(t)}</button>`).join("")}</div>
+    <div style="display:grid;gap:34px">${body || `<p class="muted">Nothing matches yet.</p>`}</div></div>`;
+}
 let labSel = null;
 function viewLabs() {
   const files = C.labs;
@@ -487,7 +511,7 @@ function viewPlan() {
     return `<tr><td>${glyph(id)}</td><td class="dt tnum">D${pad(l.day)}</td><td><a href="#${id}">${esc(l.title)}</a></td><td class="dt">${fmt(planned)}</td><td class="dt">${when}</td></tr>`;
   }).join("");
   const behind = C.order.filter((id, k) => !isDone(id) && addDays(st, k) < today()).length;
-  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">PLAN</span><span class="pp">one lesson a day</span></div><h1>Plan and pace</h1><p class="goal">One lesson a day takes ${C.order.length} days. To finish in about 3 weeks, do two short lessons on a weekend day (Days 1 and 2 pair well, and so do Days 3 and 4).</p></header>
+  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">PLAN</span><span class="pp">one lesson a day</span></div><h1>Plan and pace</h1><p class="goal">One lesson a day takes ${C.order.length} days, about 8 weeks. Long lessons split well over two sittings, and short ones pair well on a weekend. The plan moves with you.</p></header>
     <section class="stats"><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(st, { month: "short", day: "numeric" })}</span><span class="label">start date</span></div><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(pr.planned, { month: "short", day: "numeric" })}</span><span class="label">planned finish</span></div><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label">projected finish</span></div><div class="stat"><span class="n tnum" style="font-size:34px;${behind ? "color:var(--orange)" : ""}">${behind}</span><span class="label">behind plan</span></div></section>
     <div class="row"><label class="label" for="startIn">Start date</label><input class="field" id="startIn" type="date" value="${st}" style="max-width:200px" data-act="start"><span class="muted" style="font-size:15px">Your start is set the day you pass your first lesson. Change it any time.</span></div>
     <div class="tablewrap"><table class="plan-t"><thead><tr><th></th><th>Day</th><th>Lesson</th><th>Planned</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -573,6 +597,7 @@ function render(scroll = true) {
   else if (r === "commands") html = viewCommands();
   else if (r === "glossary") html = viewGlossary();
   else if (r === "labs") html = viewLabs();
+  else if (r === "library") html = viewLibrary();
   else if (r === "plan") html = viewPlan();
   else html = viewHome();
   main.innerHTML = html;
@@ -653,6 +678,8 @@ document.addEventListener("click", async (e) => {
     d.flip = false; $("#deck-" + key).outerHTML = deckHTML(key, cards);
   } else if (a === "cmdf") { cmdFilter = b.dataset.f; render(false); }
   else if (a === "lab") { labSel = b.dataset.p; render(false); }
+  else if (a === "libk") { libKind = b.dataset.k; render(false); }
+  else if (a === "sidetog") { const n = +b.dataset.p, cur = b.getAttribute("aria-expanded") === "true"; sideOpen[n] = !cur; chrome(); }
   else if (a === "reset") {
     $("#resetRow").innerHTML = `<span>This clears every lesson, score and review card${ref ? " on all your devices" : ""}.</span><button class="btn sm" data-act="reset2">Yes, reset</button><button class="btn ghost sm" data-act="reset0">Keep my progress</button>`;
   } else if (a === "reset2") { P = norm({}); commit(); if (ref) write(); render(); toast("Progress reset."); }
@@ -671,9 +698,9 @@ let inputT = null;
 document.addEventListener("input", (e) => {
   const t = e.target, a = t.dataset && t.dataset.act;
   if (a === "draft") { clearTimeout(inputT); inputT = setTimeout(() => ls.set("dfz-explain-" + t.dataset.id, t.value), 400); }
-  else if (a === "cmdq" || a === "glq") {
-    if (a === "cmdq") cmdQ = t.value; else glQ = t.value;
-    const pos = t.selectionStart; render(false); const n = $(a === "cmdq" ? "#cmdq" : "#glq"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* search input */ } }
+  else if (a === "cmdq" || a === "glq" || a === "libq") {
+    if (a === "cmdq") cmdQ = t.value; else if (a === "glq") glQ = t.value; else libQ = t.value;
+    const pos = t.selectionStart; render(false); const n = $("#" + a); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* search input */ } }
   }
 });
 document.addEventListener("change", (e) => {

@@ -138,23 +138,23 @@ def lesson(L, ref, part):
     for k in need:
         if k not in L:
             err(w, f"missing {k}")
-    mx = 50 if lid == "d02" else 40
-    if not isinstance(L.get("minutes"), int) or not 25 <= L.get("minutes", 0) <= mx:
-        err(w, f"minutes must be 25..{mx}")
+    mx = 60 if lid == "d02" else 50
+    if not isinstance(L.get("minutes"), int) or not 30 <= L.get("minutes", 0) <= mx:
+        err(w, f"minutes must be 30..{mx}")
     if not str(L.get("goal", "")).startswith("By the end you can"):
         warn(w, "goal should start with 'By the end you can'")
     if "guess" in L:
         mcq(w + ".guess", L["guess"])
     terms = L.get("terms", [])
-    if not 4 <= len(terms) <= 7:
-        err(w, "terms must be 4..7")
+    if not 5 <= len(terms) <= 8:
+        err(w, "terms must be 5..8")
     for t in terms:
         if not t.get("term") or not t.get("plain"):
             err(w, "term needs term and plain")
         text_checks(w + ".term", t.get("plain", ""))
     secs = L.get("sections", [])
-    if not 4 <= len(secs) <= 6:
-        (warn if lid == "d02" and 3 <= len(secs) <= 7 else err)(w, "sections must be 4..6")
+    if not 5 <= len(secs) <= 7:
+        (warn if lid in ("d01", "d02") and 4 <= len(secs) <= 8 else err)(w, "sections must be 5..7")
     total = 0
     for i, s in enumerate(secs):
         sw = f"{w}.sec{i + 1}"
@@ -165,11 +165,9 @@ def lesson(L, ref, part):
         text_checks(sw, s.get("body", ""))
         refs_checks(sw + ".refs", s.get("refs"))
         total += words(s.get("body", ""))
-    lo, hi = 900, 1400
-    if lid in ("d01", "d23"):
-        hi = 1600
+    lo, hi = 1400, 2200
     if lid == "d02":
-        lo = 500
+        lo = 600
     if not lo <= total <= hi:
         warn(w, f"section text is {total} words (want {lo}..{hi})")
     for k in ("analogy", "mistake", "real_world"):
@@ -178,8 +176,8 @@ def lesson(L, ref, part):
             err(w, f"{k} empty")
     svg_checks(w + ".diagram", L.get("diagram", ""))
     wk = L.get("worked") or {}
-    if not 3 <= len(wk.get("steps", [])) <= 7:
-        err(w, "worked needs 3..7 steps")
+    if not 4 <= len(wk.get("steps", [])) <= 8:
+        err(w, "worked needs 4..8 steps")
     for st in wk.get("steps", []):
         text_checks(w + ".worked", st.get("say", ""))
         if st.get("code") and st.get("lang") not in LANGS:
@@ -195,8 +193,8 @@ def lesson(L, ref, part):
         if re.search(r"^\s*\.\.\.\s*$", c.get("src", ""), re.M):
             err(w, f"placeholder ... in {c.get('title')}")
     cmds = L.get("commands", [])
-    if not (5 <= len(cmds) <= 12 or (lid == "d01" and len(cmds) <= 12)):
-        err(w, "commands must be 5..12")
+    if not (6 <= len(cmds) <= 16 or (lid == "d01" and len(cmds) <= 16)):
+        err(w, "commands must be 6..16")
     for c in cmds:
         if not c.get("cmd") or not c.get("what"):
             err(w, "command needs cmd and what")
@@ -225,8 +223,8 @@ def lesson(L, ref, part):
     for i, q in enumerate(chk):
         mcq(f"{w}.check{i + 1}", q)
     iv = L.get("interview", [])
-    if len(iv) != 2:
-        err(w, "interview must have 2 items")
+    if not 2 <= len(iv) <= 3:
+        err(w, "interview must have 2 or 3 items")
     for q in iv:
         if not q.get("q") or not q.get("a"):
             err(w, "interview item needs q and a")
@@ -237,6 +235,11 @@ def lesson(L, ref, part):
         warn(w, f"deeper is {dw} words (want 250..600)")
     text_checks(w + ".deeper", d.get("body", ""))
     refs_checks(w + ".sources", L.get("sources"), 1, 4)
+    kinds = {r.get("kind") for s_ in secs for r in s_.get("refs", [])}
+    if "watch" not in kinds:
+        warn(w, "no video ('watch') in any section refs")
+    if "docs" not in kinds:
+        warn(w, "no official docs ('docs') in any section refs")
     blob = json.dumps(L, ensure_ascii=False)
     if blob.count("**") // 2 > 2:
         warn(w, f"bold used {blob.count('**') // 2} times (max 2)")
@@ -270,26 +273,32 @@ def main(path):
     total = 0
     for L, R in zip(P.get("lessons", []), ref["lessons"]):
         total += lesson(L, R, part) or 0
-    if not 6 <= len(P.get("recap", [])) <= 8:
-        err("part", "recap must be 6..8")
-    lo, hi = (8, 10) if part == 0 else (10, 16)
+    if not 6 <= len(P.get("recap", [])) <= 10:
+        err("part", "recap must be 6..10")
+    res = P.get("resources", [])
+    if not 6 <= len(res) <= 12:
+        err("part", "resources must be 6..12")
+    for r in res:
+        if not str(r.get("url", "")).startswith("https://") or not r.get("title") or not r.get("why") or r.get("kind") not in KINDS:
+            err("part", f"bad resource {r.get('title')!r}: needs title, https url, kind and why")
+        text_checks("part.resource", r.get("why", ""))
+    lo, hi = (8, 12) if part == 0 else (10, 20)
     if not lo <= len(P.get("flashcards", [])) <= hi:
         err("part", f"flashcards must be {lo}..{hi}")
     for f in P.get("flashcards", []):
         if not f.get("front") or not f.get("back"):
             err("part", "flashcard needs front and back")
         text_checks("part.flashcard", f.get("back", ""))
-    qn = 6 if part == 0 else 8
     quiz = P.get("quiz", [])
-    if len(quiz) != qn:
-        err("part", f"quiz must have {qn} questions")
+    if not ((part == 0 and len(quiz) == 6) or (part > 0 and 8 <= len(quiz) <= 10)):
+        err("part", "quiz must have 8..10 questions (Part 0: 6)")
     for i, q in enumerate(quiz):
         mcq(f"part.quiz{i + 1}", q)
     froms = [q for q in quiz if q.get("from")]
     if part >= 2 and len(froms) != 2:
         err("part", "2 quiz questions must revisit earlier parts with 'from'")
     for q in froms:
-        m = re.match(r"Part (\d)$", q["from"])
+        m = re.match(r"Part (\d+)$", q["from"])
         if not m or int(m.group(1)) >= part:
             err("part", f"bad from {q['from']!r}")
     dist = [q.get("answer") for q in quiz]

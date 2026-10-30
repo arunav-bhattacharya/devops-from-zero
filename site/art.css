@@ -1,0 +1,24 @@
+/* Freight Notation plates (design/freight-notation.md): every color is a theme token */
+.cv { display: block; width: 100%; height: auto; }
+.cv path { fill: none; }
+.cv .cv-bg { fill: var(--panel); stroke: var(--rule); stroke-width: 1; }
+.cv .cv-g { stroke: var(--rule); stroke-width: 0.6; opacity: 0.6; }
+.cv .cv-cm { stroke: var(--faint); stroke-width: 1; }
+.cv .cv-num { font: 700 300px/1 var(--f-stencil); fill: none; stroke: var(--faint); stroke-width: 1.3; opacity: 0.55; letter-spacing: 0.02em; }
+.cv .cv-lab { font: 400 13px var(--f-mono); letter-spacing: 0.2em; fill: var(--mute); }
+.cv .cv-cap { font: 400 12px var(--f-mono); letter-spacing: 0.08em; fill: var(--faint); }
+.cv .cv-r { text-anchor: end; }
+.cv .cv-fk { fill: var(--ink); }
+.cv .cv-fm { fill: var(--mute); }
+.cv .cv-fo { fill: var(--orange); }
+.cv .cv-ft { fill: var(--teal); }
+.cv .cv-fy { fill: var(--yellow); }
+.cv .cv-bgf { fill: var(--panel); }
+.cv .cv-bx { fill: var(--panel-2); }
+.cv .cv-bx2 { fill: color-mix(in srgb, var(--mute) 24%, var(--panel)); }
+.cv .cv-sk { stroke: var(--ink); stroke-width: 1.4; }
+.cv .cv-sm { stroke: var(--mute); stroke-width: 1.2; }
+.cv .cv-so { stroke: var(--orange); stroke-width: 1.8; }
+.cv .cv-st { stroke: var(--teal); stroke-width: 1.6; }
+.cv .cv-sbg { stroke: var(--panel); stroke-width: 1.2; }
+.cv .arh { fill: var(--orange); }

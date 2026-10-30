@@ -22,6 +22,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 LAB = ROOT / "labs/hello-devops"
 OUT = ROOT / "dist/index.html"
+WEB = ROOT / "public"
 
 FMT = HtmlFormatter(nowrap=True)
 ALIAS = {"sh": "bash", "shell": "bash", "zsh": "bash", "console": "console", "yml": "yaml", "tf": "hcl",
@@ -209,14 +210,23 @@ def main():
             "flashcards": [{"front": inline(f["front"]), "back": inline(f["back"]), "id": f"f:p{P['part']}:{hid(f['front'])}"}
                            for f in d.get("flashcards", [])],
             "quiz": [mcq(q) for q in d.get("quiz", [])], "lessons": ids,
+            "resources": [{"title": inline(r["title"]), "url": r["url"], "kind": r.get("kind", "read"), "why": inline(r.get("why", ""))}
+                          for r in d.get("resources", [])],
+            "art": (SITE / f"art/p{P['part']}.svg").read_text() if (SITE / f"art/p{P['part']}.svg").exists() else "",
         })
     data = json.dumps(course, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     page = (SITE / "template.html").read_text()
-    page = page.replace("/*CSS*/", (SITE / "app.css").read_text())
+    page = page.replace("/*CSS*/", (SITE / "app.css").read_text() + (SITE / "art.css").read_text())
     page = page.replace("/*JS*/", (SITE / "app.js").read_text())
     page = page.replace("{{DATA}}", data)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(page)
+    OUT.write_text(page)  # fragment: claude.ai wraps it in its own document
+    # full document for Cloudflare (or any static host)
+    WEB.mkdir(parents=True, exist_ok=True)
+    (WEB / "index.html").write_text('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+                                    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+                                    '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect x=%223%22 y=%2214%22 width=%225%22 height=%227%22 fill=%22%230a6a7e%22/%3E%3Crect x=%2210%22 y=%228%22 width=%225%22 height=%2213%22 fill=%22%23c84410%22/%3E%3Crect x=%2217%22 y=%222%22 width=%225%22 height=%2219%22 fill=%22%23e8ad00%22/%3E%3C/svg%3E">'
+                                    '</head><body>\n' + page + '\n</body></html>\n')
     ready = sum(1 for L in course["lessons"].values() if not L.get("pending"))
     print(f"{OUT}  {OUT.stat().st_size // 1024} KB  {ready}/{len(course['order'])} lessons ready  {len(course['labs'])} lab files")
 
