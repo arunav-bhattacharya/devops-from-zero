@@ -1,0 +1,1026 @@
+{
+ "part": 9,
+ "title": "Monitoring with Prometheus",
+ "intro": "Part 8 left hello-devops running on kind, deployed by Argo CD. This part teaches you to see how it is doing. Day 41 builds the ideas every monitoring tool shares: signals, SLOs, error budgets and alerts on what users feel. Days 42 to 44 put them to work with Prometheus: a Compose lab on your laptop, PromQL from the first query to a full RED view, alerts that reach a receiver, and finally the same setup on Kubernetes.",
+ "lessons": [
+  {
+   "id": "d41",
+   "title": "Observability foundations: signals, SLOs and alerts",
+   "minutes": 45,
+   "goal": "By the end you can explain the four signals, describe a service with RED and a machine with USE, turn an SLO into an error budget and burn rates, and say which alerts deserve a page.",
+   "guess": {
+    "q": "Which of these should wake an engineer at 3 a.m.?",
+    "options": [
+     "CPU on the web servers has been above 90% for 10 minutes",
+     "The database disk is 70% full and growing slowly",
+     "5% of checkout requests have failed for the last 10 minutes",
+     "One pod restarted once and is healthy again"
+    ],
+    "answer": 2,
+    "why": "Failed checkouts are a symptom that users feel right now. The others are possible causes that may never hurt anyone, so they belong on a dashboard or in a ticket."
+   },
+   "terms": [
+    {
+     "term": "Telemetry",
+     "plain": "The data a running system gives off about itself: metrics, logs, traces and profiles."
+    },
+    {
+     "term": "Metric",
+     "plain": "A number measured again and again over time, such as requests per second."
+    },
+    {
+     "term": "Trace",
+     "plain": "The path of one request through every service it touched, with the time spent in each step."
+    },
+    {
+     "term": "SLI",
+     "plain": "Service level indicator: a measure of service quality, usually good events divided by all valid events."
+    },
+    {
+     "term": "SLO",
+     "plain": "Service level objective: a target for an SLI over a time window, such as 99.9% over 30 days."
+    },
+    {
+     "term": "Error budget",
+     "plain": "The failure an SLO still allows: 100% minus the SLO, such as 0.1% of requests."
+    },
+    {
+     "term": "Burn rate",
+     "plain": "How fast you spend the error budget. At burn rate 1 it lasts exactly until the end of the window."
+    },
+    {
+     "term": "Symptom alert",
+     "plain": "An alert on something users feel, such as errors or slow pages, not on a possible cause like high CPU."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Monitoring and observability",
+     "body": "Monitoring means you decide in advance what can go wrong, measure it, and get told when it happens. Is hello-devops answering? Is the disk filling up? Each of those is a check someone wrote on purpose.\n\n**Observability** is how well you can answer a question you did not plan for, using the data the system already gives off. Here is one: why did requests from the mobile app get slow at 14:00, but only for users with items in their basket? No alert you wrote last month answers that. If your data has enough detail, you can still find the answer without shipping new code.\n\nYou need both. Monitoring catches the problems you know about and wakes someone up. Observability helps that person find out why. Google's [SRE book chapter on monitoring](https://sre.google/sre-book/monitoring-distributed-systems/) adds one more split worth knowing:\n- White-box monitoring looks inside: numbers and logs the app reports about itself.\n- Black-box monitoring looks from outside, like a user would: does the page load at all?\n\nWhite-box data explains a problem. Black-box checks catch the problems your app cannot see, such as a broken DNS record in front of it.",
+     "refs": [
+      {
+       "title": "Google SRE book: Monitoring distributed systems",
+       "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+       "kind": "read"
+      },
+      {
+       "title": "OpenTelemetry: observability primer",
+       "url": "https://opentelemetry.io/docs/concepts/observability-primer/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Four signals, four questions",
+     "body": "The data a system gives off about itself is called telemetry. It comes in four kinds, usually called signals:\n- Metrics: numbers over time, like requests per second. They tell you that something is wrong.\n- Logs: one line of text per event, with a timestamp. They tell you what happened to one request.\n- Traces: one request followed through every service, split into timed steps called spans. They tell you where the time or the error came from.\n- Profiles: which functions use the CPU and memory. They tell you which code is expensive.\n\nMetrics are cheap because they are already summed up. A thousand requests a second become one counter that Prometheus reads every 15 seconds. Logs and traces grow with traffic, so teams keep less of them, or only a sample.\n\nA real incident often uses them in that order. A metric alert fires: 3% of checkouts fail. A trace of one failed checkout shows a 5-second wait on the payment service. That service's logs for the same trace ID say its database connection pool was full.\n\nThe next parts of the course follow the same split:\n- Part 9 (Days 41 to 44): metrics and alerts with Prometheus.\n- Part 10 (Days 45 and 46): dashboards with Grafana, and logs with Loki.\n- Part 11 (Days 47 to 49): logs with the Elastic stack, traces with OpenTelemetry.\n- Part 12 (Days 50 and 51): Dynatrace, one commercial product that collects every signal.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: signals",
+       "url": "https://opentelemetry.io/docs/concepts/signals/",
+       "kind": "docs"
+      },
+      {
+       "title": "How Prometheus monitoring works (TechWorld with Nana)",
+       "url": "https://www.youtube.com/watch?v=h4Sl21AKiDg",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Golden signals, RED and USE",
+     "body": "Which few numbers should you watch first? Three well-known checklists answer that, and they overlap a lot.\n\nThe four golden signals come from the SRE book: latency, traffic, errors and saturation. Its advice is blunt: if you can only measure four metrics of a user-facing system, measure these.\n\nThe [RED method](https://grafana.com/blog/the-red-method-how-to-instrument-your-services/), from Tom Wilkie, keeps three of them for anything that serves requests:\n- Rate: requests per second.\n- Errors: failed requests per second, or the share that fail.\n- Duration: how long requests take, usually as percentiles.\n\nA percentile reads like this: a p95 of 200 ms means 95% of requests took 200 ms or less. Averages hide the slow ones, so teams watch p95 or p99.\n\nThe [USE method](https://www.brendangregg.com/usemethod.html), from Brendan Gregg, is for resources such as CPU, memory, disks and network cards:\n- Utilization: how busy the resource was, such as CPU busy 70% of the time.\n- Saturation: extra work waiting because the resource is full, such as a queue of runnable processes.\n- Errors: error events, such as failed disk reads.\n\nGrafana's dashboard guide says it well: USE tells you how happy your machines are, RED tells you how happy your users are. For hello-devops, RED is requests per second to `/`, the share of 5xx answers, and the p95 response time. You will write all three in PromQL on Day 43.",
+     "refs": [
+      {
+       "title": "The RED method (Tom Wilkie, Grafana Labs blog)",
+       "url": "https://grafana.com/blog/the-red-method-how-to-instrument-your-services/",
+       "kind": "read"
+      },
+      {
+       "title": "The USE method (Brendan Gregg)",
+       "url": "https://www.brendangregg.com/usemethod.html",
+       "kind": "read"
+      },
+      {
+       "title": "The RED method: how to instrument your services (Tom Wilkie, KubeCon talk)",
+       "url": "https://www.youtube.com/watch?v=TJLpYXbnfQ4",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "SLIs, SLOs and SLAs",
+     "body": "An SLI (service level indicator) says how good the service is, seen from the user's side. The most useful shape is a ratio of good events to valid events:\n- Availability SLI: responses that are not 5xx, divided by all responses.\n- Latency SLI: responses faster than 300 ms, divided by all responses.\n\nAn SLO (service level objective) is a target for an SLI over a time window. For example: 99.9% of requests to `/` succeed, measured over the last 30 days. An SLA (service level agreement) is a contract with a customer that says what happens when you miss, often money back. Teams set the SLA looser than the SLO, so they notice trouble before it costs money.\n\nDo not aim for 100%. The SRE book's chapter on [embracing risk](https://sre.google/sre-book/embracing-risk/) gives the reason: a user on a phone that works 99% of the time cannot tell 99.99% from 99.999%. Each extra nine costs far more work, and users never notice it. So pick a target that keeps users happy and treat it as a floor and a ceiling. If you are far more reliable than your SLO, you are probably shipping slower than you could.",
+     "refs": [
+      {
+       "title": "Google SRE book: Service level objectives",
+       "url": "https://sre.google/sre-book/service-level-objectives/",
+       "kind": "read"
+      },
+      {
+       "title": "SLIs, SLOs, SLAs, oh my! (Google Cloud, Liz Fong-Jones and Seth Vargo)",
+       "url": "https://www.youtube.com/watch?v=tEylFyxbDLE",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Error budgets and burn rate",
+     "body": "The error budget is the failure the SLO allows: 100% minus the SLO. For 99.9% that is 0.1%. With 200,000 requests a day, 30 days hold 6,000,000 requests, and 6,000 of them may fail. If everything fails at once, 0.1% of 43,200 minutes is 43.2 minutes of full outage.\n\nThe budget turns an argument into arithmetic. Developers want to ship, operators want quiet nights, and both can look at the same number. While budget is left, you ship at normal speed and take some risks. When it is spent, the SRE book's answer is to pause risky releases until reliability is back.\n\nThe burn rate says how fast you are spending it: the current error ratio divided by the budget. With a 0.1% budget:\n- 0.1% of requests failing is burn rate 1. The budget lasts exactly 30 days.\n- 0.6% failing is burn rate 6. The budget is gone in 5 days.\n- 1.44% failing is burn rate 14.4. The budget is gone in about 2 days, and one hour of this spends 2% of it.\n\nThose numbers come from Google's [SRE Workbook](https://sre.google/workbook/alerting-on-slos/): page at 14.4 over one hour or 6 over six hours, and open a ticket at 1 over three days. Day 44 turns them into Prometheus alerts. Burn rate works better than a raw error count because it already knows your traffic and your target.",
+     "refs": [
+      {
+       "title": "Google SRE book: Embracing risk",
+       "url": "https://sre.google/sre-book/embracing-risk/",
+       "kind": "read"
+      },
+      {
+       "title": "Google SRE Workbook: Alerting on SLOs",
+       "url": "https://sre.google/workbook/alerting-on-slos/",
+       "kind": "read"
+      },
+      {
+       "title": "Alerting on error budget burn rate (Google Cloud Tech)",
+       "url": "https://www.youtube.com/watch?v=t1BGo-Il1AM",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Alert on symptoms, and keep pages rare",
+     "body": "A page is an alert that interrupts a person, maybe at 3 a.m. Each one costs sleep and focus, so every page must be urgent, real and something a human can act on. The [Prometheus alerting guide](https://prometheus.io/docs/practices/alerting/) puts it in one line: keep alerting simple, alert on symptoms, and avoid pages where there is nothing to do.\n\nA symptom is something users feel: errors, slow answers, the site down. A cause is a reason that might lead to a symptom: high CPU, a busy disk, a pod restart. Causes are useful on dashboards, where you look during an investigation. They make poor pages, because many of them never hurt anyone. A server at 90% CPU that answers every request in 50 ms is simply doing its job.\n\nSort every alert into one of three groups:\n- Page: users hurt now and a human must act now. A fast error budget burn, or the service down.\n- Ticket: needs a human in working hours. A slow burn, or a certificate that expires in 10 days.\n- Dashboard only: everything else, such as CPU, memory and single restarts.\n\nToo many alerts cause alert fatigue: people learn that pages are usually noise and start to ignore them, including the real one. If an alert fires and nobody needs to do anything, delete it or make it a ticket.",
+     "refs": [
+      {
+       "title": "Prometheus: alerting best practices",
+       "url": "https://prometheus.io/docs/practices/alerting/",
+       "kind": "docs"
+      },
+      {
+       "title": "Grafana: dashboard best practices (golden signals, RED, USE)",
+       "url": "https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/best-practices/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "On-call and blameless postmortems",
+     "body": "On-call means one person carries the pager for a shift, often a week, and answers pages within minutes. Teams keep it bearable with three habits:\n- Few pages, each one tied to a symptom.\n- A runbook for every alert: a short page with what the alert means and the first things to check.\n- A second person to call when the first one is stuck.\n\nAfter an incident, the team writes a postmortem: what happened, the timeline, the impact on users, and what will stop it from happening again. Blameless means the document looks for gaps in systems and processes, not for a person to punish. If one command could take production down, the fix is a safer command; blaming the engineer only teaches everyone to hide mistakes. Google's [postmortem chapter](https://sre.google/sre-book/postmortem-culture/) describes the practice in detail.\n\nThe SLO links all of this. It defines what working means, the burn rate decides when someone gets paged, and the postmortem decides what to change so next month's budget lasts longer.",
+     "refs": [
+      {
+       "title": "Google SRE book: Postmortem culture",
+       "url": "https://sre.google/sre-book/postmortem-culture/",
+       "kind": "read"
+      },
+      {
+       "title": "Google SRE Workbook: On-call",
+       "url": "https://sre.google/workbook/on-call/",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "Think of a train company that promises 99% of its trains arrive within five minutes of the timetable each month. That promise is the SLO, and the 1% of trains allowed to be late is the error budget. If the company has used little of it by mid-month, it can close a track for repairs; if a storm has used it all, repairs wait. Where it breaks: trains run on a fixed timetable, while software failures come in sudden bursts, which is why you watch the burn rate and not only the monthly total.",
+   "diagram": "<svg viewBox=\"0 0 560 340\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"From requests to an SLI, compared with the SLO target, giving an error budget, a burn rate, and finally a page or a ticket\"><rect class=\"bx\" x=\"40\" y=\"12\" width=\"200\" height=\"36\" rx=\"10\"/><text class=\"t\" x=\"140\" y=\"35\" font-size=\"13\" text-anchor=\"middle\">Requests</text><text class=\"ts\" x=\"260\" y=\"35\" font-size=\"11\" text-anchor=\"start\">every response to /</text><line class=\"ln\" x1=\"140\" y1=\"49\" x2=\"140\" y2=\"64\" marker-end=\"url(#ar)\"/><rect class=\"bxt\" x=\"40\" y=\"68\" width=\"200\" height=\"36\" rx=\"10\"/><text class=\"tk\" x=\"140\" y=\"91\" font-size=\"13\" text-anchor=\"middle\">SLI</text><text class=\"ts\" x=\"260\" y=\"91\" font-size=\"11\" text-anchor=\"start\">good / valid = 99.95%</text><line class=\"ln\" x1=\"140\" y1=\"105\" x2=\"140\" y2=\"120\" marker-end=\"url(#ar)\"/><rect class=\"bxt\" x=\"40\" y=\"124\" width=\"200\" height=\"36\" rx=\"10\"/><text class=\"tk\" x=\"140\" y=\"147\" font-size=\"13\" text-anchor=\"middle\">SLO target</text><text class=\"ts\" x=\"260\" y=\"147\" font-size=\"11\" text-anchor=\"start\">99.9% over 30 days</text><line class=\"ln\" x1=\"140\" y1=\"161\" x2=\"140\" y2=\"176\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"40\" y=\"180\" width=\"200\" height=\"36\" rx=\"10\"/><text class=\"tk\" x=\"140\" y=\"203\" font-size=\"13\" text-anchor=\"middle\">Error budget</text><text class=\"ts\" x=\"260\" y=\"203\" font-size=\"11\" text-anchor=\"start\">100% - 99.9% = 0.1% may fail</text><line class=\"ln\" x1=\"140\" y1=\"217\" x2=\"140\" y2=\"232\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"40\" y=\"236\" width=\"200\" height=\"36\" rx=\"10\"/><text class=\"tk\" x=\"140\" y=\"259\" font-size=\"13\" text-anchor=\"middle\">Burn rate</text><text class=\"ts\" x=\"260\" y=\"259\" font-size=\"11\" text-anchor=\"start\">error ratio / budget</text><line class=\"ln\" x1=\"140\" y1=\"273\" x2=\"140\" y2=\"288\" marker-end=\"url(#ar)\"/><rect class=\"bxp\" x=\"40\" y=\"292\" width=\"200\" height=\"36\" rx=\"10\"/><text class=\"tk\" x=\"140\" y=\"315\" font-size=\"13\" text-anchor=\"middle\">Page or ticket</text><text class=\"ts\" x=\"260\" y=\"315\" font-size=\"11\" text-anchor=\"start\">fast burn: page; slow burn: ticket</text></svg>",
+   "diagram_caption": "An SLO turns raw requests into a budget, and the burn rate decides who gets woken up.",
+   "worked": {
+    "title": "An SLO for hello-devops, from numbers to an alert plan",
+    "steps": [
+     {
+      "say": "Start with what users do. hello-devops has one real job: the JSON at `/`. A good event is a response that is not 5xx. A valid event is any response to `/`. A 404 for a mistyped URL is the user's mistake, so it does not count against you."
+     },
+     {
+      "say": "Pick a target and a window, then let the Day 41 script do the arithmetic. I guessed 200,000 requests a day.",
+      "code": "$ python3 observability/error_budget.py 99.9 30 200000\nSLO 99.90% over 30 days\nError budget: 0.10% of requests\nFull outage allowed: 43.2 minutes\nFailed requests allowed: 6,000 of 6,000,000\nBurn rate 14.4: error ratio 1.44%, budget gone in 2.1 days; 1 h of this uses 2% (page)\nBurn rate    6: error ratio 0.60%, budget gone in 5.0 days; 6 h of this uses 5% (page)\nBurn rate    1: error ratio 0.10%, budget gone in 30.0 days; 72 h of this uses 10% (ticket)",
+      "lang": "console"
+     },
+     {
+      "say": "Read it like a budget. One bad deploy that breaks everything for 20 minutes spends almost half the month. That tells you something concrete: a rollback must take minutes, not an hour.",
+      "code": "$ python3 -c \"print(20 / 43.2)\"\n0.4629629629629629",
+      "lang": "console"
+     },
+     {
+      "say": "Now a bad hour: 2% of requests fail for 60 minutes. The burn rate is 0.02 / 0.001 = 20, above 14.4, so this should page. One hour at burn rate 20 spends 20/720 of the budget, because 30 days have 720 hours.",
+      "code": "$ python3 -c \"print(0.02 / 0.001, 20 * 1 / 720)\"\n20.0 0.027777777777777776",
+      "lang": "console"
+     },
+     {
+      "say": "Compare a slow leak: 0.3% of requests fail all week. That is burn rate 3, and the budget lasts 10 days. Nobody needs to wake up, but someone must fix it this week, so it is a ticket.",
+      "code": "$ python3 -c \"print(round(0.003 / 0.001, 2), 30 / 3)\"\n3.0 10.0",
+      "lang": "console"
+     },
+     {
+      "say": "Write the plan down in plain words before any PromQL. Day 44 turns exactly these lines into `alerts.yml`. Each long window has a short partner, so the alert stops soon after the errors stop.",
+      "code": "SLI:    responses to / that are not 5xx, divided by all responses to /\nSLO:    99.9% over 30 days  (error budget 0.1%)\nPage:   error ratio > 1.44% over 1 h AND over 5 m\n        or > 0.6% over 6 h AND over 30 m\nTicket: error ratio > 0.1% over 3 days AND over 6 h\nNever page on: CPU, memory, single pod restarts (dashboard only)",
+      "lang": "text"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "python",
+     "title": "observability/error_budget.py",
+     "src": "\"\"\"Turn an SLO into an error budget and burn rates (Day 41).\n\nUsage:   python3 error_budget.py SLO_PERCENT [DAYS] [REQUESTS_PER_DAY]\nExample: python3 error_budget.py 99.9 30 200000\n\"\"\"\n\nimport sys\n\nslo = float(sys.argv[1]) / 100  # 99.9 -> 0.999\ndays = float(sys.argv[2]) if len(sys.argv) > 2 else 30\nper_day = float(sys.argv[3]) if len(sys.argv) > 3 else 0\n\nbudget = 1 - slo  # the share of requests that may fail\nminutes = days * 24 * 60\n\nprint(f\"SLO {slo:.2%} over {days:g} days\")\nprint(f\"Error budget: {budget:.2%} of requests\")\nprint(f\"Full outage allowed: {budget * minutes:.1f} minutes\")\nif per_day:\n    total = per_day * days\n    print(f\"Failed requests allowed: {budget * total:,.0f} of {total:,.0f}\")\n\n# Burn rate = how fast you spend the budget. 1 means \"used up exactly at the end\".\n# The three rows are the starting points from Google's SRE Workbook (Day 44):\n# page at 14.4 over 1 hour or 6 over 6 hours, open a ticket at 1 over 3 days.\nfor burn, window_h, action in [(14.4, 1, \"page\"), (6, 6, \"page\"), (1, 72, \"ticket\")]:\n    used = burn * window_h / (days * 24)\n    print(\n        f\"Burn rate {burn:>4}: error ratio {burn * budget:.2%}, budget gone in {days / burn:.1f} days;\"\n        f\" {window_h} h of this uses {used:.0%} ({action})\"\n    )",
+     "run": "python3 observability/error_budget.py 99.9 30 200000"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "python3 observability/error_budget.py 99.9 30 200000",
+     "what": "Print the error budget and burn-rate thresholds for a 99.9% SLO, 30 days, 200,000 requests a day."
+    },
+    {
+     "cmd": "python3 observability/error_budget.py 99.99",
+     "what": "See how small the budget gets with one more nine: 4.3 minutes a month."
+    },
+    {
+     "cmd": "python3 -c \"print(0.02 / 0.001)\"",
+     "what": "Burn rate = error ratio divided by budget. Here 2% errors against a 0.1% budget gives 20."
+    },
+    {
+     "cmd": "docker compose up -d",
+     "what": "In the repo root: start hello-devops and Redis from the Day 15 Compose file."
+    },
+    {
+     "cmd": "curl -s -o /dev/null -w '%{http_code} %{time_total}\\n' localhost:8000/",
+     "what": "Measure one request by hand: its status code and how many seconds it took."
+    },
+    {
+     "cmd": "for i in $(seq 1 200); do curl -s -o /dev/null -w '%{http_code} %{time_total}\\n' localhost:8000/; done > sli.txt",
+     "what": "Measure 200 requests and save one line per request."
+    },
+    {
+     "cmd": "awk '$1 < 500' sli.txt | wc -l",
+     "what": "Count the good responses: every status below 500."
+    },
+    {
+     "cmd": "awk '$1 < 500 {good++} END {printf \"%.2f%%\\n\", 100 * good / NR}' sli.txt",
+     "what": "Print the availability SLI as a percentage."
+    },
+    {
+     "cmd": "awk '$2 <= 0.1' sli.txt | wc -l",
+     "what": "Count responses that took 0.1 seconds or less, for a latency SLI."
+    },
+    {
+     "cmd": "docker compose stop redis",
+     "what": "Break the app's dependency on purpose so the SLI drops."
+    },
+    {
+     "cmd": "docker compose start redis",
+     "what": "Bring Redis back."
+    }
+   ],
+   "mistake": "Paging on causes such as CPU above 80%, memory above 90% or any pod restart. These fire all the time without users noticing, so people stop trusting the pager. Page on symptoms (error budget burn, the service not answering) and put causes on a dashboard you open once a page fires.",
+   "real_world": "At a payments company with a product called PayFlow, the card team might set an SLO of 99.95% of authorisations answered without error within 2 seconds, over 28 days. The on-call engineer is paged only on a fast burn of that budget. When the budget runs out, the team's written policy freezes feature releases until two weeks of clean numbers come back.",
+   "task": {
+    "title": "Measure an SLI by hand, then sort the alerts",
+    "steps": [
+     "In your repo root, start the Day 15 stack with `docker compose up -d` and check that `curl localhost:8000/` answers.",
+     "Send 200 requests to `/` and save the status code and time of each one to `sli.txt`, using curl's `-w` option from Day 9.",
+     "Stop Redis with `docker compose stop redis`, then append 20 more requests to the same file. Each one takes a few seconds, because the app retries Redis before it gives up.",
+     "With awk (Day 5), count the good responses (status below 500) and print the availability SLI as a percentage. Then compute a latency SLI: the share that took 0.1 seconds or less.",
+     "Start Redis again. Run `error_budget.py` for a 99.5% SLO over 30 days with your own guess of daily traffic.",
+     "Work out the burn rate your measured error ratio means against that 99.5% SLO, and how many days the budget would last at that rate.",
+     "Sort these eight alerts into page, ticket or dashboard, with one line of why for each: CPU above 80% for 10 minutes; 5% of requests to `/` fail for 10 minutes; p95 latency above 2 seconds for 15 minutes; disk 70% full; a pod restarted once; a TLS certificate expires in 10 days; burn rate 1.5 over 3 days; no successful request at all for 2 minutes."
+    ],
+    "hints": [
+     "`awk '$1 < 500' sli.txt | wc -l` counts the good lines, and `wc -l < sli.txt` counts all of them.",
+     "Burn rate is the error ratio divided by the budget. For 99.5% the budget is 0.5%, so 5% errors is burn rate 10.",
+     "For each alert, ask two questions: do users feel it now, and can a person fix it now?"
+    ],
+    "done_when": "You have an availability SLI from your own requests (mine was 200 good of 220, 90.91%), its burn rate against a 99.5% SLO, and all eight alerts sorted with a reason."
+   },
+   "explain_back": {
+    "prompt": "Explain to a product manager, in 3 to 4 sentences, what an error budget is and why it can let the team ship more, not less. Mention the SLO, the burn rate and what happens when the budget runs out.",
+    "answer": "Our SLO says 99.9% of requests must succeed over 30 days, so 0.1% may fail, and that 0.1% is our error budget. While budget is left we can ship features and take some risk, because a few failures are already priced in. The burn rate tells us how fast we are spending it: a fast burn pages someone, a slow burn becomes a ticket. If the budget runs out, we pause risky releases and fix reliability first, so we argue about a number instead of about feelings."
+   },
+   "recap": [
+    "Monitoring checks for known problems; observability lets you ask new questions of your telemetry.",
+    "Metrics say that something is wrong, traces say where, logs say what happened, profiles say which code is expensive.",
+    "RED (rate, errors, duration) describes a service from the user's side; USE (utilization, saturation, errors) describes a machine.",
+    "An SLI is good events over valid events, an SLO is its target over a window, and the error budget is 100% minus the SLO.",
+    "Burn rate is the error ratio divided by the budget: page on fast burns (14.4 over 1 hour, 6 over 6 hours), open a ticket on slow ones.",
+    "Page only on symptoms with a clear action, and learn from incidents with blameless postmortems."
+   ],
+   "check": [
+    {
+     "q": "An image-resize service gets 1,000,000 requests a month and has an SLO of 99.95%. How many failed requests does its monthly error budget allow?",
+     "options": [
+      "50",
+      "500",
+      "5,000",
+      "9,995"
+     ],
+     "answer": 1,
+     "why": "The budget is 100% minus 99.95%, which is 0.05%, and 0.05% of 1,000,000 is 500."
+    },
+    {
+     "q": "Which of these is a saturation signal for a Postgres database server?",
+     "options": [
+      "Queries per second",
+      "The share of queries that return an error",
+      "Queries waiting for a free connection",
+      "The median query time"
+     ],
+     "answer": 2,
+     "why": "Saturation is work that waits because a resource is full, and a queue of waiting queries is exactly that."
+    },
+    {
+     "q": "Your SLO is 99.9%. For the last 6 hours 0.7% of requests failed, and the last 30 minutes look the same. What should happen?",
+     "options": [
+      "Page someone: burn rate 7 over 6 hours passes the 6x line",
+      "Nothing: 99.3% success still sounds high",
+      "Add it to next quarter's planning notes",
+      "Restart every pod to clear the errors"
+     ],
+     "answer": 0,
+     "why": "0.7% divided by the 0.1% budget is burn rate 7, above the 6x paging line, and the short window shows it is still happening."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the difference between an SLI, an SLO and an SLA?",
+     "a": "An SLI measures service quality from the user's point of view, usually good events divided by valid events, such as the share of requests that succeed. An SLO is the target for that SLI over a window, such as 99.9% over 30 days. An SLA is a contract with customers that says what happens, often credits, if a promised level is missed. Teams set the SLO tighter than the SLA so they react before they owe anyone money."
+    },
+    {
+     "q": "Why should alerts fire on symptoms rather than causes?",
+     "a": "Users feel symptoms such as errors and slow responses, so a symptom alert always means real pain. A cause such as high CPU may or may not hurt anyone, and there are far too many possible causes to alert on each one. Paging on causes produces false alarms, which trains people to ignore the pager. Causes still matter: they belong on dashboards, where the on-call engineer looks once a symptom alert fires."
+    },
+    {
+     "q": "How would you choose an SLO for a new service?",
+     "a": "I would start with a simple SLI, such as successful requests over all requests, and measure what the service achieves today. Then I would pick a target a little below that, so the team is not paged from day one, and agree with the product owner what happens when the budget runs out. I would review it every quarter: if users complain while the SLO is met, the SLI or the target is wrong. I would never pick 100%, because it leaves no room for deploys and costs far more than users can notice."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Why do the SLO alerts in this course compare two windows? Try the simple version first and see where it fails.\n\nAlert 1 is a plain threshold: page when the error ratio over the last 5 minutes is above 0.1%. It fires on every small blip, such as ten bad requests during a deploy, and spends your nights on errors that barely touch the budget. Alert 2 uses a long window instead: page when the ratio over 30 days is above 0.1%. Now it fires far too late, and once it fires it stays on for days after the problem is fixed.\n\nBurn rate fixes the size question. Paging at burn rate 14.4 over one hour means you only page when one hour has already spent 2% of the month's budget. A ten-request blip never gets there. A real outage gets there within minutes, because a total outage is a burn rate of 1,000 for a 99.9% SLO.\n\nThe short window fixes the reset question. A one-hour window remembers a bad spike for an hour, so the alert would keep firing long after you fixed it. The [SRE Workbook](https://sre.google/workbook/alerting-on-slos/) adds a second condition with a window one twelfth as long, 5 minutes for the 1-hour alert. Both windows must be over the line. The 5-minute window drops back within minutes of the fix, so the page clears quickly too.\n\nThe Workbook then layers three pairs:\n- Page: burn rate 14.4 over 1 hour and 5 minutes (2% of the budget).\n- Page: burn rate 6 over 6 hours and 30 minutes (5% of the budget).\n- Ticket: burn rate 1 over 3 days and 6 hours (10% of the budget).\n\nThese are starting numbers, and the Workbook says to tune them for your service. Day 44 turns them into Prometheus rules for hello-devops, with a `promtool` test that proves a slow leak opens a ticket but does not page.\n\nOne more thing to try on paper: a latency SLO. Write it as a ratio too, for example requests answered within 300 ms divided by all requests. Then the same budget and burn-rate maths works unchanged. This is why many teams prefer ratio SLIs over a rule like p99 below 300 ms: ratios add up across time and across servers, and percentiles do not."
+   },
+   "sources": [
+    {
+     "title": "Google SRE book: Service level objectives",
+     "url": "https://sre.google/sre-book/service-level-objectives/"
+    },
+    {
+     "title": "Google SRE Workbook: Alerting on SLOs",
+     "url": "https://sre.google/workbook/alerting-on-slos/"
+    },
+    {
+     "title": "The RED method (Tom Wilkie, Grafana Labs blog)",
+     "url": "https://grafana.com/blog/the-red-method-how-to-instrument-your-services/"
+    },
+    {
+     "title": "Prometheus: alerting best practices",
+     "url": "https://prometheus.io/docs/practices/alerting/"
+    }
+   ]
+  },
+  {
+   "id": "d42",
+   "title": "Prometheus: architecture and the data model",
+   "minutes": 50,
+   "goal": "By the end you can run Prometheus next to hello-devops with Docker Compose, read a /metrics page line by line, explain what a time series is, pick the right metric type, and spot a label that would explode the number of series.",
+   "guess": {
+    "q": "hello-devops crashes and stops answering. How does Prometheus find out?",
+    "options": [
+     "The app sends a last message to Prometheus before it dies",
+     "Its next scrape of the app fails, and it records up = 0",
+     "It does not notice; the graph just stays flat",
+     "Docker tells Prometheus that the container stopped"
+    ],
+    "answer": 1,
+    "why": "Prometheus pulls. Every scrape records an `up` value for the target: 1 if the scrape worked, 0 if it failed. A dead app cannot push anything."
+   },
+   "terms": [
+    {
+     "term": "Target",
+     "plain": "One endpoint Prometheus scrapes, such as web:8000/metrics."
+    },
+    {
+     "term": "Scrape",
+     "plain": "One HTTP GET of a target's /metrics page, done again every scrape interval."
+    },
+    {
+     "term": "Exporter",
+     "plain": "A small program that reads numbers from something else, such as Linux, and shows them on a /metrics page."
+    },
+    {
+     "term": "Time series",
+     "plain": "All the samples for one metric name plus one exact set of label values."
+    },
+    {
+     "term": "Label",
+     "plain": "A key and value pair on a metric, such as status=\"500\", used to split and filter."
+    },
+    {
+     "term": "Sample",
+     "plain": "One value with a timestamp, stored each time a series is scraped."
+    },
+    {
+     "term": "Cardinality",
+     "plain": "How many time series a metric creates: every new combination of label values is a new series."
+    },
+    {
+     "term": "Histogram",
+     "plain": "A metric that counts observations, such as request times, into buckets with upper limits."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Prometheus pulls",
+     "body": "Prometheus is a server that collects numbers from your programs every few seconds and stores them with a timestamp. It does this by pulling. Your app shows its current numbers on a plain web page, `/metrics`, and Prometheus fetches that page on a timer. One fetch is a scrape, and the thing it scrapes is a target.\n\nPulling sounds backwards if you know logging, where the app sends lines out. It has real advantages:\n- Prometheus knows which targets should exist. If one does not answer, it records `up = 0` for it, a health check you get for free.\n- You can read the same page yourself with `curl` while you debug.\n- A slow or broken monitoring server never blocks your app. The app only keeps a few counters in memory.\n\nPushing still has a place. A batch job that runs for 20 seconds may finish before any scrape. For that case the docs describe the Pushgateway, and they say [it is usually only right](https://github.com/prometheus/docs/blob/main/docs/practices/pushing.md) for the result of service-level batch jobs. Prometheus 3 can also receive metrics pushed over OTLP, the OpenTelemetry protocol you meet on Day 49.",
+     "refs": [
+      {
+       "title": "Prometheus: overview and architecture",
+       "url": "https://prometheus.io/docs/introduction/overview/",
+       "kind": "docs"
+      },
+      {
+       "title": "How Prometheus monitoring works (TechWorld with Nana)",
+       "url": "https://www.youtube.com/watch?v=h4Sl21AKiDg",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "The parts: server, targets, exporters",
+     "body": "One Prometheus server is a single program with four jobs:\n- A scraper that fetches every target each `scrape_interval` (default 1 minute; the lab uses 15 seconds).\n- A time series database (TSDB) on local disk.\n- A rule engine that runs recording rules (Day 43) and alerting rules (Day 44).\n- A web UI and HTTP API that answer PromQL queries.\n\nYou list targets in `prometheus.yml` under `scrape_configs`. Each entry is a job: a group of targets that do the same work. The lab has four jobs: `prometheus` (it scrapes itself), `hello-devops`, `node` and `alertmanager`. In a big system you do not type addresses. Service discovery asks the platform for the current list instead: Kubernetes, Docker, AWS and plain files are all supported.\n\nMany programs have no `/metrics` page. An exporter fills the gap: it reads numbers from the system and shows them in Prometheus format.\n- [node_exporter](https://github.com/prometheus/node_exporter) shows CPU, memory, disk and network for a Linux machine, on port 9100.\n- [blackbox_exporter](https://github.com/prometheus/blackbox_exporter) probes other services from outside (HTTP, TCP, DNS), on port 9115.\n\nOne warning for your Mac. Docker Desktop runs containers inside a small Linux virtual machine. So the node_exporter container in the lab reports that VM, not macOS. That is fine for learning PromQL; just do not read it as your laptop's numbers.",
+     "refs": [
+      {
+       "title": "Prometheus: configuration reference",
+       "url": "https://github.com/prometheus/prometheus/blob/main/docs/configuration/configuration.md",
+       "kind": "docs"
+      },
+      {
+       "title": "node_exporter README",
+       "url": "https://github.com/prometheus/node_exporter",
+       "kind": "docs"
+      },
+      {
+       "title": "Introduction to the Prometheus monitoring system (Julius Volz, Prometheus co-founder)",
+       "url": "https://www.youtube.com/watch?v=STVMGrYIlfg",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Reading a /metrics page",
+     "body": "Open `localhost:8000/metrics` and you see the exposition format: plain text, one sample per line. Here are the first lines for the app's own counter:\n- `# HELP hello_requests_total Requests served` is the description.\n- `# TYPE hello_requests_total counter` is the metric type.\n- `hello_requests_total{path=\"/\"} 3.0` is the metric name, its labels in braces, and the current value.\n\nThe rest of the page has three sources:\n- `app.py` defines `hello_requests_total`. It counts visits to `/` and has one label, `path`.\n- `observability/red_metrics.py` adds `hello_responses_total` (with `path` and `status`) and the histogram `hello_request_duration_seconds`. Compose loads it next to the unchanged app; Day 44 explains how.\n- The Python client adds `process_*` metrics (memory, CPU, open files) and `python_*` metrics for free.\n\nTwo details surprise most people. The Python client adds a `_created` series next to each counter, holding the time it was created; you can ignore it. And the names follow conventions from the [naming guide](https://github.com/prometheus/docs/blob/main/docs/practices/naming.md): base units such as seconds and bytes, `_total` at the end of counters, and a prefix for the app.\n\nPrometheus 3 is strict about the HTTP `Content-Type` header of this page. If it is missing or wrong, the scrape fails. Client libraries set it for you.",
+     "refs": [
+      {
+       "title": "Prometheus: exposition formats",
+       "url": "https://prometheus.io/docs/instrumenting/exposition_formats/",
+       "kind": "docs"
+      },
+      {
+       "title": "Prometheus: metric and label naming",
+       "url": "https://github.com/prometheus/docs/blob/main/docs/practices/naming.md",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "A time series is a name plus labels",
+     "body": "This is the most important idea in Prometheus. A time series is identified by its metric name plus the exact set of label values. Change any label value and you have a different series.\n\nThe app's page shows `hello_responses_total` three times, with three label sets: `/` and 200, `/healthz` and 200, `/` and 500. That is three time series. Each scrape adds one sample to each: a timestamp and a value.\n\nPrometheus adds two labels of its own when it stores them:\n- `job`: the job name from `prometheus.yml`, here `hello-devops`.\n- `instance`: the target's address, here `web:8000`.\n\nSo the full name of one series in the lab is `hello_responses_total{instance=\"web:8000\", job=\"hello-devops\", path=\"/\", status=\"500\"}`. If you think in databases, the labels are a composite primary key, and each scrape appends a row to every key.\n\nPrometheus also writes a few series per target that the app never showed. `up` is 1 or 0 for each scrape, and `scrape_duration_seconds` tells you how long it took. When a scrape takes longer than `scrape_timeout` (10 seconds by default), it fails with `context deadline exceeded` and `up` becomes 0.",
+     "refs": [
+      {
+       "title": "Prometheus: data model",
+       "url": "https://prometheus.io/docs/concepts/data_model/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Four metric types",
+     "body": "Every metric has one of four types. The type tells you which questions it can answer.\n\nA counter only goes up, or drops to zero when the process restarts. `hello_responses_total` and `process_cpu_seconds_total` are counters. The raw value is rarely useful; you ask how fast it grows, which is `rate()` on Day 43.\n\nA gauge is a value that goes up and down: memory in use, queue length, temperature. `process_resident_memory_bytes` for the app read 48,803,840 bytes (about 49 MB) in my run. You read a gauge as it is, and you never take its `rate()`.\n\nA histogram counts observations into buckets. Each bucket has an upper limit, the `le` label (less than or equal), and the buckets are cumulative. In my run the app's `/` route showed `le=\"0.005\"` 759 and `le=\"0.01\"` 1009: 759 requests took 5 ms or less, and 1009 took 10 ms or less. Next to the buckets come `_sum` (all the seconds added up) and `_count` (how many). From these, Prometheus can estimate percentiles and add them up across many servers.\n\nA summary computes percentiles inside the app and shows them with a `quantile` label. Prometheus itself has one: `go_gc_duration_seconds{quantile=\"0.5\"}`. Summaries from several servers cannot be combined, because you cannot average percentiles. That is why the [docs](https://prometheus.io/docs/practices/histograms/) usually point you to histograms.\n\nQuick rule: counting events, use a counter; measuring a level, a gauge; timing things or sizes, a histogram.",
+     "refs": [
+      {
+       "title": "Prometheus: metric types",
+       "url": "https://prometheus.io/docs/concepts/metric_types/",
+       "kind": "docs"
+      },
+      {
+       "title": "Prometheus tutorial: understanding metric types",
+       "url": "https://prometheus.io/docs/tutorials/understanding_metric_types/",
+       "kind": "docs"
+      },
+      {
+       "title": "Understanding Prometheus histograms (PromLabs, Julius Volz)",
+       "url": "https://www.youtube.com/watch?v=yYbXak-1hew",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Cardinality: why user IDs never go in labels",
+     "body": "Labels look free, and this trips most people up. Each new label value creates new series, and series cost memory, disk and query time.\n\nCount the app's histogram. It has one label, `path`, and the default buckets give 15 `le` values. Each path therefore costs 15 bucket series plus `_sum`, `_count` and `_created`, and the counter adds 2 more. In the lab, one request to a new route took the `hello_*` series from 44 to 64.\n\nNow imagine someone adds a `user_id` label so they can see requests per user. With 10,000 users, that is 200,000 series for one route, from one app instance. The [instrumentation guide](https://prometheus.io/docs/practices/instrumentation/) suggests keeping most metrics under 10 series and looking hard at anything that could pass 100.\n\nRules that keep you safe:\n- Labels hold small, fixed sets of values: status code, HTTP method, route pattern.\n- Never put user IDs, email addresses, request IDs or raw URLs in labels.\n- Record the route pattern, not the URL. `red_metrics.py` uses Flask's rule, so `/nope` and `/admin.php` both become `unmatched`.\n- Details about single requests belong in logs and traces (Part 11).\n\nFor scale: the whole lab, with all four jobs, holds about 2,200 series.",
+     "refs": [
+      {
+       "title": "Prometheus: instrumentation best practices",
+       "url": "https://prometheus.io/docs/practices/instrumentation/",
+       "kind": "docs"
+      },
+      {
+       "title": "Cardinality is key (Robust Perception)",
+       "url": "https://www.robustperception.io/cardinality-is-key/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Storage, retention and what changed in Prometheus 3",
+     "body": "The TSDB keeps recent samples in memory and in a write-ahead log, then writes them to disk in two-hour blocks. Old blocks are merged in the background. By default it keeps 15 days of data (`--storage.tsdb.retention.time`); the lab keeps 7. The [storage docs](https://prometheus.io/docs/prometheus/latest/storage/) say plainly that local storage is not clustered or replicated. For months of history or a backup, you send data elsewhere, which Day 44 covers.\n\nPrometheus 3.0 came out in November 2024, the first major version in seven years. What you will notice:\n- A new web UI. The Query page has Table, Graph and Explain tabs, and Explore metrics in its menu lists every metric name.\n- Metric and label names may use any UTF-8 characters, such as dots from OpenTelemetry. Such names need quotes in PromQL.\n- An OTLP receiver, turned on with `--web.enable-otlp-receiver`, so OpenTelemetry apps can push metrics in.\n- Native histograms, a more precise histogram, are stable since 3.8 but stay off unless you turn them on.\n- Some old flags were removed. Tutorials written for Prometheus 2 may show flags that no longer start.\n\nThe details are in the [Prometheus 3.0 announcement](https://prometheus.io/blog/2024/11/14/prometheus-3-0/).",
+     "refs": [
+      {
+       "title": "Prometheus: storage and retention",
+       "url": "https://prometheus.io/docs/prometheus/latest/storage/",
+       "kind": "docs"
+      },
+      {
+       "title": "Announcing Prometheus 3.0 (Prometheus blog)",
+       "url": "https://prometheus.io/blog/2024/11/14/prometheus-3-0/",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "Prometheus is like a meter reader who walks past every house on a fixed round, every 15 seconds. Each house shows its meters through the window (the /metrics page), and the reader writes down every number with the time and the house address (the labels). If a house does not answer, the reader notes that too, which is up = 0. Where it breaks: a real meter reader cannot be overwhelmed by one house, but an app that invents a new label value per user creates thousands of new meters for Prometheus to read and store.",
+   "diagram": "<svg viewBox=\"0 0 560 300\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Prometheus scrapes the metrics pages of hello-devops, node_exporter and itself, stores samples in its time series database, sends firing alerts to Alertmanager, and answers queries from Grafana\"><rect class=\"bxt\" x=\"16\" y=\"24\" width=\"150\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"91\" y=\"49\" font-size=\"13\" text-anchor=\"middle\">hello-devops</text><rect class=\"bxt\" x=\"16\" y=\"88\" width=\"150\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"91\" y=\"113\" font-size=\"13\" text-anchor=\"middle\">node_exporter</text><rect class=\"bxt\" x=\"16\" y=\"152\" width=\"150\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"91\" y=\"177\" font-size=\"13\" text-anchor=\"middle\">Alertmanager</text><text class=\"ts\" x=\"91\" y=\"212\" font-size=\"11\" text-anchor=\"middle\">targets: GET /metrics</text><rect class=\"bxo\" x=\"226\" y=\"56\" width=\"140\" height=\"104\" rx=\"10\"/><text class=\"tk\" x=\"296\" y=\"84\" font-size=\"13\" text-anchor=\"middle\">Prometheus</text><text class=\"ts\" x=\"296\" y=\"108\" font-size=\"11\" text-anchor=\"middle\">scraper</text><text class=\"ts\" x=\"296\" y=\"126\" font-size=\"11\" text-anchor=\"middle\">TSDB</text><text class=\"ts\" x=\"296\" y=\"144\" font-size=\"11\" text-anchor=\"middle\">rules</text><line class=\"ln\" x1=\"224\" y1=\"76\" x2=\"170\" y2=\"48\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"224\" y1=\"108\" x2=\"170\" y2=\"108\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"224\" y1=\"140\" x2=\"170\" y2=\"168\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"197\" y=\"40\" font-size=\"11\" text-anchor=\"middle\">pull</text><rect class=\"bxg\" x=\"420\" y=\"56\" width=\"124\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"482\" y=\"81\" font-size=\"13\" text-anchor=\"middle\">Grafana</text><line class=\"ln\" x1=\"418\" y1=\"76\" x2=\"370\" y2=\"76\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"394\" y=\"68\" font-size=\"11\" text-anchor=\"middle\">PromQL</text><rect class=\"bx\" x=\"420\" y=\"128\" width=\"124\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"482\" y=\"153\" font-size=\"13\" text-anchor=\"middle\">You (UI)</text><line class=\"ln\" x1=\"418\" y1=\"148\" x2=\"370\" y2=\"140\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"296\" y1=\"162\" x2=\"296\" y2=\"236\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"304\" y=\"204\" font-size=\"11\" text-anchor=\"start\">firing alerts</text><rect class=\"bxp\" x=\"216\" y=\"240\" width=\"160\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"296\" y=\"265\" font-size=\"13\" text-anchor=\"middle\">Alertmanager</text></svg>",
+   "diagram_caption": "Prometheus pulls /metrics from each target, stores the samples, and pushes only firing alerts onward.",
+   "worked": {
+    "title": "Count what one label costs",
+    "steps": [
+     {
+      "say": "Start only the services this lesson needs, from the `observability` folder, and keep a request loop running in a second terminal. Compose starts Redis too, because `web` depends on it.",
+      "code": "$ cd observability\n$ docker compose up -d --build web prometheus node-exporter\n$ while true; do curl -s localhost:8000/ > /dev/null; sleep 0.2; done",
+      "lang": "console"
+     },
+     {
+      "say": "Read one metric family straight from the app. One name, three label combinations, so three time series. I had stopped Redis for a few minutes earlier, which is where the 500 line comes from.",
+      "code": "$ curl -s localhost:8000/metrics | grep '^hello_responses_total'\nhello_responses_total{path=\"/\",status=\"200\"} 865.0\nhello_responses_total{path=\"/healthz\",status=\"200\"} 13.0\nhello_responses_total{path=\"/\",status=\"500\"} 48.0",
+      "lang": "console"
+     },
+     {
+      "say": "Ask Prometheus how many `hello_*` series it stores. A small shell function saves typing: it runs `promtool`, the command-line tool inside the Prometheus container, against the server's API.",
+      "code": "$ q() { docker compose exec prometheus promtool query instant http://localhost:9090 \"$1\"; }\n$ q 'count({__name__=~\"hello_.*\"})'\n{} => 44 @[1793338157.211]",
+      "lang": "console"
+     },
+     {
+      "say": "Split that count by metric name. The buckets are the big part: 2 routes (`/` and `/healthz`) times 15 `le` values is 30.",
+      "code": "$ q 'count by (__name__) ({__name__=~\"hello_.*\"})'\nhello_requests_total => 1 @[1793338157.505]\nhello_requests_created => 1 @[1793338157.505]\nhello_responses_total => 3 @[1793338157.505]\nhello_responses_created => 3 @[1793338157.505]\nhello_request_duration_seconds_bucket => 30 @[1793338157.505]\nhello_request_duration_seconds_count => 2 @[1793338157.505]\nhello_request_duration_seconds_sum => 2 @[1793338157.505]\nhello_request_duration_seconds_created => 2 @[1793338157.505]",
+      "lang": "console"
+     },
+     {
+      "say": "Now add one new label value: call a route nobody had called yet, then count again after the next scrape. One request to `/readyz` added 20 series.",
+      "code": "$ curl -s localhost:8000/readyz\n{\"status\":\"ready\"}\n$ q 'count({__name__=~\"hello_.*\"})'\n{} => 64 @[1793338169.071]",
+      "lang": "console"
+     },
+     {
+      "say": "Do the maths for a `user_id` label with 10,000 users on one route, then compare with the whole lab. One careless label would make this single app 90 times bigger than everything Prometheus stores today.",
+      "code": "$ python3 -c \"print(20 * 10000)\"\n200000\n$ q 'prometheus_tsdb_head_series'\nprometheus_tsdb_head_series{instance=\"localhost:9090\", job=\"prometheus\"} => 2177 @[1793338169.53]",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "yaml",
+     "title": "observability/compose.yaml",
+     "src": "# The monitoring lab for Parts 9 and 10: hello-devops plus everything that watches it.\n#\n# Start it from this folder:  docker compose up -d --build\n# Then open:\n#   http://localhost:8000  hello-devops\n#   http://localhost:9090  Prometheus\n#   http://localhost:9093  Alertmanager\n#   http://localhost:3000  Grafana (user admin, password admin)\n# Stop it:                    docker compose down     (add -v to delete the stored data too)\n#\n# Port 8000 is also used by the Day 15 stack in the repo root. Stop that one first.\n\nservices:\n  # The app, built from the Dockerfile in the repo root.\n  web:\n    build: ..\n    # One gunicorn worker process: each process keeps its own counters, and with\n    # two, every scrape would see a different number (Day 42 explains).\n    # Four threads in that process, so one slow request cannot block the\n    # /metrics page that Prometheus scrapes.\n    # \"red_metrics:app\" loads red_metrics.py, which adds status and latency\n    # metrics to the unchanged app.py (Day 44 explains).\n    command:\n      - gunicorn\n      - --bind=0.0.0.0:8000\n      - --workers=1\n      - --threads=4\n      - --no-control-socket\n      - red_metrics:app\n    volumes:\n      - ./red_metrics.py:/app/red_metrics.py:ro\n    environment:\n      REDIS_HOST: redis\n      APP_VERSION: \"1.0.0\"\n    ports:\n      - \"8000:8000\"\n    depends_on:\n      redis:\n        condition: service_healthy\n\n  redis:\n    image: redis:8-alpine\n    healthcheck:\n      test: [\"CMD\", \"redis-cli\", \"ping\"]\n      interval: 5s\n      timeout: 3s\n      retries: 5\n\n  # Scrapes every target, stores the samples, runs the rules.\n  prometheus:\n    image: prom/prometheus:v3.15.1\n    command:\n      - --config.file=/etc/prometheus/prometheus.yml\n      - --storage.tsdb.path=/prometheus\n      - --storage.tsdb.retention.time=7d # keep a week of data (default 15d)\n      - --web.enable-lifecycle # allows: curl -X POST localhost:9090/-/reload\n    volumes:\n      - ./prometheus:/etc/prometheus:ro\n      - prometheus-data:/prometheus\n    ports:\n      - \"9090:9090\"\n\n  # Machine metrics. On a Mac, containers run inside Docker Desktop's Linux VM,\n  # so these numbers describe that VM, not macOS.\n  node-exporter:\n    image: prom/node-exporter:v1.12.1\n    ports:\n      - \"9100:9100\"\n\n  # Receives alerts from Prometheus, groups them and routes them to receivers.\n  alertmanager:\n    image: prom/alertmanager:v0.34.2\n    command:\n      - --config.file=/etc/alertmanager/alertmanager.yml\n      - --storage.path=/alertmanager\n    volumes:\n      - ./alertmanager:/etc/alertmanager:ro\n      - alertmanager-data:/alertmanager # keeps silences across restarts\n    ports:\n      - \"9093:9093\"\n\n  # A stand-in for Slack or PagerDuty: prints each alert it receives.\n  # Read it with: docker compose logs -f webhook\n  webhook:\n    image: python:3.14-slim\n    command: [\"python\", \"-u\", \"/webhook.py\"]\n    volumes:\n      - ./webhook.py:/webhook.py:ro\n\n  # Dashboards (Part 10). The provisioning and dashboards folders come from Day 45.\n  grafana:\n    image: grafana/grafana:13.3.0\n    environment:\n      GF_SECURITY_ADMIN_USER: admin\n      GF_SECURITY_ADMIN_PASSWORD: admin\n    volumes:\n      - ./grafana/provisioning:/etc/grafana/provisioning:ro\n      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro\n    ports:\n      - \"3000:3000\"\n    depends_on:\n      - prometheus\n\nvolumes:\n  prometheus-data:\n  alertmanager-data:",
+     "run": "cd observability && docker compose up -d --build web prometheus node-exporter"
+    },
+    {
+     "lang": "yaml",
+     "title": "observability/prometheus/prometheus.yml",
+     "src": "# Prometheus settings for the monitoring lab (Days 42 to 44).\n# Check this file:  docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml\n# Reload after an edit:  curl -X POST localhost:9090/-/reload\n\nglobal:\n  scrape_interval: 15s     # scrape every target every 15 seconds (default 1m)\n  evaluation_interval: 15s # run the rules every 15 seconds (default 1m)\n\n# Recording and alerting rules (Days 43 and 44). Paths are relative to this file.\nrule_files:\n  - rules/*.yml\n\n# Where to send alerts that fire (Day 44).\nalerting:\n  alertmanagers:\n    - static_configs:\n        - targets: [\"alertmanager:9093\"]\n\n# What to scrape. Each job is a group of targets that do the same work.\n# Prometheus adds two labels to every series it stores:\n#   job=\"<job_name>\" and instance=\"<host:port of the target>\".\nscrape_configs:\n  # Prometheus watches itself.\n  - job_name: prometheus\n    static_configs:\n      - targets: [\"localhost:9090\"]\n\n  # hello-devops (the \"web\" service in compose.yaml).\n  # Metrics: hello_requests_total{path}, from app.py, plus\n  # hello_responses_total{path,status} and hello_request_duration_seconds{path},\n  # from red_metrics.py.\n  - job_name: hello-devops\n    static_configs:\n      - targets: [\"web:8000\"]\n\n  # Machine metrics (CPU, memory, disk, network) from node_exporter.\n  # On a Mac this is Docker Desktop's Linux VM, not macOS itself.\n  - job_name: node\n    static_configs:\n      - targets: [\"node-exporter:9100\"]\n\n  # Alertmanager has its own /metrics page too.\n  - job_name: alertmanager\n    static_configs:\n      - targets: [\"alertmanager:9093\"]",
+     "run": "docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml"
+    },
+    {
+     "lang": "python",
+     "title": "observability/red_metrics.py",
+     "src": "\"\"\"Add RED metrics (rate, errors, duration) to hello-devops without editing app.py.\n\napp.py only counts visits to \"/\" in hello_requests_total. It does not record\nstatus codes or how long a request took. This file imports the unchanged app\nand adds two Flask hooks: one runs before every request, one after it.\n\ncompose.yaml starts gunicorn with \"red_metrics:app\" instead of \"app:app\".\nBoth metrics land in the same registry, so the app's /metrics page shows them.\n\"\"\"\n\nimport time\n\nfrom flask import g, request\nfrom prometheus_client import Counter, Histogram\n\nfrom app import app  # the hello-devops app, unchanged\n\n# Every response, labelled by route and status code (\"200\", \"404\", \"500\").\nRESPONSES = Counter(\n    \"hello_responses_total\",\n    \"HTTP responses sent, by route and status code\",\n    [\"path\", \"status\"],\n)\n\n# How long each request took, in seconds, counted into buckets.\n# No buckets given, so the client's defaults apply: 5 ms up to 10 s.\nDURATION = Histogram(\n    \"hello_request_duration_seconds\",\n    \"Time spent handling a request, in seconds\",\n    [\"path\"],\n)\n\n\n@app.before_request\ndef start_timer():\n    g.start = time.perf_counter()\n\n\n@app.after_request\ndef record(response):\n    # Use the route pattern (\"/\", \"/healthz\"), never the raw URL.\n    # Raw URLs would give one time series per URL anyone ever typed.\n    path = request.url_rule.rule if request.url_rule else \"unmatched\"\n    if path != \"/metrics\":  # do not count Prometheus's own scrapes\n        RESPONSES.labels(path=path, status=str(response.status_code)).inc()\n        DURATION.labels(path=path).observe(time.perf_counter() - g.start)\n    return response",
+     "run": "curl -s localhost:8000/metrics | grep '^hello_'"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "docker compose up -d --build web prometheus node-exporter",
+     "what": "From the observability folder: build the app and start it with Redis, Prometheus and node_exporter."
+    },
+    {
+     "cmd": "docker compose ps",
+     "what": "Check that every service is running."
+    },
+    {
+     "cmd": "curl -s localhost:8000/metrics | grep '^hello_'",
+     "what": "Show only the app's own metric lines, without HELP and TYPE comments."
+    },
+    {
+     "cmd": "curl -s localhost:9100/metrics | grep '^node_load'",
+     "what": "Read node_exporter's load average lines directly."
+    },
+    {
+     "cmd": "open http://localhost:9090/targets",
+     "what": "Open Prometheus at Status, Target health: every target with its state and last error."
+    },
+    {
+     "cmd": "q() { docker compose exec prometheus promtool query instant http://localhost:9090 \"$1\"; }",
+     "what": "Define a shell function q that runs one PromQL query from the terminal."
+    },
+    {
+     "cmd": "q 'up'",
+     "what": "One line per target: 1 if the last scrape worked, 0 if it failed."
+    },
+    {
+     "cmd": "q 'count by (job) ({__name__=~\".+\"})'",
+     "what": "Count the stored series per job."
+    },
+    {
+     "cmd": "q 'prometheus_tsdb_head_series'",
+     "what": "How many series Prometheus holds in memory right now."
+    },
+    {
+     "cmd": "docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml",
+     "what": "Check prometheus.yml for mistakes before you reload."
+    },
+    {
+     "cmd": "curl -X POST localhost:9090/-/reload",
+     "what": "Tell Prometheus to re-read its config without a restart (the lab enables this endpoint)."
+    },
+    {
+     "cmd": "docker compose stop node-exporter",
+     "what": "Stop one target on purpose to watch its up value drop to 0."
+    },
+    {
+     "cmd": "docker compose down",
+     "what": "Stop the stack. Add -v to delete the stored metrics too."
+    }
+   ],
+   "mistake": "Putting an unbounded value in a label: a user ID, an email address, a request ID or the raw URL path. Nothing fails at first, then memory use climbs and queries slow down as the series pile up. Keep labels to small fixed sets such as status code and route pattern, and put per-request details in logs or traces.",
+   "real_world": "At PayFlow, a made-up payments company, each service exposes /metrics and Prometheus finds the pods through Kubernetes service discovery. Their code review checklist asks one question about every new label: how many values can it have? A `merchant_id` label would mean one series per merchant per route per bucket, so merchant-level detail goes into logs instead.",
+   "task": {
+    "title": "Start the lab and explore its targets",
+    "steps": [
+     "Add the three files above to `observability/` in your repo, then start `web`, `prometheus` and `node-exporter` with Compose. Stop the Day 15 stack first if it is still running, because both use port 8000.",
+     "Open Status, then Target health in the Prometheus UI. Find the four jobs. One of them is down: read its error message and explain why it is down today.",
+     "Run `curl -s localhost:8000/metrics` and find one counter, one gauge and one histogram. Write down the `# TYPE` line for each.",
+     "In the Query page, run `up` in the Table tab. Then stop node-exporter with Compose, wait 30 seconds and run it again.",
+     "Start node-exporter again. Run `count by (job) ({__name__=~\".+\"})` and note which job has the most series.",
+     "Change `scrape_interval` in `prometheus.yml` from 15s to 5s, check the file with promtool, reload Prometheus and confirm the new value on the Status, Configuration page.",
+     "Set the interval back to 15s and reload again."
+    ],
+    "hints": [
+     "The down target's error mentions a lookup that failed. Which service in compose.yaml did you not start?",
+     "`process_resident_memory_bytes` is a gauge, and anything ending in `_bucket` belongs to a histogram.",
+     "Reloading needs `curl -X POST`; a plain GET to `/-/reload` is refused."
+    ],
+    "done_when": "Target health shows hello-devops, node and prometheus as UP, you can explain why alertmanager is DOWN, and you have one counter, one gauge and one histogram from the app's page."
+   },
+   "explain_back": {
+    "prompt": "Explain to a teammate in 3 to 4 sentences how a number in app.py ends up stored in Prometheus. Mention the /metrics page, the scrape, labels and what makes one time series different from another.",
+    "answer": "The app keeps counters in memory and prints their current values on its /metrics page in a simple text format. Every 15 seconds Prometheus scrapes that page, adds job and instance labels, and stores one timestamped sample per series. A series is the metric name plus one exact set of label values, so hello_responses_total with status 200 and with status 500 are two series. That is why every new label value costs a new series, and why user IDs never go in labels."
+   },
+   "recap": [
+    "Prometheus pulls: it scrapes each target's /metrics page every scrape interval and records up = 0 when a scrape fails.",
+    "One server scrapes, stores samples in its TSDB, runs rules and answers PromQL; exporters give /metrics pages to things that have none.",
+    "A time series is a metric name plus one exact set of label values; Prometheus adds job and instance.",
+    "Counters only go up, gauges go up and down, histograms count observations into cumulative buckets, summaries cannot be combined.",
+    "Every new label value is a new series, so keep labels to small fixed sets and never use user IDs or raw URLs.",
+    "Data stays on local disk for 15 days by default; Prometheus 3 brought a new UI, UTF-8 names and an OTLP receiver."
+   ],
+   "check": [
+    {
+     "q": "A metric `orders_total` has labels `country` (40 values) and `payment_method` (5 values), and it runs on 3 instances. At most how many series can it create?",
+     "options": [
+      "48",
+      "120",
+      "200",
+      "600"
+     ],
+     "answer": 3,
+     "why": "Series multiply across labels: 40 times 5 times 3 instances is 600."
+    },
+    {
+     "q": "You want to track how many jobs are waiting in a queue right now. Which metric type fits?",
+     "options": [
+      "Gauge",
+      "Counter",
+      "Histogram",
+      "Summary"
+     ],
+     "answer": 0,
+     "why": "Queue length goes up and down, which is exactly what a gauge is for."
+    },
+    {
+     "q": "A nightly backup script runs for 30 seconds and then exits. Prometheus scrapes every minute. What is the usual way to get its result into Prometheus?",
+     "options": [
+      "Scrape it every second so you catch it",
+      "Add a backup_id label to every metric",
+      "Push the result to a Pushgateway at the end of the job",
+      "Write the result into the app's /metrics page by hand"
+     ],
+     "answer": 2,
+     "why": "A short batch job may finish between scrapes, and recording its outcome is the main case the Pushgateway exists for."
+    }
+   ],
+   "interview": [
+    {
+     "q": "Why does Prometheus pull metrics instead of having apps push them?",
+     "a": "With pull, Prometheus knows the full list of targets, so a target that stops answering shows up at once as up = 0. Pull also keeps the app simple: it only holds counters in memory and serves a page, and a slow monitoring server cannot block it. You can debug by opening the same page with curl. Push is still right for short batch jobs, through the Pushgateway, and Prometheus 3 can also accept OTLP pushes from OpenTelemetry."
+    },
+    {
+     "q": "What is cardinality and why does it matter?",
+     "a": "Cardinality is the number of time series a metric creates, which is the product of the number of values of each label. Every series costs memory in the server and work for every query that touches it. A label with unbounded values, such as user IDs or raw URLs, can turn one metric into hundreds of thousands of series and slow or crash Prometheus. I keep labels to small fixed sets and put per-request details in logs or traces."
+    },
+    {
+     "q": "When would you choose a histogram over a summary?",
+     "a": "Almost always, for request latency. A histogram exposes bucket counters, so you can add them up across all instances and then compute a percentile with histogram_quantile. A summary computes percentiles inside each process, and you cannot average percentiles from several processes into a correct total. Summaries can still make sense for one process when you need an exact percentile and never aggregate. The trade-off of a histogram is that its accuracy depends on the bucket limits you choose."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Why does the lab run gunicorn with one worker process and four threads, when the Dockerfile from Day 16 runs two workers? Because of how counters live in memory.\n\nGunicorn starts separate worker processes. Each Python process has its own copy of every counter, and each scrape of `/metrics` is answered by whichever worker is free. I started the plain image with two workers, sent 10 requests at once, and then read `/metrics` six times:\n- `hello_requests_total{path=\"/\"} 3.0`\n- `hello_requests_total{path=\"/\"} 7.0`\n- then 3, 3, 3 and 7 again.\n\nNeither number is the truth (10). Worse, Prometheus sees the counter drop from 7 to 3, treats it as a restart, and `rate()` counts the jump as new requests. Your request rate looks higher than it is, and it jumps around.\n\nThe [Python client docs](https://github.com/prometheus/client_python/blob/master/docs/content/multiprocess/_index.md) say it directly: client libraries assume a threaded model, where all workers share the metrics. You have three fixes:\n- One process per container, with threads for concurrency. The lab does this, and Kubernetes adds more pods when you need more capacity.\n- The client's multiprocess mode: every worker writes to files in a shared folder, and `/metrics` adds them up. It has limits, listed in that doc.\n- A language whose runtime is one process with many threads, such as the JVM. A Spring Boot app has one set of counters however many requests it serves at once.\n\nThe threads matter for a second reason. With one worker and one thread, I froze Redis with `docker compose pause redis`. Every request to `/` then hung for more than 10 seconds while the Redis client waited and retried. The scrape of `/metrics` waited behind them, failed after 10 seconds with `context deadline exceeded`, and `up` went to 0. The app was alive but Prometheus was blind, and the error counters it needed never arrived. With four threads, one thread can answer the scrape while others wait on Redis.\n\nTry the first experiment yourself: `docker run --rm -p 8001:8000 hello-devops:1.0.0` runs the image's own two-worker command. Send a burst of parallel requests with `for i in $(seq 10); do curl -s localhost:8001/ > /dev/null & done`, then read `/metrics` a few times."
+   },
+   "sources": [
+    {
+     "title": "Prometheus: overview and architecture",
+     "url": "https://prometheus.io/docs/introduction/overview/"
+    },
+    {
+     "title": "Prometheus: data model",
+     "url": "https://prometheus.io/docs/concepts/data_model/"
+    },
+    {
+     "title": "Prometheus: metric types",
+     "url": "https://prometheus.io/docs/concepts/metric_types/"
+    },
+    {
+     "title": "Prometheus: storage and retention",
+     "url": "https://prometheus.io/docs/prometheus/latest/storage/"
+    }
+   ]
+  }
+ ],
+ "recap": [
+  "Monitoring watches for known problems; observability lets you ask new questions of metrics, logs, traces and profiles.",
+  "RED (rate, errors, duration) describes a service, USE (utilization, saturation, errors) describes a machine.",
+  "An SLO is a target for an SLI over a window; the error budget is 100% minus the SLO, and the burn rate decides pages and tickets.",
+  "Prometheus pulls each target's /metrics page and stores one series per metric name and label set; up = 0 means a failed scrape.",
+  "Counters need rate() over a range of at least 4 scrape intervals; take the rate first, then sum.",
+  "Latency percentiles come from histogram_quantile over summed bucket rates that keep the le label, and bucket limits set the accuracy.",
+  "Alerting rules wait out their for: time, then Alertmanager groups, routes, inhibits and silences before a receiver is notified.",
+  "Test rules with promtool before they page anyone.",
+  "On Kubernetes, kube-prometheus-stack reads ServiceMonitors and PrometheusRules only when they carry the release label.",
+  "Local storage keeps 15 days by default; remote write to Thanos, Mimir or a hosted service gives long-term history."
+ ],
+ "flashcards": [
+  {
+   "front": "What does up == 0 mean for a target?",
+   "back": "Prometheus's last scrape of it failed: the target is down, unreachable or too slow to answer."
+  },
+  {
+   "front": "What makes two time series different?",
+   "back": "A different metric name or any different label value."
+  },
+  {
+   "front": "Which metric type only goes up?",
+   "back": "A counter. It drops to zero only when the process restarts."
+  },
+  {
+   "front": "Why must you never take rate() of a gauge?",
+   "back": "rate() treats every drop as a counter reset, so a value that goes up and down gives nonsense."
+  },
+  {
+   "front": "Rule of thumb for the range in rate(x[...])?",
+   "back": "At least 4 times the scrape interval, so 1m for a 15s scrape."
+  },
+  {
+   "front": "Rate then sum, or sum then rate?",
+   "back": "Rate first, then sum. Summing raw counters first hides restarts."
+  },
+  {
+   "front": "Which label must survive when you sum histogram buckets for histogram_quantile?",
+   "back": "le, the bucket's upper limit."
+  },
+  {
+   "front": "How do you compute a burn rate?",
+   "back": "The current error ratio divided by the error budget (1 minus the SLO)."
+  },
+  {
+   "front": "Error budget of a 99.9% SLO over 30 days, as full outage?",
+   "back": "43.2 minutes."
+  },
+  {
+   "front": "What does for: 5m do in an alerting rule?",
+   "back": "The condition must stay true for 5 minutes. Until then the alert is pending, not firing."
+  },
+  {
+   "front": "Where do silences live?",
+   "back": "In Alertmanager at run time, made in its UI or with amtool, not in alertmanager.yml."
+  },
+  {
+   "front": "What does an inhibition rule do?",
+   "back": "It mutes some alerts while another one fires, such as tickets while a page fires for the same job."
+  },
+  {
+   "front": "Your ServiceMonitor applies fine but no target appears. First suspect?",
+   "back": "A missing release label for the Helm release, or a selector or port name that does not match the Service."
+  },
+  {
+   "front": "kube-state-metrics or metrics-server: which one does Prometheus scrape for Deployment replica counts?",
+   "back": "kube-state-metrics. metrics-server only serves current CPU and memory to kubectl top and autoscalers."
+  },
+  {
+   "front": "Default Prometheus retention?",
+   "back": "15 days, on local disk, not replicated."
+  },
+  {
+   "front": "When is the Pushgateway the right tool?",
+   "back": "For the result of a short, service-level batch job that may finish between scrapes."
+  }
+ ],
+ "resources": [
+  {
+   "title": "Prometheus: overview and architecture",
+   "url": "https://prometheus.io/docs/introduction/overview/",
+   "kind": "docs",
+   "why": "The official map of the server, exporters, Pushgateway and Alertmanager, with the architecture picture."
+  },
+  {
+   "title": "Prometheus: querying basics",
+   "url": "https://prometheus.io/docs/prometheus/latest/querying/basics/",
+   "kind": "docs",
+   "why": "The reference for selectors, instant and range vectors, offset and the lookback window."
+  },
+  {
+   "title": "Prometheus: query functions",
+   "url": "https://prometheus.io/docs/prometheus/latest/querying/functions/",
+   "kind": "docs",
+   "why": "Every PromQL function with its exact behaviour, including how rate() extrapolates."
+  },
+  {
+   "title": "Prometheus: histograms and summaries",
+   "url": "https://prometheus.io/docs/practices/histograms/",
+   "kind": "docs",
+   "why": "Why histograms usually beat summaries, and the classic histogram_quantile mistakes."
+  },
+  {
+   "title": "Alertmanager: configuration",
+   "url": "https://prometheus.io/docs/alerting/latest/configuration/",
+   "kind": "docs",
+   "why": "The full Alertmanager config reference: routes, receivers, inhibition and timing."
+  },
+  {
+   "title": "Google SRE Workbook: Alerting on SLOs",
+   "url": "https://sre.google/workbook/alerting-on-slos/",
+   "kind": "read",
+   "why": "The chapter that derives the multiwindow, multi-burn-rate alerts used on Day 44, step by step."
+  },
+  {
+   "title": "Google SRE book: Service level objectives",
+   "url": "https://sre.google/sre-book/service-level-objectives/",
+   "kind": "read",
+   "why": "Google's original explanation of SLIs, SLOs and SLAs, with examples of choosing targets."
+  },
+  {
+   "title": "How Prometheus monitoring works (TechWorld with Nana)",
+   "url": "https://www.youtube.com/watch?v=h4Sl21AKiDg",
+   "kind": "watch",
+   "why": "A short, beginner-friendly tour of targets, the pull model, the Pushgateway and Alertmanager."
+  },
+  {
+   "title": "Intro to PromQL (Julius Volz)",
+   "url": "https://www.youtube.com/watch?v=MPN0SLE5YWk",
+   "kind": "watch",
+   "why": "One of Prometheus's creators shows PromQL with live examples."
+  },
+  {
+   "title": "PromLabs YouTube channel (Prometheus monitoring with Julius)",
+   "url": "https://www.youtube.com/@PromLabs",
+   "kind": "watch",
+   "why": "Short videos from Prometheus co-founder Julius Volz on histograms, rates and PromQL details."
+  },
+  {
+   "title": "How exactly does PromQL calculate rates? (PromLabs)",
+   "url": "https://promlabs.com/blog/2021/01/29/how-exactly-does-promql-calculate-rates/",
+   "kind": "read",
+   "why": "Explains exactly why increase() returns fractions and why young series read low."
+  },
+  {
+   "title": "kube-prometheus-stack Helm chart",
+   "url": "https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack",
+   "kind": "docs",
+   "why": "The README and values for kube-prometheus-stack, the usual way to run Prometheus on Kubernetes."
+  }
+ ],
+ "quiz": [
+  {
+   "q": "Prometheus scrapes a target every 30 seconds. What is the smallest sensible range for rate() on its counters?",
+   "options": [
+    "[30s]",
+    "[1m]",
+    "[2m]",
+    "[30m]"
+   ],
+   "answer": 2,
+   "why": "The rule of thumb is at least 4 scrape intervals, so rate() always has several samples to work with: 4 times 30s is 2m."
+  },
+  {
+   "q": "An API answers every request in about 3 ms. Its histogram's first bucket is le=\"0.1\", and the p95 query returns exactly 0.095. Why?",
+   "options": [
+    "The API is much slower than it looks",
+    "Prometheus adds its own network time",
+    "The scrape interval is too long",
+    "Every request is in the first bucket, so the estimate lands at 95% of its limit"
+   ],
+   "answer": 3,
+   "why": "histogram_quantile only knows bucket counts. With all requests in the 0 to 0.1 bucket, it interpolates linearly to 0.95 of 0.1."
+  },
+  {
+   "q": "Which query gives hello-devops's share of failed responses correctly?",
+   "options": [
+    "sum(rate(hello_responses_total{status=~\"5..\"}[5m])) / sum(rate(hello_responses_total[5m]))",
+    "avg(hello_responses_total{status=~\"5..\"}) / avg(hello_responses_total)",
+    "count(hello_responses_total{status=~\"5..\"}) / count(hello_responses_total)",
+    "rate(hello_responses_total{status=~\"5..\"}[10s])"
+   ],
+   "answer": 0,
+   "why": "Take the rate of each counter first, sum, then divide. The others divide raw totals, count series instead of requests, or use a range too short to hold two samples."
+  },
+  {
+   "q": "An alert has for: 10m. Its condition is true for 8 minutes, false for one evaluation, then true again. When does it fire?",
+   "options": [
+    "At 10 minutes after it first became true",
+    "Right away when the condition comes back",
+    "10 minutes after the condition came back",
+    "Never, because Alertmanager drops it"
+   ],
+   "answer": 2,
+   "why": "A false evaluation resets the pending state, so the 10-minute wait starts again from the moment the condition is true again."
+  },
+  {
+   "q": "With kube-prometheus-stack, which object adds your own alerting rules to Prometheus?",
+   "options": [
+    "A ServiceMonitor",
+    "A PrometheusRule with the release label",
+    "A ConfigMap named prometheus-rules",
+    "A PodMonitor"
+   ],
+   "answer": 1,
+   "why": "The Prometheus Operator turns PrometheusRule objects into rule files, but only those its ruleSelector matches, which by default means the release label."
+  },
+  {
+   "q": "Your team wants a year of metrics and one query view across three clusters. What do you add?",
+   "options": [
+    "Thanos or Mimir, fed by sidecars or remote write",
+    "A retention of 365d on each local Prometheus",
+    "A Pushgateway in every cluster",
+    "More recording rules on each server"
+   ],
+   "answer": 0,
+   "why": "Local storage is not replicated and each server sees only its own cluster; Thanos and Mimir keep blocks in object storage and query across all of them."
+  },
+  {
+   "q": "Which alert follows the symptom rule best?",
+   "options": [
+    "Node CPU above 85% for 10 minutes",
+    "More than 2 pod restarts in an hour",
+    "Fast burn: 2% of the monthly error budget spent in one hour",
+    "Memory above 90% on any container"
+   ],
+   "answer": 2,
+   "why": "Error budget burn measures failed requests, which users feel. The others are possible causes that often hurt nobody."
+  },
+  {
+   "q": "On a Mac, the lab's node_exporter container reports node_uname_info with sysname=\"Linux\". Why?",
+   "options": [
+    "node_exporter cannot read macOS at all",
+    "Containers run inside Docker Desktop's Linux VM, so it measures that VM",
+    "Prometheus rewrites the label when it stores it",
+    "The image was built for Linux servers only by mistake"
+   ],
+   "answer": 1,
+   "why": "Docker Desktop runs every container in a small Linux virtual machine, so a containerised exporter sees that VM, not macOS."
+  },
+  {
+   "q": "In the lab's compose.yaml, Prometheus scrapes web:8000. Why does the name web work?",
+   "options": [
+    "Docker adds web to the Mac's /etc/hosts file",
+    "Prometheus has a built-in list of service names",
+    "web is a reserved name for port 8000",
+    "Compose puts all services on one network, and Docker's DNS resolves service names"
+   ],
+   "answer": 3,
+   "why": "Compose creates a user-defined network for the project, and Docker's built-in DNS answers each service name with that container's address.",
+   "from": "Part 3"
+  },
+  {
+   "q": "node_exporter shows node_load1 = 7.6 on a machine with 4 CPUs. In USE terms, what does that suggest?",
+   "options": [
+    "Saturation: more processes want to run than there are CPUs",
+    "Errors: the CPUs are failing",
+    "Low utilization: the CPUs are mostly idle",
+    "Nothing, load average only counts disk reads"
+   ],
+   "answer": 0,
+   "why": "Load average counts processes that are running or waiting (on Linux, also those waiting on disk). Well above the CPU count means work is queuing, which is saturation.",
+   "from": "Part 1"
+  }
+ ]
+}

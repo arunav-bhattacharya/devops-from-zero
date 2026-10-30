@@ -144,7 +144,7 @@ D46 = {
             "refs": [
                 {"title": "Loki docs: log queries", "url": DOC_LOGQ, "kind": "docs"},
                 {"title": "Loki docs: metric queries", "url": DOC_METRICQ, "kind": "docs"},
-                {"title": "How to query Grafana Loki with LogQL (Grafana Labs video)", "url": VID_LOGQL, "kind": "watch"},
+                {"title": "How to query Grafana Loki with LogQL (Nicole van der Hoeven, Grafana developer advocate)", "url": VID_LOGQL, "kind": "watch"},
             ],
         },
         {

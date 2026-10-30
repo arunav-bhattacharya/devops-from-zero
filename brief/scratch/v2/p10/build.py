@@ -71,7 +71,7 @@ D46["worked"] = {
         },
         {
             "say": "Watch the state with a small loop that prints a line only when it changes (times are UTC). Redis stopped at 05:22:30. The rule looks at a 2-minute window and runs every 30 seconds, so the ratio crossed 5% at 05:24:04 and the rule turned Pending. It stayed true for the whole pending period of one minute, and at 05:25:05 it fired.",
-            "code": "$ prev=; while true; do s=$(" + RULES + "); [ \"$s\" != \"$prev\" ] && echo \"$(date -u +%T) $s\" && prev=$s; sleep 5; done\n05:23:49 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"inactive\"}\n05:24:04 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"pending\"}\n05:25:05 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"firing\"}",
+            "code": "$ prev=; while true; do\n    s=$(" + RULES + ")\n    [ \"$s\" != \"$prev\" ] && echo \"$(date -u +%T) $s\" && prev=$s\n    sleep 5\n  done\n05:23:49 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"inactive\"}\n05:24:04 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"pending\"}\n05:25:05 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"firing\"}",
             "lang": "console",
         },
         {
@@ -153,7 +153,7 @@ PART = {
          "why": "One container with Grafana, Loki, Tempo, Prometheus and Pyroscope for trying every signal on a laptop."},
         {"title": "Creating visualizations with Grafana (video)", "url": VID_VIZ, "kind": "watch",
          "why": "A beginner walk-through of building panels and choosing visualizations."},
-        {"title": "How to query Grafana Loki with LogQL (Grafana Labs video)", "url": VID_LOGQL, "kind": "watch",
+        {"title": "How to query Grafana Loki with LogQL (video)", "url": VID_LOGQL, "kind": "watch",
          "why": "Filters, parsers and formatting in LogQL, shown step by step."},
         {"title": "Grafana 13 deep dive from GrafanaCON 2026 (video)", "url": VID_G13, "kind": "watch",
          "why": "What dynamic dashboards, suggested dashboards and the other Grafana 13 features look like in use."},

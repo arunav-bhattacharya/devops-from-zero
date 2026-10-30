@@ -90,7 +90,7 @@
        "kind": "docs"
       },
       {
-       "title": "Creating visualizations with Grafana (Grafana for Beginners series)",
+       "title": "Creating visualizations with Grafana (Lisa Jung, Grafana developer advocate)",
        "url": "https://www.youtube.com/watch?v=yNRnLyVntUw",
        "kind": "watch"
       }
@@ -159,7 +159,7 @@
        "kind": "docs"
       },
       {
-       "title": "The RED Method: how to instrument your services (talk by Tom Wilkie)",
+       "title": "The RED Method: how to instrument your services (Tom Wilkie, GrafanaCon EU 2018)",
        "url": "https://www.youtube.com/watch?v=zk77VS98Em8",
        "kind": "watch"
       }
@@ -519,7 +519,7 @@
        "kind": "docs"
       },
       {
-       "title": "How to query Grafana Loki with LogQL (Grafana Labs video)",
+       "title": "How to query Grafana Loki with LogQL (Nicole van der Hoeven, Grafana developer advocate)",
        "url": "https://www.youtube.com/watch?v=57dQwcmqkpQ",
        "kind": "watch"
       }
@@ -607,7 +607,7 @@
      },
      {
       "say": "Watch the state with a small loop that prints a line only when it changes (times are UTC). Redis stopped at 05:22:30. The rule looks at a 2-minute window and runs every 30 seconds, so the ratio crossed 5% at 05:24:04 and the rule turned Pending. It stayed true for the whole pending period of one minute, and at 05:25:05 it fired.",
-      "code": "$ prev=; while true; do s=$(curl -s -u admin:admin localhost:3000/api/prometheus/grafana/api/v1/rules | jq -c '.data.groups[].rules[] | {name, state}'); [ \"$s\" != \"$prev\" ] && echo \"$(date -u +%T) $s\" && prev=$s; sleep 5; done\n05:23:49 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"inactive\"}\n05:24:04 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"pending\"}\n05:25:05 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"firing\"}",
+      "code": "$ prev=; while true; do\n    s=$(curl -s -u admin:admin localhost:3000/api/prometheus/grafana/api/v1/rules | jq -c '.data.groups[].rules[] | {name, state}')\n    [ \"$s\" != \"$prev\" ] && echo \"$(date -u +%T) $s\" && prev=$s\n    sleep 5\n  done\n05:23:49 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"inactive\"}\n05:24:04 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"pending\"}\n05:25:05 {\"name\":\"HelloErrorRatioHigh\",\"state\":\"firing\"}",
       "lang": "console"
      },
      {
@@ -948,7 +948,7 @@
    "why": "A beginner walk-through of building panels and choosing visualizations."
   },
   {
-   "title": "How to query Grafana Loki with LogQL (Grafana Labs video)",
+   "title": "How to query Grafana Loki with LogQL (video)",
    "url": "https://www.youtube.com/watch?v=57dQwcmqkpQ",
    "kind": "watch",
    "why": "Filters, parsers and formatting in LogQL, shown step by step."

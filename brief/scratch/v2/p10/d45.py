@@ -109,7 +109,7 @@ D45 = {
             "refs": [
                 {"title": "Grafana docs: panel overview", "url": DOC_PANEL, "kind": "docs"},
                 {"title": "Grafana docs: all visualizations", "url": DOC_VIZ, "kind": "docs"},
-                {"title": "Creating visualizations with Grafana (Grafana for Beginners series)", "url": VID_VIZ, "kind": "watch"},
+                {"title": "Creating visualizations with Grafana (Lisa Jung, Grafana developer advocate)", "url": VID_VIZ, "kind": "watch"},
             ],
         },
         {
@@ -202,7 +202,7 @@ D45 = {
             "refs": [
                 {"title": "Grafana docs: dashboard best practices", "url": DOC_BEST, "kind": "docs"},
                 {"title": "Grafana docs: annotate visualizations", "url": DOC_ANNOT, "kind": "docs"},
-                {"title": "The RED Method: how to instrument your services (talk by Tom Wilkie)", "url": VID_RED, "kind": "watch"},
+                {"title": "The RED Method: how to instrument your services (Tom Wilkie, GrafanaCon EU 2018)", "url": VID_RED, "kind": "watch"},
             ],
         },
         {
