@@ -1,0 +1,50 @@
+# Fluent Bit pipeline for the logging lab (Days 47 and 48).
+# Docker's fluentd logging driver sends each line the web container prints.
+# Each record arrives with four fields: log (the line), source (stdout or stderr),
+# container_id and container_name. The tag is hello.<container name>.
+
+service:
+  flush: 1        # send to outputs every second
+  log_level: info
+
+parsers:
+  # Reads a JSON string and turns its keys into fields.
+  - name: json_line
+    format: json
+
+pipeline:
+  inputs:
+    # Listen for the Docker logging driver (the Fluentd "forward" protocol).
+    - name: forward
+      listen: 0.0.0.0
+      port: 24224
+
+  filters:
+    # 1. A Python traceback arrives as many lines. Glue them back into one record.
+    - name: multiline
+      match: 'hello.*'
+      multiline.key_content: log
+      multiline.parser: python
+
+    # 2. If "log" holds JSON (the gunicorn access log), turn it into fields.
+    #    Lines that are not JSON pass through unchanged.
+    - name: parser
+      match: 'hello.*'
+      key_name: log
+      parser: json_line
+      reserve_data: on # keep the other fields (source, container_name, ...)
+
+  outputs:
+    - name: es
+      match: 'hello.*'
+      host: elasticsearch
+      port: 9200
+      logstash_format: on      # one index per day: hello-logs-YYYY.MM.DD, plus an @timestamp field
+      logstash_prefix: hello-logs
+      suppress_type_name: on   # required for Elasticsearch 8 and 9
+      trace_error: on          # print Elasticsearch's answer when it rejects a record
+
+    # Also print every record, so `docker compose logs fluent-bit` shows what leaves.
+    - name: stdout
+      match: '*'
+      format: json_lines

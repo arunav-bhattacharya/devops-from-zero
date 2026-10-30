@@ -1,0 +1,94 @@
+# Centralized logging lab (Day 47): hello-devops -> Fluent Bit -> Elasticsearch -> Kibana.
+#
+# LOCAL LEARNING ONLY. Security is switched off, so anything that can reach
+# port 9200 can read and delete every log. Never run this on a server.
+#
+# Start (from this logging/ folder):  docker compose up -d --build
+# Kibana:                             http://localhost:5601
+# Elasticsearch:                      http://localhost:9200
+# Stop and delete the stored logs:    docker compose down -v
+#
+# Memory: give Docker Desktop at least 6 GB (Settings > Resources). See README.md.
+
+services:
+  elasticsearch:
+    image: elasticsearch:9.5.5 # Docker Hub official image, built by Elastic (see README.md)
+    environment:
+      discovery.type: single-node     # one node: do not look for other nodes to form a cluster
+      xpack.security.enabled: "false" # no passwords and no TLS (lab only)
+      ES_JAVA_OPTS: -Xms1g -Xmx1g     # Java heap: 1 GB, fixed
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    mem_limit: 2g
+    healthcheck:
+      # Healthy once the cluster answers and is not red. Yellow is fine on one node.
+      test: ["CMD-SHELL", "curl -s localhost:9200/_cluster/health | grep -qv '\"status\":\"red\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  kibana:
+    image: kibana:9.5.5 # must be the same version as Elasticsearch
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    mem_limit: 1g
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  fluent-bit:
+    image: fluent/fluent-bit:5.1.5
+    command: ["-c", "/fluent-bit/etc/fluent-bit.yaml"]
+    volumes:
+      - ./fluent-bit.yaml:/fluent-bit/etc/fluent-bit.yaml:ro
+    ports:
+      # The Docker engine itself (not a container) connects here to hand over
+      # the web container's logs, so the port must be published on localhost.
+      - "24224:24224"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  web:
+    build: .. # the hello-devops Dockerfile, one folder up
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_HOST: redis
+      APP_VERSION: "1.0.0"
+    # Same gunicorn as the Dockerfile, plus an access log: one JSON line per request.
+    # %(m)s method, %(U)s path, %(s)s status code, %(M)s duration in milliseconds.
+    command:
+      - gunicorn
+      - --bind=0.0.0.0:8000
+      - --workers=2
+      - --no-control-socket
+      - --access-logfile=-
+      - '--access-logformat={"level":"INFO","logger":"access","method":"%(m)s","path":"%(U)s","status":%(s)s,"duration_ms":%(M)s}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224    # Fluent Bit's published port
+        fluentd-async: "true"               # start even if Fluent Bit is not up yet
+        fluentd-sub-second-precision: "true" # keep the order of lines inside one second
+        tag: hello.{{.Name}}                # Fluent Bit routes on this tag
+    depends_on:
+      redis:
+        condition: service_healthy
+      fluent-bit:
+        condition: service_started
+
+  redis:
+    image: redis:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  es-data:

@@ -1,17 +1,49 @@
 # A read-only identity for an AI agent (or any helper tool) in namespace hello.
-# It can look (get, list, watch) but not change anything, and it cannot read Secrets.
+#
+# This is RBAC, not a Kyverno policy: RBAC decides WHO may do WHAT.
+# The Role lists every allowed action. It has no wildcards ("*"), so it cannot
+# grow by itself when new resource types are added to the cluster.
+#
+# The agent can look at Pods, their logs, events and workloads.
+# It cannot read Secrets, open a shell in a Pod (pods/exec), or change anything.
+#
 # Apply:      kubectl apply -f policy/ai-agent-readonly.yaml
+# Test:       kubectl auth can-i --list -n hello --as=system:serviceaccount:hello:ai-agent
 # Get token:  kubectl -n hello create token ai-agent --duration=1h
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ai-agent
   namespace: hello
+# No Pod runs as this account, so never mount its token into a Pod.
+automountServiceAccountToken: false
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ai-agent-read
+  namespace: hello
+rules:
+  # What you look at when you debug: Pods, their logs, events, Services and settings.
+  - apiGroups: [""]
+    resources: [pods, pods/log, events, services, configmaps]
+    verbs: [get, list, watch]
+  - apiGroups: [events.k8s.io]
+    resources: [events]
+    verbs: [get, list, watch]
+  # The workloads that create the Pods, and the autoscaler.
+  - apiGroups: [apps]
+    resources: [deployments, replicasets]
+    verbs: [get, list, watch]
+  - apiGroups: [autoscaling]
+    resources: [horizontalpodautoscalers]
+    verbs: [get, list, watch]
+---
+# Give the Role to the ServiceAccount, in namespace hello only.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: ai-agent-view
+  name: ai-agent-read
   namespace: hello
 subjects:
   - kind: ServiceAccount
@@ -19,5 +51,5 @@ subjects:
     namespace: hello
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: view # built in: read most things in the namespace, but not Secrets
+  kind: Role
+  name: ai-agent-read

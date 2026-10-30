@@ -1,33 +1,63 @@
-# Kyverno policy: every container image needs a fixed tag, and never :latest.
-# Apply: kubectl apply -f policy/disallow-latest-tag.yaml
+# Kyverno policy: every container image needs a fixed tag or a digest, and never :latest.
+#
+# Type: ValidatingPolicy (policies.kyverno.io/v1), the CEL-based type.
+# The older ClusterPolicy type is deprecated since Kyverno 1.19, so the course does not use it.
+# Scope: only namespace hello.
+#
+# Apply:  kubectl apply -f policy/disallow-latest-tag.yaml
+# Check:  kubectl get validatingpolicies
+# Try it: kubectl -n hello run test --image=nginx:latest   (Kyverno rejects it)
 apiVersion: policies.kyverno.io/v1
 kind: ValidatingPolicy
 metadata:
   name: disallow-latest-tag
 spec:
-  # Deny = block the request. Audit = allow it, but record a failure in a report.
+  # Deny = reject the request. Audit = allow it, but record a failure in a PolicyReport.
   validationActions:
     - Deny
-  # Check Pods only in namespace hello, our app's namespace.
   matchConstraints:
+    # Kubernetes puts this label on every namespace, so it selects namespace hello only.
     namespaceSelector:
       matchLabels:
         kubernetes.io/metadata.name: hello
+    # Check Pods, and also the workloads that create Pods.
+    # Then a bad Deployment fails at "kubectl apply" time, not later in a ReplicaSet event.
     resourceRules:
       - apiGroups: [""]
         apiVersions: [v1]
         operations: [CREATE, UPDATE]
         resources: [pods]
-  # Also check Deployments, so a bad Deployment fails at kubectl apply time.
-  autogen:
-    podControllers:
-      controllers:
-        - deployments
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets, daemonsets]
+      - apiGroups: [batch]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [jobs, cronjobs]
+  variables:
+    # Find the Pod spec inside the object:
+    # a CronJob has it at spec.jobTemplate.spec.template.spec,
+    # a Deployment, StatefulSet, DaemonSet or Job at spec.template.spec,
+    # and a Pod at spec.
+    - name: podSpec
+      expression: >-
+        object.spec.?jobTemplate.?spec.?template.?spec.orValue(
+        object.spec.?template.?spec.orValue(object.spec))
+    # All containers, including init containers.
+    - name: containers
+      expression: >-
+        variables.podSpec.containers +
+        variables.podSpec.?initContainers.orValue([])
   validations:
-    # The part after the last "/" must contain ":" (a tag) or the image uses "@" (a digest).
+    # Look only at the part after the last "/". It must contain ":" (a tag),
+    # or the image must use "@" (a digest). The "/" matters: in
+    # localhost:5000/hello-devops the ":" belongs to the registry port, not a tag.
     - expression: >-
-        object.spec.containers.all(c,
-        c.image.substring(c.image.lastIndexOf('/') + 1).contains(':') || c.image.contains('@'))
-      message: "Every image needs a tag, for example hello-devops:1.0.0."
-    - expression: "object.spec.containers.all(c, !c.image.endsWith(':latest'))"
-      message: "The :latest tag is not allowed. Use a fixed version tag."
+        variables.containers.all(c,
+        c.image.substring(c.image.lastIndexOf('/') + 1).contains(':') ||
+        c.image.contains('@'))
+      message: "Every image needs a tag or a digest, for example hello-devops:1.2.0."
+    - expression: >-
+        variables.containers.all(c, !c.image.endsWith(':latest'))
+      message: "The :latest tag is not allowed. Use a fixed version tag, for example 1.2.0."
