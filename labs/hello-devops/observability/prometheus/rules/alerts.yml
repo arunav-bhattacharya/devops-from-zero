@@ -1,0 +1,45 @@
+# Alerting rules (Day 44). Test them:
+#   docker compose exec prometheus promtool test rules /etc/prometheus/tests/alerts_test.yml
+#
+# The SLO from Day 41: 99.9% of hello-devops responses are not 5xx, over 30 days.
+# Error budget = 0.1% (0.001). Burn rate 14.4 spends 2% of the budget in 1 hour;
+# burn rate 6 spends 5% in 6 hours. The lab uses short "for" times so you can
+# watch alerts fire within minutes.
+groups:
+  - name: hello-devops-alerts
+    rules:
+      # Symptom: Prometheus cannot reach the app at all.
+      - alert: HelloDown
+        expr: up{job="hello-devops"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "hello-devops at {{ $labels.instance }} is down"
+          description: "Prometheus has not been able to scrape {{ $labels.instance }} for 1 minute."
+
+      # Symptom: users get errors fast enough to burn 2% of the budget per hour.
+      - alert: HelloErrorBudgetFastBurn
+        expr: |
+          job:hello_responses_errors:ratio_rate1h{job="hello-devops"} > (14.4 * 0.001)
+          and
+          job:hello_responses_errors:ratio_rate5m{job="hello-devops"} > (14.4 * 0.001)
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of hello-devops requests fail (fast burn)"
+          description: "At this rate the 30-day error budget is gone in about 2 days."
+
+      # Symptom: a slower burn. Worth a ticket for working hours, not a page.
+      - alert: HelloErrorBudgetSlowBurn
+        expr: |
+          job:hello_responses_errors:ratio_rate6h{job="hello-devops"} > (6 * 0.001)
+          and
+          job:hello_responses_errors:ratio_rate30m{job="hello-devops"} > (6 * 0.001)
+        for: 2m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of hello-devops requests fail (slow burn)"
+          description: "At this rate the 30-day error budget is gone in about 5 days."

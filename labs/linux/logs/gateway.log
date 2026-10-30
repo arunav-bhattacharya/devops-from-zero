@@ -1,0 +1,7 @@
+2026-10-30T09:06:10Z INFO  gateway req=6b1d2e GET /api/products -> checkout-api 200 19ms
+2026-10-30T09:06:18Z INFO  gateway req=7f3a9c POST /api/checkout -> checkout-api
+2026-10-30T09:06:24Z ERROR gateway req=7f3a9c upstream checkout-api answered 504 after 6013ms
+2026-10-30T09:07:02Z INFO  gateway req=3b4c5d GET /api/orders/1001 -> checkout-api 200 23ms
+2026-10-30T09:08:45Z INFO  gateway req=6e7f8a POST /api/checkout -> checkout-api
+2026-10-30T09:08:46Z INFO  gateway req=6e7f8a POST /api/checkout -> checkout-api 200 813ms
+2026-10-30T09:11:37Z ERROR gateway req=9d0e1f upstream checkout-api answered 500 after 46ms

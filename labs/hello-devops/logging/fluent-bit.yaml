@@ -12,6 +12,22 @@ parsers:
   - name: json_line
     format: json
 
+multiline_parsers:
+  # hello-devops prints two kinds of first lines: gunicorn and Flask messages
+  # start with "[" (a timestamp) and access log lines start with "{".
+  # Any other line (traceback frames, ^^^ markers, blank lines) belongs to
+  # the event above it.
+  - name: hello_multiline
+    type: regex
+    flush_timeout: 1000
+    rules:
+      - state: start_state
+        regex: '/^[\[{]/'
+        next_state: cont
+      - state: cont
+        regex: '/^(?![\[{])/'
+        next_state: cont
+
 pipeline:
   inputs:
     # Listen for the Docker logging driver (the Fluentd "forward" protocol).
@@ -21,10 +37,12 @@ pipeline:
 
   filters:
     # 1. A Python traceback arrives as many lines. Glue them back into one record.
+    #    (Fluent Bit's built-in "python" parser misses the ^^^ lines that
+    #    Python 3.11 and later print, so we use our own rules above.)
     - name: multiline
       match: 'hello.*'
       multiline.key_content: log
-      multiline.parser: python
+      multiline.parser: hello_multiline
 
     # 2. If "log" holds JSON (the gunicorn access log), turn it into fields.
     #    Lines that are not JSON pass through unchanged.

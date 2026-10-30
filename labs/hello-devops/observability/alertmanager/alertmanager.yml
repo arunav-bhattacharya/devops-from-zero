@@ -1,0 +1,32 @@
+# Alertmanager settings for the monitoring lab (Day 44).
+# Check this file:  docker compose exec alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
+
+# The routing tree: every alert enters at the top "route" and walks down.
+route:
+  receiver: tickets # default: anything no child route matches goes here
+  group_by: ["alertname", "job"] # one notification per alert name and job
+  group_wait: 10s # wait for more alerts of a new group before the first send (default 30s)
+  group_interval: 1m # wait before sending changes to a group already sent (default 5m)
+  repeat_interval: 1h # resend an alert that is still firing (default 4h)
+  routes:
+    - matchers: ['severity="page"']
+      receiver: pager
+
+# Where notifications go. In real life: PagerDuty, Slack, email, ...
+# Here both go to the small webhook service, which prints them.
+receivers:
+  - name: pager
+    webhook_configs:
+      - url: http://webhook:5001/pager
+        send_resolved: true # also tell us when the alert stops
+  - name: tickets
+    webhook_configs:
+      - url: http://webhook:5001/tickets
+        send_resolved: true
+
+# While a page fires for a job, mute ticket alerts for the same job.
+# The page already gets a human's attention, so the ticket is noise.
+inhibit_rules:
+  - source_matchers: ['severity="page"']
+    target_matchers: ['severity="ticket"']
+    equal: ["job"]

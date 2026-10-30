@@ -1,0 +1,42 @@
+# Alerting and recording rules for hello-devops on Kubernetes (Day 44).
+# Needs kube-prometheus-stack (see values.yaml). The Prometheus Operator
+# turns this object into a rule file and loads it into Prometheus.
+# Apply: kubectl apply -f observability/prometheusrule.yaml
+#
+# On Kubernetes the pods run the image's default command, so only
+# hello_requests_total{path} and up exist (no red_metrics.py here).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hello-devops
+  namespace: hello
+  labels:
+    # Like ServiceMonitors, rules are only read when they carry the
+    # release label of the "monitoring" Helm release.
+    release: monitoring
+spec:
+  groups:
+    - name: hello-devops
+      rules:
+        # Requests per second across all pods.
+        - record: namespace_job:hello_requests:rate5m
+          expr: sum by (namespace, job) (rate(hello_requests_total{job="hello-devops"}[5m]))
+
+        # No pod answers its scrape. A dead pod leaves the target list,
+        # so "up == 0" alone would miss this case; absent() catches it.
+        - alert: HelloNoPodsUp
+          expr: absent(up{job="hello-devops", namespace="hello"} == 1)
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "No hello-devops pod in namespace hello can be scraped"
+
+        # One pod is still listed but does not answer its scrape.
+        - alert: HelloPodNotScraped
+          expr: up{job="hello-devops", namespace="hello"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.pod }} has not answered a scrape for 5 minutes"

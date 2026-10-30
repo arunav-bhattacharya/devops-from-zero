@@ -1,0 +1,10 @@
+2026-10-30T09:05:00Z INFO  checkout-api req=b52d18 GET /healthz 200 3ms
+2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c POST /api/checkout started for cart 5521
+2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c calling payments-api: charge 59.90 EUR
+2026-10-30T09:06:21Z WARN  checkout-api req=7f3a9c payments-api answered slowly: 2900ms
+2026-10-30T09:06:24Z ERROR checkout-api req=7f3a9c timeout talking to payments-api after 3000ms
+2026-10-30T09:06:24Z INFO  checkout-api req=7f3a9c POST /api/checkout 504 6012ms
+2026-10-30T09:07:02Z INFO  checkout-api req=3b4c5d GET /api/orders/1001 200 22ms
+2026-10-30T09:08:45Z WARN  checkout-api req=6e7f8a retrying after error from payments-api (attempt 1 of 3)
+2026-10-30T09:08:46Z INFO  checkout-api req=6e7f8a POST /api/checkout 200 812ms
+2026-10-30T09:11:37Z ERROR checkout-api req=9d0e1f NullPointerException in CartService.total

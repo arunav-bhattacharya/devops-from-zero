@@ -1,8 +1,20 @@
-# Dependabot opens pull requests when the actions in .github/workflows
-# have a newer version. It also updates SHA pins and their comments.
+# Dependabot opens pull requests when the actions you use have a newer
+# version. It also updates SHA pins and the version comments next to them.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directory: "/"
+    # "/" covers .github/workflows. A composite action in its own folder
+    # (Day 20) must be listed too, or Dependabot never looks inside it.
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: "weekly"
+    # Suggest a new release only after it is 7 days old, so a broken or
+    # bad release has time to be noticed before it reaches you.
+    cooldown:
+      default-days: 7
+    # One pull request for all action updates, instead of one per action.
+    groups:
+      actions:
+        patterns: ["*"]

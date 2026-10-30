@@ -1,0 +1,24 @@
+# A composite action: a few steps bundled into one, used as a single step.
+# ci.yml calls it with: uses: ./.github/actions/setup-app (after checkout).
+name: Set up hello-devops
+description: Install Python with a pip cache, then install the app and its test tools.
+
+inputs:
+  python-version:
+    description: Python version to install, for example "3.14"
+    required: false
+    default: "3.14"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python (with a pip cache)
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+        cache-dependency-path: requirements*.txt
+    - name: Install dependencies
+      # A run step inside a composite action must name its shell.
+      shell: bash
+      run: pip install -r requirements-dev.txt

@@ -1,0 +1,9 @@
+# Keep the build context small: Docker sends all of it to the builder.
+.git
+.github
+.idea
+*.md
+# Build output and local caches (at any depth). The image builds its own.
+**/build
+**/.gradle
+**/.kotlin

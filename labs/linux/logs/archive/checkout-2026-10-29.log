@@ -1,0 +1,6 @@
+2026-10-29T17:40:02Z INFO  checkout-api req=91aa20 GET /api/cart 200 30ms
+2026-10-29T17:41:15Z ERROR checkout-api req=92bb31 database connection refused: orders-db:5432
+2026-10-29T17:41:16Z INFO  checkout-api req=92bb31 retrying database connection (attempt 2 of 3)
+2026-10-29T17:41:18Z INFO  checkout-api req=92bb31 database connection restored
+2026-10-29T17:55:47Z ERROR checkout-api req=93cc42 timeout talking to payments-api after 3000ms
+2026-10-29T18:02:09Z INFO  checkout-api req=94dd53 POST /api/checkout 200 702ms

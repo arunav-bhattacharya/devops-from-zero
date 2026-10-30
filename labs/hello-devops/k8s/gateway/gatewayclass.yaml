@@ -1,4 +1,4 @@
-# Which controller runs our Gateways: Envoy Gateway.
+# Which controller runs our Gateways: Envoy Gateway. Cluster-wide, so no namespace.
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:

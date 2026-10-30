@@ -1,0 +1,106 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "metadata": {
+        "name": "checkout-api-7d9f8c6b5-x2k4p",
+        "namespace": "shop",
+        "labels": {
+          "app": "checkout-api"
+        }
+      },
+      "spec": {
+        "nodeName": "node-2"
+      },
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [
+          {
+            "name": "checkout-api",
+            "image": "ghcr.io/example/checkout-api:1.4.1",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {
+                "startedAt": "2026-10-30T08:55:12Z"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "checkout-api-7d9f8c6b5-q8n2m",
+        "namespace": "shop",
+        "labels": {
+          "app": "checkout-api"
+        }
+      },
+      "spec": {
+        "nodeName": "node-2"
+      },
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [
+          {
+            "name": "checkout-api",
+            "image": "ghcr.io/example/checkout-api:1.4.1",
+            "ready": true,
+            "restartCount": 1,
+            "state": {
+              "running": {
+                "startedAt": "2026-10-30T08:55:12Z"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "payments-api-5c7d9b8f4-zt6wd",
+        "namespace": "shop",
+        "labels": {
+          "app": "payments-api"
+        }
+      },
+      "spec": {
+        "nodeName": "node-2"
+      },
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [
+          {
+            "name": "payments-api",
+            "image": "ghcr.io/example/payments-api:1.4.1",
+            "ready": false,
+            "restartCount": 14,
+            "state": {
+              "waiting": {
+                "reason": "CrashLoopBackOff"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "orders-worker-6f8b7c9d2-m4r7s",
+        "namespace": "shop",
+        "labels": {
+          "app": "orders-worker"
+        }
+      },
+      "spec": {
+        "nodeName": null
+      },
+      "status": {
+        "phase": "Pending",
+        "containerStatuses": []
+      }
+    }
+  ]
+}

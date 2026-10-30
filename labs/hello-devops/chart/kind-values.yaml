@@ -1,4 +1,4 @@
-# Values for the local kind cluster (Day 19). Use them with:
+# Values for the local kind cluster (Day 37). Use them with:
 #   helm install hello chart/hello-devops -n hello-helm --create-namespace -f chart/kind-values.yaml
 # Pass the same file again on every helm upgrade, so no setting is lost.
 greeting: "Hello from Helm on kind!"

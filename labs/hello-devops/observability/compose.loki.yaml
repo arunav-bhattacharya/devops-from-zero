@@ -1,0 +1,52 @@
+# Adds logs to the monitoring lab (Day 46). Use it on top of compose.yaml:
+#
+#   docker compose -f compose.yaml -f compose.loki.yaml up -d
+#
+# Compose merges the two files: new services are added, and settings for a
+# service that already exists (web) are merged into it.
+#   http://localhost:3100/ready  Loki
+#   http://localhost:12345       Alloy UI (its pipeline, live)
+# Stop:  docker compose -f compose.yaml -f compose.loki.yaml down   (add -v to delete stored logs)
+
+services:
+  # Stores log lines. Indexes only their labels.
+  loki:
+    image: grafana/loki:3.7.9
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    volumes:
+      - ./loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+
+  # Collects container logs from Docker and pushes them to Loki.
+  alloy:
+    image: grafana/alloy:v1.21.3
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345 # the Alloy UI
+      - --storage.path=/var/lib/alloy/data # remembers how far it read each log
+      - /etc/alloy/config.alloy
+    environment:
+      COMPOSE_PROJECT: ${COMPOSE_PROJECT_NAME} # config.alloy only reads this project's containers
+    volumes:
+      - ./loki/config.alloy:/etc/alloy/config.alloy:ro
+      # Docker's API, to list containers and read their logs. On a Mac this
+      # needs "Allow the default Docker socket to be used" (Day 2).
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "12345:12345"
+    depends_on:
+      - loki
+
+  # Turn on gunicorn's access log: one JSON line per request, same format as
+  # the logging lab (Day 47). %(m)s method, %(U)s path, %(s)s status code,
+  # %(M)s duration in milliseconds. Gunicorn reads extra flags from this variable.
+  web:
+    environment:
+      GUNICORN_CMD_ARGS: >-
+        --access-logfile=-
+        '--access-logformat={"level":"INFO","logger":"access","method":"%(m)s","path":"%(U)s","status":%(s)s,"duration_ms":%(M)s}'
+
+volumes:
+  loki-data:

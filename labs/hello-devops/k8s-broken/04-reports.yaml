@@ -1,0 +1,39 @@
+# reports: builds the daily sales report.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reports
+  namespace: debug-lab
+  labels:
+    app: reports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reports
+  template:
+    metadata:
+      labels:
+        app: reports
+    spec:
+      containers:
+        - name: web
+          image: hello-devops:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: GREETING
+              value: "Daily report"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 40Mi
+            limits:
+              memory: 40Mi

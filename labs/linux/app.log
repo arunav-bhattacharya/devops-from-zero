@@ -1,0 +1,37 @@
+2026-10-30T09:00:01Z INFO  checkout-api req=- server started on port 8000
+2026-10-30T09:00:01Z INFO  checkout-api req=- connected to database orders-db:5432
+2026-10-30T09:00:05Z INFO  checkout-api req=a41c07 GET /healthz 200 2ms
+2026-10-30T09:01:12Z INFO  checkout-api req=4d5e6f GET /api/cart 200 34ms
+2026-10-30T09:01:13Z INFO  checkout-api req=7a8b9c POST /api/cart/items 201 51ms
+2026-10-30T09:02:40Z WARN  checkout-api req=2c3d4e slow query took 1200ms: SELECT * FROM carts
+2026-10-30T09:03:05Z INFO  checkout-api req=5f6a7b GET /api/products 200 18ms
+2026-10-30T09:04:30Z ERROR checkout-api req=8e9f0a database connection refused: orders-db:5432
+2026-10-30T09:04:31Z INFO  checkout-api req=8e9f0a retrying database connection (attempt 2 of 3)
+2026-10-30T09:04:33Z INFO  checkout-api req=8e9f0a database connection restored
+2026-10-30T09:05:00Z INFO  checkout-api req=b52d18 GET /healthz 200 3ms
+2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c POST /api/checkout started for cart 5521
+2026-10-30T09:06:21Z WARN  checkout-api req=7f3a9c payments-api answered slowly: 2900ms
+2026-10-30T09:06:24Z ERROR checkout-api req=7f3a9c timeout talking to payments-api after 3000ms
+2026-10-30T09:06:24Z INFO  checkout-api req=7f3a9c POST /api/checkout 504 6012ms
+2026-10-30T09:07:02Z INFO  checkout-api req=3b4c5d GET /api/orders/1001 200 22ms
+2026-10-30T09:08:45Z WARN  checkout-api req=6e7f8a retrying after error from payments-api (attempt 1 of 3)
+2026-10-30T09:08:46Z INFO  checkout-api req=6e7f8a POST /api/checkout 200 812ms
+2026-10-30T09:10:00Z INFO  checkout-api req=c63e29 GET /healthz 200 2ms
+2026-10-30T09:11:37Z ERROR checkout-api req=9d0e1f NullPointerException in CartService.total
+    at com.shop.checkout.CartService.total(CartService.kt:42)
+    at com.shop.checkout.CheckoutHandler.handle(CheckoutHandler.kt:17)
+2026-10-30T09:11:37Z INFO  checkout-api req=9d0e1f POST /api/checkout 500 45ms
+2026-10-30T09:12:10Z INFO  checkout-api req=2a3b4c GET /api/cart 200 31ms
+2026-10-30T09:13:55Z WARN  checkout-api req=- disk usage at 85% on /var/log
+2026-10-30T09:15:00Z INFO  checkout-api req=d74f3a GET /healthz 200 2ms
+2026-10-30T09:16:20Z INFO  checkout-api req=5c6d7e GET /api/products?page=2 200 20ms
+2026-10-30T09:17:42Z ERROR checkout-api req=8f9a0b payment declined: card expired (code 2001)
+2026-10-30T09:17:42Z INFO  checkout-api req=8f9a0b POST /api/checkout 402 230ms
+2026-10-30T09:18:03Z INFO  checkout-api req=1c2d3e GET /api/orders 200 1200ms
+2026-10-30T09:20:00Z INFO  checkout-api req=e85a4b GET /healthz 200 3ms
+2026-10-30T09:21:30Z INFO  checkout-api req=- received SIGTERM, finishing 2 open requests
+2026-10-30T09:21:31Z INFO  checkout-api req=- shutdown complete
+2026-10-30T09:21:40Z INFO  checkout-api req=- server started on port 8000
+2026-10-30T09:21:41Z INFO  checkout-api req=- connected to database orders-db:5432
+2026-10-30T09:22:15Z INFO  checkout-api req=f96b5c GET /healthz 200 2ms
+2026-10-30T09:23:08Z INFO  checkout-api req=0a1b2c POST /api/checkout 200 640ms

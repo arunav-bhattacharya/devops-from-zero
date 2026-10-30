@@ -1,0 +1,36 @@
+# Recording rules (Day 43): Prometheus runs each expr every 15 seconds and
+# stores the result as a new series named after "record".
+# Names follow level:metric:operations, for example job:hello_responses:rate5m.
+groups:
+  - name: hello-devops-recording
+    rules:
+      # Rate: requests per second, per job.
+      - record: job:hello_responses:rate5m
+        expr: sum by (job) (rate(hello_responses_total[5m]))
+
+      # Errors: the share of responses with a 5xx status, over four windows.
+      # The SLO alerts in alerts.yml compare a long and a short window.
+      - record: job:hello_responses_errors:ratio_rate5m
+        expr: |
+          sum by (job) (rate(hello_responses_total{status=~"5.."}[5m]))
+          /
+          sum by (job) (rate(hello_responses_total[5m]))
+      - record: job:hello_responses_errors:ratio_rate30m
+        expr: |
+          sum by (job) (rate(hello_responses_total{status=~"5.."}[30m]))
+          /
+          sum by (job) (rate(hello_responses_total[30m]))
+      - record: job:hello_responses_errors:ratio_rate1h
+        expr: |
+          sum by (job) (rate(hello_responses_total{status=~"5.."}[1h]))
+          /
+          sum by (job) (rate(hello_responses_total[1h]))
+      - record: job:hello_responses_errors:ratio_rate6h
+        expr: |
+          sum by (job) (rate(hello_responses_total{status=~"5.."}[6h]))
+          /
+          sum by (job) (rate(hello_responses_total[6h]))
+
+      # Duration: the 95th percentile latency in seconds, per job.
+      - record: job:hello_request_duration_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (job, le) (rate(hello_request_duration_seconds_bucket[5m])))

@@ -1,0 +1,41 @@
+name: hello
+
+# Run on every push to any branch, and from a button in the Actions tab.
+on:
+  push:
+  workflow_dispatch:
+
+# Workflow-level env: every job and step can read it.
+env:
+  GREETING: Hello from GitHub Actions
+
+jobs:
+  say-hello:
+    runs-on: ubuntu-latest
+    # Job-level env: only steps in this job can read it.
+    env:
+      JOB_NOTE: I run on a fresh virtual machine
+    steps:
+      - name: Print facts about this run
+        # Step-level env: copy context values into plain shell variables.
+        env:
+          BRANCH: ${{ github.ref_name }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          echo "$GREETING"
+          echo "$JOB_NOTE"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch or tag: $BRANCH"
+          echo "Started by: $EVENT"
+      - name: Look around the runner
+        run: |
+          uname -sm
+          python3 --version
+          docker --version
+
+  # A second job. It runs at the same time, on an arm64 machine like your Mac.
+  on-arm:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Which CPU is this?
+        run: uname -sm

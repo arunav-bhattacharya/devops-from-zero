@@ -1,0 +1,50 @@
+# Unit tests for the alerting rules (Day 44). Run:
+#   docker compose exec prometheus promtool test rules /etc/prometheus/tests/alerts_test.yml
+# promtool feeds in made-up series, runs the rules, and compares the alerts.
+rule_files:
+  - ../rules/recording.yml
+  - ../rules/alerts.yml
+
+evaluation_interval: 15s
+
+tests:
+  # The app stops answering at minute 3. HelloDown must wait 1 minute ("for: 1m").
+  - interval: 1m
+    input_series:
+      - series: 'up{job="hello-devops", instance="web:8000"}'
+        values: "1 1 1 0 0 0"
+    alert_rule_test:
+      - eval_time: 3m # just went down: pending, not firing yet
+        alertname: HelloDown
+        exp_alerts: []
+      - eval_time: 5m # down for 2 minutes: firing
+        alertname: HelloDown
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              job: hello-devops
+              instance: web:8000
+            exp_annotations:
+              summary: "hello-devops at web:8000 is down"
+              description: "Prometheus has not been able to scrape web:8000 for 1 minute."
+
+  # 5 good requests per second for 90 minutes. From minute 61, 1 failure per second.
+  - interval: 1m
+    input_series:
+      - series: 'hello_responses_total{job="hello-devops", instance="web:8000", path="/", status="200"}'
+        values: "0+300x90"
+      - series: 'hello_responses_total{job="hello-devops", instance="web:8000", path="/", status="500"}'
+        values: "0x60 60+60x29"
+    alert_rule_test:
+      - eval_time: 60m # no errors yet
+        alertname: HelloErrorBudgetFastBurn
+        exp_alerts: []
+      - eval_time: 75m # errors for 15 minutes: the fast burn alert fires
+        alertname: HelloErrorBudgetFastBurn
+        exp_alerts:
+          - exp_labels:
+              severity: page
+              job: hello-devops
+            exp_annotations:
+              summary: "4.762% of hello-devops requests fail (fast burn)"
+              description: "At this rate the 30-day error budget is gone in about 2 days."

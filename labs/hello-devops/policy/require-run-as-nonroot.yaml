@@ -52,10 +52,11 @@ spec:
       expression: >-
         variables.podSpec.?securityContext.?runAsNonRoot.orValue(false)
   validations:
-    # Pass when every container ends up with runAsNonRoot: true, either its own
-    # setting or the one inherited from the Pod. A container that sets false fails,
-    # even when the Pod says true.
+    # Pass when the Pod does not say false, and every container ends up with
+    # runAsNonRoot: true, either its own setting or the one inherited from the Pod.
+    # A container that sets false fails, even when the Pod says true.
     - expression: >-
+        variables.podSpec.?securityContext.?runAsNonRoot.orValue(true) == true &&
         variables.containers.all(c,
         c.?securityContext.?runAsNonRoot.orValue(variables.podNonRoot) == true)
       message: >-

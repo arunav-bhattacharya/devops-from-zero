@@ -1,0 +1,11 @@
+# During planned work, such as kubectl drain, at most one hello-devops Pod may be down at a time.
+# It does not protect against unplanned failures, such as a node crashing.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hello-devops
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: hello-devops

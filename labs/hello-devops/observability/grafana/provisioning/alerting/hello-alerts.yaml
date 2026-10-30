@@ -1,0 +1,72 @@
+# Grafana-managed alerting for the monitoring lab (Day 46): one alert rule,
+# one contact point and the notification policy tree, all from this file.
+# Grafana loads it at start. After an edit, reload without a restart:
+#   curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/alerting/reload
+# You can't edit these in the UI: the file is the source of truth.
+apiVersion: 1
+
+# Where notifications go: the same webhook service Alertmanager uses (Day 44).
+# Read them with: docker compose logs -f webhook
+contactPoints:
+  - orgId: 1
+    name: lab-webhook
+    receivers:
+      - uid: lab-webhook
+        type: webhook
+        settings:
+          url: http://webhook:5001/grafana
+          httpMethod: POST
+
+# How notifications are routed. This replaces Grafana's whole policy tree:
+# every alert goes to lab-webhook, grouped by folder and alert name.
+policies:
+  - orgId: 1
+    receiver: lab-webhook
+    group_by: ["grafana_folder", "alertname"]
+    group_wait: 10s # wait this long for more alerts before the first message
+    group_interval: 1m # wait this long before telling about changes in a group
+    repeat_interval: 1h # remind about an alert that is still firing
+
+# The rules. Grafana runs each group every "interval".
+groups:
+  - orgId: 1
+    name: hello-devops
+    folder: hello-devops # the same folder as the dashboard
+    interval: 30s
+    rules:
+      - uid: hello-error-ratio
+        title: HelloErrorRatioHigh
+        # The rule fires when C is true. C reads the result of A.
+        condition: C
+        data:
+          # A: the error ratio over the last 2 minutes, one number per job.
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              refId: A
+              instant: true
+              expr: |
+                sum by (job) (rate(hello_responses_total{job="hello-devops", status=~"5.."}[2m]))
+                /
+                sum by (job) (rate(hello_responses_total{job="hello-devops"}[2m]))
+          # C: a threshold expression. True when A is above 0.05 (5%).
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.05] }
+        for: 1m # C must stay true this long (Pending) before the alert fires
+        # No 5xx at all means A returns nothing. That is good news, so OK.
+        noDataState: OK
+        execErrState: Error # Prometheus down or the query broken: show an error
+        labels:
+          severity: ticket
+        annotations:
+          summary: "{{ if $values.A }}{{ humanizePercentage $values.A.Value }}{{ end }} of hello-devops requests fail"
+        # Link the rule to the Errors graph on the RED dashboard.
+        dashboardUid: hello-red
+        panelId: 6

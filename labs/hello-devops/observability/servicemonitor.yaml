@@ -1,4 +1,4 @@
-# Tells Prometheus to scrape hello-devops every 15 seconds.
+# Tells Prometheus to scrape hello-devops every 15 seconds (Day 44).
 # Needs kube-prometheus-stack (see values.yaml). It finds the Service in
 # k8s/service.yaml by its label app: hello-devops and its port named http.
 # Apply: kubectl apply -f observability/servicemonitor.yaml
@@ -9,7 +9,8 @@ metadata:
   namespace: hello
   labels:
     # Prometheus from the "monitoring" Helm release only reads
-    # ServiceMonitors with this label.
+    # ServiceMonitors with this label. Without it, nothing fails:
+    # your app just never shows up.
     release: monitoring
 spec:
   # Find Services with this label ...
@@ -21,6 +22,9 @@ spec:
     matchNames:
       - hello
   endpoints:
-    - port: http # the name of the Service port (port 80, which leads to 8000)
+    # Prometheus finds the pods behind the Service and scrapes each pod
+    # directly on the matching container port (8000): one target per pod.
+    # The job label becomes the Service name: job="hello-devops".
+    - port: http # the NAME of the Service port, not its number
       path: /metrics
       interval: 15s

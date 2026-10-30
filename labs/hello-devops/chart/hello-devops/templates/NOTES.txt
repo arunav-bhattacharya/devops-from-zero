@@ -1,10 +1,10 @@
-{{ .Chart.Name }} is installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+{{ .Chart.Name }} {{ .Values.image.tag | default .Chart.AppVersion }} is installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
 
 Try it:
   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }} 8090:{{ .Values.service.port }}
   curl localhost:8090
 {{- if .Values.httpRoute.enabled }}
 
-Through the Gateway (keep the Envoy port-forward from Day 19 running on 8888):
+Through the Gateway (keep the Envoy port-forward from Day 36 running on 8888):
   curl {{ with .Values.httpRoute.hostname }}-H "Host: {{ . }}" {{ end }}localhost:8888
 {{- end }}

@@ -1,0 +1,36 @@
+# OPTIONAL (Day 40): let Argo CD Image Updater move dev to each new release.
+# You only need this file if you install Argo CD Image Updater (see its docs).
+# It watches your image in GHCR and, when a higher version such as 1.3.0 appears,
+# commits the new tag into k8s/overlays/dev/kustomization.yaml on main.
+# It commits straight to main, with no pull request, so keep it to dev.
+# Before you apply it:
+#   1. Replace <your-github-user> below.
+#   2. Create a Secret named git-creds in namespace argocd with two keys:
+#      username (your GitHub user) and password (a fine-grained token that can
+#      write to the hello-devops repo only).
+# Apply it with: kubectl apply -n argocd -f argocd/image-updater.yaml
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: hello-devops-dev
+  namespace: argocd # the namespace of the Applications it updates
+spec:
+  # Write the new tag to git, using the token in the git-creds Secret.
+  # (The default method, argocd, changes only the Application in the cluster.)
+  writeBackConfig:
+    method: git:secret:git-creds
+    gitConfig:
+      branch: main
+      # Edit kustomization.yaml, as `kustomize edit set image` would.
+      writeBackTarget: kustomization
+  applicationRefs:
+    - namePattern: hello-devops-dev # only the dev Application
+      images:
+        - alias: app
+          # ":1.x" is a version rule: any 1.something version, never 2.0.0.
+          imageName: ghcr.io/<your-github-user>/hello-devops:1.x
+          commonUpdateSettings:
+            updateStrategy: semver # pick the highest version that fits the rule
+          manifestTargets:
+            kustomize:
+              name: hello-devops # the image name in k8s/deployment.yaml

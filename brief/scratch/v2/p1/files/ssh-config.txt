@@ -1,0 +1,14 @@
+# ~/.ssh/config: short names for machines you connect to often.
+# Lines that start with # are comments. Comments must be on their own line.
+
+# Your Multipass VM from Day 6. Replace the address with the IPv4
+# that `multipass info devbox` prints.
+Host devbox
+    HostName 192.168.64.5
+    User ubuntu
+    IdentityFile ~/.ssh/id_ed25519
+
+# macOS only: keep the key's passphrase in your Keychain.
+Host *
+    AddKeysToAgent yes
+    UseKeychain yes

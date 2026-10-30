@@ -1,0 +1,9 @@
+# Settings for the fake shop app.
+port: 8000
+database:
+  host: orders-db
+  port: 5432
+payments:
+  url: http://payments-api:8080
+  timeout_ms: 3000
+log_level: info

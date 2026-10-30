@@ -1,0 +1,188 @@
+== build1
+$ docker build --build-arg APP_VERSION=1.0.0 -t hello-devops:1.0.0 .
+[+] Building 8.2s (10/10) FINISHED                                 docker:desktop-linux
+ => [internal] load build definition from Dockerfile                               0.0s
+ => => transferring dockerfile: 801B                                               0.0s
+ => [internal] load metadata for docker.io/library/python:3.14-slim                0.0s
+ => [internal] load .dockerignore                                                  0.0s
+ => => transferring context: 131B                                                  0.0s
+ => [1/5] FROM docker.io/library/python:3.14-slim@sha256:cd89c30eda26ee911a4611b1  0.0s
+ => => resolve docker.io/library/python:3.14-slim@sha256:cd89c30eda26ee911a4611b1  0.0s
+ => [internal] load build context                                                  0.0s
+ => => transferring context: 1.75kB                                                0.0s
+ => CACHED [2/5] WORKDIR /app                                                      0.0s
+ => [3/5] COPY requirements.txt .                                                  0.0s
+ => [4/5] RUN pip install --no-cache-dir -r requirements.txt                       6.3s
+ => [5/5] COPY app.py .                                                            0.0s
+ => exporting to image                                                             1.6s
+ => => exporting layers                                                            1.2s
+ => => exporting manifest sha256:9e9c787a0d5171184c26887c7cae496285004ea644f0047e  0.0s
+ => => exporting config sha256:08cc7533beb6464bca2296945bec0133626c975fb4f68f8c08  0.0s
+ => => exporting attestation manifest sha256:75461c964480f23a579779a8ba75b456b94c  0.0s
+ => => exporting manifest list sha256:445f157c73091f0a7629abfe6f9b024aa2b01c5b63d  0.0s
+ => => naming to docker.io/library/hello-devops:1.0.0                              0.0s
+ => => unpacking to docker.io/library/hello-devops:1.0.0                           0.3s
+== run
+$ docker run -d --name hello -p 8000:8000 hello-devops:1.0.0
+a475b2e1c6e4632d86201b2adbb99a25ac940e4b8fbb1cb60c6b80a0af8de6cd
+== curl1
+$ curl -s localhost:8000
+{"host":"a475b2e1c6e4","message":"Hello, DevOps!","version":"1.0.0","visits":1}
+== curl2
+$ curl -s localhost:8000/healthz
+{"status":"ok"}
+== build2
+$ docker build --build-arg APP_VERSION=1.0.0 -t hello-devops:1.0.0 .
+[+] Building 0.2s (10/10) FINISHED                                 docker:desktop-linux
+ => [internal] load build definition from Dockerfile                               0.0s
+ => => transferring dockerfile: 801B                                               0.0s
+ => [internal] load metadata for docker.io/library/python:3.14-slim                0.0s
+ => [internal] load .dockerignore                                                  0.0s
+ => => transferring context: 131B                                                  0.0s
+ => [1/5] FROM docker.io/library/python:3.14-slim@sha256:cd89c30eda26ee911a4611b1  0.0s
+ => => resolve docker.io/library/python:3.14-slim@sha256:cd89c30eda26ee911a4611b1  0.0s
+ => [internal] load build context                                                  0.0s
+ => => transferring context: 1.78kB                                                0.0s
+ => CACHED [2/5] WORKDIR /app                                                      0.0s
+ => CACHED [3/5] COPY requirements.txt .                                           0.0s
+ => CACHED [4/5] RUN pip install --no-cache-dir -r requirements.txt                0.0s
+ => CACHED [5/5] COPY app.py .                                                     0.0s
+ => exporting to image                                                             0.1s
+ => => exporting layers                                                            0.0s
+ => => exporting manifest sha256:cd692efed1af568e89cf0ad1d51fff14abf0006bca1339ec  0.0s
+ => => exporting config sha256:bcb0c396fda213b875aae47cc8619d9af75b6abb59df3105c2  0.0s
+ => => exporting attestation manifest sha256:deeadcfba4049cda02a612999c1afd6798ad  0.0s
+ => => exporting manifest list sha256:e23adef8070fd471ad6473f0d1db294200de2e53330  0.0s
+ => => naming to docker.io/library/hello-devops:1.0.0                              0.0s
+ => => unpacking to docker.io/library/hello-devops:1.0.0                           0.0s
+== hist
+$ docker history hello-devops:1.0.0 | head -9
+IMAGE          CREATED              CREATED BY                                      SIZE      COMMENT
+e23adef8070f   About a minute ago   CMD ["gunicorn" "--bind" "0.0.0.0:8000" "--w…   0B        buildkit.dockerfile.v0
+<missing>      About a minute ago   EXPOSE [8000/tcp]                               0B        buildkit.dockerfile.v0
+<missing>      About a minute ago   ENV APP_VERSION=1.0.0 PYTHONUNBUFFERED=1        0B        buildkit.dockerfile.v0
+<missing>      About a minute ago   ARG APP_VERSION=1.0.0                           0B        buildkit.dockerfile.v0
+<missing>      About a minute ago   COPY app.py . # buildkit                        12.3kB    buildkit.dockerfile.v0
+<missing>      About a minute ago   RUN /bin/sh -c pip install --no-cache-dir -r…   26.7MB    buildkit.dockerfile.v0
+<missing>      About a minute ago   COPY requirements.txt . # buildkit              12.3kB    buildkit.dockerfile.v0
+<missing>      About a minute ago   WORKDIR /app                                    8.19kB    buildkit.dockerfile.v0
+== run2
+$ docker run -d --name hello2 -p 8001:8000 -e GREETING="Hi from a second container" hello-devops:1.0.0
+80c7122738f611cedbdb553967ba7da62c2d4c3d02d1ed121982832f4f7be861
+== curl3
+$ curl -s localhost:8001
+{"host":"80c7122738f6","message":"Hi from a second container","version":"1.0.0","visits":1}
+== insp
+$ docker image inspect hello-devops:1.0.0 --format '{{json .Config.Cmd}} {{.Config.WorkingDir}}'
+["gunicorn","--bind","0.0.0.0:8000","--workers","2","app:app"] /app
+== insp_env
+$ docker run --rm -e GREETING=Hi hello-devops:1.0.0 env | grep -E '^(APP_VERSION|GREETING|PYTHONUNBUFFERED)='
+GREETING=Hi
+APP_VERSION=1.0.0
+PYTHONUNBUFFERED=1
+== pid1_exec
+$ docker exec hello cat /proc/1/cmdline | tr '\0' ' '; echo
+/usr/local/bin/python3.14 /usr/local/bin/gunicorn --bind 0.0.0.0:8000 --workers 2 app:app 
+== whoami
+$ docker exec hello whoami
+root
+== shell_run
+$ docker run -d --name shell shell:1.0
+75522c6dd6f996c3c1c039015ce83812ec2fe4db228bd8db48a4bee480093db5
+== pid1_shell
+$ docker exec shell cat /proc/1/cmdline | tr '\0' ' '; echo
+/bin/sh -c gunicorn --bind 0.0.0.0:8000 --workers 2 app:app 
+== stop_shell
+$ time docker stop shell
+shell
+
+real	0m10.186s
+user	0m0.015s
+sys	0m0.018s
+== stop_exec
+$ time docker stop hello
+hello
+
+real	0m0.552s
+user	0m0.008s
+sys	0m0.027s
+== stop_ps
+$ docker ps -a --format 'table {{.Names}}\t{{.Status}}'
+NAMES     STATUS
+shell     Exited (137) Less than a second ago
+hello     Exited (0) Less than a second ago
+== g1
+$ docker run --rm greeter:1.0
+Hello, world
+== g2
+$ docker run --rm greeter:1.0 Ana
+Hello, Ana
+== g3
+$ docker run --rm --entrypoint date greeter:1.0 -u +%Y
+2026
+== arg_build
+$ docker build --progress=plain --no-cache --build-arg BUILD_NOTE=hello -t argdemo:1.0 argdemo 2>&1 | grep 'at build time'
+#5 [2/2] RUN echo "at build time: hello"
+#5 0.201 at build time: hello
+== arg_run
+$ docker run --rm argdemo:1.0
+at run time: not set
+== arg_hist
+$ docker history argdemo:1.0 | head -4
+IMAGE          CREATED        CREATED BY                                      SIZE      COMMENT
+cc0c52d941ca   1 second ago   CMD ["sh" "-c" "echo at run time: ${BUILD_NO…   0B        buildkit.dockerfile.v0
+<missing>      1 second ago   RUN |1 BUILD_NOTE=hello /bin/sh -c echo "at …   4.1kB     buildkit.dockerfile.v0
+<missing>      1 second ago   ARG BUILD_NOTE=hello                            0B        buildkit.dockerfile.v0
+== check
+$ docker build --check check
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 154B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.14-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+Check complete, 3 warnings have been found!
+
+WARNING: FromAsCasing - https://docs.docker.com/go/dockerfile/rule/from-as-casing/
+'as' and 'FROM' keywords' casing do not match
+check/Dockerfile:1
+--------------------
+   1 | >>> FROM python:3.14-slim as base
+   2 |     WORKDIR /app
+   3 |     ENV GREETING Hello
+--------------------
+
+WARNING: LegacyKeyValueFormat - https://docs.docker.com/go/dockerfile/rule/legacy-key-value-format/
+"ENV key=value" should be used instead of legacy "ENV key value" format
+check/Dockerfile:3
+--------------------
+   1 |     FROM python:3.14-slim as base
+   2 |     WORKDIR /app
+   3 | >>> ENV GREETING Hello
+   4 |     COPY app.py .
+   5 |     CMD gunicorn --bind 0.0.0.0:8000 app:app
+--------------------
+
+WARNING: JSONArgsRecommended - https://docs.docker.com/go/dockerfile/rule/json-args-recommended/
+JSON arguments recommended for CMD to prevent unintended behavior related to OS signals
+check/Dockerfile:5
+--------------------
+   3 |     ENV GREETING Hello
+   4 |     COPY app.py .
+   5 | >>> CMD gunicorn --bind 0.0.0.0:8000 app:app
+   6 |     
+--------------------
+== ctx1
+$ docker build --progress=plain -t ctx:1.0 ctx 2>&1 | grep 'transferring context'
+#3 transferring context: 2B done
+#5 transferring context: 10.00MB 0.2s done
+== ctx2
+$ docker build --progress=plain -t ctx:1.0 ctx 2>&1 | grep 'transferring context'
+#3 transferring context: 46B done
+#4 transferring context: 100B done

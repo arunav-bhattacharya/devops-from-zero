@@ -1,0 +1,122 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    # Skip CI on main when a push only changes Markdown files.
+    # Never filter pull_request like this: a required check that never runs
+    # stays "Pending" and blocks the merge.
+    paths-ignore:
+      - "**.md"
+  pull_request:
+  # The Run workflow button. Its input can switch the smoke test off.
+  workflow_dispatch:
+    inputs:
+      smoke-test:
+        description: "Start the CI image and call it after the build"
+        type: boolean
+        default: true
+
+# One run per branch or pull request. A new push cancels the older run,
+# except on main, where every merge gets a full result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# The GITHUB_TOKEN in this workflow can only read the repository.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      # Our own composite action: Python, the pip cache and dependencies.
+      # It lives in this repository, so it only works after checkout.
+      - uses: ./.github/actions/setup-app
+      - name: Lint and format check
+        run: ruff check . && ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      # Let every Python version finish, so you see all failures at once.
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-app
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run tests
+        run: pytest -q --junitxml=reports/junit.xml
+      - name: Upload test report
+        # Upload even when tests fail: that is when you need the report most.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-py${{ matrix.python-version }}
+          path: reports/junit.xml
+          retention-days: 7
+
+  build:
+    # Start only when lint and every test job have passed.
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+
+      # A step output: a version for this CI image, such as 0.0.0-ci.1a2b3c4.
+      - name: Work out a version for this build
+        id: meta
+        run: echo "version=0.0.0-ci.${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build the image (no push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          # Also load the image into the runner's Docker, so a step can run it.
+          load: true
+          tags: hello-devops:ci
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+          # Reuse image layers from earlier runs (GitHub Actions cache).
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # An image that builds can still crash at start. Run it and call it.
+      # Skipped only on a manual run with the smoke-test box unticked.
+      - name: Smoke test the image
+        id: smoke
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.smoke-test }}
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          docker run -d --name smoke -p 8000:8000 hello-devops:ci
+          # Gunicorn needs a moment to start, so retry for up to 10 seconds.
+          curl -fsS --retry 10 --retry-all-errors --retry-delay 1 localhost:8000/healthz
+          GOT=$(curl -fsS localhost:8000/ | jq -r .version)
+          echo "The app reports version $GOT"
+          test "$GOT" = "$VERSION"
+
+      - name: Show the app's logs if the smoke test failed
+        if: ${{ failure() && steps.smoke.outcome == 'failure' }}
+        run: docker logs smoke
+
+      - name: Write the run summary
+        if: ${{ !cancelled() }}
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          SMOKE: ${{ steps.smoke.outcome }}
+        run: |
+          {
+            echo "### CI image"
+            echo "- Version: \`$VERSION\`"
+            echo "- Smoke test: $SMOKE"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,52 @@
+# An ApplicationSet: one template that makes one Argo CD Application per
+# environment (Day 40). Here it makes hello-devops-dev and hello-devops-prod.
+# Each one deploys a Kustomize overlay from your repo into its own namespace.
+# Apply it after project.yaml:
+#   kubectl apply -n argocd -f argocd/applicationset.yaml
+# Replace <your-github-user> with your GitHub user name first.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: hello-devops
+  namespace: argocd
+spec:
+  # Use Go templates ({{.env}}) and stop with an error on a misspelled name.
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  # The generator makes one set of values per environment.
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: hello-dev
+          - env: prod
+            namespace: hello-prod
+  # The template is a normal Application with {{.env}} and {{.namespace}} filled in.
+  template:
+    metadata:
+      name: "hello-devops-{{.env}}"
+      labels:
+        env: "{{.env}}"
+    spec:
+      project: hello # the rules in project.yaml
+      source:
+        repoURL: https://github.com/<your-github-user>/hello-devops
+        targetRevision: main
+        path: "k8s/overlays/{{.env}}" # the Kustomize overlay for this environment
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.namespace}}"
+      # Same reason as in application.yaml: the autoscaler owns the replica count.
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          name: hello-devops
+          jsonPointers:
+            - /spec/replicas
+      syncPolicy:
+        automated:
+          prune: true # delete things that you removed from git
+          selfHeal: true # undo changes made by hand in the cluster
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true

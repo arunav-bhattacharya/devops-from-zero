@@ -1,0 +1,43 @@
+# A "developer" identity that may run Pods in namespace hello, but may NOT read Secrets.
+# Day 53 uses it to show a trap: anyone who can create a Pod in a namespace can
+# mount any Secret of that namespace into it, and so read the Secret anyway.
+#
+# Apply: kubectl apply -f security/rbac-pod-creator.yaml
+# Test:  kubectl auth can-i get secrets -n hello --as=system:serviceaccount:hello:dev    (no)
+#        kubectl auth can-i create pods -n hello --as=system:serviceaccount:hello:dev    (yes)
+# Clean: kubectl delete -f security/rbac-pod-creator.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dev
+  namespace: hello
+# Nothing runs as this account inside the cluster, so do not mount its token into Pods.
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-creator
+  namespace: hello
+rules:
+  # Run, look at and remove Pods, and read their logs. No rule mentions Secrets.
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch, create, delete]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-pod-creator
+  namespace: hello
+subjects:
+  - kind: ServiceAccount
+    name: dev
+    namespace: hello
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-creator

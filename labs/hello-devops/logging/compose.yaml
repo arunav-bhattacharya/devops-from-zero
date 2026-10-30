@@ -35,7 +35,7 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     ports:
       - "5601:5601"
-    mem_limit: 1g
+    mem_limit: 2g # Kibana logs a warning below 2 GB
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -69,6 +69,7 @@ services:
       - --no-control-socket
       - --access-logfile=-
       - '--access-logformat={"level":"INFO","logger":"access","method":"%(m)s","path":"%(U)s","status":%(s)s,"duration_ms":%(M)s}'
+      - app:app
     logging:
       driver: fluentd
       options:

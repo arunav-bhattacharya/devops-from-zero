@@ -1,0 +1,141 @@
+// DQL queries from Days 50 and 51 of "DevOps, from zero".
+// Run ONE query at a time: open the Notebooks app, add a DQL section, paste, run.
+// The Playground (free, sample data) is enough for everything except Part D.
+// Each query says what it returns. If a query returns zero rows, the field or
+// data may not exist in that environment; start again from query A1.
+
+
+// ======================================================================
+// Day 50, part A: look around
+// ======================================================================
+
+// A1. What data does this environment hold? One row per data object
+//     (logs, spans, events, dt.davis.problems, ...).
+fetch dt.system.data_objects
+| fields name, display_name, type
+
+// A2. Which kinds of things (entity types) does Smartscape know about?
+smartscapeNodes "*"
+| dedup type
+| fields type
+
+// A3. Services Smartscape found, with their IDs.
+smartscapeNodes "SERVICE"
+| fields name, id
+| limit 20
+
+// A4. Who calls whom: service-to-service "calls" edges of the map.
+smartscapeEdges "calls"
+| filter source_type == "SERVICE" and target_type == "SERVICE"
+| limit 20
+
+// A5. Problems Davis has opened in the last 2 hours and not closed yet,
+//     with the root cause it found. Expect zero or a few rows; display IDs
+//     look like P-12345. On a quiet environment, use from: now() - 7d and
+//     drop the event.status check to see closed problems too.
+fetch dt.davis.problems, from: now() - 2h
+| filter not(dt.davis.is_duplicate) and event.status == "ACTIVE"
+| fields event.start, display_id, event.name, event.category, root_cause_entity_name
+| sort event.start desc
+| limit 20
+
+
+// ======================================================================
+// Day 51, part B: warm-up on made-up data (same result everywhere)
+// ======================================================================
+
+// B1. "data" makes a tiny table by hand. It reads nothing from Grail.
+//     Returns 5 rows with the fields path, status and ms.
+data record(path = "/", status = 200, ms = 12),
+     record(path = "/", status = 200, ms = 15),
+     record(path = "/", status = 500, ms = 250),
+     record(path = "/healthz", status = 200, ms = 2),
+     record(path = "/readyz", status = 503, ms = 1001)
+
+// B2. Add "| filter status >= 500" to B1: 2 rows remain (the 500 and the 503).
+// B3. Replace the filter with this line: 3 rows, one per path.
+//     | summarize requests = count(), errors = countIf(status >= 500), by: {path}
+// B4. Then add these two lines: /readyz (100), / (about 33.3), /healthz (0).
+//     | fieldsAdd error_pct = errors * 100.0 / requests
+//     | sort error_pct desc
+
+
+// ======================================================================
+// Day 51, part C: the ladder on real data
+// ======================================================================
+
+// C1. fetch + limit: 10 raw log records from the last hour (a cheap first look).
+fetch logs, from: -1h
+| limit 10
+
+// C2. filter + fields: only ERROR logs, only 3 columns. Note ==, loglevel and content.
+fetch logs, from: -1h
+| filter loglevel == "ERROR"
+| fields timestamp, loglevel, content
+| limit 20
+
+// C3. Text search without lower(): case-insensitive contains.
+fetch logs, from: -1h, scanLimitGBytes: 1
+| filter contains(content, "timeout", caseSensitive: false)
+| fields timestamp, content
+| limit 20
+
+// C4. summarize + sort: error count per Kubernetes namespace.
+//     Returns one row per namespace. Name the count first, then sort by the name.
+fetch logs, from: -2h
+| filter loglevel == "ERROR"
+| summarize errors = count(), by: {k8s.namespace.name}
+| sort errors desc
+
+// C5. makeTimeseries: turn log records into a chart (one value per 5 minutes).
+//     Returns one row whose fields are arrays; the Notebook draws them as lines.
+fetch logs, from: -2h
+| makeTimeseries {total = count(), errors = countIf(loglevel == "ERROR")}, interval: 5m
+| fieldsAdd error_pct = errors[] * 100.0 / total[]
+
+// C6. Spans: requests, failures and p95 duration per service (RED from Day 41).
+fetch spans, from: -1h
+| filter request.is_root_span == true
+| summarize requests = count(),
+            failed = countIf(request.is_failed == true),
+            p95 = percentile(duration, 95),
+            by: {dt.service.name}
+| sort requests desc
+| limit 20
+
+// C7. timeseries: real metrics are read with timeseries, never with fetch.
+//     Request count per service, as a chart.
+timeseries requests = sum(dt.service.request.count), by: {dt.service.name}
+
+// C8. timeseries plus array functions: average and peak CPU per host.
+timeseries cpu = avg(dt.host.cpu.usage), by: {dt.smartscape.host}
+| fieldsAdd host = getNodeName(dt.smartscape.host), avg_cpu = arrayAvg(cpu), max_cpu = arrayMax(cpu)
+| sort max_cpu desc
+
+// C9. An SLO-style number: share of requests that succeeded in under 3 seconds.
+fetch spans, from: now() - 1h
+| filter request.is_root_span == true
+| fieldsAdd is_good = if(request.is_failed == false and duration < 3s, 1, else: 0)
+| summarize total = count(), good = sum(is_good), by: {dt.service.name}
+| fieldsAdd good_pct = good * 100.0 / total
+
+
+// ======================================================================
+// Day 51, part D: your own environment (trial only)
+// ======================================================================
+
+// D1. Your kind cluster, if the DynaKube worked. Expect a row named kind-devops.
+smartscapeNodes "K8S_CLUSTER"
+| fields name, id
+
+// D2. Spans from hello-devops (after you send traffic with curl localhost:8081).
+fetch spans, from: -30m
+| summarize spans = count(), by: {dt.service.name}
+| sort spans desc
+
+// D3. Cost awareness: which kinds of usage your subscription is counting.
+//     No rows does NOT mean free: the trial may simply not record these events.
+fetch dt.system.events, from: -7d
+| filter event.kind == "BILLING_USAGE_EVENT"
+| summarize events = count(), by: {event.type}
+| sort events desc

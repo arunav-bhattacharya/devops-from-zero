@@ -1,0 +1,4 @@
+ERROR
+[Tt]imeout
+refused
+[0-9]{4}ms

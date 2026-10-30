@@ -21,8 +21,9 @@ OUT.mkdir(exist_ok=True)
 
 
 def run(cmd, cwd=None, timeout=600, env=None):
-    p = subprocess.run(["bash", "-c", cmd], cwd=cwd, capture_output=True, text=True, timeout=timeout, env=env)
-    return (p.stdout + p.stderr).rstrip("\n")
+    p = subprocess.run(["bash", "-c", cmd], cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                       text=True, timeout=timeout, env=env)
+    return p.stdout.rstrip("\n")
 
 
 def mapped(s, mapping):
@@ -99,3 +100,22 @@ def tty(cmd, cwd=None, cols=88, timeout=900):
     i = clean.rfind("[+] Building")
     tail = clean[i:] if i >= 0 else clean
     return "\n".join(l.rstrip() for l in tail.split("\n")).strip("\n")
+
+
+def ttymap(text, mapping):
+    """Map names in BuildKit tty output while keeping the time column aligned."""
+    out = []
+    for ln in text.split("\n"):
+        new = mapped(ln, mapping)
+        if new != ln:
+            if ln.startswith("[+] Building"):
+                m = re.match(r"(.*?FINISHED)\s+(\S+)$", ln)
+                if m:
+                    right = mapped(m.group(2), mapping)
+                    new = m.group(1).ljust(len(ln) - len(right)) + right
+            else:
+                m = re.match(r"(.*?)(\s+)(\d+\.\d+s)$", ln)
+                if m:
+                    new = mapped(m.group(1), mapping).ljust(len(ln) - len(m.group(3))) + m.group(3)
+        out.append(new)
+    return "\n".join(out)

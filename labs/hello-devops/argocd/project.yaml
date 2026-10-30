@@ -1,0 +1,38 @@
+# An Argo CD project: the rules for every hello-devops Application (Day 40).
+# It says which repo the apps may read, where they may deploy, and which
+# cluster-wide objects they may create. Apply it before applicationset.yaml:
+#   kubectl apply -n argocd -f argocd/project.yaml
+# Replace <your-github-user> with your GitHub user name first.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: hello
+  namespace: argocd
+  # Argo CD will not delete this project while an Application still uses it.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: hello-devops in dev and prod
+  # Apps in this project may only read your repo.
+  sourceRepos:
+    - https://github.com/<your-github-user>/hello-devops
+  # They may only deploy to these namespaces of the cluster Argo CD runs in.
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: hello
+    - server: https://kubernetes.default.svc
+      namespace: hello-dev
+    - server: https://kubernetes.default.svc
+      namespace: hello-prod
+  # Cluster-wide objects are denied, except Namespaces (the app creates its own).
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  # A role you can hand out later, for example to a teammate or a dashboard:
+  # it can look at the apps and read their logs, but not sync or delete them.
+  roles:
+    - name: viewer
+      description: Read-only access to hello-devops apps
+      policies:
+        - p, proj:hello:viewer, applications, get, hello/*, allow
+        - p, proj:hello:viewer, logs, get, hello/*, allow

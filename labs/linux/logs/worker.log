@@ -1,0 +1,5 @@
+2026-10-30T09:06:30Z INFO  orders-worker req=- polling queue orders.created
+2026-10-30T09:06:31Z WARN  orders-worker req=7f3a9c no order found for cart 5521, skipping email
+2026-10-30T09:08:50Z INFO  orders-worker req=6e7f8a sent confirmation email for order 1002
+2026-10-30T09:12:00Z ERROR orders-worker req=- queue orders.created unreachable, retrying in 5s
+2026-10-30T09:12:05Z INFO  orders-worker req=- queue orders.created reachable again

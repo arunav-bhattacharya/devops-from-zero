@@ -1,0 +1,80 @@
+# Opens a pull request that changes which image version one environment runs (Day 40).
+# Save it as .github/workflows/bump-image.yml in your repo. (This reference copy
+# sits in gitops/ so that it never runs in the course's own repo.)
+# Once, before the first run: Settings > Actions > General > Workflow permissions,
+# tick "Allow GitHub Actions to create and approve pull requests".
+# Run it from the Actions tab, or with:
+#   gh workflow run bump-image.yml -f environment=dev -f version=1.2.0
+name: bump-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Which environment to change
+        type: choice
+        options: [dev, prod]
+        default: dev
+      version:
+        description: Image tag to deploy, such as 1.2.0 (no "v" in front)
+        type: string
+        required: true
+
+# Only what this job needs: push a branch and open a pull request.
+permissions:
+  contents: write
+  pull-requests: write
+
+# One bump per environment at a time.
+concurrency:
+  group: bump-image-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Inputs go through env variables, never straight into a script (Day 21).
+      ENVIRONMENT: ${{ inputs.environment }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check that the version looks like 1.2.0
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must look like 1.2.0, got '$VERSION'"
+            exit 1
+          fi
+
+      # kustomize is already installed on GitHub's ubuntu runners.
+      - name: Write the new tag into the overlay
+        working-directory: k8s/overlays/${{ inputs.environment }}
+        run: |
+          # The same lower case image name that release.yml pushes to.
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          kustomize edit set image "hello-devops=${IMAGE}:${VERSION}"
+          git diff
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "The $ENVIRONMENT overlay already uses $VERSION. Nothing to do."
+            exit 0
+          fi
+          BRANCH="bump/${ENVIRONMENT}-${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git commit -am "Deploy hello-devops ${VERSION} to ${ENVIRONMENT}"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "Deploy hello-devops ${VERSION} to ${ENVIRONMENT}" \
+            --body "Sets the image tag in k8s/overlays/${ENVIRONMENT}. Argo CD deploys it after you merge."
+          {
+            echo "### Pull request opened"
+            echo "Branch \`$BRANCH\` sets $ENVIRONMENT to $VERSION."
+          } >> "$GITHUB_STEP_SUMMARY"

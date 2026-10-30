@@ -8,5 +8,6 @@ terraform {
   }
 }
 
-# Talks to Docker on your laptop. No cloud account needed.
+# Talks to the Docker engine on your laptop. No cloud account needed.
+# The modules below use this provider too.
 provider "docker" {}

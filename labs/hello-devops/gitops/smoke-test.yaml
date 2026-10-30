@@ -1,0 +1,30 @@
+# A PostSync hook (Day 40): after every sync, once all resources are Healthy,
+# Argo CD runs this Job. If curl fails, Argo CD marks the sync as failed.
+# To try it, copy this file into k8s/overlays/dev/ and add
+# "- smoke-test.yaml" to the resources list in that kustomization.yaml.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: smoke-test
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    # Delete the old Job just before the next sync creates a new one.
+    # Until then you can still read its logs.
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 0 # one try only: a failure fails the sync
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: curl
+          image: curlimages/curl:8.22.0
+          # -f: fail on an HTTP error, -sS: quiet but show errors, -m 5: give up after 5 seconds.
+          # hello-devops is the Service name in this namespace, on port 80.
+          args: ["-fsS", "-m", "5", "http://hello-devops/healthz"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi

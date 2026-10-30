@@ -1,5 +1,5 @@
 variable "app_image" {
-  description = "The app image to run (build it first with docker build)."
+  description = "The hello-devops image to run. Build it first with docker build."
   type        = string
   default     = "hello-devops:1.0.0"
 }
@@ -10,8 +10,14 @@ variable "app_version" {
   default     = "1.0.0"
 }
 
-variable "host_port" {
-  description = "Port on your laptop that forwards to the app."
+variable "dev_port" {
+  description = "Port on your laptop for the dev stack."
   type        = number
   default     = 8080
+}
+
+variable "test_port" {
+  description = "Port on your laptop for the test stack."
+  type        = number
+  default     = 8082
 }

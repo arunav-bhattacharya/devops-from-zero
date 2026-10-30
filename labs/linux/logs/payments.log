@@ -1,0 +1,9 @@
+2026-10-30T09:06:18Z INFO  payments-api req=7f3a9c charge started: 59.90 EUR for cart 5521
+2026-10-30T09:06:18Z INFO  payments-api req=7f3a9c calling bank-gateway
+2026-10-30T09:06:21Z WARN  payments-api req=7f3a9c bank-gateway slow: 2800ms so far
+2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c bank-gateway timeout after 3000ms
+2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c charge failed, returning 504
+2026-10-30T09:08:45Z INFO  payments-api req=6e7f8a charge started: 12.00 EUR for cart 5530
+2026-10-30T09:08:45Z ERROR payments-api req=6e7f8a bank-gateway reset the connection
+2026-10-30T09:08:46Z INFO  payments-api req=6e7f8a retry 1 of 3 succeeded in 640ms
+2026-10-30T09:17:42Z ERROR payments-api req=8f9a0b card expired (code 2001)

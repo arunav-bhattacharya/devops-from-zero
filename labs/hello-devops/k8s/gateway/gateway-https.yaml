@@ -1,0 +1,29 @@
+# Optional (Day 36): the same Gateway as gateway.yaml, plus an HTTPS listener on port 443.
+# The Gateway ends TLS here and sends plain HTTP to the Pods ("TLS termination").
+# First create the Secret "hello-tls" from a certificate and key, then:
+#   kubectl apply -f k8s/gateway/gateway-https.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: hello-gateway
+  namespace: hello
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate # decrypt at the Gateway
+        certificateRefs:
+          - kind: Secret
+            name: hello-tls # a Secret of type kubernetes.io/tls in namespace hello
+      allowedRoutes:
+        namespaces:
+          from: All

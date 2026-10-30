@@ -32,8 +32,8 @@ def main() -> int:
             return 0
     except ConnectionRefusedError:
         print(f"REFUSED   {ip}:{port} answered, but no program listens on that port")
-    except TimeoutError:
-        print(f"TIMEOUT   {ip}:{port} sent no answer in 3 s (dropped by a firewall, or a wrong address)")
+    except socket.timeout:
+        print(f"TIMEOUT   {ip}:{port} sent no answer in 3 s (firewall drop or wrong address)")
     except OSError as err:
         print(f"ERROR     {ip}:{port} {err.strerror}")
     return 1

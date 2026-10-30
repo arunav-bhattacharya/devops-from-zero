@@ -6,7 +6,7 @@ metadata:
   namespace: hello
 spec:
   parentRefs:
-    - name: hello-gateway # attach to this Gateway
+    - name: hello-gateway # attach to this Gateway (same namespace)
   rules:
     - matches:
         - path:

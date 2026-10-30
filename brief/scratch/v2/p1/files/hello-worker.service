@@ -1,0 +1,18 @@
+# hello-worker.service: run worker.sh as a systemd service (Day 6).
+# Install: sudo cp hello-worker.service /etc/systemd/system/
+#          sudo systemctl daemon-reload
+[Unit]
+Description=Practice worker from Day 6
+After=network.target
+
+[Service]
+# The program to run. systemd starts it and keeps track of its PID.
+ExecStart=/usr/local/bin/worker.sh
+# Start it again if it crashes, but not after a clean stop.
+Restart=on-failure
+# Run as the normal ubuntu user, not as root.
+User=ubuntu
+
+[Install]
+# Start at boot (when the machine reaches normal multi-user mode).
+WantedBy=multi-user.target

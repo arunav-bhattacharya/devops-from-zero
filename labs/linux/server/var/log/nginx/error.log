@@ -1,0 +1,1 @@
+2026/10/30 09:06:24 [error] 812#812: *4411 upstream timed out (110: Connection timed out) while reading response header from upstream, client: 192.0.2.15, server: shop.example.com, request: "POST /api/checkout HTTP/1.1", upstream: "http://127.0.0.1:8000/api/checkout"

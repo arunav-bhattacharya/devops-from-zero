@@ -4,7 +4,7 @@
 
 ## How did you test it?
 
-- [ ] `ruff check .` and `pytest -q` pass on my laptop
+- [ ] `ruff check .`, `ruff format --check .` and `pytest -q` pass on my laptop
 - [ ] I ran the app and tried the change (for example with `curl`)
 
 ## Anything the reviewer should look at first?
