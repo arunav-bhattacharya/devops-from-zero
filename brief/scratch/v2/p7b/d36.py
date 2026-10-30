@@ -33,11 +33,11 @@ LESSON = {
         "q": "On a fresh kind cluster with nothing extra installed, you run `kubectl apply` on a Gateway and an HTTPRoute. What happens?",
         "options": [
             "Traffic starts flowing, because Kubernetes ships a default proxy",
-            "The apply fails, because the cluster does not know these object types",
             "Kubernetes downloads Envoy and starts it for you",
             "The objects are saved, and the old Ingress controller serves them",
+            "The apply fails, because the cluster does not know these object types",
         ],
-        "answer": 1,
+        "answer": 3,
         "why": "The Gateway API is not built in. Until you install its CRDs, the API server rejects the objects with \"no matches for kind\", and even then nothing routes until a controller such as Envoy Gateway runs.",
     },
     "terms": [

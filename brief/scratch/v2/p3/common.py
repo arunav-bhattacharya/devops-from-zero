@@ -109,6 +109,7 @@ L = {
     "tmpfs": ("tmpfs mounts", DOCS + "/engine/storage/tmpfs/", "docs"),
     "network": ("Networking overview", DOCS + "/engine/network/", "docs"),
     "bridge": ("Bridge network driver", DOCS + "/engine/network/drivers/bridge/", "docs"),
+    "desktop_net": ("Docker Desktop networking how-tos", DOCS + "/desktop/features/networking/networking-how-tos/", "docs"),
     "host": ("Host network driver", DOCS + "/engine/network/drivers/host/", "docs"),
     "none": ("None network driver", DOCS + "/engine/network/drivers/none/", "docs"),
     "compose_model": ("How Compose works", DOCS + "/compose/intro/compose-application-model/", "docs"),

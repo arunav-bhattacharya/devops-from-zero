@@ -1,5 +1,5 @@
 """Day 47: Centralized logging and the Elastic stack."""
-from common import lab, ref, V_KIBANA
+from common import lab, ref
 import svg
 
 L = {
@@ -43,7 +43,7 @@ A log pipeline has four jobs. The lab gives each one to a different program:
 3. A store indexes every field so search is fast. Here that is Elasticsearch.
 4. A web UI lets people search and chart. Here that is Kibana.
 
-In the lab, Docker itself hands each line to Fluent Bit. The compose file sets the `fluentd` logging driver on the web container, so the Docker engine sends every line to port 24224 as well as keeping its own copy. One detail matters: the engine opens that connection, not a container. That is why the address is `localhost:24224`, the port Fluent Bit publishes on your laptop, and why `fluentd-async` is set. Without it, a container whose log collector is down refuses to start.""",
+In the lab, Docker itself hands each line to Fluent Bit. The compose file sets the `fluentd` logging driver on the web container, so the Docker engine sends every line to port 24224 as well as keeping its own copy. One detail matters: the engine opens that connection, not a container. That is why the address is `localhost:24224`, the port Fluent Bit publishes on your laptop, and why `fluentd-async` is set. Without it, a container stops at once when it cannot reach its log collector.""",
             "refs": [
                 ref("OpenTelemetry: observability primer", "https://opentelemetry.io/docs/concepts/observability-primer/", "docs"),
                 ref("Docker: Fluentd logging driver", "https://docs.docker.com/engine/logging/drivers/fluentd/", "docs"),
@@ -395,7 +395,7 @@ Now the refresh. A new document first lands in an in-memory buffer. A refresh wr
 
 The `_score` you saw in search results is relevance: how well a document matches the words you searched for. Product search lives on it. Logging mostly ignores it, because Kibana sorts log results by `@timestamp`, newest first.
 
-One last check you can do right now: run `curl -s 'localhost:9200/_cat/segments/hello-logs-*?v'` while the lab takes traffic. Each line is a segment. Run it again a few minutes later and you will often see fewer, bigger segments, because Lucene merges small ones in the background to keep searches cheap.""",
+One last check you can do right now: run `curl -s 'localhost:9200/_cat/segments/hello-logs-*?v'` while the lab takes traffic. Each line is a segment. Run it again later and the list may be shorter, because Lucene merges small segments into bigger ones in the background to keep searches cheap.""",
     },
     "sources": [
         {"title": "Elastic: index basics", "url": "https://www.elastic.co/docs/manage-data/data-store/index-basics"},

@@ -40,7 +40,7 @@ LESSON = {
     "id": "d35",
     "title": "Health checks, resources and scaling",
     "minutes": 50,
-    "goal": "By the end you can give hello-devops health checks and resource settings that match what it really needs, autoscale it with an HPA, and control where its Pods run and how many may be down at once.",
+    "goal": "By the end you can give hello-devops health checks and resource settings that match what it needs, autoscale it with an HPA, and control where its Pods run and how many may be down at once.",
     "guess": {
         "q": "A container uses more CPU than its CPU limit for a few seconds. What does Kubernetes do?",
         "options": [
@@ -79,7 +79,8 @@ LESSON = {
                 "- Readiness probe: \"Can you take traffic right now?\" While it fails, the Pod leaves the Service's endpoints. Nothing restarts.\n\n"
                 "hello-devops has two endpoints made for this. The `/healthz` endpoint answers as long as the Python process can serve a request. "
                 "The `/readyz` endpoint also pings Redis and returns 503 when Redis is down. "
-                "The lab's `k8s/deployment.yaml` points the startup and liveness probes at `/healthz` and the readiness probe at `/readyz`.\n\n"
+                "Today you add all three probes to `k8s/deployment.yaml`: startup and liveness on `/healthz`, readiness on `/readyz`. "
+                "Redis already has one: `k8s/redis.yaml` from Day 34 runs `redis-cli ping` as an `exec` readiness probe.\n\n"
                 "One surprise: Kubernetes does not run the `HEALTHCHECK` line from your Dockerfile (Part 3). "
                 "That line only matters when you run the image with plain Docker. In a cluster, probes take its place."
             ),
@@ -97,7 +98,7 @@ LESSON = {
                 "- `timeoutSeconds`: how long one check may take. Default 1.\n"
                 "- `failureThreshold`: how many failures in a row before the kubelet acts. Default 3.\n"
                 "- `initialDelaySeconds`: how long to wait after the container starts. Default 0.\n\n"
-                "Multiply them to see how fast each probe acts. In the lab, the startup probe allows 30 failures, 2 seconds apart, so the app gets up to 60 seconds to boot. "
+                "Multiply them to see how fast each probe acts. In the lab's Deployment, the startup probe allows 30 failures, 2 seconds apart, so the app gets up to 60 seconds to boot. "
                 "The liveness probe needs 3 misses 10 seconds apart, so a stuck container is replaced after about 30 seconds. "
                 "The readiness probe checks every 5 seconds and acts after 2 misses, so a Pod leaves the Service within about 10 seconds.\n\n"
                 "Now the trap, which catches many teams. Never make the liveness probe depend on something outside the container, such as a database. "
@@ -127,7 +128,7 @@ LESSON = {
                 "Memory cannot be taken back once a process holds it. A container that goes over its memory limit is killed by the kernel's out-of-memory (OOM) killer. "
                 "Kubernetes then shows `OOMKilled` and exit code 137. The 137 means the process got signal 9, SIGKILL (128 + 9).\n\n"
                 "A short way to remember it: too much CPU makes you slow, too much memory gets you killed.\n\n"
-                "The lab asks for `100m` CPU and `128Mi` memory, and limits memory to `256Mi`. It sets no CPU limit on purpose. "
+                "The Deployment you update today asks for `100m` CPU and `128Mi` memory, and limits memory to `256Mi`. It sets no CPU limit on purpose. "
                 "A CPU limit throttles a container even when the node has idle cores, which shows up as slow responses that are hard to explain. "
                 "For a web app like this one, I would skip the CPU limit and rely on the request.\n\n"
                 "Requests are a different story: always set them. The scheduler, the autoscaler and the eviction order all depend on them. "
@@ -259,10 +260,14 @@ LESSON = {
             {"say": "The crashed container's log is empty. Python never reached its print line, and a process killed from outside gets no chance to write an error. An empty log plus exit code 137 points at memory, not at your code.", "code": "$ kubectl logs hog -n hello --previous\n$", "lang": "console"},
             {"say": "Look at what Kubernetes stored. You set only a memory limit, so it copied the limit into the memory request. With no CPU numbers at all, the Pod is Burstable, not Guaranteed.", "code": "$ kubectl get pod hog -n hello -o jsonpath='{.spec.containers[0].resources}{\"\\n\"}'\n{\"limits\":{\"memory\":\"100Mi\"},\"requests\":{\"memory\":\"100Mi\"}}\n$ kubectl get pod hog -n hello -o jsonpath='{.status.qosClass}{\"\\n\"}'\nBurstable", "lang": "console"},
             {"say": "Fix it. A bare Pod's resources only change through the resize subresource, so the simple path is delete and recreate. Run the command from step 1 again with `memory: 256Mi`. A Deployment would do this replace for you.", "code": "$ kubectl delete pod hog -n hello\npod \"hog\" deleted from hello namespace\n$ # run the command from step 1 again, with memory: 256Mi\n$ kubectl get pod hog -n hello\nNAME   READY   STATUS    RESTARTS   AGE\nhog    1/1     Running   0          8s\n$ kubectl logs hog -n hello\ngot 150 MB", "lang": "console"},
-            {"say": "Clean up. In real work you would pick the new limit from measured use (`kubectl top pod`), not from a guess.", "code": "$ kubectl delete pod hog -n hello\npod \"hog\" deleted from hello namespace", "lang": "console"},
+            {"say": "Clean up. In real work you would pick the new limit from measured use, with `kubectl top pod`.", "code": "$ kubectl delete pod hog -n hello\npod \"hog\" deleted from hello namespace", "lang": "console"},
         ],
     },
-    "code_files": [("yaml", "k8s/hpa.yaml", "kubectl apply -f k8s/hpa.yaml")],
+    "code_files": [
+        ("yaml", "k8s/deployment.yaml", "kubectl apply -k k8s", "k8s/deployment.yaml (final version: Day 35 adds the probes and resources)"),
+        ("yaml", "k8s/hpa.yaml", "kubectl apply -k k8s"),
+        ("yaml", "k8s/kustomization.yaml", "kubectl apply -k k8s", "k8s/kustomization.yaml (Day 35 version: adds hpa.yaml)"),
+    ],
     "commands": [
         {"cmd": "kubectl describe pod <pod-name> -n hello", "what": "Show a Pod's probes, resources, Last State and Events."},
         {"cmd": "kubectl get pod <pod-name> -n hello -o jsonpath='{.status.qosClass}'", "what": "Print a Pod's QoS class: Guaranteed, Burstable or BestEffort."},
@@ -293,11 +298,11 @@ LESSON = {
     "task": {
         "title": "Probes, autoscaling and a safe drain on the lab app",
         "steps": [
-            "Open `k8s/deployment.yaml` and work out from the timing settings how long each probe takes to act. Check with `kubectl describe pod` that a running Pod shows the same probes.",
+            "Add the three probes and the resources to `k8s/deployment.yaml` (the file above) and apply with `kubectl apply -k k8s`. Work out from the timing settings how long each probe takes to act, and check the probes in `kubectl describe pod`.",
             "In a second terminal, run `kubectl get pods -n hello -w`. Scale Redis to 0 replicas and watch the hello-devops Pods go to `0/1` READY while RESTARTS stays at 0. Try `curl localhost:8081`.",
             "Scale Redis back to 1 and watch the app Pods become ready again on their own.",
             "Install metrics-server, add the `--kubelet-insecure-tls` flag, and wait until `kubectl top pods -n hello` prints numbers.",
-            "Apply `k8s/hpa.yaml` (it is listed in the kustomization, so `kubectl apply -k k8s` works too). Check that `kubectl get hpa -n hello` shows a real percentage instead of `<unknown>`.",
+            "Write `k8s/hpa.yaml`, add it to `k8s/kustomization.yaml`, and apply with `kubectl apply -k k8s`. Check that `kubectl get hpa -n hello` shows a real percentage instead of `<unknown>`.",
             "Start the load generator Pod from the commands list and watch `kubectl get hpa -n hello -w` until REPLICAS goes above 3. Delete the load Pod and watch the count return to 3 after about 2 quiet minutes.",
             "Create a PodDisruptionBudget for hello-devops with `minAvailable` 2 and read ALLOWED DISRUPTIONS in `kubectl get pdb -n hello`.",
             "Drain the node `devops-worker` while you watch the Pods move, then make it schedulable again with `kubectl uncordon`.",

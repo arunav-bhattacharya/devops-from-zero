@@ -22,9 +22,11 @@ ORDER = ["id", "title", "minutes", "goal", "guess", "terms", "sections", "analog
 def build(mod):
     L = dict(mod.LESSON)
     code = []
-    for lang, path, run in L.pop("code_files"):
+    for item in L.pop("code_files"):
+        lang, path, run = item[:3]
+        title = item[3] if len(item) > 3 else path
         src = (LAB / path).read_text().rstrip("\n")
-        code.append({"lang": lang, "title": path, "src": src, "run": run})
+        code.append({"lang": lang, "title": title, "src": src, "run": run})
     L["code"] = code
     missing = [k for k in ORDER if k not in L]
     assert not missing, (L["id"], missing)

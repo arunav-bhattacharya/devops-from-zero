@@ -35,8 +35,8 @@ SECTIONS = [
     {
         "h": "Why platform teams exist",
         "body": (
-            "List what hello-devops needs by now: a Dockerfile, two workflows with pinned actions, Kubernetes YAML, an Argo CD Application, "
-            "a ServiceMonitor, a dashboard, log shipping, tracing, policies and a way to get secrets. You learned all of it over 50 lessons. "
+            "List what hello-devops needs by now. A Dockerfile, two workflows with pinned actions, Kubernetes YAML and an Argo CD Application. "
+            "A ServiceMonitor, a dashboard, log shipping and tracing. Policies, and a way to get secrets. You learned all of it over 50 lessons. "
             "Now picture 40 product teams, each building that alone. They solve the same problems 40 times, in 40 slightly different ways, "
             "and whoever is on call has to learn every one.\n\n"
             "Platform engineering is the answer most large companies have reached. A platform team builds an internal developer platform (IDP): "
@@ -59,8 +59,9 @@ SECTIONS = [
     {
         "h": "Golden paths and developer portals",
         "body": (
-            "The platform's main product is the golden path, which some companies call the paved road: a supported, ready-made way to do a common job. "
-            "\"Create a new service\" is the classic one. You fill in a name and a team, and you get a repository with a Dockerfile, CI, a release workflow, "
+            "The platform's main product is the golden path, which some companies call the paved road. "
+            "It is a supported, ready-made way to do a common job. \"Create a new service\" is the classic one. "
+            "You fill in a name and a team. You get a repository with a Dockerfile, CI, a release workflow, "
             "Kubernetes YAML, an Argo CD Application and a dashboard, already wired together.\n\n"
             "The CNCF maturity model describes golden paths as documentation and templates built on compliant and tested patterns. Two of those words carry weight:\n"
             "- Compliant: security and policy are built in, so the easy way is also the safe way.\n"
@@ -170,6 +171,8 @@ SECTIONS = [
             "A person approves it, and it goes through the same CI, Kyverno policies and Argo CD as any human change.\n"
             "- Untrusted input. A log line, an issue comment or a web page can contain text that tries to give the agent orders. "
             "This is called prompt injection, and your guardrails must hold even when the agent is fooled.\n\n"
+            "Why a custom Role, and not the built-in `view` ClusterRole? The built-in role would work today, but it is aggregated. "
+            "Tools such as Argo CD or Kyverno can add their own rules to it when you install them. A Role that lists every action stays exactly as written.\n\n"
             "This is where the GitOps setup from Part 8 pays off again. With Argo CD applying git, an agent never needs write access to the cluster. "
             "It opens a pull request, and the pipeline does the rest."
         ),
@@ -367,7 +370,7 @@ lesson = {
     "analogy": (
         "A platform is like the shared services in a big office building. Every company in the building uses the same reception, mail room, network and security desk, so no tenant builds its own. "
         "A golden path is the standard office fit-out: you move in on Monday and start work on Monday. "
-        "Where it breaks: a building changes slowly, while a platform must change every month with its users, and a tenant who leaves the fit-out is telling you something about it."
+        "Where it breaks: a building changes slowly, while a platform must change every month with its users. And a tenant who leaves the fit-out is telling you something about it."
     ),
     "diagram": diagram(),
     "diagram_caption": "Same guardrails, new actor: an agent proposes, a human approves, git deploys.",
@@ -375,8 +378,9 @@ lesson = {
     "code": CODE,
     "commands": COMMANDS,
     "mistake": (
-        "Adopting every trending tool at once. Each tool in this lesson solves a problem you only feel at a certain size: Backstage pays off with many teams, not one repository, "
-        "and a FinOps tool is useless until workloads carry owner labels. Get the basics solid on one real project, then add a tool when you can name the pain it removes."
+        "Adopting every trending tool at once. Each tool in this lesson solves a problem you only feel at a certain size. "
+        "Backstage pays off with many teams, not one repository, and a FinOps tool is useless until workloads carry owner labels. "
+        "Get the basics solid on one real project, then add a tool when you can name the pain it removes."
     ),
     "real_world": (
         "At a payments company, a platform team offers one golden path that creates a service with CI, signing, an Argo CD app, dashboards and a team label already in place. "
@@ -406,7 +410,7 @@ lesson = {
             "I give the agent its own ServiceAccount with a namespaced Role that can only get, list and watch Pods, logs and events, never Secrets or exec. "
             "Its token lasts one hour and lives in a separate kubeconfig, and deleting the ServiceAccount cuts it off at once. "
             "The MCP server runs in read-only mode too, but I rely on RBAC, because a read-only flag does not shrink the credentials behind it. "
-            "Any fix the agent finds becomes a pull request that CI, Kyverno and a human review, and Argo CD applies it from git, so the agent never needs write access to the cluster."
+            "Any fix the agent finds becomes a pull request that CI, Kyverno and a human review. Argo CD applies it from git, so the agent never needs write access to the cluster."
         ),
     },
     "recap": [

@@ -89,12 +89,12 @@ LESSON = {
     "guess": {
         "q": "Revision 3 of your Helm release is bad, so you run `helm rollback shop 1`. What does `helm history shop` show afterwards?",
         "options": [
-            "Revisions 2 and 3 are gone, and 1 is current again",
             "A new revision 4 that has the same content as revision 1",
+            "Revisions 2 and 3 are gone, and 1 is current again",
             "Revision 1 marked deployed, with no new revision",
             "Nothing changes until you also run `helm upgrade`",
         ],
-        "answer": 1,
+        "answer": 0,
         "why": "Helm never rewrites history. A rollback applies what revision 1 had and records it as a new revision 4, described as \"Rollback to 1\".",
     },
     "terms": [
@@ -182,7 +182,7 @@ LESSON = {
                 "A few changes matter to you:\n"
                 "- Server-side apply is the default for new releases. The API server merges the changes and tracks which tool owns each field. Upgrades and rollbacks keep the method the release started with, so old Helm 3 releases stay on client-side apply.\n"
                 "- Two flags were renamed: `--atomic` is now `--rollback-on-failure`, and `--force` is now `--force-replace`. The old names still work but print a warning, and older blog posts use them.\n"
-                "- `--wait` uses kstatus, a status library, to tell when each kind of object is really ready.\n"
+                "- `--wait` uses kstatus, a status library, to tell when each kind of object is ready.\n"
                 "- You can install a chart by digest, `oci://...@sha256:...`, so you get exactly the bytes you tested.\n"
                 "- Post-renderers are now plugins, and `helm registry login` takes only the host name.\n\n"
                 "Helm 3 is at the end of its life. Its last feature release came out on September 9, 2026, and its security fixes stop on February 10, 2027. "
@@ -336,7 +336,7 @@ LESSON = {
         ],
         "hints": [
             "Release names are unique per namespace, and most helm commands need `-n hello-helm`. `helm list -A` shows every release in the cluster.",
-            "Greeting back to the chart default after an upgrade? You passed values without the file. `helm get values hello -n hello-helm` shows what the release really uses.",
+            "Greeting back to the chart default after an upgrade? You passed values without the file. `helm get values hello -n hello-helm` shows what the release uses now.",
             "Curl returns the base app's greeting instead of Helm's? Your request did not match the chart's route. Check the Host header and `kubectl get httproute -A`.",
         ],
         "done_when": "`helm history hello -n hello-helm` shows install, upgrade and a \"Rollback to 1\" revision, and the curl through the Gateway shows the greeting from revision 1.",

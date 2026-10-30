@@ -13,13 +13,13 @@ def lab(path):
 def diagram():
     p = [note(280, 18, "one change, end to end")]
     # Top row: from the laptop to the cluster.
-    top = [(8, 88, "bx", "git push"), (124, 96, "bxt", "CI, Gradle"), (248, 88, "bxo", "Release"), (364, 80, "bxg", "GHCR"), (472, 80, "bxo", "Argo CD")]
+    top = [(8, 88, "bx", "git push"), (130, 104, "bxt", "CI, Gradle"), (268, 80, "bxo", "Release"), (382, 56, "bxg", "GHCR"), (472, 80, "bxo", "Argo CD")]
     for i, (x, w, c, t) in enumerate(top):
         p.append(box(x, 32, w, 44, c, t))
         if i < len(top) - 1:
             nx = top[i + 1][0]
             p.append(arrow(x + w + 2, 54, nx - 4, 54))
-    p.append(note(292, 94, "test, scan, sign"))
+    p.append(note(308, 94, "test, scan, sign"))
     # Argo CD applies to kind.
     p.append(arrow(512, 78, 512, 116))
     p.append(note(470, 100, "applies", anchor="end"))
@@ -32,7 +32,7 @@ def diagram():
     for x, w, c, t in bottom:
         p.append(box(x, 232, w, 44, c, t))
     p.append(arrow(480, 166, 480, 198, dashed=True, head=False))
-    p.append(arrow(480, 198, 68, 198, dashed=True, head=False))
+    p.append(arrow(488, 198, 68, 198, dashed=True, head=False))
     for x, w, _, _ in bottom:
         p.append(arrow(x + w / 2, 198, x + w / 2, 228, dashed=True))
     p.append(note(280, 300, "metrics, dashboards, logs, traces (Dynatrace optional)"))
@@ -128,7 +128,7 @@ SECTIONS = [
             "Interviewers love these, because they show how you think when something is broken."
         ),
         "refs": [
-            {"title": "Google SRE book: postmortem culture", "url": "https://sre.google/sre-book/postmortem-culture/", "kind": "read"},
+            {"title": "Google SRE book (see the chapter on postmortem culture)", "url": "https://sre.google/sre-book/table-of-contents/", "kind": "read"},
             {"title": "Argo CD docs: automated sync and self-heal", "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/", "kind": "docs"},
         ],
     },
@@ -285,7 +285,7 @@ DEEPER = (
     "Try it like this:\n"
     "1. Write a `bootstrap.sh` that creates the kind cluster, installs Argo CD, and applies one Argo CD Application.\n"
     "2. Let Argo CD install everything else from git: Kyverno, External Secrets Operator, kube-prometheus-stack, Fluent Bit and the app. "
-    "The app-of-apps pattern from Day 40 is made for this.\n"
+    "The [app-of-apps pattern](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/) from Day 40 is made for this.\n"
     "3. Time it: run `kind delete cluster --name devops`, start a stopwatch, run the bootstrap script, and stop when `security/capstone-check.sh` shows 0 failed.\n"
     "4. Every time the rebuild needs a manual step, move that step into git and run the test again.\n\n"
     "Two things will bite you. Order matters: Kyverno's policies need Kyverno's CRDs first, and the app needs its namespace labels before Pod Security can judge it. "
@@ -293,7 +293,8 @@ DEEPER = (
     "And state outside git does not come back: the Redis counter, Prometheus history and Elasticsearch logs are gone. "
     "That is fine for a lab, and it is the reason real teams keep data in managed services or back it up separately.\n\n"
     "When the rebuild is one command and the check is green, write the time in your README. "
-    "\"The whole platform rebuilds from git in N minutes\" is a sentence that gets attention in an interview, because it shows you understand GitOps, infrastructure as code and recovery at once."
+    "In an interview, \"the whole platform rebuilds from git in N minutes\" gets attention. "
+    "It shows that you understand GitOps, infrastructure as code and recovery at once."
 )
 
 lesson = {
@@ -336,8 +337,8 @@ lesson = {
         "Finish one stage, make its check pass, commit, and only then start the next."
     ),
     "real_world": (
-        "At a payments company, a new platform engineer's first project looks a lot like this capstone: take one service from commit to production on the golden path, "
-        "with every check green, and present it to the team. "
+        "At a payments company, a new platform engineer's first project looks a lot like this capstone. "
+        "They take one service from commit to production on the golden path, with every check green, and present it to the team. "
         "The team learns where the path is rough, and the new engineer learns the whole system in two weeks instead of six months."
     ),
     "task": {
@@ -363,7 +364,7 @@ lesson = {
         "answer": (
             "A pull request runs CI, which lints and tests the code and must be green before merge; a version tag then runs the release workflow. "
             "The release scans the image, pushes it to GHCR, writes an SBOM and signs it, and I verify that with `verify-release.sh`. "
-            "A commit that changes the image tag in git tells Argo CD what to run, and I know the deploy worked when Argo CD shows Synced and Healthy and the rollout completes. "
+            "A commit that changes the image tag in git tells Argo CD what to run. I know the deploy worked when Argo CD shows Synced and Healthy and the rollout completes. "
             "Then Prometheus and Grafana show traffic and errors, Kibana shows the logs and Jaeger shows traces, so I can see that users actually get the new version."
         ),
     },

@@ -86,11 +86,11 @@ LESSON = {
         "q": "A Pod is in CrashLoopBackOff, and `kubectl logs` on it shows nothing useful. Where is the error message most likely to be?",
         "options": [
             "Nowhere: a crashing app never writes its error",
-            "In the previous container's log: `kubectl logs --previous`",
             "Only in etcd, which kubectl cannot read",
-            "In the node's disk, which you must open with SSH",
+            "In the previous container's log: `kubectl logs --previous`",
+            "On the node's disk, which you must open with SSH",
         ],
-        "answer": 1,
+        "answer": 2,
         "why": "After a restart, `kubectl logs` shows the new container, which may have printed nothing yet. `--previous` shows the container that crashed, error and all.",
     },
     "terms": [
@@ -227,7 +227,8 @@ LESSON = {
                 "Read it as subject, verb, resource, API group and namespace. Then ask the cluster directly:\n"
                 "- `kubectl auth can-i delete pods -n hello` answers yes or no for you.\n"
                 "- Add `--as=system:serviceaccount:hello:viewer` to ask on behalf of someone else. Your kind admin user is allowed to do that.\n\n"
-                "Fix it with the smallest Role that does the job. Binding a robot to `cluster-admin` makes the error go away, and also opens the whole cluster to that robot."
+                "Fix it with the smallest Role that does the job. Binding a robot to `cluster-admin` makes the error go away, and also opens the whole cluster to that robot. "
+                "RBAC is also how you keep Secrets private (Day 34): very few Roles should allow `get` or `list` on `secrets`."
             ),
             "refs": [
                 {"title": "Using RBAC authorization", "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/", "kind": "docs"},
@@ -345,7 +346,7 @@ LESSON = {
         "CrashLoopBackOff is a symptom; `logs --previous` and the exit code in Last State show the cause.",
         "Healthy Pods but a failing Service usually means a selector or targetPort mismatch: check EndpointSlices.",
         "`kubectl debug` adds an ephemeral container with tools; a throwaway busybox Pod checks DNS.",
-        "Forbidden is RBAC, not a bug: read the message, ask `kubectl auth can-i`, grant the smallest Role.",
+        "A Forbidden error comes from RBAC: read the message, ask `kubectl auth can-i`, grant the smallest Role.",
     ],
     "check": [
         {
