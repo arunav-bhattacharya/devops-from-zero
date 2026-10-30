@@ -47,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ env.IMAGE }}
+          images: ghcr.io/${{ github.repository }}
           # Tag v1.2.0 gives 1.2.0, sha-<short commit> and latest.
           tags: |
             type=semver,pattern={{version}}

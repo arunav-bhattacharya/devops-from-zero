@@ -122,7 +122,7 @@
     },
     {
      "h": "Roles, and how this course works",
-     "body": "Three job titles grew out of these ideas. They overlap, and companies use them loosely:\n\n- DevOps engineer: builds pipelines, infrastructure code and deploy tools with product teams.\n- Site reliability engineer (SRE): keeps production reliable, using software to replace manual operations work.\n- Platform engineer: builds an internal platform, a set of self-service tools so other teams ship without waiting.\n\nThe SRE role started at Google, and Google wrote a free book about it. Each day of this course follows the same rhythm:\n\n1. Guess an answer before you read. A guess, even a wrong one, makes the answer easier to remember.\n2. Read the short sections and study the diagram.\n3. Follow the worked example.\n4. Do the hands-on task on your own laptop.\n5. Explain the idea back in your own words, then take the check.\n\nYou ship one small app all course: hello-devops, a Python web app that says hello and counts visits. Tomorrow you create its repo. By Day 23 it is tested, packaged, deployed to Kubernetes and watched on dashboards.",
+     "body": "Three job titles grew out of these ideas. They overlap, and companies use them loosely:\n\n- DevOps engineer: builds pipelines, infrastructure code and deploy tools with product teams.\n- Site reliability engineer (SRE): keeps production reliable, using software to replace manual operations work.\n- Platform engineer: builds an internal platform, a set of self-service tools so other teams ship without waiting.\n\nThe SRE role started at Google, and Google's engineers wrote [a free book about it](https://sre.google/sre-book/table-of-contents/). Each day of this course follows the same rhythm:\n\n1. Guess an answer before you read. A guess, even a wrong one, makes the answer easier to remember.\n2. Read the short sections and study the diagram.\n3. Follow the worked example.\n4. Do the hands-on task on your own laptop.\n5. Explain the idea back in your own words, then take the check.\n\nYou ship one small app all course: hello-devops, a Python web app that says hello and counts visits. Tomorrow you create its repo. By Day 23 it is tested, packaged, deployed to Kubernetes and watched on dashboards.",
      "refs": [
       {
        "title": "Site Reliability Engineering, Introduction (Google SRE book)",
@@ -172,7 +172,7 @@
    },
    "code": [],
    "commands": [],
-   "mistake": "The most common mistake is treating DevOps as a set of tools to install. A team buys a CI server and sets up Kubernetes, but keeps big quarterly releases and a separate ops team that gets paged for code it never saw. Start with the habits (small changes, shared ownership, fast feedback), then pick tools that support them.",
+   "mistake": "The most common mistake is treating DevOps as a set of tools to install. A team buys a CI server and sets up Kubernetes, but keeps big quarterly releases and a separate ops team that gets woken at night for code it never saw. Start with the habits (small changes, shared ownership, fast feedback), then pick tools that support them.",
    "real_world": "At a payments company like PayFlow, one product team owns its checkout service from code to production. The pipeline tests and deploys their changes many times a day, and the same team is on call when checkout errors rise. A platform team gives every product team the shared pipelines, clusters and dashboards, so nobody builds them from scratch.",
    "task": {
     "title": "Map your own delivery path",
@@ -346,7 +346,7 @@
     },
     {
      "h": "Docker Desktop, and its licence",
-     "body": "Containers are a Linux feature, and macOS is not Linux. So Docker Desktop runs a small Linux virtual machine (VM) in the background. A VM is a computer simulated in software. Your `docker` commands talk to the Linux system inside it.\n\nYou install it with `brew install --cask docker-desktop`, or from [Docker's install page](https://docs.docker.com/desktop/setup/install/mac-install/). A cask is Homebrew's name for a Mac app with a window. Open Docker from Applications once and accept the terms.\n\nThen change one setting: in Settings, Advanced, turn on \"Allow the default Docker socket to be used\". It creates `/var/run/docker.sock`, the file other programs use to talk to Docker. New versions leave it off, and Terraform's Docker provider on Day 13 looks for it.\n\nThe licence: Docker Desktop is free for personal use, education and non-commercial open source. It is also free for small businesses (fewer than 250 employees and less than $10 million in yearly revenue). Larger companies need a paid plan. Learning on your own laptop counts as personal use. On a work laptop, ask your employer first.\n\nTwo alternatives run the same `docker` commands:\n\n- OrbStack: a fast Mac app, free for personal use and paid for commercial use.\n- Colima: free and open source, started from the terminal with `colima start`.",
+     "body": "Containers are a Linux feature, and macOS is not Linux. So Docker Desktop runs a small Linux virtual machine (VM) in the background. A VM is a computer simulated in software. Your `docker` commands talk to the Linux system inside it.\n\nYou install it with `brew install --cask docker-desktop`, or from [Docker's install page](https://docs.docker.com/desktop/setup/install/mac-install/). A cask is Homebrew's name for a Mac app with a window. Open Docker from Applications once and accept the terms.\n\nThen change one setting: in Settings, Advanced, turn on \"Allow the default Docker socket to be used\" (it asks for your password). It creates `/var/run/docker.sock`, the file other programs use to talk to Docker. New versions leave it off, and Terraform's Docker provider on Day 13 looks for it.\n\nThe licence: Docker Desktop is free for personal use, education and non-commercial open source. It is also free for small businesses (fewer than 250 employees and less than $10 million in yearly revenue). Larger companies need a paid plan. Learning on your own laptop counts as personal use. On a work laptop, ask your employer first.\n\nTwo alternatives run the same `docker` commands:\n\n- OrbStack: a fast Mac app, free for personal use and paid for commercial use.\n- Colima: free and open source, started from the terminal with `colima start`.",
      "refs": [
       {
        "title": "Install Docker Desktop on Mac",
@@ -480,7 +480,7 @@
     {
      "lang": "text",
      "title": ".gitignore",
-     "src": "__pycache__/\n*.pyc\n.venv/\n.pytest_cache/\n.ruff_cache/\n.terraform/\n*.tfstate\n*.tfstate.*\n*.tfplan\n.terraform.lock.hcl.bak\n",
+     "src": "__pycache__/\n*.pyc\n.venv/\n.pytest_cache/\n.ruff_cache/\n.terraform/\n*.tfstate\n*.tfstate.*\n*.tfplan\n.terraform.lock.hcl.bak\n.env\n",
      "run": "git status --short"
     }
    ],

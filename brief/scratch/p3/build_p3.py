@@ -118,8 +118,8 @@ D12 = svg(200, "Pushing a version tag waits for approval in the production envir
     box(416, 42, 136, 44, "bxg", "ghcr.io"),
     box(264, 136, 128, 40, "bx", "GITHUB_TOKEN"),
     line(328, 136, 328, 90, dashed=True),
-    cap(190, 161, "short-lived"),
-    cap(470, 161, "packages: write"),
+    cap(206, 161, "short-lived"),
+    cap(452, 161, "packages: write"),
 ])
 
 # ---------------------------------------------------------------- links
@@ -395,7 +395,7 @@ d09 = {
             |/
             * 7142d7d Add greeting
         """), "lang": "console"},
-        {"say": "Run the tests before you push. Git only checks that the text merged cleanly, so it cannot tell if the code still works. Here the teammate's test still expects 'Hello, DevOps team!', so you update `test_app.py` in the same merge. Catching this kind of break is exactly the job of CI.", "code": T("""
+        {"say": "Run the tests before you push. Git only checks that the text merged cleanly, so it cannot tell if the code still works. Here the teammate's test still expects 'Hello, DevOps team!', so you fix `test_app.py` and commit before you push. Catching this kind of break is exactly the job of CI.", "code": T("""
             $ pytest -q | tail -2
             FAILED test_app.py::test_index_says_hello - AssertionError: assert 'Hi there,...
             1 failed, 2 passed in 0.20s
@@ -429,7 +429,7 @@ d09 = {
             "Open the PR in the browser. Read the Files changed tab as a reviewer would, and leave one comment on a line.",
             "Merge the PR with squash and delete the branch, using `gh pr merge`.",
             "Update your local `main`, then create the annotated tag `v0.1.0` and push it.",
-            "Start a second branch, change one line, push it, and run `gh pr create --web`. The description box now starts from your template. Close that PR if you do not need it.",
+            "Start a second branch, change one line, and push it. On the repository page, click Compare & pull request: the description box now starts from your template. Close that PR if you do not need it.",
         ],
         "hints": [
             "If `gh pr create` asks where to push the branch, pick your own repository.",
@@ -618,7 +618,7 @@ d10 = {
             $ git push -u origin try-actions
             $ gh run watch
         """), "lang": "console"},
-        {"say": "Open the run with `gh run view --web`, click the job, and expand the first step. You see lines like these, with your own commit ID. Each `env` level fed one line.", "code": T("""
+        {"say": "Open the run with `gh run view --web`, click the job, and expand the first step. You see lines like these, with your own commit ID. Line 1 comes from the workflow `env`, line 2 from the job `env`, and the last two from the step `env`.", "code": T("""
             Hello from GitHub Actions
             I run on a fresh virtual machine
             Commit: 9f2c1e7d0b6a4c3e8f5a1b2c3d4e5f6a7b8c9d0e
@@ -757,6 +757,8 @@ d11 = {
             3. Docker build: the slowest part, so it only runs after the tests pass.
 
             Jobs run in parallel by default. The `needs` key makes a job wait. With `needs: test` on the `build` job, the build starts only after every test job succeeds. If a test fails, the build is skipped, and you get feedback without paying for the slow part.
+
+            The triggers change too. On Day 10, CI ran on every push. Now it runs on pull requests, which test the merged result, and on pushes to `main`. Running on pushes to every branch as well would test each PR commit twice. One more line, `permissions: contents: read`, makes the job's token read-only, and Day 12 explains it.
 
             Today you grow `ci.yml` into the lab's final version, one piece at a time.
         """), "refs": refs("use_jobs", "python")},
@@ -898,7 +900,7 @@ d11 = {
             "Prove it: on a new branch, break a test, open a PR, and confirm that GitHub blocks the merge. Then fix the test and merge.",
         ],
         "hints": [
-            "A check name can only be picked once it has run in the repository recently, so merge the pipeline first.",
+            "A check name only shows up in the ruleset search after it has run in the repository recently, so let the pipeline run first.",
             "In the ruleset, the default branch is the easiest target to add.",
             "If `build` fails while tests pass, run `docker build .` locally to see the same error.",
         ],
@@ -1007,10 +1009,10 @@ d12 = {
             So the release job can push images, while every other job can only read code. If an action in a read-only job is ever compromised, it cannot push a fake image or change your code. Your `ci.yml` from Day 11 already starts with `contents: read` for this reason.
         """), "refs": refs("token", "token_tut")},
         {"h": "From a git tag to an image in GHCR", "body": T("""
-            Now the payoff. When you push a tag such as `v1.0.0`, `release.yml` builds the image and pushes it to GitHub Container Registry (GHCR), at `ghcr.io/<you>/hello-devops`. The job runs these steps:
+            Now the payoff. When you push a tag such as `v1.0.0`, `release.yml` builds the image and pushes it to GitHub Container Registry (GHCR). It lands at `ghcr.io/$GH_USER/hello-devops`, the same package you pushed by hand on Day 8. The job runs these steps:
 
             1. `actions/checkout` fetches the code at the tag.
-            2. The QEMU and Buildx setup actions prepare a builder for amd64 and arm64 images.
+            2. The QEMU and Buildx setup actions prepare a builder for amd64 (most servers) and arm64 (your Mac).
             3. `docker/login-action` logs in to `ghcr.io` with the `GITHUB_TOKEN`.
             4. `docker/metadata-action` turns the git tag into the image tags `1.0.0`, `sha-<commit>` and `latest`.
             5. `docker/build-push-action` builds both architectures with `APP_VERSION=1.0.0` and pushes them.
@@ -1094,7 +1096,7 @@ d12 = {
                   contents: read
                   id-token: write
         """), "lang": "yaml"},
-        {"say": "Replace the stored keys with OIDC. This third-party action receives cloud access, so pin it to a full SHA. Settings that are not secret come from variables, and the bucket name reaches the shell through `env`.", "code": T("""
+        {"say": "Replace the stored keys with OIDC. This third-party action receives cloud access, so pin it to a full SHA. Settings that are not secret come from variables, and the bucket name reaches the shell through `env`.", "code": textwrap.indent(T("""
                 steps:
                   - uses: actions/checkout@v7
                   - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -1104,7 +1106,7 @@ d12 = {
                   - run: aws s3 sync ./site "s3://$BUCKET"
                     env:
                       BUCKET: ${{ vars.SITE_BUCKET }}
-        """), "lang": "yaml"},
+        """), "    "), "lang": "yaml"},
         {"say": "Finish the switch. The IAM role's trust policy accepts only tokens from this repository's production environment (Day 15 builds it). Then delete the old key secrets here, and deactivate the keys in AWS, so a leaked copy is useless.", "code": T("""
             $ gh variable set AWS_ROLE_ARN --body arn:aws:iam::123456789012:role/hello-devops-deploy
             $ gh variable set SITE_BUCKET --body hello-devops-site
@@ -1124,9 +1126,9 @@ d12 = {
         {"cmd": "gh run watch", "what": "Follow the release run; it waits while the approval is pending."},
         {"cmd": "gh secret set API_KEY", "what": "Store a repository secret; gh asks for the value, so it stays out of your shell history."},
         {"cmd": "gh variable set AWS_REGION --body eu-west-1", "what": "Store a plain variable that is not secret."},
-        {"cmd": "docker pull ghcr.io/<you>/hello-devops:1.0.0", "what": "Download your released image from GHCR."},
-        {"cmd": "docker buildx imagetools inspect ghcr.io/<you>/hello-devops:1.0.0", "what": "Show the digest and the platforms (amd64, arm64) behind a tag."},
-        {"cmd": "echo \"$CR_PAT\" | docker login ghcr.io -u <you> --password-stdin", "what": "Log in to GHCR with a classic token; needed to pull a private package."},
+        {"cmd": "docker pull ghcr.io/$GH_USER/hello-devops:1.0.0", "what": "Download your released image from GHCR (GH_USER is your GitHub user, as on Day 8)."},
+        {"cmd": "docker buildx imagetools inspect ghcr.io/$GH_USER/hello-devops:1.0.0", "what": "Show the digest and the platforms (amd64, arm64) behind a tag."},
+        {"cmd": "docker login ghcr.io -u \"$GH_USER\"", "what": "Log in to GHCR; paste a classic token with read:packages to pull a private package."},
         {"cmd": "git ls-remote --tags https://github.com/docker/login-action", "what": "List an action's tags with their commit SHAs, so you can pin by SHA."},
     ],
     "mistake": "The push to GHCR fails with `denied` even though the job has `packages: write`. This usually means the package already exists, for example from your manual push on Day 8, and is not linked to this repository. Open the package settings, add `hello-devops` under Manage Actions access with the Write role, and re-run the job.",
@@ -1138,7 +1140,7 @@ d12 = {
             "In Settings, open Environments and create `production`. Add yourself as a required reviewer, leave Prevent self-review off, and save.",
             "Under Deployment branches and tags, choose Selected branches and tags, and add a tag rule for `v*`.",
             "Update `main` locally, create the annotated tag `v1.0.0`, and push it.",
-            "Follow the run. When it waits, open it in the browser, click Review deployments, and approve.",
+            "Follow the run. When it waits, open it in the browser, click Review deployments, then Approve and deploy.",
             "When it is green, read the digest in the run summary, and list the platforms with `docker buildx imagetools inspect`.",
             "Make the package public in its package settings, or log in to GHCR with a classic token that has `read:packages`.",
             "Pull and run the image on your Mac with port 8000 mapped, then call `curl localhost:8000`.",
@@ -1187,7 +1189,7 @@ d12 = {
         - `sub` (subject) says which workflow is calling, for example `repo:octo-org/octo-repo:environment:production`.
         - `exp` says when the token expires.
 
-        The real security lives on the cloud side. The IAM role's trust policy decides which tokens it accepts. A strict policy checks `aud` and the exact `sub`. A loose policy, such as one that matches `repo:octo-org/*`, lets every repository in that account assume the role. Always pin `sub` to one repository, plus a branch or an environment.
+        The real security lives on the cloud side. The IAM role's trust policy decides which tokens it accepts. A strict policy checks `aud` and the exact `sub`. A loose policy, such as one that matches `repo:octo-org/*`, lets every repository owned by `octo-org` assume the role. Always pin `sub` to one repository, plus a branch or an environment.
 
         The `sub` value depends on the job:
 

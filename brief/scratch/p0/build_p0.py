@@ -234,7 +234,7 @@ d01 = {
                 - Site reliability engineer (SRE): keeps production reliable, using software to replace manual operations work.
                 - Platform engineer: builds an internal platform, a set of self-service tools so other teams ship without waiting.
 
-                The SRE role started at Google, and Google wrote a free book about it. Each day of this course follows the same rhythm:
+                The SRE role started at Google, and Google's engineers wrote [a free book about it](https://sre.google/sre-book/table-of-contents/). Each day of this course follows the same rhythm:
 
                 1. Guess an answer before you read. A guess, even a wrong one, makes the answer easier to remember.
                 2. Read the short sections and study the diagram.
@@ -301,7 +301,7 @@ d01 = {
     "code": [],
     "commands": [],
     "mistake": T("""
-        The most common mistake is treating DevOps as a set of tools to install. A team buys a CI server and sets up Kubernetes, but keeps big quarterly releases and a separate ops team that gets paged for code it never saw. Start with the habits (small changes, shared ownership, fast feedback), then pick tools that support them.
+        The most common mistake is treating DevOps as a set of tools to install. A team buys a CI server and sets up Kubernetes, but keeps big quarterly releases and a separate ops team that gets woken at night for code it never saw. Start with the habits (small changes, shared ownership, fast feedback), then pick tools that support them.
     """),
     "real_world": T("""
         At a payments company like PayFlow, one product team owns its checkout service from code to production. The pipeline tests and deploys their changes many times a day, and the same team is on call when checkout errors rise. A platform team gives every product team the shared pipelines, clusters and dashboards, so nobody builds them from scratch.
@@ -490,7 +490,7 @@ d02 = {
 
                 You install it with `brew install --cask docker-desktop`, or from [Docker's install page](https://docs.docker.com/desktop/setup/install/mac-install/). A cask is Homebrew's name for a Mac app with a window. Open Docker from Applications once and accept the terms.
 
-                Then change one setting: in Settings, Advanced, turn on "Allow the default Docker socket to be used". It creates `/var/run/docker.sock`, the file other programs use to talk to Docker. New versions leave it off, and Terraform's Docker provider on Day 13 looks for it.
+                Then change one setting: in Settings, Advanced, turn on "Allow the default Docker socket to be used" (it asks for your password). It creates `/var/run/docker.sock`, the file other programs use to talk to Docker. New versions leave it off, and Terraform's Docker provider on Day 13 looks for it.
 
                 The licence: Docker Desktop is free for personal use, education and non-commercial open source. It is also free for small businesses (fewer than 250 employees and less than $10 million in yearly revenue). Larger companies need a paid plan. Learning on your own laptop counts as personal use. On a work laptop, ask your employer first.
 

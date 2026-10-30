@@ -600,7 +600,7 @@ d04 = {
                 2. Destroy everything you create as soon as you finish. On Day 15, that is `terraform destroy`.
                 3. Never put access keys in code or in git.
 
-                A budget alert only sends an email. It does not stop anything, so habit 2 still matters. You need no cloud account today, and Day 15 is the only lesson that uses one.
+                A budget alert only sends an email. It does not stop anything, so habit 2 still matters. You need no cloud account today. Day 15 is the only lesson that uses one, and that part is optional.
             """),
             "refs": refs("aws_free", "aws_budget_tpl"),
         },
