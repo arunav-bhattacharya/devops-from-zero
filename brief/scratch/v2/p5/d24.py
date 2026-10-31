@@ -66,7 +66,7 @@ L = {
         {
             "h": "The build cache and the configuration cache",
             "body": (
-                "Turn the **build cache** on with `org.gradle.caching=true` in `gradle.properties`. Before a cacheable task runs, Gradle hashes all its inputs into a cache key. If the cache already holds outputs for that key, Gradle copies them in and prints `FROM-CACHE`. The folder path is not part of the key, so a fresh clone in another folder gets hits too. A fresh clone of hello-jvm on the same laptop built with `20 actionable tasks: 8 executed, 12 from cache`.\n\n"
+                "Turn the build cache on with `org.gradle.caching=true` in `gradle.properties`. Before a cacheable task runs, Gradle hashes all its inputs into a cache key. If the cache already holds outputs for that key, Gradle copies them in and prints `FROM-CACHE`. The folder path is not part of the key, so a fresh clone in another folder gets hits too. A fresh clone of hello-jvm on the same laptop built with `20 actionable tasks: 8 executed, 12 from cache`.\n\n"
                 "The local cache lives in `~/.gradle/caches/build-cache-1`. Many teams also run a remote cache, an HTTP server that every build can read. The usual setup is that CI writes to it and laptops only read. Pull main in the morning, and most of it is already compiled. Develocity, Gradle's commercial server, is one common choice.\n\n"
                 "The configuration cache is a different thing. It stores the task graph from Day 22's first two phases, keyed by your build files and the tasks you asked for. Gradle 9 calls it the preferred mode and plans to turn it on by default in Gradle 10. Two things to know:\n\n"
                 "- Some plugins are not compatible yet. They fail with `Invocation of 'Task.project' ... is unsupported with the configuration cache`, and `--no-configuration-cache` turns the cache off for one run.\n"
@@ -101,7 +101,7 @@ L = {
                 "- Is this the right Gradle? The wrapper's `distributionSha256Sum` refuses a download that does not match. We broke one character on purpose and got `Verification of Gradle distribution failed!`.\n"
                 "- Are these the same versions as last week? Dependency locking writes the exact resolved version of every library to `gradle.lockfile`. Turn it on with `dependencyLocking { lockAllConfigurations() }`, run `./gradlew dependencies --write-locks`, and commit the file. A new version then fails the build, for example `Resolved 'org.opentest4j:opentest4j:1.3.0' which is not part of the dependency lock state`, until you update the lock on purpose.\n"
                 "- Are these the same bytes? Dependency verification keeps a SHA-256 checksum of every downloaded file in `gradle/verification-metadata.xml`. Create it with `./gradlew --write-verification-metadata sha256 help`. A swapped jar then fails the build.\n\n"
-                "When a build is slow or flaky, a Build Scan shows why. `./gradlew build --scan` uploads a report of the run, with task timings, test results and the dependency graph, and prints a link. The free service is scans.gradle.com. It asks you to accept its terms first, and your build data goes to Gradle's servers, so keep it for open code. Companies run their own Develocity server for private code, and since Gradle 9.5 `--develocity-url` points a build at one without editing it."
+                "When a build is slow or flaky, a Build Scan shows why. Run `./gradlew build --scan`, and Gradle uploads a report of the run and prints a link. The report has task timings, test results and the dependency graph. The free service is scans.gradle.com. It asks you to accept its terms first, and your build data goes to Gradle's servers, so keep it for open code. Companies run their own Develocity server for private code, and since Gradle 9.5 `--develocity-url` points a build at one without editing it."
             ),
             "refs": [
                 {"title": "Gradle docs: Locking versions", "url": "https://docs.gradle.org/current/userguide/dependency_locking.html", "kind": "docs"},
@@ -140,10 +140,11 @@ L = {
             "h": "JVM memory in containers, and images without a Dockerfile",
             "body": (
                 "The JVM reads the container's memory limit and sizes its heap from it. By default the largest heap is only 25% of that limit. We checked in a 512 MB container: `MaxHeapSize` was 134217728 bytes (128 MB). With `-XX:MaxRAMPercentage=75.0` it became 402653184 (384 MB). The Dockerfile sets that flag in `JAVA_OPTS`, which the start script passes to `java`. Stay well below 100%: threads, class metadata and the JIT need memory outside the heap. If the total crosses the limit, the kernel kills the container (Day 35 covers memory limits in Kubernetes).\n\n"
-                "You do not always need a Dockerfile:\n\n"
-                "- Jib is a Gradle plugin that builds the image itself, with separate layers for dependencies and for your classes. `jibDockerBuild` loads the image into Docker, and `jib` pushes to a registry with no Docker at all. By default it uses an `eclipse-temurin` JRE base and builds for amd64 only.\n"
-                "- Spring Boot's Gradle plugin has a `bootBuildImage` task that builds an image with Cloud Native Buildpacks.\n"
-                "- Quarkus has container-image extensions (Jib, Docker, Podman, Buildpacks) that build the image as part of the Quarkus build.\n\n"
+                "You do not always need a Dockerfile. Three tools build the image from the build itself:\n\n"
+                "- Jib, a Gradle and Maven plugin from Google, for any JVM app.\n"
+                "- Spring Boot's `bootBuildImage` task, which uses Cloud Native Buildpacks.\n"
+                "- Quarkus container-image extensions, such as Jib, Docker and Podman.\n\n"
+                "Jib puts your dependencies and your classes in separate layers. The `jibDockerBuild` task loads the image into Docker, and the `jib` task pushes to a registry with no Docker at all. By default it uses an `eclipse-temurin` JRE base and builds for amd64 only.\n\n"
                 "Jib has a catch today. Version 3.5.4 does not work with the configuration cache, so you run it with `--no-configuration-cache`, and Gradle warns that the build will break on Gradle 10. For learning, the Dockerfile wins, because you can see every step. At work, use what your framework and platform team already use."
             ),
             "refs": [
@@ -220,11 +221,11 @@ L = {
         {"cmd": "openssl rand -base64 16", "what": "Make a key for setup-gradle's cache-encryption-key secret."},
     ],
     "mistake": (
-        "Writing `./gradlew clean build` in CI to be safe, and adding `actions/cache` next to setup-gradle. `clean` throws away the outputs the caches exist to reuse, and two caching systems on one folder get in each other's way. "
+        "Two habits slow CI down: writing `./gradlew clean build` to be safe, and adding `actions/cache` next to setup-gradle. On a fresh runner `clean` has nothing to delete, and on a reused machine it throws away outputs Gradle could have skipped. Two caching systems on one folder also conflict with each other. "
         "Run `./gradlew build` and let setup-gradle do the caching. If you distrust a cache hit, the real fix is a task input that is missing from the build logic."
     ),
     "real_world": (
-        "At Paylane (a made-up payments company), CI on main writes to a remote build cache and developers' laptops only read from it, so a fresh clone of main is mostly FROM-CACHE. "
+        "At Paylane (a made-up payments company), CI on main writes to a remote build cache. Developers' laptops only read from it, so a fresh clone of main is mostly FROM-CACHE. "
         "Every service image uses the same two-stage Dockerfile pattern with `MaxRAMPercentage` set, and memory limits are tuned with a load test, not guessed."
     ),
     "task": {
@@ -298,7 +299,7 @@ L = {
     "interview": [
         {
             "q": "A Gradle build in CI is slow. How do you speed it up?",
-            "a": "First I look at which tasks actually ran, using the console output or a Build Scan. Then I make sure caching works: setup-gradle restoring Gradle User Home, the build cache on, ideally a remote cache that CI writes and laptops read, and no `clean` in the CI command. I turn on the configuration cache and parallel execution, and fix plugins that break them. If one project dominates, I look at compile avoidance: splitting modules and preferring `implementation` stops changes from rippling.",
+            "a": "First I look at which tasks actually ran, using the console output or a Build Scan. Then I make sure caching works: setup-gradle restoring Gradle User Home, the build cache turned on, and no `clean` in the CI command. Ideally there is also a remote cache that CI writes and laptops read. I turn on the configuration cache and parallel execution, and fix plugins that break them. If one project dominates, I look at compile avoidance: splitting modules and preferring `implementation` stops changes from rippling.",
         },
         {
             "q": "How do you package a JVM service as a container image?",
@@ -312,7 +313,7 @@ L = {
     "deeper": {
         "minutes": 12,
         "body": (
-            "The cache mount that made local rebuilds fast does not help much on a fresh CI runner. Each runner starts with an empty BuildKit cache, so the build stage downloads every library again whenever the source changed. In our test the mount held about 900 MB after one build: libraries, the Kotlin compiler, transformed jars and the local build cache. `cache-from: type=gha` brings back image layers, including the 170 MB Gradle layer, but not the contents of a cache mount.\n\n"
+            "The cache mount that made local rebuilds fast does not help much on a fresh CI runner. Each runner starts with an empty BuildKit cache, so the build stage downloads every library again whenever the source changed. In our test the mount held about 900 MB after one build: libraries, the Kotlin compiler, transformed jars and the local build cache. The `cache-from: type=gha` setting brings back image layers, including the 170 MB Gradle layer, but not the contents of a cache mount.\n\n"
             "Teams handle this in one of three ways:\n\n"
             "1. Accept it. For a small service, the image job takes a minute or two longer than it could. hello-jvm's workflow does this, because the Dockerfile stays simple and the same everywhere.\n"
             "2. Build outside Docker, and only package inside it. The build job runs `./gradlew build :app:installDist` with setup-gradle's warm cache, and a one-stage Dockerfile copies `app/build/install/app` onto the JRE image. The trade-off is that the image now depends on what the runner built, so laptops and CI must use the same steps.\n"

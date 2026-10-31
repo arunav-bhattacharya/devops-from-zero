@@ -67,7 +67,7 @@ LESSON = {
                 "- `{path=\"/healthz\", status=\"200\"} 3`\n"
                 "- `{path=\"unmatched\", status=\"404\"} 1`\n\n"
                 "(I left out the `job` and `instance` labels to keep the lines short.) "
-                "That result is an instant vector: one value per series, all for the same moment. "
+                "That result is an **instant vector**: one value per series, all for the same moment. "
                 "Prometheus takes the newest sample that is at most 5 minutes old. A series nobody has scraped for 5 minutes drops out.\n\n"
                 "Add a duration in square brackets and you get a range vector: every sample in that window. "
                 "`hello_responses_total{path=\"/\"}[1m]` returned four samples, 99, 167, 235 and 303, 15 seconds apart. "
@@ -305,8 +305,8 @@ LESSON = {
         "answer": (
             "The histogram stores a counter per bucket, such as how many requests took 0.1 seconds or less. "
             "First rate() turns each bucket counter into a per-second rate over the window. "
-            "Then sum by (le) adds those rates across routes and instances while keeping the bucket limits. "
-            "histogram_quantile(0.95, ...) finds the bucket where 95% of requests are reached and interpolates inside it. "
+            "Then sum by (le) adds those rates across routes and instances, and keeps the bucket limits. "
+            "The histogram_quantile(0.95, ...) function finds the bucket where 95% of requests are reached and interpolates inside it. "
             "Because it only knows bucket counts, the result can be off by up to a bucket's width, so bucket limits should sit near the latencies you care about."
         ),
     },

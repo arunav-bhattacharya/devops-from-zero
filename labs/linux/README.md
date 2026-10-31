@@ -22,11 +22,11 @@ in `server/etc/shop/.env` are placeholders.
 
 ## Get the folder onto your Mac
 
-Copy this `labs/linux` folder from the course files to `~/code/linux-lab`, for example:
+Clone the course repo once, then copy this folder to its own place:
 
 ```bash
-mkdir -p ~/code
-cp -R path/to/devops-from-zero/labs/linux ~/code/linux-lab
+git clone --depth 1 https://github.com/arunav-bhattacharya/devops-from-zero ~/code/devops-from-zero
+cp -R ~/code/devops-from-zero/labs/linux ~/code/linux-lab
 ```
 
 ## Open a Linux shell with the files inside

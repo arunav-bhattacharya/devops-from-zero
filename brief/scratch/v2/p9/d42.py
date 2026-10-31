@@ -130,7 +130,7 @@ LESSON = {
         {
             "h": "A time series is a name plus labels",
             "body": (
-                "This is the most important idea in Prometheus. A time series is identified by its metric name plus the exact set of label values. "
+                "This is the most important idea in Prometheus. A **time series** is identified by its metric name plus the exact set of label values. "
                 "Change any label value and you have a different series.\n\n"
                 "The app's page shows `hello_responses_total` three times, with three label sets: `/` and 200, `/healthz` and 200, `/` and 500. "
                 "That is three time series. Each scrape adds one sample to each: a timestamp and a value.\n\n"

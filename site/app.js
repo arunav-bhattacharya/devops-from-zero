@@ -510,6 +510,7 @@ function viewLabs() {
   const f = files.find((x) => x.path === labSel), rel = (x) => x.path.slice(x.proj.length + 1);
   const dl = L("d" + pad(f.day));
   return `<div class="page"><header class="lhead"><div class="plate"><span class="pd">LAB</span><span class="pp">finished reference · ${all.length} files</span></div><h1>Lab files</h1><p class="goal">The finished lab repos, every file checked. Build yours by following the lessons, then come here to compare. Copy a file only when you are truly stuck.</p></header>
+    <div class="code"><div class="code-bar"><span class="fn">Get every lab file at once</span><button class="copy" data-act="copy" data-target="clonecmd">Copy</button></div><pre id="clonecmd"><code>git clone --depth 1 https://github.com/arunav-bhattacharya/devops-from-zero ~/code/devops-from-zero</code></pre></div>
     <div class="filter">${projs.map((x) => `<button class="chip${x === labProj ? " on" : ""}" data-act="labp" data-p="${esc(x)}">${esc(x)}</button>`).join("")}</div>
     <p class="muted" style="margin:0">${esc(LABDESC[labProj] || "")}</p>
     <div class="labgrid"><div class="labtree" role="list">${files.map((x) => `<button class="${x.path === labSel ? "on" : ""}" data-act="lab" data-p="${esc(x.path)}" role="listitem"><span>${esc(rel(x))}</span><small>D${pad(x.day)}</small></button>`).join("")}</div>

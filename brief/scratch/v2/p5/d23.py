@@ -132,7 +132,7 @@ L = {
                 "- `app` is the web service. It depends on `greeting` and adds the server.\n\n"
                 "Why bother for a tiny service? The Day 22 version builds JSON by gluing strings. Start it with a `GREETING` that contains a double quote and `curl` returns `{\"message\":\"Say \"hi\"\",...}`, which no JSON parser accepts. Escaping is exactly the kind of logic that deserves its own module and its own tests. In a big codebase the same split gives clear boundaries and faster builds, because a change in `app` never recompiles `greeting`.\n\n"
                 "The wiring is two lines. `include(\"app\", \"greeting\")` in the settings file declares both projects. `implementation(project(\":greeting\"))` in `app/build.gradle.kts` makes `app` use `greeting` like any library, except that Gradle builds it first.\n\n"
-                "Task paths matter now. `./gradlew build` at the root builds both projects. `./gradlew :greeting:test` tests only the library. `./gradlew :app:build` builds `app` and only the parts of `greeting` it needs, such as its jar. `./gradlew projects` prints the tree."
+                "Task paths matter now:\n\n- `./gradlew build` at the root builds both projects.\n- `./gradlew :greeting:test` tests only the library.\n- `./gradlew :app:build` builds `app` and only the parts of `greeting` it needs, such as its jar.\n- `./gradlew projects` prints the tree."
             ),
             "refs": [
                 {"title": "Gradle docs: Structuring multi-project builds", "url": "https://docs.gradle.org/current/userguide/multi_project_builds_intermediate.html", "kind": "docs"},
@@ -142,7 +142,7 @@ L = {
             "h": "Share setup with a convention plugin",
             "body": (
                 "Split a build and the build scripts start repeating themselves. Both projects need the Kotlin plugin, `jvmToolchain(21)`, kotlin.test, the JUnit BOM and `useJUnitPlatform()`. Copy that into ten projects and the copies drift apart. Older builds put shared setup in `allprojects {}` or `subprojects {}` blocks in the root script. Gradle now advises against that, because it ties every project to the root.\n\n"
-                "The current answer is a **convention plugin**: your own small plugin that holds the shared setup. In hello-jvm it lives in `build-logic`, a separate little Gradle build inside the repository:\n\n"
+                "The current answer is a convention plugin: your own small plugin that holds the shared setup. In hello-jvm it lives in `build-logic`, a separate little Gradle build inside the repository:\n\n"
                 "1. `settings.gradle.kts` says `pluginManagement { includeBuild(\"build-logic\") }`, so Gradle builds `build-logic` first and offers its plugins.\n"
                 "2. `build-logic/build.gradle.kts` applies `kotlin-dsl`, which turns each `*.gradle.kts` file in `src/main/kotlin` into a plugin.\n"
                 "3. The file `hello.kotlin-jvm.gradle.kts` becomes the plugin `hello.kotlin-jvm`.\n"
@@ -228,12 +228,12 @@ L = {
         {"cmd": "./gradlew :greeting:publishToMavenLocal", "what": "With maven-publish applied, install the library into ~/.m2 for other local builds."},
     ],
     "mistake": (
-        "Trusting the version in your build file. With highest-wins, the version that runs can be higher than the one you wrote, and a library can sit on the classpath without being in any build file at all. "
+        "Trusting the version in your build file. With highest-wins, the version that runs can be higher than the one you wrote. A library can even sit on the classpath without being in any build file. "
         "When a scanner reports a vulnerable version, run `dependencyInsight` to see which path brings it in, then declare the fixed version yourself; highest-wins then lifts every path to it."
     ),
     "real_world": (
         "At Paylane (a made-up payments company), a security scan flagged an old JSON library that no build file mentioned. `dependencyInsight` showed it arrived through a client SDK. "
-        "The team added the fixed version to the catalog and declared it in the affected project; highest-wins lifted every path, and a convention plugin made sure all services got the same setup."
+        "The team added the fixed version to the catalog and declared it in the affected project. Highest-wins then lifted every path to the fixed version."
     ),
     "task": {
         "title": "Split hello-jvm into app and greeting",
@@ -304,7 +304,7 @@ L = {
     "interview": [
         {
             "q": "What is the difference between api and implementation in Gradle?",
-            "a": "Both make a dependency available to the project that declares it. An `api` dependency is also exposed on the compile classpath of consumers, while `implementation` keeps it internal and only ships it at runtime. `implementation` is the default because it prevents accidental use of a library's internals and means fewer projects recompile when it changes. I use `api` only for libraries whose types appear in public signatures. It needs the `java-library` plugin.",
+            "a": "Both make a dependency available to the project that declares it. An `api` dependency is also exposed on the compile classpath of consumers, while `implementation` keeps it internal and only ships it at runtime. The `implementation` configuration is the default because it prevents accidental use of a library's internals and means fewer projects recompile when it changes. I use `api` only for libraries whose types appear in public signatures. It needs the `java-library` plugin.",
         },
         {
             "q": "Two libraries need different versions of the same dependency. What does Gradle do, and how do you investigate?",
@@ -328,7 +328,7 @@ L = {
             "3. Use a platform for a whole family, as hello-jvm does for JUnit.\n"
             "4. As a last resort, use a strict version or `enforcedPlatform`, which can force a version downward. Check the graph afterwards, because you may have broken a library that needed the newer one.\n\n"
             "There is also a switch for teams that want to decide every conflict by hand. With `configurations.runtimeClasspath { resolutionStrategy.failOnVersionConflict() }` in `app`, the dependency report marked both commons-lang3 entries `FAILED`. Put the same rule on every configuration with `configurations.all` and it fails first on the Kotlin compiler's own classpath, so keep it to the classpaths you care about.\n\n"
-            "Day 24 adds two more tools that sit on top of all this: dependency locking, which records the exact result of resolution in a file, and dependency verification, which checks the bytes of every downloaded jar."
+            "Day 24 adds two more tools on top of all this. Dependency locking records the exact result of resolution in a file. Dependency verification checks the bytes of every downloaded jar."
         ),
     },
     "sources": [

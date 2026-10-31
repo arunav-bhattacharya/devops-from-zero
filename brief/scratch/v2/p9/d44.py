@@ -63,7 +63,7 @@ LESSON = {
         {
             "h": "Alerting rules: expr, for, labels, annotations",
             "body": (
-                "An alerting rule is a PromQL query with a name. Prometheus runs it every evaluation interval (15 seconds in the lab), "
+                "An **alerting rule** is a PromQL query with a name. Prometheus runs it every evaluation interval (15 seconds in the lab), "
                 "and every series the query returns is one active alert. Here is `HelloDown` from `alerts.yml`:\n"
                 "- `expr: up{job=\"hello-devops\"} == 0` is the condition. The comparison filters, so the query returns something only when a scrape fails.\n"
                 "- `for: 1m` means the condition must stay true for a whole minute. Until then the alert is pending.\n"

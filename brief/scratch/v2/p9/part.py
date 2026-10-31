@@ -12,8 +12,8 @@ PART = {
     "intro": (
         "Part 8 left hello-devops running on kind, deployed by Argo CD. This part teaches you to see how it is doing. "
         "Day 41 builds the ideas every monitoring tool shares: signals, SLOs, error budgets and alerts on what users feel. "
-        "Days 42 to 44 put them to work with Prometheus. You run a Compose lab on your laptop, learn PromQL from the first query to a full RED view, "
-        "send alerts to a receiver, and finally set up the same on Kubernetes."
+        "Days 42 to 44 put them to work with Prometheus. You run a Compose lab on your laptop and learn PromQL up to a full RED view. "
+        "Then you send alerts to a receiver and set up the same monitoring on Kubernetes."
     ),
     "recap": [
         "Monitoring watches for known problems; observability lets you ask new questions of metrics, logs, traces and profiles.",
