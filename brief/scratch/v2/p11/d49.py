@@ -172,7 +172,7 @@ The price is memory and a design rule: all spans of one trace must reach the sam
 - Commercial platforms. Dynatrace (Day 50) and Elastic both accept OTLP, so the same Collector config can send there.
 
 Traces get most useful when the three signals point at each other. The thread that ties them together is the trace ID:
-- In logs: write the trace ID on every line. For Python, `OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true` adds it to log records. Then a Kibana search for one trace ID returns every log line of that request, across services.
+- In logs: write the trace ID on every line. For Python, `OTEL_PYTHON_LOG_CORRELATION=true` adds the trace and span IDs to log records. Then a Kibana search for one trace ID returns every log line of that request, across services.
 - In metrics: Prometheus can attach a trace ID to a histogram sample, called an exemplar, so a latency spike on a Grafana graph links to an example trace.
 - In the UI: Grafana and Kibana can link from a span to its logs and back.
 
@@ -183,7 +183,7 @@ A habit worth building: when you add a log line in a service that is traced, mak
             ],
         },
     ],
-    "analogy": "A trace is a parcel's tracking history. The tracking number on the label (the trace ID in `traceparent`) is copied onto every new label as the parcel moves on, and each depot adds a scan with its arrival and departure times (a span). Looking at all the scans for one number shows where the parcel sat for two days. Where it breaks: a courier keeps every parcel's history, while a busy system usually samples and keeps only some traces, so the request you care about may never have been recorded.",
+    "analogy": "A trace is a parcel's tracking history. The tracking number on the label (the trace ID in `traceparent`) is copied onto every new label as the parcel moves on. Each depot adds a scan with its arrival and departure times (a span). Looking at all the scans for one number shows where the parcel sat for two days. Where it breaks: a courier keeps every parcel's history. A busy system usually samples and keeps only some traces, so the request you care about may never have been recorded.",
     "diagram": svg.d49(),
     "diagram_caption": "The real slow trace from the lab: the GET / server span lasted 835 ms, and its Redis child span INCRBY used 832 ms of that, so Redis is the slow step.",
     "worked": {
@@ -204,7 +204,7 @@ $ curl -s localhost:8000/
                 "lang": "console",
             },
             {
-                "say": "Ask Jaeger's API for that exact trace ID and print each span's name, own ID and parent ID, using jq from Day 2. `GET /` has your fake caller `00f067aa0ba902b7` as its parent, and `INCRBY` hangs under `GET /`. Three services would chain the same way. Open http://localhost:16686/trace/4bf92f3577b34da6a3ce929d0e0e4736 to see the waterfall.",
+                "say": "Ask Jaeger's API for that exact trace ID, and let jq from Day 2 print each span's name, own ID and parent ID. The `GET /` span has your fake caller `00f067aa0ba902b7` as its parent, and `INCRBY` hangs under it. Three services would chain the same way. Open http://localhost:16686/trace/4bf92f3577b34da6a3ce929d0e0e4736 to see the waterfall.",
                 "code": """$ curl -s localhost:16686/api/v3/traces/4bf92f3577b34da6a3ce929d0e0e4736 \\
     | jq -r '.result.resourceSpans[].scopeSpans[].spans[] | [.name, .spanId, (.parentSpanId // "-")] | @tsv'
 GET /	3ac93496b7a0eb5b	00f067aa0ba902b7
@@ -258,7 +258,7 @@ $ curl -s localhost:16686/api/v3/traces/0af7651916cd43dd8448eb211c80319c
         {"cmd": "docker compose down", "what": "Stop the tracing lab. Jaeger's in-memory traces are gone after this."},
     ],
     "mistake": "Copying a Collector config from an older tutorial. A `jaeger:` exporter now stops the Collector with `'exporters' unknown type: \"jaeger\"`, and `otlp:` still works but logs `\"otlp\" alias is deprecated; use \"otlp_grpc\" instead`. Send OTLP to Jaeger with the `otlp_grpc` exporter, and run `otelcol validate` (the `validate` command in the worked commands) on every config change before you deploy it.",
-    "real_world": "A payments team traces every service with OpenTelemetry and runs a Collector tier with tail sampling: all traces with an error, all slower than two seconds, and 5% of the rest. The Collector also hashes client IPs and removes card-related attributes before anything leaves the cluster. When the checkout latency alert fires, on-call opens an example slow trace, sees the time spent in the call to the card partner, and searches the logs by that trace ID.",
+    "real_world": "A payments team traces every service with OpenTelemetry. Its Collector tier uses tail sampling to keep all traces with an error, all slower than two seconds, and 5% of the rest. The Collector also hashes client IPs and removes card-related attributes before anything leaves the cluster. When the checkout latency alert fires, on-call opens an example slow trace and sees the time spent in the call to the card partner. Then they search the logs by that trace ID.",
     "task": {
         "title": "Find the slow span",
         "steps": [
@@ -331,7 +331,7 @@ $ curl -s localhost:16686/api/v3/traces/0af7651916cd43dd8448eb211c80319c
         },
         {
             "q": "Head sampling or tail sampling: what is the difference and when do you use each?",
-            "a": "Head sampling decides at the start of a trace, usually from the trace ID and a ratio, and the decision travels with the request so all services agree. It is cheap but blind: it may drop the rare error or slow trace. Tail sampling waits until a trace is complete, in a Collector, and can keep every error and slow trace plus a share of the rest. It needs memory for buffering and all spans of a trace must reach the same Collector, so I use head sampling to cut volume and tail sampling where error and latency traces matter.",
+            "a": "Head sampling decides at the start of a trace, usually from the trace ID and a ratio, and the decision travels with the request so all services agree. It is cheap but blind: it may drop the rare error or slow trace. Tail sampling waits until a trace is complete, in a Collector, and can keep every error and slow trace plus a share of the rest. It needs memory for buffering, and all spans of a trace must reach the same Collector. So I use head sampling to cut volume, and tail sampling where error and latency traces matter.",
         },
         {
             "q": "Why put an OpenTelemetry Collector between your apps and the tracing backend?",
@@ -354,7 +354,7 @@ Two consequences are worth thinking through before you run this in production.
 
 First, memory. The Collector holds every span of every trace in flight for `decision_wait`. At 1,000 requests a second with 10 spans each, a 10-second wait means about 100,000 spans in memory at once. That is why `memory_limiter` comes first in the pipeline and why tail sampling Collectors get their own resource limits.
 
-Second, scale-out. The README says all spans of a trace must be received by the same Collector instance. With three Collector replicas behind a normal load balancer, each one sees a third of every trace and decides badly. The usual fix is two tiers: a first tier of Collectors that only forwards, using the load-balancing exporter, which routes by trace ID, and a second tier that does the tail sampling. The OpenTelemetry docs on scaling the Collector describe this layout.
+Second, scale-out. The README says all spans of a trace must be received by the same Collector instance. With three Collector replicas behind a normal load balancer, each one sees a third of every trace and decides badly. The usual fix is two tiers of Collectors. The first tier only forwards, with the load-balancing exporter, which routes spans by trace ID. The second tier does the tail sampling. The OpenTelemetry docs on scaling the Collector describe this layout.
 
 Head and tail sampling can work together. A service can head-sample at 50% to cut the load on its own process, and the Collector then tail-samples what arrives. Just remember that anything head sampling dropped is gone for good, errors included. If you need every error, the SDK has to keep every trace, and only the Collector may sample.
 

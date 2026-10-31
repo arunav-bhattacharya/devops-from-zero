@@ -98,7 +98,7 @@ LESSON = {
             "body": (
                 "The Day 13 image has one stage, so everything used to build the app ships with it. pip is there, and so is anything a compiler step would leave behind. "
                 "None of it helps at run time. Each extra file is one more thing to patch, one more thing a scanner flags, and one more tool an attacker can use.\n\n"
-                "A **multi-stage build** fixes that. One Dockerfile holds several `FROM` lines, and each starts a new stage from a clean base. "
+                "A multi-stage build fixes that. One Dockerfile holds several `FROM` lines, and each starts a new stage from a clean base. "
                 "A later stage copies what it needs from an earlier one with `COPY --from=<stage>`. Only the last stage becomes the image. The others stay behind in the build cache.\n\n"
                 "The lab's final Dockerfile, in Files, has two stages:\n\n"
                 "1. `build` starts from `python:3.14-slim`, makes a virtual environment in `/venv`, installs the requirements into it, and removes pip from it.\n"
@@ -137,7 +137,7 @@ LESSON = {
                 "- `USER 10001` makes every later step, and the running container, use that user.\n\n"
                 "Write the number in `USER`, not the name. Kubernetes can then check that an image runs as non-root without looking inside it. "
                 "The files you copied in still belong to root, so the app can read its own code but cannot change it. That is what you want.\n\n"
-                "The missing home folder has one side effect. Gunicorn 26 tries to open a control socket, a small file it listens on for admin commands, in the user's home folder. "
+                "The missing home folder has one side effect. Gunicorn 26 tries to open a control socket, a special file that other programs can use to send it commands, in the user's home folder. "
                 "Without the flag, our test container logged `Control server error: [Errno 13] Permission denied: '/home/appuser'` at startup. The app still answered, but every start began with an error. "
                 "The lab's `CMD` adds `--no-control-socket`, which turns that feature off."
             ),
@@ -182,8 +182,8 @@ LESSON = {
         {
             "h": "Two CPU types, and a push to GHCR",
             "body": (
-                "Your Mac builds arm64 images, and most servers run amd64. `docker buildx build --platform linux/amd64,linux/arm64` builds both and pushes one index with a manifest for each, as on Day 12. "
-                "`RUN` steps for the other CPU type run through emulation, so the amd64 half of the build is slower on your Mac.\n\n"
+                "Your Mac builds arm64 images, and most servers run amd64. The command `docker buildx build --platform linux/amd64,linux/arm64` builds both and pushes one index with a manifest for each, as on Day 12. "
+                "The `RUN` steps for the other CPU type run through emulation, so the amd64 half of the build is slower on your Mac.\n\n"
                 "GitHub Container Registry, `ghcr.io`, keeps images next to your code. Pushing there takes three things:\n\n"
                 "1. A personal access token (classic) with the `write:packages` scope. GitHub Packages accepts only classic tokens.\n"
                 "2. `docker login ghcr.io -u <your-github-user> --password-stdin`, with the token piped in so it never appears in your shell history.\n"
@@ -216,7 +216,7 @@ LESSON = {
     "analogy": (
         "A multi-stage build is like building a table in a workshop and delivering only the table. "
         "The saws, the glue and the sawdust stay in the workshop, and the customer gets a clean piece of furniture with nothing sharp attached. "
-        "The picture breaks in one place: Docker keeps the workshop (the build stage) in its cache on the machine that built it, so a secret you copied into the build stage still sits there."
+        "The picture breaks in one place. Docker keeps the workshop (the build stage) in its cache on the machine that built it, so a secret copied into that stage still sits there."
     ),
     "diagram": SVG,
     "diagram_caption": "Only /venv crosses from the build stage; the final stage adds app.py and runs as user 10001.",
@@ -395,13 +395,14 @@ LESSON = {
             "`docker run -d --name nosock hello-devops:1.0.0 gunicorn --bind 0.0.0.0:8000 app:app`. "
             "Then read `docker logs nosock`. Ours ended with `[ERROR] Control server error: [Errno 13] Permission denied: '/home/appuser'`, while the container stayed up. "
             "That is the cost of a user with no home folder, and why the flag is in the lab's `CMD`. Remove it with `docker rm -f nosock`.\n\n"
-            "Second, a small waste we found in the final stage. `docker history hello-devops:1.0.0` shows the `RUN pip uninstall -y pip` layer in the final stage at 4.85 MB, which is odd for a step that deletes things. "
-            "Running pip makes Python save compiled `.pyc` files for every module it loads. `find /usr/local/lib/python3.14 -name '*.pyc' | wc -l` counted 0 in the base image and 150 in ours. "
+            "Second, a small waste we found in the final stage. In `docker history hello-devops:1.0.0`, the final stage's `RUN pip uninstall -y pip` layer is 4.85 MB. "
+            "That is odd for a step that deletes things. "
+            "Running pip makes Python save compiled `.pyc` files for every module it loads. The command `find /usr/local/lib/python3.14 -name '*.pyc' | wc -l` counted 0 in the base image and 150 in ours. "
             "Writing the line as `RUN PYTHONDONTWRITEBYTECODE=1 pip uninstall -y pip` stops that, and the same layer measured 28.7 kB. Try it and compare the two histories.\n\n"
             "Third, a hardened base. Docker's migration guide for Python uses `dhi.io/python:3.13-alpine3.23-dev` for the build stage and `dhi.io/python:3.13-alpine3.23` for the final one. "
             "You need `docker login dhi.io` with a free Docker account first. Moving the lab to such a base changes four things:\n\n"
-            "- The final stage has no shell, so every `RUN` line there fails. Drop the `pip uninstall` and `useradd` lines.\n"
-            "- The runtime image already runs as a non-root user and ships without pip.\n"
+            "- The final stage has no shell, so shell-form `RUN` lines there fail. Drop the `pip uninstall` and `useradd` lines.\n"
+            "- The runtime image already runs as a non-root user and, by Docker's docs, has no package manager.\n"
             "- The lab's `HEALTHCHECK` is in shell form, which `docker history` shows as `CMD-SHELL`. It needs `/bin/sh`, so rewrite it in exec form as a JSON list.\n"
             "- Debugging changes too: `docker exec web sh` has no shell to start.\n\n"
             "We did not build this version here, because pulling from dhi.io needs a login. "

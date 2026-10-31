@@ -96,7 +96,7 @@ LESSON = {
                 "2. Docker Engine, a background program called `dockerd`, runs inside the VM. It pulls images and creates, starts and stops containers.\n"
                 "3. The VM's Linux kernel runs the container processes.\n\n"
                 "The client reaches the engine through a socket, the connection you set up on Day 2. "
-                "`docker version` prints both halves: a Client section for the command on your Mac and a Server section that says `linux/arm64`.\n\n"
+                "Run `docker version` and it prints both halves: a Client section for the command on your Mac and a Server section that says `linux/arm64`.\n\n"
                 "That `arm64` is your CPU type, which Linux calls `aarch64`. Most cloud servers use amd64, also called `x86_64`. "
                 "Popular images carry a variant for each CPU, and Docker picks the one that matches yours. "
                 "An amd64-only image still runs on your Mac through emulation, only slower. "
@@ -122,7 +122,7 @@ LESSON = {
             "refs": ref("c_image", "c_registry"),
         },
         {
-            "h": "docker run, flag by flag",
+            "h": "The docker run command, flag by flag",
             "body": (
                 "`docker run` creates a container from an image and starts it. Its shape is `docker run [options] image [command]`. "
                 "Take `docker run -d --name web -p 8080:80 -e TZ=UTC nginx`. Each option changes one thing:\n\n"
@@ -355,8 +355,9 @@ LESSON = {
             "Three small experiments let you watch namespaces, cgroups and CPU types at work.\n\n"
             "Start with the process namespace. Run `docker run --rm alpine ps`. The output lists exactly one process: `ps` itself, as PID 1. "
             "Your Mac and the Linux VM run hundreds of processes, but the container cannot see any of them. "
-            "Now run `docker run --rm alpine hostname`. You get a random-looking name such as `89851d1cc476`, the container's short ID, because the container has its own hostname namespace too. "
-            "`docker run --rm alpine ip addr` shows a third namespace: the container has its own loopback and its own `eth0` with a private address such as `172.17.0.3`.\n\n"
+            "Now run `docker run --rm alpine hostname`. You get a random-looking name such as `89851d1cc476`, the container's short ID. "
+            "The container has its own hostname namespace too. "
+            "Then `docker run --rm alpine ip addr` shows a third namespace: the container has its own loopback and its own `eth0` with a private address such as `172.17.0.3`.\n\n"
             "For cgroups, start Redis with a memory limit: `docker run -d --name capped -m 64m redis:8-alpine`. "
             "Then run `docker stats --no-stream capped`. When we ran it, the MEM USAGE / LIMIT column said `8.633MiB / 64MiB`. "
             "If Redis tried to use more than 64 MB, the kernel would stop it. Remove it with `docker rm -f capped`. "
@@ -368,7 +369,7 @@ LESSON = {
             "That is the exact error a server shows when someone ships an arm64-only image to it.\n\n"
             "Docker Desktop has two settings worth knowing here. Under Settings, General, you can choose the virtual machine manager. "
             "Another setting uses Apple's Rosetta to speed up amd64 emulation. "
-            "Docker Desktop is also not your only choice: OrbStack and Colima run a Linux VM too and give you the same `docker` command, so this course works with any of them. "
+            "Docker Desktop is also not your only choice. OrbStack and Colima run a Linux VM too and give you the same `docker` command, so this course works with them as well. "
             "For a friendly tour of the kernel features behind all this, read [Julia Evans' post on containers](https://jvns.ca/blog/2016/10/10/what-even-is-a-container/)."
         ),
     },

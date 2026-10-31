@@ -183,7 +183,8 @@ LESSON = {
         },
     ],
     "analogy": (
-        "compose.yaml is like the stage plan a band sends to a venue. It lists each musician (service), their instruments (images), who must be on stage and tuned before the show starts (depends_on with a health condition), and which microphones face the audience (ports). "
+        "compose.yaml is like the stage plan a band sends to a venue. It lists each musician (service) and their instruments (images). "
+        "It says who must be on stage and tuned before the show starts (depends_on with a health condition), and which microphones face the audience (ports). "
         "The crew reads the plan and sets the stage, and `down` clears it while the storage room (volumes) keeps its boxes. "
         "The picture fails on improvising: a stage crew adapts on the night, while Compose only does exactly what the file says, and only on one machine."
     ),
@@ -196,7 +197,7 @@ LESSON = {
                  C("up")),
             step("Check the containers and call the app. The greeting comes from the override file, and the count rises by one each time, because both gunicorn workers share one Redis.",
                  join(C("ps"), C("curl3"))),
-            step("Read web's logs, look inside Redis, and run a one-off container. `run --rm` starts a fresh redis container just for `ping`, talks to the service named redis over the network, and removes itself.",
+            step("Read web's logs, look inside Redis, and run a one-off container. The `run --rm` command starts a fresh redis container just for `ping`. It talks to the service named redis over the network, then removes itself.",
                  join(C("logs"), C("exec"), C("run"))),
             step("Shut Redis down from inside. The restart policy `unless-stopped` brings it back, and the count carries on, because Redis saved its data to the volume on the way down.",
                  join(C("shutdown"), C("ps_after"), C("restarts"), C("curl_after_restart"))),
@@ -303,7 +304,7 @@ LESSON = {
             "options": [
                 "Yes, because profiles start by default",
                 "Yes, because CI merges every Compose file",
-                "No: CI reads only compose.yaml, and the tools profile is off anyway",
+                "No, because CI never reads the override file",
                 "No, because Compose cannot run database tools",
             ],
             "answer": 2,
@@ -348,11 +349,11 @@ LESSON = {
             + "\n".join("- `" + l.strip() + "`" for l in WATCH_TAIL.split("\n")) + "\n\n"
             "Two details matter for real projects. First, list paths you never want copied under `ignore:` in each watch entry, such as test folders. "
             "Second, Docker's docs advise against syncing a dependency folder such as `node_modules`; let a `rebuild` rule install dependencies inside the image instead.\n\n"
-            "CI wants a different thing from Compose: start the stack and fail fast if it is not healthy. "
-            "`docker compose -f compose.yaml up -d --wait` returns only when every service with a healthcheck is healthy, and fails if one becomes unhealthy. "
+            "CI wants a different thing from Compose. It needs the stack started, and a fast failure if something is not healthy. "
+            "The command `docker compose -f compose.yaml up -d --wait` returns only when every service with a healthcheck is healthy, and fails if one becomes unhealthy. "
             "That makes it a good first step before integration tests.\n\n"
             "You might try `docker compose up -d --scale web=3` to get three copies of web. With the lab's file it fails, because each copy would want host port 8000. "
-            "The fix is to stop publishing web at all and let the nginx proxy be the only published service. nginx then reaches the web copies by the name `web` over the project network. "
+            "The fix is to stop publishing web and let the nginx proxy be the only published service. Then nginx reaches the web copies by the name `web` over the project network. "
             "Kubernetes does this job properly on Day 33 with a Service.\n\n"
             "Large setups split Compose files. `include:` pulls another Compose file into this one, and `extends:` reuses one service's settings in another. "
             "Docker's [guide to Compose in production](https://docs.docker.com/compose/how-tos/production/) explains how teams use an extra file for server settings when they do run Compose on a server."

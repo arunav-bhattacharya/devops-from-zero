@@ -65,7 +65,7 @@ LESSON = {
                 "Volumes also fix a speed problem. Writes into the container layer go through copy-on-write, which is slow for big, busy files. "
                 "A volume skips the layers and writes straight to the disk.\n\n"
                 "hello-devops has a data problem right now. The visit count lives in memory, so every restart resets it to zero. "
-                "gunicorn also runs two worker processes, and each keeps its own count, so the number can jump back. "
+                "Gunicorn also runs two worker processes, and each keeps its own count, so the number can jump back. "
                 "Moving the count into Redis fixes both: the workers share one number, and Redis keeps it in a volume."
             ),
             "refs": ref("storage", "c_persist"),
@@ -132,14 +132,16 @@ LESSON = {
                 "In the worked example, `wget http://web` from a container on `demo` returned the page, and `cat /etc/resolv.conf` showed `nameserver 127.0.0.11`. "
                 "The same request from a container on the default bridge failed with `bad address 'web'`.\n\n"
                 "A container can sit on several networks, with one network card for each. That is how you build a proxy that talks to the outside on one network and to private services on another. "
-                "`--network-alias api` gives a container an extra DNS name on a network, which helps when one name should point at several containers.\n\n"
+                "The flag `--network-alias api` gives a container an extra DNS name on a network, which helps when one name should point at several containers.\n\n"
+                "Docker picks a private subnet for each network. Ours got `172.23.0.0/16`, while the default bridge used `172.17.0.0/16`. "
+                "Both sit inside the private `172.16.0.0/12` range from Day 8, so they never clash with addresses on the internet.\n\n"
                 "Containers on the same network reach each other on any port. They need no `-p` at all, because `-p` is only for traffic from outside. "
                 "Docker Compose creates one user-defined network per project, so everything in Day 15 gets name lookup for free."
             ),
             "refs": ref("bridge", "network"),
         },
         {
-            "h": "host and none, and publishing versus exposing",
+            "h": "The host and none drivers, and publishing versus exposing",
             "body": (
                 "`bridge` is one of several network drivers. Two more matter on day one:\n\n"
                 "- `--network none` gives a container no network at all. `ip addr` inside showed only the loopback `lo`. Good for batch jobs that must not talk to anything.\n"
@@ -155,7 +157,8 @@ LESSON = {
         },
     ],
     "analogy": (
-        "Think of an office building. The default bridge is an open-plan floor with no phone directory: you can call a colleague only if you know their extension number, and the numbers change when people move desks. "
+        "Think of an office building. The default bridge is an open-plan floor with no phone directory. "
+        "You can call a colleague only if you know their extension number, and the numbers change when people move desks. "
         "A user-defined network is a floor with a receptionist who knows everyone on that floor by name. "
         "Volumes are the storage room in the basement: people come and go, and the boxes stay. "
         "The picture fails at the building's edge, because a volume stays on the one Docker host where it was made and does not follow your container to another machine."

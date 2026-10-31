@@ -172,7 +172,7 @@ Many teams use both: Loki for everyday app logs, Elasticsearch for security and 
             ],
         },
     ],
-    "analogy": "A DaemonSet of Fluent Bit is like a mail room on every floor of an office building. Each floor's mail room collects the letters its offices put out, stamps each one with the sender's floor and department (the Kubernetes filter), and sends the sacks to one central archive (Elasticsearch). The archive's rules decide which shelf a letter goes on (the index template) and when old boxes go to the shredder (ILM). Where it breaks: real mail rooms do not need to ask head office who sits in which office, but Fluent Bit asks the Kubernetes API for pod labels, and in a very large building those questions add up.",
+    "analogy": "A DaemonSet of Fluent Bit is like a mail room on every floor of an office building. Each floor's mail room collects the letters its offices put out. It stamps each one with the sender's floor and department (the Kubernetes filter) and sends the sacks to one central archive (Elasticsearch). The archive's rules decide which shelf a letter goes on (the index template) and when old boxes go to the shredder (ILM). Where it breaks: a real mail room already knows who sits in which office. Fluent Bit has to ask the Kubernetes API for pod labels, and in a very large building those questions add up.",
     "diagram": svg.d48(),
     "diagram_caption": "Every node runs its own Fluent Bit pod. It tails the node's container log files, adds labels from the Kubernetes API and ships to Elasticsearch outside the cluster.",
     "worked": {
@@ -269,7 +269,7 @@ green  hello-logs-2026.10.30   1   0          4""",
         {"cmd": "helm uninstall fluent-bit -n logging", "what": "Remove Fluent Bit from the cluster."},
     ],
     "mistake": "Installing the Fluent Bit chart with its default config and waiting for logs. The default output sends to a host named `elasticsearch-master`, which only exists if you installed Elastic's old chart, and it does not set `suppress_type_name`. Against Elasticsearch 8 or 9 that answers HTTP 400 with `Action/metadata line [1] contains an unknown parameter [_type]`, and with unlimited retries Fluent Bit keeps trying forever. Always set the output yourself, and read one Fluent Bit pod's log with `kubectl logs` before you open Kibana.",
-    "real_world": "A payments company runs Fluent Bit as a DaemonSet in every cluster with one shared Helm values file, so each service's logs arrive with the same Kubernetes fields. The platform team owns the index templates and lifecycle policies: application logs stay 14 days, while audit logs go to a separate data stream kept much longer in a cheaper tier. Teams that add a noisy debug log see it on the weekly 'biggest indices' report and fix it before it shows up on the bill.",
+    "real_world": "A payments company runs Fluent Bit as a DaemonSet in every cluster with one shared Helm values file, so each service's logs arrive with the same Kubernetes fields. The platform team owns the index templates and lifecycle policies. Application logs stay 14 days, while audit logs go to a separate data stream kept much longer in a cheaper tier. Teams that add a noisy debug log see it on the weekly 'biggest indices' report and fix it before it shows up on the bill.",
     "task": {
         "title": "Ship your kind cluster's logs to Elasticsearch",
         "steps": [
@@ -291,7 +291,7 @@ green  hello-logs-2026.10.30   1   0          4""",
     },
     "explain_back": {
         "prompt": "Explain to a teammate how a line printed by a hello-devops pod gets into Elasticsearch with its pod name attached, and how old logs get deleted, in 3 to 4 sentences. Mention the DaemonSet, the Kubernetes filter and ILM.",
-        "answer": "The container runtime writes the pod's output to a file under /var/log/containers on its node, and the Fluent Bit pod that the DaemonSet runs on that node tails the file. The Kubernetes filter reads the pod name, namespace and container from the file name and asks the API server for the pod's labels, then adds them to the record. Fluent Bit sends the record to that day's k8s-logs index. An index template attaches an ILM policy to each new index, and ILM deletes the index once it is older than the retention we chose.",
+        "answer": "The container runtime writes the pod's output to a file under /var/log/containers on its node. The Fluent Bit pod that the DaemonSet runs on that node tails the file. The Kubernetes filter reads the pod name, namespace and container from the file name and asks the API server for the pod's labels, then adds them to the record. Fluent Bit sends the record to that day's k8s-logs index. An index template attaches an ILM policy to each new index, and ILM deletes the index once it is older than the retention we chose.",
     },
     "recap": [
         "Fluent Bit runs as a DaemonSet: one pod per node, tailing /var/log/containers.",
@@ -362,7 +362,7 @@ That name matches the `logs-*-*` pattern of Elasticsearch's built-in `logs` temp
 
 The naming scheme is `type-dataset-namespace`. Here the type is `logs`, the dataset `hello`, and the namespace `default`. Elastic Agent and its integrations name their data streams the same way, which is why so many Kibana views look for `logs-*`.
 
-Now read the policy behind it with `curl -s 'localhost:9200/_ilm/policy/logs?pretty'`. Its only phase is hot, with a rollover at 30 days or 50 GB per primary shard. There is no delete phase. A data stream on defaults keeps everything until the disk fills. To add retention, you either attach your own ILM policy with a delete phase, or use the data stream lifecycle, a simpler mechanism that takes a single `data_retention` value such as `7d`. Read Elastic's data stream lifecycle page before you mix the two, because the data stream lifecycle leaves alone any backing index that ILM already manages. I saw exactly that in the test: setting `data_retention` on the stream was accepted, but the lifecycle explain API reported that the backing index was not managed by it.
+Now read the policy behind it with `curl -s 'localhost:9200/_ilm/policy/logs?pretty'`. Its only phase is hot, with a rollover at 30 days or 50 GB per primary shard. There is no delete phase. A data stream on defaults keeps everything until the disk fills. To add retention, you can attach your own ILM policy with a delete phase. Or you can use the data stream lifecycle, a simpler mechanism that takes a single `data_retention` value such as `7d`. Read Elastic's data stream lifecycle page before you mix the two, because the data stream lifecycle leaves alone any backing index that ILM already manages. I saw exactly that in the test: setting `data_retention` on the stream was accepted, but the lifecycle explain API reported that the backing index was not managed by it.
 
 Two practical differences from daily indices:
 - You cannot delete "today's index" to pick up a new template, because writes always go to the stream. You trigger a rollover instead (`POST logs-hello-default/_rollover`), and the new backing index uses the current template.

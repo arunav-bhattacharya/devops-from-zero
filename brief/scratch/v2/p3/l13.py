@@ -64,8 +64,8 @@ LESSON = {
                 "- `ARG` declares a variable that exists only during the build.\n"
                 "- `EXPOSE` documents the port the app listens on. It publishes nothing; `-p` does that.\n"
                 "- `CMD` and `ENTRYPOINT` set what the container runs when it starts.\n\n"
-                "Two more arrive on Day 16: `USER`, which picks the user the app runs as, and `HEALTHCHECK`, which tells Docker how to test the app. "
-                "`LABEL` adds key and value notes to the image, such as a link to its source repo.\n\n"
+                "Two more arrive on Day 16. The `USER` instruction picks the user the app runs as, and `HEALTHCHECK` tells Docker how to test the app. "
+                "The `LABEL` instruction adds key and value notes to the image, such as a link to its source repo.\n\n"
                 "Read the Day 13 Dockerfile in the Files section with this list next to it. Every line is one of these instructions, with a comment that says why it is there."
             ),
             "refs": ref("dockerfile"),
@@ -119,7 +119,7 @@ LESSON = {
                 "`--entrypoint` swaps the program itself. For a web app, `CMD` alone is the simple choice.\n\n"
                 "Write both in exec form, a JSON list such as `[\"gunicorn\", \"app:app\"]`. Then your app runs directly as PID 1 and receives the SIGTERM from `docker stop`. "
                 "In shell form, `CMD gunicorn app:app`, Docker runs `/bin/sh -c \"gunicorn app:app\"`. The shell becomes PID 1 and does not pass SIGTERM on. "
-                "We measured both: the shell-form container needed 10.2 seconds to stop and ended with code 137, while the exec-form one stopped in 0.6 seconds with code 0. "
+                "We measured both. The shell-form container needed 10.2 seconds to stop and ended with code 137. The exec-form one stopped in 0.6 seconds with code 0. "
                 "PID 1 is also special in Linux: it gets no default signal handlers, which is why `sleep` ignored SIGTERM on Day 11."
             ),
             "refs": ref("json_args", "dockerfile"),
@@ -157,7 +157,7 @@ LESSON = {
                 "- `LegacyKeyValueFormat`: `ENV GREETING Hello` should be `ENV GREETING=Hello`\n"
                 "- `JSONArgsRecommended`: a shell-form `CMD`, with the signal problem from above\n\n"
                 "`docker init`, which ships with Docker Desktop, writes a starter `Dockerfile`, `.dockerignore`, `compose.yaml` and `README.Docker.md` for a project. "
-                "It has templates for Python, Go, Java, Node and more. It is a fine way to see a second opinion, but read every line before you keep it, and run it in an empty folder: it overwrites files and you cannot get them back."
+                "It has templates for Python, Go, Java, Node and more. It is a fine way to get a second opinion, but read every line before you keep it. Run it in an empty folder, because it overwrites files and you cannot get them back."
             ),
             "refs": ref("checks", "init"),
         },
@@ -250,9 +250,11 @@ LESSON = {
         "prompt": "Explain in 3 to 4 sentences why the order of lines in a Dockerfile matters for build speed, and why CMD should use exec form. Mention layers, the cache and PID 1.",
         "answer": (
             "Each Dockerfile instruction creates a layer, and Docker caches each layer. "
-            "When an instruction or the files it copies change, Docker rebuilds that layer and every layer after it, so I copy requirements.txt and run pip install before I copy the code. "
+            "When an instruction or the files it copies change, Docker rebuilds that layer and every layer after it. "
+            "So I copy requirements.txt and run pip install before I copy the code. "
             "A code change then rebuilds only the last small layer. "
-            "I write CMD as a JSON list so my app runs as PID 1 and gets the SIGTERM from docker stop; with shell form, a shell sits in between and the container is killed after 10 seconds."
+            "I write CMD as a JSON list so my app runs as PID 1 and gets the SIGTERM from docker stop. "
+            "With shell form, a shell sits in between and the container is killed after 10 seconds."
         ),
     },
     "recap": [

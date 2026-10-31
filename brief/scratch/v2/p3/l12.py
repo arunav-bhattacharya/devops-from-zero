@@ -66,8 +66,8 @@ LESSON = {
                 "Instructions that only change settings, such as `CMD`, `ENV` and `EXPOSE`, only edit the config. "
                 "That is why `docker history` lists them with a size of 0B.\n\n"
                 "Try it on the base image you will use on Day 13. "
-                "`docker image inspect python:3.14-slim --format '{{json .RootFS.Layers}}'` printed four layer digests on the day we checked. "
-                "`docker history python:3.14-slim` shows which instruction made each one: 87.7 MB of Debian files at the bottom, 42.1 MB for the Python build, and two small layers.\n\n"
+                "The command `docker image inspect python:3.14-slim --format '{{json .RootFS.Layers}}'` printed four layer digests on the day we checked. "
+                "Then `docker history python:3.14-slim` shows which instruction made each one: 87.7 MB of Debian files at the bottom, 42.1 MB for the Python build, and two small layers.\n\n"
                 "If you know git, the picture is familiar. Layers are like immutable snapshots of changes, and the manifest is like a commit that points at them."
             ),
             "refs": ref("c_layers", "ref_history", "images_deep"),
@@ -98,8 +98,8 @@ LESSON = {
                 "3. A new file goes straight into the container layer.\n"
                 "4. A delete adds a small marker called a whiteout, which hides the file below. The bytes below stay where they are.\n\n"
                 "`docker diff` lists what a container changed, with A for added, C for changed and D for deleted. "
-                "We edited `nginx.conf`, created a file in `/tmp` and deleted `50x.html` in an nginx container. `docker diff` showed exactly those, plus files nginx wrote at startup, such as `/run/nginx.pid`. "
-                "`docker ps --size` reported that container layer as `106kB (virtual 177MB)`: 106 kB of its own on top of 177 MB of shared image.\n\n"
+                "We edited `nginx.conf`, created a file in `/tmp` and deleted `50x.html` in an nginx container. The diff showed exactly those, plus files nginx wrote at startup, such as `/run/nginx.pid`. "
+                "Then `docker ps --size` reported that container layer as `106kB (virtual 177MB)`: 106 kB of its own on top of 177 MB of shared image.\n\n"
                 "Copy-on-write has a cost. Copying a big file up is slow, and the layer dies with the container. That is why databases keep their files in volumes (Day 14)."
             ),
             "refs": ref("overlay", "ref_diff"),
@@ -117,7 +117,10 @@ LESSON = {
                 "Install it with `brew install dive`. With `CI=true` it prints a pass or fail report, and for the two-step image it said: efficiency 14%, 50 MB wasted in `/big.bin`, FAIL.\n\n"
                 "`docker image ls` shows two sizes on current Docker. CONTENT SIZE is the compressed data, close to what you download and push. "
                 "DISK USAGE also counts the unpacked copy on disk, so it is bigger.\n\n"
-                "Size is worth watching for three reasons: every deploy and CI run pulls the image, it takes disk on every machine, and every extra package is one more thing to patch."
+                "Size is worth watching for three reasons:\n\n"
+                "- Every deploy and every CI run pulls the image.\n"
+                "- It takes disk space on every machine that runs it.\n"
+                "- Every extra package is one more thing to patch."
             ),
             "refs": ref("dive", "ref_imagels"),
         },
@@ -176,7 +179,8 @@ LESSON = {
     "analogy": (
         "Think of an overhead projector with a stack of transparent sheets. Each sheet adds some drawings, and the screen shows all of them at once: those are the layers. "
         "A container adds one blank sheet on top for its own notes. "
-        "To erase a line drawn on a lower sheet, you can only stick a white patch over it on a higher sheet, so the line is hidden but still there, and the stack is no lighter. "
+        "To erase a line drawn on a lower sheet, you can only stick a white patch over it on a higher sheet. "
+        "The line is hidden but still there, and the stack is no lighter. "
         "The picture breaks on sharing: a real sheet sits in one stack at a time, while Docker uses the same layer in many images at once."
     ),
     "diagram": SVG,
@@ -248,7 +252,7 @@ LESSON = {
         "Clean up in the same `RUN` that created the files, or build in one stage and copy only the results into a fresh one."
     ),
     "real_world": (
-        "PayFlow's deploy files never say `payments-api:latest`. CI pushes each build with a version tag, and the deploy file pins the digest that CI printed, so what ran in tests is byte for byte what runs in production. "
+        "PayFlow's deploy files never say `payments-api:latest`. CI pushes each build with a version tag, and the deploy file pins the digest that CI printed. What ran in tests is then byte for byte what runs in production. "
         "A weekly job rebuilds base images, and a pull request updates the pinned digests, so nobody gets a new base by surprise."
     ),
     "task": {

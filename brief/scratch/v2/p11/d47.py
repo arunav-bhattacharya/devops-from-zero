@@ -204,7 +204,7 @@ Two habits save time:
             ],
         },
     ],
-    "analogy": "Picture a newspaper archive. Instead of each reporter keeping old papers in a desk drawer (a container that can be thrown away), every issue is filed in one building, one shelf per day (one index per day). The archive also keeps a card catalogue that lists every word and the issues it appears in (the inverted index), so you find every mention of 'declined' without opening old papers. Where it breaks: the catalogue only lists whole words exactly as it filed them, so a search for part of a word, or for a plural it never saw, comes back empty.",
+    "analogy": "Picture a newspaper archive. Old papers do not sit in a reporter's desk drawer, which can be thrown out with the desk (a container). Every issue is filed in one building, one shelf per day (one index per day). The archive keeps a card catalogue of every word and the issues it appears in (the inverted index). So you find every mention of 'declined' without opening a single paper. Where it breaks: the catalogue lists only whole words, exactly as it filed them. A search for part of a word, or for a plural it never saw, comes back empty.",
     "diagram": svg.d47(),
     "diagram_caption": "One log line's road in the lab: printed by the app, handed over by Docker, parsed by Fluent Bit, indexed by Elasticsearch, searched in Kibana.",
     "worked": {
@@ -310,7 +310,7 @@ $ curl -s -X DELETE localhost:9200/demo-logs,demo-guess
         {"cmd": "docker compose logs web", "what": "Read the app's lines locally. This still works with the fluentd driver, because Docker keeps a local copy."},
         {"cmd": "docker compose down -v", "what": "Stop the stack and delete the volume, which removes every stored log."},
     ],
-    "mistake": "Treating the Kibana search box like grep. You search for part of a word, such as `ConnectionError` inside `redis.exceptions.ConnectionError`, get zero hits, and decide the error never happened. Elasticsearch matches whole tokens, so search for a phrase that really appears as words (`\"service not known\"`), filter on structured fields such as `status >= 500`, or check the tokens with `_analyze` before you trust an empty result.",
+    "mistake": "Treating the Kibana search box like grep. You search for part of a word, such as `ConnectionError` inside `redis.exceptions.ConnectionError`, get zero hits, and decide the error never happened. Elasticsearch matches whole tokens. Search for a phrase that really appears as words (`\"service not known\"`), or filter on structured fields such as `status >= 500`. Check the tokens with `_analyze` before you trust an empty result.",
     "real_world": "On a payments team, every service writes JSON logs with the same field names (`service`, `level`, `order_id`, `trace_id`), so one Kibana query works across all of them. Card numbers and tokens are masked inside the app before the line is printed, and a review checks new log statements for personal data. When a merchant reports a failed payment, on-call filters on `order_id` and reads the whole story across services in a minute.",
     "task": {
         "title": "Find hello-devops errors in Kibana",
@@ -346,7 +346,7 @@ $ curl -s -X DELETE localhost:9200/demo-logs,demo-guess
     "check": [
         {
             "q": "Your logs get a new field, `customer_tier`, with values like `gold` and `silver`. You want to filter on it and count requests per tier. Which mapping type fits?",
-            "options": ["text", "date", "long", "keyword"],
+            "options": ["text", "short", "boolean", "keyword"],
             "answer": 3,
             "why": "Exact filters and counts need the whole value stored as one term, which is what keyword does.",
         },
@@ -375,11 +375,11 @@ $ curl -s -X DELETE localhost:9200/demo-logs,demo-guess
         },
         {
             "q": "What is the difference between ELK and EFK, and when would you choose Fluent Bit?",
-            "a": "Both use Elasticsearch to store and Kibana to search. ELK collects with Logstash, a JVM program that can do heavy transformations; EFK collects with Fluentd or Fluent Bit. I choose Fluent Bit when the shipper runs on many machines, such as every Kubernetes node, because it is small (about 450 KB of memory against Fluentd's 60 MB or more) and can send straight to Elasticsearch. I would add Logstash or Fluentd as a central aggregator only if the pipeline needs transformations Fluent Bit cannot do.",
+            "a": "Both use Elasticsearch to store and Kibana to search. ELK collects with Logstash, a JVM program that can do heavy transformations; EFK collects with Fluentd or Fluent Bit. I choose Fluent Bit when the shipper runs on many machines, such as every Kubernetes node. It is small (about 450 KB of memory against Fluentd's 60 MB or more) and can send straight to Elasticsearch. I would add Logstash or Fluentd as a central aggregator only if the pipeline needs transformations Fluent Bit cannot do.",
         },
         {
             "q": "What should never go into logs, and how do you enforce it?",
-            "a": "Passwords, tokens, session IDs, connection strings, keys, payment card data and personal data such as emails should be removed, masked or hashed before the line is written. I enforce it in layers: logging helpers in the app that mask known fields, code review of new log statements, and a filter in the shipper as a last safety net. Scrubbing at the source matters most, because deleting a secret later from every index, replica and backup is hard.",
+            "a": "Passwords, tokens, session IDs, connection strings, keys, payment card data and personal data such as emails should be removed, masked or hashed before the line is written. I enforce it in layers. The app's logging helpers mask known fields, code review checks new log statements, and a filter in the shipper is the last safety net. Scrubbing at the source matters most, because deleting a secret later from every index, replica and backup is hard.",
         },
     ],
     "deeper": {

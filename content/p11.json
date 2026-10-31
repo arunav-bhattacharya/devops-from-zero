@@ -1,0 +1,1411 @@
+{
+ "part": 11,
+ "title": "Logs and traces: ELK, EFK and OpenTelemetry",
+ "intro": "Parts 9 and 10 told you when hello-devops is unhealthy. This part gives you the two signals that say which request failed and where its time went. Days 47 and 48 collect every log line into Elasticsearch with Fluent Bit, first with Docker Compose on your laptop and then as a DaemonSet on kind. Day 49 traces hello-devops with OpenTelemetry, without changing its code, and finds a slow Redis call in Jaeger.",
+ "lessons": [
+  {
+   "id": "d47",
+   "title": "Centralized logging and the Elastic stack",
+   "minutes": 50,
+   "goal": "By the end you can explain why teams centralize logs, run Elasticsearch, Kibana and Fluent Bit on your laptop, and find hello-devops errors in Kibana with KQL and ES|QL.",
+   "guess": {
+    "q": "A log line says `redis.exceptions.ConnectionError: Error -2 connecting to redis:6379`. You search Elasticsearch for `ConnectionError` and get zero hits. Why?",
+    "options": [
+     "New logs need a few minutes before Elasticsearch can search them",
+     "Elasticsearch stored `redis.exceptions.connectionerror` as one word, and search matches whole words",
+     "Search is case-sensitive, so you have to type `connectionerror` in lower case",
+     "Elasticsearch only searches the first 256 characters of each log line"
+    ],
+    "answer": 1,
+    "why": "Elasticsearch splits text into words (tokens) and searches those, not substrings. Dots between letters do not split a word, so the whole dotted name became one token, and `ConnectionError` on its own is not in the index."
+   },
+   "terms": [
+    {
+     "term": "Centralized logging",
+     "plain": "Copying the logs of every app and server to one place where you can search them together."
+    },
+    {
+     "term": "Structured log",
+     "plain": "A log line written as data with named fields, usually one JSON object per line."
+    },
+    {
+     "term": "Document",
+     "plain": "One JSON object stored in Elasticsearch. In logging, one document is usually one log event."
+    },
+    {
+     "term": "Index (Elasticsearch)",
+     "plain": "A named collection of documents, such as hello-logs-2026.10.30, that you write to and search."
+    },
+    {
+     "term": "Inverted index",
+     "plain": "A table from each word to the documents that contain it, like the index at the back of a book."
+    },
+    {
+     "term": "Mapping",
+     "plain": "The list of fields in an index and the type of each one, such as text, keyword, long or date."
+    },
+    {
+     "term": "Shard and replica",
+     "plain": "A shard is one slice of an index. A replica is a copy of a shard kept on a different node."
+    },
+    {
+     "term": "Fluent Bit",
+     "plain": "A small open-source program that collects logs, parses them into fields and sends them on."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Why logs need one home",
+     "body": "In Part 3 you read a container's output with `docker logs`. That works for one app on one laptop. Now picture hello-devops on Kubernetes: three pods on three nodes, replaced on every deploy. A customer says a payment failed at 14:02. Which pod handled it? That pod may not exist any more, and its logs left with it.\n\nCentralized logging fixes this. Every line every container prints is copied, as it is written, to one store you can search. The copy outlives the container, so you stop asking where the log is and start asking what it says.\n\nMetrics from Part 9 tell you that errors went up. Logs tell you which request failed and why. You need both, and you usually read them in that order.\n\nA log pipeline has four jobs. The lab gives each one to a different program:\n1. The app prints one event per line to stdout. hello-devops already does.\n2. A shipper collects the lines, parses them into fields and sends them on. Here that is Fluent Bit.\n3. A store indexes every field so search is fast. Here that is Elasticsearch.\n4. A web UI lets people search and chart. Here that is Kibana.\n\nIn the lab, Docker itself hands each line to Fluent Bit. The compose file sets the `fluentd` logging driver on the web container, so the Docker engine sends every line to port 24224 as well as keeping its own copy. One detail matters: the engine opens that connection, not a container. That is why the address is `localhost:24224`, the port Fluent Bit publishes on your laptop, and why `fluentd-async` is set. Without it, a container stops at once when it cannot reach its log collector.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: observability primer",
+       "url": "https://opentelemetry.io/docs/concepts/observability-primer/",
+       "kind": "docs"
+      },
+      {
+       "title": "Docker: Fluentd logging driver",
+       "url": "https://docs.docker.com/engine/logging/drivers/fluentd/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Write logs a machine can read",
+     "body": "Compare two lines from the lab. Gunicorn prints this when it starts a worker:\n\n`[2026-10-30 05:03:07 +0000] [8] [INFO] Booting worker with pid: 8`\n\nAnd this is one line of the access log the lab turns on:\n\n`{\"level\":\"INFO\",\"logger\":\"access\",\"method\":\"GET\",\"path\":\"/\",\"status\":200,\"duration_ms\":8}`\n\nThe first is fine for a human. A machine has to guess where the level ends and the message starts, and every program formats it a little differently. The second is a structured log: data with named fields. Fluent Bit turns each key into a field, so you can ask for `status >= 500` or the slowest `path` without writing a regular expression.\n\nYou did not change `app.py` to get this. The lab's compose file gives gunicorn an `--access-logformat` that prints JSON. In your own services, use a JSON logging library and write one event per line.\n\nEvery event also carries a level. Most teams use these four:\n- DEBUG: detail for developers. Usually off in production, because it is loud.\n- INFO: normal events, such as a request served or a job finished.\n- WARN: something odd that has not failed yet, such as a retry.\n- ERROR: a request or job failed, and someone may need to act.\n\nSome things never belong in a log, because many people read the log store and it keeps data for weeks. The OWASP Logging Cheat Sheet says to remove, mask or hash these before they are written:\n- passwords, access tokens and session IDs\n- database connection strings and encryption keys\n- payment card and bank account data\n- personal data, such as names, email addresses and home addresses\n\nA token in a log is a security incident. Deleting it later from every copy and backup is slow, painful work, so scrub at the source.",
+     "refs": [
+      {
+       "title": "OWASP Logging Cheat Sheet",
+       "url": "https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Logging_Cheat_Sheet.md",
+       "kind": "read"
+      },
+      {
+       "title": "OpenTelemetry: logs",
+       "url": "https://opentelemetry.io/docs/concepts/signals/logs/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Documents, indices and the inverted index",
+     "body": "Elasticsearch stores JSON documents. A document is one JSON object, and in logging one document is one log event. Each document gets an `_id`, and Elasticsearch keeps the exact JSON you sent in a field called `_source`.\n\nDocuments live in an index, a named collection such as `hello-logs-2026.10.30`. You write to one index and can search many at once with a pattern like `hello-logs-*`. The lab makes one index per day, which keeps old days easy to delete.\n\nSearch is fast because of the **inverted index**. When a document arrives, Elasticsearch splits each text field into words, called tokens, and lowercases them. Then it records, for every token, which documents contain it. It works like the index at the back of a book: to find \"declined\" you look it up once instead of reading every page.\n\nHere is what the default analyzer did with a message in the worked example:\n\n`Payment FAILED for order 42: card declined` became `payment`, `failed`, `for`, `order`, `42`, `card` and `declined`.\n\nThat explains two surprises you will hit in the lab:\n- A search for `payments` finds nothing. Only `payment` was stored, and the default analyzer does not reduce words to a common stem.\n- `redis.exceptions.ConnectionError` stays one token, because dots between letters do not split words. Search for `ConnectionError` and you get zero hits. Search for the phrase `\"service not known\"` from the same error and you find it at once.\n\nThis trips most people up, because grep matches any substring and Elasticsearch matches whole tokens.\n\nNew documents are not searchable in the same instant. Elasticsearch makes them visible within about one second, in a step called a refresh. The Elastic docs call this near real-time search.",
+     "refs": [
+      {
+       "title": "Elastic: index basics",
+       "url": "https://www.elastic.co/docs/manage-data/data-store/index-basics",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: near real-time search",
+       "url": "https://www.elastic.co/docs/manage-data/data-store/near-real-time-search",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Mappings: text, keyword and the first guess",
+     "body": "Each index has a **mapping**: the type of every field and how it is indexed. You can write one yourself, or let Elasticsearch guess from the first document that contains a field. That guess is called dynamic mapping, and it sticks.\n\nThe two types you will meet most in logs are:\n- `text`: split into tokens for full-text search. Good for `message` or `log`.\n- `keyword`: stored whole, for exact filters, sorting and counting. Good for `level`, `path` or `service`.\n\nA keyword is matched exactly, capitals included. In the worked example the `level` field held `ERROR`, so a search for `error` on it found nothing.\n\nFor strings, dynamic mapping makes both: a `text` field plus a `.keyword` sub-field. That is why the lab's index shows `path` and also `path.keyword`. Whole numbers become `long`, so `status` and `duration_ms` are numbers you can compare and average.\n\nThe guess is only as good as the first document:\n- A service sends `\"duration_ms\": \"120\"` as a string. The field becomes text, and you can never average it in that index.\n- A later document sends a value the mapped type cannot hold. Elasticsearch rejects it with a `document_parsing_exception` and HTTP status 400.\n- Someone logs request headers as keys. Every new header becomes a new field. The Elastic docs warn that too many fields, a mapping explosion, can run the cluster out of memory.\n\nThe fix is an explicit mapping. On Day 48 you put one into an index template, so every new daily index starts with the right types.",
+     "refs": [
+      {
+       "title": "Elastic: mapping",
+       "url": "https://www.elastic.co/docs/manage-data/data-store/mapping",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Shards, replicas and the yellow cluster",
+     "body": "One running Elasticsearch process is a node. Nodes that work together form a cluster. Your lab is a cluster of one node.\n\nAn index is split into shards. Each shard is a complete small Lucene index (Lucene is the Java search library under Elasticsearch) holding part of the documents. Shards let one index spread over many nodes, so more machines can store and search it in parallel.\n\nThere are two kinds:\n- A primary shard holds the original documents. Each document belongs to exactly one primary.\n- A replica shard is a copy of a primary on another node. If that node dies, the copy takes over. Replicas also answer searches.\n\nTwo rules follow, and both surprise people:\n1. The number of primary shards is fixed when the index is created. The number of replicas can change at any time.\n2. Elasticsearch never puts a replica on the same node as its primary.\n\nSo on your laptop, an index with one replica is yellow: all data is there, but a copy is missing. Green means every shard is placed. Red means a primary is missing, so some data cannot be searched. The lab's daily index starts yellow for exactly this reason, because new indices get one replica by default. On Day 48 you set replicas to 0 for it.\n\nMore shards are not free. Each search runs on one thread per shard, and every shard costs memory. The Elastic sizing guide suggests shards between 10 GB and 50 GB. A lab that stores a few megabytes a day needs one shard per index.",
+     "refs": [
+      {
+       "title": "Elastic: clusters, nodes and shards",
+       "url": "https://www.elastic.co/docs/deploy-manage/distributed-architecture/clusters-nodes-shards",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: red or yellow cluster health",
+       "url": "https://www.elastic.co/docs/troubleshoot/elasticsearch/red-yellow-cluster-status",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: size your shards",
+       "url": "https://www.elastic.co/docs/deploy-manage/production-guidance/optimize-performance/size-shards",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "ELK, EFK and OpenSearch",
+     "body": "ELK is the classic name for three Elastic products used together:\n- Elasticsearch stores and searches.\n- Logstash collects and reshapes data. It runs on the JVM and can do heavy transformations on the way in.\n- Kibana is the web UI.\n\nElastic later added Beats, small single-purpose shippers such as Filebeat, and then Elastic Agent, one agent you manage centrally with Fleet. Elastic now calls the whole family the Elastic Stack.\n\nEFK swaps the L for an F: Fluentd or Fluent Bit. Both are open-source CNCF graduated projects, not Elastic products. Fluentd came first and is written in C and Ruby. Fluent Bit is written in C for small machines. Its docs compare the two like this:\n- Memory: Fluentd needs more than 60 MB, Fluent Bit about 450 KB.\n- Plugins: Fluentd has over 1,000 external plugins, Fluent Bit over 100 built in.\n\nYou need neither Logstash nor Fluentd: Fluent Bit sends straight to Elasticsearch, as in the lab. On Kubernetes a shipper runs on every node, so a small footprint matters, and that is the job Fluent Bit was built for.\n\nThe licence history explains the other product name you will meet:\n1. Until January 2021, Elasticsearch and Kibana were open source under Apache 2.0.\n2. Elastic then switched to a choice of SSPL or the Elastic License, and neither counts as an open source licence. The stated aim was to stop cloud providers selling Elasticsearch as a service.\n3. AWS forked the last Apache 2.0 code as OpenSearch. It is still Apache 2.0 and has been under the Linux Foundation since September 2024.\n4. In August 2024 Elastic added AGPLv3 as a third option. It sits next to the other two, and the binaries did not change.\n\nFor you, two facts matter. The lab images are free to run. And OpenSearch is close enough to Elasticsearch that today's ideas carry over.",
+     "refs": [
+      {
+       "title": "Elastic: the Elastic Stack",
+       "url": "https://www.elastic.co/docs/get-started/the-stack",
+       "kind": "docs"
+      },
+      {
+       "title": "Fluent Bit: Fluentd and Fluent Bit",
+       "url": "https://docs.fluentbit.io/manual/about/fluentd-and-fluent-bit",
+       "kind": "docs"
+      },
+      {
+       "title": "DevClass: Elasticsearch will be open source again (2024)",
+       "url": "https://devclass.com/2024/09/02/elasticsearch-will-be-open-source-again-as-cto-declares-changed-landscape/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Searching in Kibana: Discover, KQL and ES|QL",
+     "body": "Kibana's Discover page is where you read logs. It has two query modes.\n\nClassic mode needs a data view: a saved name pattern such as `hello-logs-*` plus the time field `@timestamp`. You type KQL, the Kibana Query Language, into the search bar. Each condition is a field, an operator and a value:\n- `status >= 500` shows failed requests. It works because `status` is a number.\n- `path: \"/readyz\" and not status: 200` combines two conditions.\n- `log: \"service not known\"` finds a phrase inside a Python traceback.\n- `not path: \"/healthz\"` hides the health checks Docker sends every 30 seconds.\n\nES|QL mode needs no data view. You write a pipeline, like a Unix pipe over your logs, where each step works on the rows from the step before. This query counts failed requests per path:\n\n`FROM hello-logs-* | WHERE status >= 500 | STATS errors = COUNT(*) BY path | SORT errors DESC`\n\nOn the lab it returned 5 for `/readyz` and 3 for `/`. My rule of thumb: KQL to narrow down what you are looking at, ES|QL when the question needs counting, grouping or math. You can even mix them, because ES|QL accepts KQL inside `WHERE KQL(\"status >= 500\")`.\n\nTwo habits save time:\n- Check the time picker first. Discover shows the last 15 minutes by default, so older logs look missing.\n- Add the fields you care about (`path`, `status`, `duration_ms`) as columns. Otherwise each row is one long summary.",
+     "refs": [
+      {
+       "title": "Exploring and querying your data with Kibana (Elastic)",
+       "url": "https://www.youtube.com/watch?v=t3cebUxRliA",
+       "kind": "watch"
+      },
+      {
+       "title": "Elastic: Kibana Query Language (KQL)",
+       "url": "https://www.elastic.co/docs/explore-analyze/query-filter/languages/kql",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: ES|QL in Kibana",
+       "url": "https://www.elastic.co/docs/explore-analyze/query-filter/languages/esql-kibana",
+       "kind": "docs"
+      }
+     ]
+    }
+   ],
+   "analogy": "Picture a newspaper archive. Old papers do not sit in a reporter's desk drawer, which can be thrown out with the desk (a container). Every issue is filed in one building, one shelf per day (one index per day). The archive keeps a card catalogue of every word and the issues it appears in (the inverted index). So you find every mention of 'declined' without opening a single paper. Where it breaks: the catalogue lists only whole words, exactly as it filed them. A search for part of a word, or for a plural it never saw, comes back empty.",
+   "diagram": "<svg viewBox=\"0 0 560 224\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A log line goes from hello-devops through the Docker engine to Fluent Bit, then to Elasticsearch, and you search it with Kibana\"><rect class=\"bxt\" x=\"16\" y=\"24\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"80\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">hello-devops</text><line class=\"ln\" x1=\"146\" y1=\"46\" x2=\"196\" y2=\"46\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"171\" y=\"38\" font-size=\"11\" text-anchor=\"middle\">stdout</text><rect class=\"bx\" x=\"200\" y=\"24\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"268\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">Docker engine</text><line class=\"ln\" x1=\"338\" y1=\"46\" x2=\"396\" y2=\"46\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"367\" y=\"38\" font-size=\"11\" text-anchor=\"middle\">forward</text><rect class=\"bxo\" x=\"400\" y=\"24\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"468\" y=\"51\" font-size=\"13\" text-anchor=\"middle\">Fluent Bit</text><text class=\"ts\" x=\"468\" y=\"86\" font-size=\"11\" text-anchor=\"middle\">parse to JSON</text><line class=\"ln\" x1=\"468\" y1=\"92\" x2=\"468\" y2=\"142\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"476\" y=\"122\" font-size=\"11\" text-anchor=\"start\">bulk API</text><rect class=\"bxp\" x=\"400\" y=\"146\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"468\" y=\"173\" font-size=\"13\" text-anchor=\"middle\">Elasticsearch</text><text class=\"ts\" x=\"468\" y=\"208\" font-size=\"11\" text-anchor=\"middle\">hello-logs-*</text><rect class=\"bx\" x=\"16\" y=\"146\" width=\"128\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"80\" y=\"173\" font-size=\"13\" text-anchor=\"middle\">Your browser</text><line class=\"ln\" x1=\"146\" y1=\"168\" x2=\"196\" y2=\"168\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"171\" y=\"160\" font-size=\"11\" text-anchor=\"middle\">5601</text><rect class=\"bxg\" x=\"200\" y=\"146\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"268\" y=\"173\" font-size=\"13\" text-anchor=\"middle\">Kibana</text><line class=\"ln\" x1=\"338\" y1=\"168\" x2=\"396\" y2=\"168\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"367\" y=\"160\" font-size=\"11\" text-anchor=\"middle\">search</text><text class=\"ts\" x=\"80\" y=\"86\" font-size=\"11\" text-anchor=\"middle\">one line per event</text><text class=\"ts\" x=\"268\" y=\"86\" font-size=\"11\" text-anchor=\"middle\">fluentd driver</text></svg>",
+   "diagram_caption": "One log line's road in the lab: printed by the app, handed over by Docker, parsed by Fluent Bit, indexed by Elasticsearch, searched in Kibana.",
+   "worked": {
+    "title": "Elasticsearch from zero with curl",
+    "steps": [
+     {
+      "say": "Start only Elasticsearch from the lab and ask who it is. A GET on the root returns the cluster name and version. `filter_path` trims the answer to the fields you name, which keeps output readable.",
+      "code": "$ cd logging\n$ docker compose up -d elasticsearch\n$ curl -s 'localhost:9200/?filter_path=cluster_name,version.number,version.lucene_version,tagline'\n{\n  \"cluster_name\" : \"docker-cluster\",\n  \"version\" : {\n    \"number\" : \"9.5.5\",\n    \"lucene_version\" : \"10.5.1\"\n  },\n  \"tagline\" : \"You Know, for Search\"\n}",
+      "lang": "console"
+     },
+     {
+      "say": "Create an index with an explicit mapping, so nothing is left to guessing: `level` and `service` are keywords, `message` is full text. Ask for 1 primary shard and 1 replica, on purpose, because step 6 needs the replica.",
+      "code": "$ curl -s -X PUT localhost:9200/demo-logs -H 'Content-Type: application/json' -d '{\n  \"settings\": {\"number_of_shards\": 1, \"number_of_replicas\": 1},\n  \"mappings\": {\"properties\": {\n    \"@timestamp\": {\"type\": \"date\"},\n    \"level\":      {\"type\": \"keyword\"},\n    \"service\":    {\"type\": \"keyword\"},\n    \"message\":    {\"type\": \"text\"}\n  }}\n}'\n{\"acknowledged\":true,\"shards_acknowledged\":true,\"index\":\"demo-logs\"}",
+      "lang": "console"
+     },
+     {
+      "say": "Store three log events. Elasticsearch picks each `_id`. Look at `_shards`: 2 copies were wanted (primary and replica) but only 1 was written, a first hint that the replica has nowhere to live. The last write asks for `refresh=true` so the next search sees all three at once.",
+      "code": "$ curl -s -X POST localhost:9200/demo-logs/_doc -H 'Content-Type: application/json' -d '{\"@timestamp\":\"2026-10-30T10:00:00Z\",\"level\":\"ERROR\",\"service\":\"checkout\",\"message\":\"Payment FAILED for order 42: card declined\"}'\n{\"_index\":\"demo-logs\",\"_id\":\"MSBHi6EBJ7eB7uT9Rb6E\",\"_version\":1,\"result\":\"created\",\"_shards\":{\"total\":2,\"successful\":1,\"failed\":0},\"_seq_no\":0,\"_primary_term\":1}\n$ curl -s -X POST localhost:9200/demo-logs/_doc -H 'Content-Type: application/json' -d '{\"@timestamp\":\"2026-10-30T10:00:05Z\",\"level\":\"INFO\",\"service\":\"checkout\",\"message\":\"Payment accepted for order 43\"}' > /dev/null\n$ curl -s -X POST 'localhost:9200/demo-logs/_doc?refresh=true' -H 'Content-Type: application/json' -d '{\"@timestamp\":\"2026-10-30T10:00:09Z\",\"level\":\"WARN\",\"service\":\"cart\",\"message\":\"Cart 7 is slow to load\"}' > /dev/null",
+      "lang": "console"
+     },
+     {
+      "say": "Look inside the inverted index. `_analyze` shows the tokens a field would store. The text field splits and lowercases. The keyword field keeps the value whole, capitals and all.",
+      "code": "$ curl -s -X POST 'localhost:9200/demo-logs/_analyze?filter_path=tokens.token' -H 'Content-Type: application/json' -d '{\"field\": \"message\", \"text\": \"Payment FAILED for order 42: card declined\"}'\n{\"tokens\":[{\"token\":\"payment\"},{\"token\":\"failed\"},{\"token\":\"for\"},{\"token\":\"order\"},{\"token\":\"42\"},{\"token\":\"card\"},{\"token\":\"declined\"}]}\n$ curl -s -X POST 'localhost:9200/demo-logs/_analyze?filter_path=tokens.token' -H 'Content-Type: application/json' -d '{\"field\": \"level\", \"text\": \"ERROR\"}'\n{\"tokens\":[{\"token\":\"ERROR\"}]}",
+      "lang": "console"
+     },
+     {
+      "say": "Now search, and predict each answer before you read it. `payment` finds both payment events. `payments` finds nothing, because that token was never stored. A `term` query for `error` on the keyword field also finds nothing: the stored value is `ERROR`.",
+      "code": "$ curl -s 'localhost:9200/demo-logs/_search?filter_path=hits.total.value,hits.hits._source.message' -H 'Content-Type: application/json' -d '{\"query\": {\"match\": {\"message\": \"payment\"}}}'\n{\"hits\":{\"total\":{\"value\":2},\"hits\":[{\"_source\":{\"message\":\"Payment accepted for order 43\"}},{\"_source\":{\"message\":\"Payment FAILED for order 42: card declined\"}}]}}\n$ curl -s 'localhost:9200/demo-logs/_search?filter_path=hits.total.value,hits.hits._source.message' -H 'Content-Type: application/json' -d '{\"query\": {\"match\": {\"message\": \"payments\"}}}'\n{\"hits\":{\"total\":{\"value\":0}}}\n$ curl -s 'localhost:9200/demo-logs/_search?filter_path=hits.total.value' -H 'Content-Type: application/json' -d '{\"query\": {\"term\": {\"level\": \"error\"}}}'\n{\"hits\":{\"total\":{\"value\":0}}}",
+      "lang": "console"
+     },
+     {
+      "say": "Find the missing copy. `_cat/shards` lists the primary (`p`) as STARTED and the replica (`r`) as UNASSIGNED, so the index is yellow. Replicas are a setting you can change on a live index, so set them to 0 and it turns green.",
+      "code": "$ curl -s 'localhost:9200/_cat/shards/demo-logs?v&h=index,shard,prirep,state,docs'\nindex     shard prirep state      docs\ndemo-logs 0     p      STARTED       3\ndemo-logs 0     r      UNASSIGNED\n$ curl -s -X PUT localhost:9200/demo-logs/_settings -H 'Content-Type: application/json' -d '{\"index\": {\"number_of_replicas\": 0}}'\n{\"acknowledged\":true}\n$ curl -s 'localhost:9200/_cat/indices/demo-logs?v&h=health,index,pri,rep,docs.count'\nhealth index     pri rep docs.count\ngreen  demo-logs   1   0          3",
+      "lang": "console"
+     },
+     {
+      "say": "Watch dynamic mapping guess, then watch a mapping say no. A new index sees `\"120\"` with quotes and maps `duration_ms` as text, for good. Then a date field refuses a value that is not a date (jq from Day 2 trims the long error). Delete both indices when you are done.",
+      "code": "$ curl -s -X POST 'localhost:9200/demo-guess/_doc?refresh=true' -H 'Content-Type: application/json' -d '{\"duration_ms\": \"120\"}' > /dev/null\n$ curl -s 'localhost:9200/demo-guess/_mapping?filter_path=*.mappings.properties.duration_ms.type'\n{\"demo-guess\":{\"mappings\":{\"properties\":{\"duration_ms\":{\"type\":\"text\"}}}}}\n$ curl -s -X POST localhost:9200/demo-logs/_doc -H 'Content-Type: application/json' -d '{\"@timestamp\": \"soon\"}' | jq -c '{status, error: .error.type}'\n{\"status\":400,\"error\":\"document_parsing_exception\"}\n$ curl -s -X DELETE localhost:9200/demo-logs,demo-guess\n{\"acknowledged\":true}",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "yaml",
+     "title": "logging/compose.yaml",
+     "src": "# Centralized logging lab (Day 47): hello-devops -> Fluent Bit -> Elasticsearch -> Kibana.\n#\n# LOCAL LEARNING ONLY. Security is switched off, so anything that can reach\n# port 9200 can read and delete every log. Never run this on a server.\n#\n# Start (from this logging/ folder):  docker compose up -d --build\n# Kibana:                             http://localhost:5601\n# Elasticsearch:                      http://localhost:9200\n# Stop and delete the stored logs:    docker compose down -v\n#\n# Memory: give Docker Desktop at least 6 GB (Settings > Resources). See README.md.\n\nservices:\n  elasticsearch:\n    image: elasticsearch:9.5.5 # Docker Hub official image, built by Elastic (see README.md)\n    environment:\n      discovery.type: single-node     # one node: do not look for other nodes to form a cluster\n      xpack.security.enabled: \"false\" # no passwords and no TLS (lab only)\n      ES_JAVA_OPTS: -Xms1g -Xmx1g     # Java heap: 1 GB, fixed\n    ports:\n      - \"9200:9200\"\n    volumes:\n      - es-data:/usr/share/elasticsearch/data\n    mem_limit: 2g\n    healthcheck:\n      # Healthy once the cluster answers and is not red. Yellow is fine on one node.\n      test: [\"CMD-SHELL\", \"curl -s localhost:9200/_cluster/health | grep -qv '\\\"status\\\":\\\"red\\\"'\"]\n      interval: 10s\n      timeout: 5s\n      retries: 30\n\n  kibana:\n    image: kibana:9.5.5 # must be the same version as Elasticsearch\n    environment:\n      ELASTICSEARCH_HOSTS: http://elasticsearch:9200\n    ports:\n      - \"5601:5601\"\n    mem_limit: 2g # Kibana logs a warning below 2 GB\n    depends_on:\n      elasticsearch:\n        condition: service_healthy\n\n  fluent-bit:\n    image: fluent/fluent-bit:5.1.5\n    command: [\"-c\", \"/fluent-bit/etc/fluent-bit.yaml\"]\n    volumes:\n      - ./fluent-bit.yaml:/fluent-bit/etc/fluent-bit.yaml:ro\n    ports:\n      # The Docker engine itself (not a container) connects here to hand over\n      # the web container's logs, so the port must be published on localhost.\n      - \"24224:24224\"\n    depends_on:\n      elasticsearch:\n        condition: service_healthy\n\n  web:\n    build: .. # the hello-devops Dockerfile, one folder up\n    ports:\n      - \"8000:8000\"\n    environment:\n      REDIS_HOST: redis\n      APP_VERSION: \"1.0.0\"\n    # Same gunicorn as the Dockerfile, plus an access log: one JSON line per request.\n    # %(m)s method, %(U)s path, %(s)s status code, %(M)s duration in milliseconds.\n    command:\n      - gunicorn\n      - --bind=0.0.0.0:8000\n      - --workers=2\n      - --no-control-socket\n      - --access-logfile=-\n      - '--access-logformat={\"level\":\"INFO\",\"logger\":\"access\",\"method\":\"%(m)s\",\"path\":\"%(U)s\",\"status\":%(s)s,\"duration_ms\":%(M)s}'\n      - app:app\n    logging:\n      driver: fluentd\n      options:\n        fluentd-address: localhost:24224    # Fluent Bit's published port\n        fluentd-async: \"true\"               # start even if Fluent Bit is not up yet\n        fluentd-sub-second-precision: \"true\" # keep the order of lines inside one second\n        tag: hello.{{.Name}}                # Fluent Bit routes on this tag\n    depends_on:\n      redis:\n        condition: service_healthy\n      fluent-bit:\n        condition: service_started\n\n  redis:\n    image: redis:8-alpine\n    healthcheck:\n      test: [\"CMD\", \"redis-cli\", \"ping\"]\n      interval: 5s\n      timeout: 3s\n      retries: 5\n\nvolumes:\n  es-data:",
+     "run": "cd logging && docker compose up -d --build"
+    },
+    {
+     "lang": "yaml",
+     "title": "logging/fluent-bit.yaml",
+     "src": "# Fluent Bit pipeline for the logging lab (Days 47 and 48).\n# Docker's fluentd logging driver sends each line the web container prints.\n# Each record arrives with four fields: log (the line), source (stdout or stderr),\n# container_id and container_name. The tag is hello.<container name>.\n\nservice:\n  flush: 1        # send to outputs every second\n  log_level: info\n\nparsers:\n  # Reads a JSON string and turns its keys into fields.\n  - name: json_line\n    format: json\n\nmultiline_parsers:\n  # hello-devops prints two kinds of first lines: gunicorn and Flask messages\n  # start with \"[\" (a timestamp) and access log lines start with \"{\".\n  # Any other line (traceback frames, ^^^ markers, blank lines) belongs to\n  # the event above it.\n  - name: hello_multiline\n    type: regex\n    flush_timeout: 1000\n    rules:\n      - state: start_state\n        regex: '/^[\\[{]/'\n        next_state: cont\n      - state: cont\n        regex: '/^(?![\\[{])/'\n        next_state: cont\n\npipeline:\n  inputs:\n    # Listen for the Docker logging driver (the Fluentd \"forward\" protocol).\n    - name: forward\n      listen: 0.0.0.0\n      port: 24224\n\n  filters:\n    # 1. A Python traceback arrives as many lines. Glue them back into one record.\n    #    (Fluent Bit's built-in \"python\" parser misses the ^^^ lines that\n    #    Python 3.11 and later print, so we use our own rules above.)\n    - name: multiline\n      match: 'hello.*'\n      multiline.key_content: log\n      multiline.parser: hello_multiline\n\n    # 2. If \"log\" holds JSON (the gunicorn access log), turn it into fields.\n    #    Lines that are not JSON pass through unchanged.\n    - name: parser\n      match: 'hello.*'\n      key_name: log\n      parser: json_line\n      reserve_data: on # keep the other fields (source, container_name, ...)\n\n  outputs:\n    - name: es\n      match: 'hello.*'\n      host: elasticsearch\n      port: 9200\n      logstash_format: on      # one index per day: hello-logs-YYYY.MM.DD, plus an @timestamp field\n      logstash_prefix: hello-logs\n      suppress_type_name: on   # required for Elasticsearch 8 and 9\n      trace_error: on          # print Elasticsearch's answer when it rejects a record\n\n    # Also print every record, so `docker compose logs fluent-bit` shows what leaves.\n    - name: stdout\n      match: '*'\n      format: json_lines",
+     "run": "docker run --rm -v \"$PWD/fluent-bit.yaml:/f.yaml:ro\" fluent/fluent-bit:5.1.5 -c /f.yaml --dry-run"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "cd logging && docker compose up -d --build",
+     "what": "Start Elasticsearch, Kibana, Fluent Bit, hello-devops and Redis in the background."
+    },
+    {
+     "cmd": "docker compose ps",
+     "what": "Show each container's state. Wait until elasticsearch says healthy."
+    },
+    {
+     "cmd": "docker compose logs -f fluent-bit",
+     "what": "Follow Fluent Bit's own log, including every record it sends on (the stdout output)."
+    },
+    {
+     "cmd": "curl -s localhost:9200",
+     "what": "Ask Elasticsearch for its cluster name and version."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/_cat/health?v'",
+     "what": "Show cluster health: green, yellow or red, plus shard counts."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/_cat/indices/hello-logs-*?v'",
+     "what": "List the daily log indices with their health, replicas and document counts."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/hello-logs-*/_mapping?pretty'",
+     "what": "Show the fields and types Elasticsearch created for your logs."
+    },
+    {
+     "cmd": "curl -s -X POST 'localhost:9200/_analyze?filter_path=tokens.token' -H 'Content-Type: application/json' -d '{\"analyzer\": \"standard\", \"text\": \"Payment FAILED for order 42\"}'",
+     "what": "Show the tokens the standard analyzer makes from a piece of text."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/hello-logs-*/_search?q=status:500&size=1&pretty'",
+     "what": "Quick search from the terminal: one document whose status is 500."
+    },
+    {
+     "cmd": "curl -s -X POST 'localhost:9200/_query?format=txt' -H 'Content-Type: application/json' -d '{\"query\": \"FROM hello-logs-* | WHERE status >= 500 | STATS errors = COUNT(*) BY path\"}'",
+     "what": "Run an ES|QL query and print the result as a text table."
+    },
+    {
+     "cmd": "docker compose stop redis",
+     "what": "Stop Redis so hello-devops returns errors you can search for. `docker compose start redis` brings it back."
+    },
+    {
+     "cmd": "docker compose logs web",
+     "what": "Read the app's lines locally. This still works with the fluentd driver, because Docker keeps a local copy."
+    },
+    {
+     "cmd": "docker compose down -v",
+     "what": "Stop the stack and delete the volume, which removes every stored log."
+    }
+   ],
+   "mistake": "Treating the Kibana search box like grep. You search for part of a word, such as `ConnectionError` inside `redis.exceptions.ConnectionError`, get zero hits, and decide the error never happened. Elasticsearch matches whole tokens. Search for a phrase that really appears as words (`\"service not known\"`), or filter on structured fields such as `status >= 500`. Check the tokens with `_analyze` before you trust an empty result.",
+   "real_world": "On a payments team, every service writes JSON logs with the same field names (`service`, `level`, `order_id`, `trace_id`), so one Kibana query works across all of them. Card numbers and tokens are masked inside the app before the line is printed, and a review checks new log statements for personal data. When a merchant reports a failed payment, on-call filters on `order_id` and reads the whole story across services in a minute.",
+   "task": {
+    "title": "Find hello-devops errors in Kibana",
+    "steps": [
+     "Give Docker Desktop at least 6 GB of memory (Settings, Resources). Add `logging/compose.yaml` and `logging/fluent-bit.yaml` from this lesson to your hello-devops repo.",
+     "Start the stack from the `logging` folder and wait until Elasticsearch is healthy.",
+     "Send 20 requests to http://localhost:8000/ and confirm that a `hello-logs-*` index exists and its document count grows.",
+     "Stop Redis, call `/` and `/readyz` a few times to create failures, then start Redis again.",
+     "Open Kibana at http://localhost:5601, create a data view for `hello-logs-*` with the time field `@timestamp`, and open Discover.",
+     "Use KQL to show only the failed requests, with `path`, `status` and `duration_ms` as columns.",
+     "Find the document that holds the Python traceback for one of the 500s and read which line of `app.py` failed.",
+     "Switch Discover to ES|QL and count failed requests per path. Keep the stack running if you go on to Day 48, or stop it with `docker compose down -v`."
+    ],
+    "hints": [
+     "`status` is a number field, so comparison operators such as `>=` work on it.",
+     "The traceback is in the `log` field. Search for a phrase from the error message, not for one long dotted word.",
+     "If Discover is empty, widen the time picker before you suspect Fluent Bit."
+    ],
+    "done_when": "You are done when Discover shows only the 500 and 503 requests and you have found the traceback line `File \"/app/app.py\", line 27, in count_visit`."
+   },
+   "explain_back": {
+    "prompt": "Explain to a teammate how a line that hello-devops prints ends up searchable in Kibana, in 3 to 4 sentences. Mention the logging driver, Fluent Bit, the index and the inverted index.",
+    "answer": "The app prints each event as a line on stdout, and Docker's fluentd logging driver sends every line to Fluent Bit on port 24224. Fluent Bit glues tracebacks back together, turns JSON lines into fields and sends the records to Elasticsearch, which stores each one as a document in that day's hello-logs index. While storing it, Elasticsearch splits text fields into tokens and records which documents contain each token: the inverted index. Kibana's queries look tokens up in that table, which is why search is fast and why it matches whole words, not substrings."
+   },
+   "recap": [
+    "Centralized logging copies every line to one store, so logs outlive the containers that wrote them.",
+    "Structured JSON logs give you fields to filter on. Never log secrets or personal data.",
+    "Elasticsearch stores JSON documents in indices and finds them through an inverted index of tokens.",
+    "Mappings decide field types. Text is split into words, keyword is matched whole, and the first guess sticks.",
+    "Replicas never share a node with their primary, so a one-node lab with replicas is yellow.",
+    "ELK uses Logstash, EFK uses Fluentd or Fluent Bit, and OpenSearch is the Apache 2.0 fork."
+   ],
+   "check": [
+    {
+     "q": "Your logs get a new field, `customer_tier`, with values like `gold` and `silver`. You want to filter on it and count requests per tier. Which mapping type fits?",
+     "options": [
+      "text",
+      "short",
+      "boolean",
+      "keyword"
+     ],
+     "answer": 3,
+     "why": "Exact filters and counts need the whole value stored as one term, which is what keyword does."
+    },
+    {
+     "q": "On your one-node lab you create an index with 2 primary shards and 2 replicas. What health do you expect for it?",
+     "options": [
+      "Green, because one node can hold all shards",
+      "Yellow, because the replicas cannot share the node with their primaries",
+      "Red, because there are more shards than nodes",
+      "Green after one minute, once the replicas copy over"
+     ],
+     "answer": 1,
+     "why": "All primaries are placed, so no data is missing (not red), but no replica can be placed on the same node as its primary."
+    },
+    {
+     "q": "You must ship logs from 200 small gateways with very little memory to Elasticsearch, with light JSON parsing on the way. Which shipper fits best?",
+     "options": [
+      "Logstash on every gateway",
+      "Fluent Bit on every gateway",
+      "Kibana on every gateway",
+      "Elasticsearch on every gateway"
+     ],
+     "answer": 1,
+     "why": "Fluent Bit is a small C program built for exactly this, while Logstash runs on the JVM and needs far more memory."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is an inverted index, and why does it make Elasticsearch fast?",
+     "a": "An inverted index maps each token to the list of documents that contain it, like the index at the back of a book. When a document is stored, Elasticsearch analyzes its text fields (splits them into words and usually lowercases them) and adds each token to that table. A search then looks up a few tokens and intersects their lists instead of scanning every document. The trade-off is that search matches tokens, so analyzers, mappings and phrase queries decide what you can find."
+    },
+    {
+     "q": "What is the difference between ELK and EFK, and when would you choose Fluent Bit?",
+     "a": "Both use Elasticsearch to store and Kibana to search. ELK collects with Logstash, a JVM program that can do heavy transformations; EFK collects with Fluentd or Fluent Bit. I choose Fluent Bit when the shipper runs on many machines, such as every Kubernetes node. It is small (about 450 KB of memory against Fluentd's 60 MB or more) and can send straight to Elasticsearch. I would add Logstash or Fluentd as a central aggregator only if the pipeline needs transformations Fluent Bit cannot do."
+    },
+    {
+     "q": "What should never go into logs, and how do you enforce it?",
+     "a": "Passwords, tokens, session IDs, connection strings, keys, payment card data and personal data such as emails should be removed, masked or hashed before the line is written. I enforce it in layers. The app's logging helpers mask known fields, code review checks new log statements, and a filter in the shipper is the last safety net. Scrubbing at the source matters most, because deleting a secret later from every index, replica and backup is hard."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "What happens when you run a search on `hello-logs-*`? The node that receives the request becomes the coordinator for that search, and it works in two rounds.\n\n1. Query phase: the coordinator sends the query to one copy of every shard involved, primary or replica. Each shard searches its own inverted index on one thread and returns only the IDs and sort values of its best matches.\n2. Fetch phase: the coordinator merges those short lists, picks the overall top results, and asks the right shards for the full documents.\n\nThis is why the shard count matters even on small data. A search over 30 daily indices with 1 shard each touches 30 shards. With 5 shards each it touches 150, and each one costs a thread and some memory. The Elastic sizing guide puts it plainly: searching a thousand 50 MB shards is much more expensive than searching one 50 GB shard with the same data. Most logging trouble with Elasticsearch at scale starts here, with too many small indices and shards (oversharding), for example one index per service per namespace per day.\n\nNow the refresh. A new document first lands in an in-memory buffer. A refresh writes the buffer into a new segment, which is a small inverted index of its own, and opens it for search. By default Elasticsearch refreshes every second, but only on indices that received a search in the last 30 seconds. That is why the worked example added `?refresh=true` to its last write: it forced a refresh, so the very next search saw all three documents. For logs you never need that. A delay of a second is fine, and forcing refreshes on every write makes indexing slower.\n\nThe `_score` you saw in search results is relevance: how well a document matches the words you searched for. Product search lives on it. Logging mostly ignores it, because Kibana sorts log results by `@timestamp`, newest first.\n\nOne last check you can do right now: run `curl -s 'localhost:9200/_cat/segments/hello-logs-*?v'` while the lab takes traffic. Each line is a segment. Run it again later and the list may be shorter, because Lucene merges small segments into bigger ones in the background to keep searches cheap."
+   },
+   "sources": [
+    {
+     "title": "Elastic: index basics",
+     "url": "https://www.elastic.co/docs/manage-data/data-store/index-basics"
+    },
+    {
+     "title": "Elastic: clusters, nodes and shards",
+     "url": "https://www.elastic.co/docs/deploy-manage/distributed-architecture/clusters-nodes-shards"
+    },
+    {
+     "title": "Fluent Bit: Elasticsearch output",
+     "url": "https://docs.fluentbit.io/manual/pipeline/outputs/elasticsearch"
+    },
+    {
+     "title": "Elastic: Kibana Query Language (KQL)",
+     "url": "https://www.elastic.co/docs/explore-analyze/query-filter/languages/kql"
+    }
+   ]
+  },
+  {
+   "id": "d48",
+   "title": "Running EFK on Kubernetes",
+   "minutes": 50,
+   "goal": "By the end you can run Fluent Bit as a DaemonSet with Helm, explain how a pod's log line gets its Kubernetes metadata, and give your log indices a mapping and a retention policy.",
+   "guess": {
+    "q": "Your kind cluster has 3 nodes and 12 pods. You install Fluent Bit as a DaemonSet that tolerates every node. How many Fluent Bit pods run?",
+    "options": [
+     "1, shared by the whole cluster",
+     "12, one next to each app pod",
+     "3, one on each node",
+     "As many as the autoscaler decides"
+    ],
+    "answer": 2,
+    "why": "A DaemonSet runs one copy of its pod on every node it is allowed on, and that copy reads the log files of all pods on its node. Without the toleration in the lab's values, the control-plane node would be skipped and you would get 2."
+   },
+   "terms": [
+    {
+     "term": "DaemonSet",
+     "plain": "A Kubernetes workload that runs one copy of a pod on every node, or on every node it is allowed on."
+    },
+    {
+     "term": "/var/log/containers",
+     "plain": "The folder on each node where every container's output appears as a file, one file per container."
+    },
+    {
+     "term": "Kubernetes filter",
+     "plain": "The Fluent Bit filter that adds the pod name, namespace, labels and node to each log record."
+    },
+    {
+     "term": "Multiline parser",
+     "plain": "Rules that glue the lines of one event, such as a stack trace, back into one record."
+    },
+    {
+     "term": "Index template",
+     "plain": "A rule that gives every new index whose name matches a pattern its settings and mappings."
+    },
+    {
+     "term": "Data stream",
+     "plain": "One name for append-only, time-stamped data, backed by hidden indices that Elasticsearch rolls over for you."
+    },
+    {
+     "term": "ILM",
+     "plain": "Index lifecycle management: a policy that moves indices through phases such as hot and delete, by age or size."
+    },
+    {
+     "term": "Retention",
+     "plain": "How long you keep logs before they are deleted."
+    }
+   ],
+   "sections": [
+    {
+     "h": "One shipper per node: the DaemonSet",
+     "body": "On Day 47 Docker handed each line to Fluent Bit. Kubernetes works differently. The container runtime on each node writes every container's stdout and stderr to a file, and the kubelet links those files into one folder:\n\n`/var/log/containers/<pod>_<namespace>_<container>-<container id>.log`\n\nSo the job is \"read every file in that folder on every node\". A DaemonSet does exactly that. It runs one copy of a pod on each node, and the Fluent Bit chart mounts the node's `/var/log` into that pod. Add a node and Kubernetes starts another Fluent Bit there by itself.\n\nWhy not a log sidecar in every app pod? It works, but 40 app pods would mean 40 shippers instead of one per node, each with its own memory and config. Per-node agents are the common choice, and Fluent Bit's documentation says to deploy it as a DaemonSet.\n\nEach line in those files is wrapped by the runtime. Here is one from the lab test, with the JSON shortened:\n\n`2026-10-30T10:15:02.123456789Z stdout F {\"level\":\"INFO\",\"path\":\"/\",\"status\":200}`\n\nThat is a timestamp, the stream, a flag and the message. The flag is `F` for a full line, or `P` for a partial line, used when the runtime splits a very long line. The `tail` input with `multiline.parser: docker, cri` unwraps this format and joins `P` pieces back together. In the test, a line split into a `P` and an `F` part came out as one record.\n\nTwo more tail settings matter:\n- `db` stores how far each file was read, so a restarted Fluent Bit continues where it stopped.\n- On first start, Fluent Bit reads new lines only, so send fresh traffic before you go looking for logs.",
+     "refs": [
+      {
+       "title": "Fluent Bit: Kubernetes installation",
+       "url": "https://docs.fluentbit.io/manual/installation/downloads/kubernetes",
+       "kind": "docs"
+      },
+      {
+       "title": "Fluent Bit: tail input",
+       "url": "https://docs.fluentbit.io/manual/pipeline/inputs/tail",
+       "kind": "docs"
+      },
+      {
+       "title": "Fluent Bit v3: unified layer for logs, metrics and traces (Eduardo Silva at KubeCon, CNCF)",
+       "url": "https://www.youtube.com/watch?v=4SqDRokC7ac",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Who wrote this line? The Kubernetes filter",
+     "body": "A bare log line does not say which pod wrote it. The `kubernetes` filter adds that. It gets the pod name, namespace and container name from the file name, for free. For labels and annotations it asks the Kubernetes API about the pod, then caches the answer so it does not ask again for every line. The chart creates a ServiceAccount and a ClusterRole that allow those reads.\n\nHere is what Fluent Bit made of the line above in a test run, trimmed to the interesting fields:\n\n`{\"stream\":\"stdout\",\"level\":\"INFO\",\"path\":\"/\",\"status\":200,\"kubernetes\":{\"pod_name\":\"hello-devops-7c9f8b6d5-x2x4k\",\"namespace_name\":\"hello\",\"labels\":{\"app\":\"hello-devops\"},\"host\":\"devops-worker\",\"container_name\":\"web\"}}`\n\nThree settings in the lab's values shape that record:\n- `merge_log: on` checks whether the line is JSON and, if so, lifts its keys (`level`, `path`, `status`) into real fields.\n- `keep_log: off` drops the original JSON string after that, so you do not store everything twice.\n- `k8s-logging.exclude: on` lets a pod opt out. Add the annotation `fluentbit.io/exclude: \"true\"` to a chatty pod and its lines are dropped at the node.\n\nIn Kibana these fields become filters you will use every day: `kubernetes.namespace_name: hello`, `kubernetes.labels.app: hello-devops`, or `kubernetes.host` to see whether one node is the problem.\n\nThe API lookups are the part that can hurt at scale. A thousand nodes asking the API server about pods adds real load. The filter has a `use_kubelet` option that asks the local kubelet instead. Your three-node kind cluster does not need it.",
+     "refs": [
+      {
+       "title": "Fluent Bit: Kubernetes filter",
+       "url": "https://docs.fluentbit.io/manual/pipeline/filters/kubernetes",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Parsers and multiline logs",
+     "body": "Parsing turns a string into fields. Fluent Bit has two kinds of parser, and you met both on Day 47:\n- A parser reads one line, for example as JSON or with a regular expression, and turns it into fields. The lab's `json_line` parser does this for the access log.\n- A multiline parser decides which lines belong together. Stack traces need this, because each line of a trace arrives as its own record.\n\nFluent Bit ships built-in multiline parsers for `docker`, `cri`, `go`, `java`, `json`, `python` and `ruby`. Treat them as a starting point and test them with your real logs. When I built the lab, the built-in `python` parser left Python 3.14 tracebacks in pieces. It expects each `File ...` line to be followed by exactly one code line, and newer Python versions add a third line of `^^^^` markers under the failing code.\n\nSo the lab defines its own rule, which is short:\n1. A new event starts with `[` (gunicorn and Flask messages begin with a timestamp in brackets) or `{` (the JSON access log).\n2. Any other line, including blank lines and `^^^^` lines, belongs to the event above it.\n\nWith that rule, one failed request became one 72-line document in Elasticsearch, with the traceback readable from top to bottom.\n\nOn Kubernetes there are two layers. `multiline.parser: docker, cri` on the tail input only joins lines the runtime split. Joining a stack trace is a second step, a `multiline` filter like the lab's. The best fix sits in the app: log errors as one JSON object with the stack trace inside one field, and nobody has to glue anything.",
+     "refs": [
+      {
+       "title": "Fluent Bit: multiline parsing",
+       "url": "https://docs.fluentbit.io/manual/pipeline/parsers/multiline-parsing",
+       "kind": "docs"
+      },
+      {
+       "title": "Fluent Bit: multiline filter",
+       "url": "https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Index templates, data streams and lifecycle",
+     "body": "Day 47 left two problems: dynamic mapping guesses, and indices that never go away. Elasticsearch has a tool for each.\n\nAn index template is a rule: every new index whose name matches `hello-logs-*` gets these settings and this mapping. It only acts when an index is created, so today's index keeps its old settings until tomorrow's index appears.\n\nIndex lifecycle management (ILM) handles age. A policy lists phases, and an index moves through them:\n- hot: the index takes new writes and most searches.\n- warm and cold: older data on cheaper or slower nodes, searched less.\n- delete: the index is removed.\n\nEach phase has a `min_age`. The lab's policy has only hot and delete, with delete at 7 days. Daily indices make this easy to reason about: the index for 30 October is deleted about a week later, and ILM checks every 10 minutes by default.\n\nData streams are Elastic's recommended way to store logs. You write to one name, for example `logs-hello-default`. Behind it sit hidden backing indices such as `.ds-logs-hello-default-2026.10.30-000001`, and only the newest one takes writes. A rollover starts a new backing index when the current one is old or big enough. Every document must have an `@timestamp`, and documents are append-only.\n\nI tested this with Fluent Bit. Any name that matches `logs-*-*` picks up Elasticsearch's built-in `logs` template, which in 9.x uses logsdb mode. Elastic's benchmarks found logsdb cut log storage by up to 60%. But the built-in `logs` policy only rolls over at 30 days or 50 GB. It has no delete phase, so data stays until you add retention yourself. The course lab keeps daily indices plus your own ILM policy, because every part of it is visible.",
+     "refs": [
+      {
+       "title": "Elastic: index templates",
+       "url": "https://www.elastic.co/docs/manage-data/data-store/templates",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: index lifecycle management",
+       "url": "https://www.elastic.co/docs/manage-data/lifecycle/index-lifecycle-management",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: data streams",
+       "url": "https://www.elastic.co/docs/manage-data/data-store/data-streams",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "What logs cost, and how to spend less",
+     "body": "Logs are the signal that grows fastest, because every request writes at least one line. A simple way to think about the bill: what you store is roughly the daily volume, times one plus the number of replicas, times the days you keep it. Every one of those three is a lever.\n\nYour lab already has a small example of waste. The hello-devops image has a Docker health check that calls `/healthz` every 30 seconds. That is 2,880 identical lines per container per day that nobody will read. On Kubernetes the kubelet's probes do the same, from the user agent `kube-probe`.\n\nWays to spend less, cheapest first:\n1. Do not ship it. Drop noise at the node with a Fluent Bit `grep` filter, for example `exclude: path ^/healthz$`. Dropped lines cost nothing downstream.\n2. Log less. Keep DEBUG off in production and avoid logging every loop iteration.\n3. Keep it shorter. Seven days hot is plenty for many app logs. Audit logs may need a year, in a cheaper tier.\n4. Copy it less. Low-value logs can live with zero replicas, if you accept losing them when a node dies.\n5. Store it smaller. logsdb mode and good mappings, such as keyword instead of text where you never need full-text search, shrink indices.\n\nReliability is part of the cost too. If Elasticsearch is down, Fluent Bit buffers and retries. The lab's values retry without limit, so a short outage loses nothing. They also set `drop_unrecoverable_records: on`. A record Elasticsearch will never accept, such as one with a mapping conflict, is dropped instead of retried forever and blocking the queue behind it.",
+     "refs": [
+      {
+       "title": "Fluent Bit: grep filter",
+       "url": "https://docs.fluentbit.io/manual/pipeline/filters/grep",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: logs data streams (logsdb)",
+       "url": "https://www.elastic.co/docs/manage-data/data-store/data-streams/logs-data-stream",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Kibana dashboards and alerts",
+     "body": "Discover is for reading. Dashboards are for the questions you ask every day. In Kibana you build visualizations with Lens, mostly by dragging fields, and pin them to a dashboard. A useful first logging dashboard for hello-devops has three panels:\n- failed requests over time, split by `status`\n- the top paths by number of 5xx responses\n- a saved Discover session with the newest ERROR lines\n\nLogs can also alert. Kibana's Elasticsearch query rule runs a query on a schedule, compares the number of matches to a threshold and runs actions when the condition is met. The query can be ES|QL, KQL or Elasticsearch's JSON query language. A rule such as \"more than 3 documents with `status >= 500` in 5 minutes\" is a few clicks. Actions go through connectors, and the Elastic docs note that some connector types are paid features.\n\nShould alerts come from logs or from metrics? Prefer metrics for rates and latency: Prometheus from Part 9 is cheaper and faster for those. Use log alerts for events that only exist in logs. Good examples are a specific error message, a failed login burst or a payment provider's error code. One alert source per symptom keeps on-call sane.",
+     "refs": [
+      {
+       "title": "Elastic: dashboards",
+       "url": "https://www.elastic.co/docs/explore-analyze/dashboards",
+       "kind": "docs"
+      },
+      {
+       "title": "Elastic: Elasticsearch query rule",
+       "url": "https://www.elastic.co/docs/explore-analyze/alerting/alerts/rule-type-es-query",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Loki or Elasticsearch?",
+     "body": "Day 46 introduced Grafana Loki. It makes the opposite trade-off to Elasticsearch, so it is worth comparing them directly.\n\nElasticsearch indexes every word of every field. Any search, on any field, is fast, and so are aggregations such as \"errors per path\". You pay for that index in disk, memory and CPU.\n\nLoki indexes only a small set of labels per log stream, such as `namespace` and `app`. The lines themselves are compressed into chunks in object storage such as S3. Loki's docs say this makes it less expensive to operate. The cost moves to query time: a search for a word inside the lines has to scan the chunks of every matching stream.\n\nThat leads to a different rule for each:\n- In Loki, keep labels few and low in cardinality. Values such as user IDs or order IDs must not be labels, the same rule as Prometheus labels in Part 9.\n- In Elasticsearch, put structure in fields, and watch the field count and the shard count.\n\nHow I would choose:\n- Your team already runs Grafana and Prometheus, and most log questions start from \"this service, this time window\": start with Loki.\n- You need fast free-text search across months of logs, heavy analytics on log fields, or security investigations: Elasticsearch or OpenSearch.\n\nMany teams use both: Loki for everyday app logs, Elasticsearch for security and audit data. The shipper does not decide for you. Fluent Bit has outputs for both.",
+     "refs": [
+      {
+       "title": "Grafana Loki overview",
+       "url": "https://grafana.com/docs/loki/latest/get-started/overview/",
+       "kind": "docs"
+      }
+     ]
+    }
+   ],
+   "analogy": "A DaemonSet of Fluent Bit is like a mail room on every floor of an office building. Each floor's mail room collects the letters its offices put out. It stamps each one with the sender's floor and department (the Kubernetes filter) and sends the sacks to one central archive (Elasticsearch). The archive's rules decide which shelf a letter goes on (the index template) and when old boxes go to the shredder (ILM). Where it breaks: a real mail room already knows who sits in which office. Fluent Bit has to ask the Kubernetes API for pod labels, and in a very large building those questions add up.",
+   "diagram": "<svg viewBox=\"0 0 560 276\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A Fluent Bit pod on every node tails the container log files, asks the Kubernetes API for pod labels, and sends records to Elasticsearch\"><rect class=\"bxp\" x=\"200\" y=\"12\" width=\"136\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"268\" y=\"37\" font-size=\"13\" text-anchor=\"middle\">Kubernetes API</text><line class=\"lnd\" x1=\"320\" y1=\"54\" x2=\"320\" y2=\"92\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"312\" y=\"78\" font-size=\"11\" text-anchor=\"end\">labels</text><text class=\"ts\" x=\"16\" y=\"88\" font-size=\"11\" text-anchor=\"start\">node 1</text><rect class=\"bxt\" x=\"16\" y=\"96\" width=\"96\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"64\" y=\"123\" font-size=\"13\" text-anchor=\"middle\">app pod</text><line class=\"ln\" x1=\"114\" y1=\"118\" x2=\"132\" y2=\"118\" marker-end=\"url(#ar)\"/><rect class=\"bx\" x=\"136\" y=\"96\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"192\" y=\"123\" font-size=\"13\" text-anchor=\"middle\">log files</text><line class=\"ln\" x1=\"250\" y1=\"118\" x2=\"268\" y2=\"118\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"272\" y=\"96\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"328\" y=\"123\" font-size=\"13\" text-anchor=\"middle\">Fluent Bit</text><text class=\"ts\" x=\"16\" y=\"188\" font-size=\"11\" text-anchor=\"start\">node 2</text><rect class=\"bxt\" x=\"16\" y=\"196\" width=\"96\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"64\" y=\"223\" font-size=\"13\" text-anchor=\"middle\">app pod</text><line class=\"ln\" x1=\"114\" y1=\"218\" x2=\"132\" y2=\"218\" marker-end=\"url(#ar)\"/><rect class=\"bx\" x=\"136\" y=\"196\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"t\" x=\"192\" y=\"223\" font-size=\"13\" text-anchor=\"middle\">log files</text><line class=\"ln\" x1=\"250\" y1=\"218\" x2=\"268\" y2=\"218\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"272\" y=\"196\" width=\"112\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"328\" y=\"223\" font-size=\"13\" text-anchor=\"middle\">Fluent Bit</text><line class=\"ln\" x1=\"386\" y1=\"118\" x2=\"412\" y2=\"156\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"386\" y1=\"218\" x2=\"412\" y2=\"182\" marker-end=\"url(#ar)\"/><rect class=\"bxg\" x=\"416\" y=\"146\" width=\"136\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"484\" y=\"173\" font-size=\"13\" text-anchor=\"middle\">Elasticsearch</text><text class=\"ts\" x=\"484\" y=\"208\" font-size=\"11\" text-anchor=\"middle\">k8s-logs-*</text><text class=\"ts\" x=\"192\" y=\"160\" font-size=\"11\" text-anchor=\"middle\">/var/log/containers</text><text class=\"ts\" x=\"192\" y=\"260\" font-size=\"11\" text-anchor=\"middle\">/var/log/containers</text></svg>",
+   "diagram_caption": "Every node runs its own Fluent Bit pod. It tails the node's container log files, adds labels from the Kubernetes API and ships to Elasticsearch outside the cluster.",
+   "worked": {
+    "title": "Give hello-logs a mapping and a 7-day retention",
+    "steps": [
+     {
+      "say": "Start from the Day 47 lab with some logs in it. First the policy: indices stay hot, and are deleted once they are 7 days old. A policy does nothing until an index uses it.",
+      "code": "$ curl -s -X PUT localhost:9200/_ilm/policy/hello-logs-7d -H 'Content-Type: application/json' -d '{\n  \"policy\": {\n    \"phases\": {\n      \"hot\":    {\"actions\": {}},\n      \"delete\": {\"min_age\": \"7d\", \"actions\": {\"delete\": {}}}\n    }\n  }\n}'\n{\"acknowledged\":true}",
+      "lang": "console"
+     },
+     {
+      "say": "Now the template. It matches every future `hello-logs-*` index and sets three things: one shard, zero replicas (one node, so a replica could never be placed), and the ILM policy. The mapping replaces Day 47's guesses: `path` becomes a keyword and `status` a small number.",
+      "code": "$ curl -s -X PUT localhost:9200/_index_template/hello-logs -H 'Content-Type: application/json' -d '{\n  \"index_patterns\": [\"hello-logs-*\"],\n  \"priority\": 200,\n  \"template\": {\n    \"settings\": {\"number_of_shards\": 1, \"number_of_replicas\": 0, \"index.lifecycle.name\": \"hello-logs-7d\"},\n    \"mappings\": {\"properties\": {\n      \"@timestamp\": {\"type\": \"date\"},   \"level\": {\"type\": \"keyword\"},\n      \"logger\": {\"type\": \"keyword\"},    \"method\": {\"type\": \"keyword\"},\n      \"path\": {\"type\": \"keyword\"},      \"status\": {\"type\": \"short\"},\n      \"duration_ms\": {\"type\": \"long\"},  \"log\": {\"type\": \"text\"}\n    }}\n  }\n}'\n{\"acknowledged\":true}",
+      "lang": "console"
+     },
+     {
+      "say": "Templates act only when an index is created, so today's index is still yellow with 1 replica. In this lab you can simply delete today's index (never do this to real data), and Fluent Bit creates a new one on its next write.",
+      "code": "$ curl -s 'localhost:9200/_cat/indices/hello-logs-*?v&h=health,index,pri,rep,docs.count'\nhealth index                 pri rep docs.count\nyellow hello-logs-2026.10.30   1   1         79\n$ curl -s -X DELETE localhost:9200/hello-logs-$(date -u +%Y.%m.%d)\n{\"acknowledged\":true}",
+      "lang": "console"
+     },
+     {
+      "say": "Send a few requests and look again. The new index got its settings from the template: zero replicas, so the cluster is green.",
+      "code": "$ for i in 1 2 3; do curl -s -o /dev/null localhost:8000/readyz; done; sleep 3\n$ curl -s 'localhost:9200/_cat/indices/hello-logs-*?v&h=health,index,pri,rep,docs.count'\nhealth index                 pri rep docs.count\ngreen  hello-logs-2026.10.30   1   0          4",
+      "lang": "console"
+     },
+     {
+      "say": "Ask ILM what it thinks of the index. It is managed by `hello-logs-7d` and sits in the hot phase. It will move to delete once it is 7 days old.",
+      "code": "$ curl -s 'localhost:9200/hello-logs-*/_ilm/explain?filter_path=indices.*.policy,indices.*.phase,indices.*.age,indices.*.managed&pretty'\n{\n  \"indices\" : {\n    \"hello-logs-2026.10.30\" : {\n      \"managed\" : true,\n      \"policy\" : \"hello-logs-7d\",\n      \"age\" : \"9.38s\",\n      \"phase\" : \"hot\"\n    }\n  }\n}",
+      "lang": "console"
+     },
+     {
+      "say": "Finally, check the mapping did its job. `path` is a keyword now, so filters and counts on it are exact, and `status` is a number. Tomorrow's index gets the same mapping without anyone touching it.",
+      "code": "$ curl -s 'localhost:9200/hello-logs-*/_mapping/field/path,status?filter_path=*.mappings.*.mapping'\n{\"hello-logs-2026.10.30\":{\"mappings\":{\"path\":{\"mapping\":{\"path\":{\"type\":\"keyword\"}}},\"status\":{\"mapping\":{\"status\":{\"type\":\"short\"}}}}}}",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "yaml",
+     "title": "logging/fluent-bit-values.yaml",
+     "src": "# Values for the official Fluent Bit Helm chart (Day 48).\n# Fluent Bit runs as a DaemonSet: one pod on every node of your kind cluster.\n# Each pod reads the container log files on its node, adds Kubernetes\n# metadata (namespace, pod, labels) and sends the records to the\n# Elasticsearch from logging/compose.yaml, which runs outside the cluster.\n#\n# Install (check the chart's README for the current command):\n#   helm repo add fluent https://fluent.github.io/helm-charts\n#   helm upgrade --install fluent-bit fluent/fluent-bit \\\n#     --namespace logging --create-namespace -f logging/fluent-bit-values.yaml\n#\n# The chart ships its own default pipeline in the older \"classic\" format.\n# We switch it off and hand Fluent Bit a YAML pipeline instead, in the same\n# format as logging/fluent-bit.yaml.\n\nkind: DaemonSet\n\n# Run on the control-plane node too, so you also collect the logs of the\n# Kubernetes system pods there. That node has a taint that keeps normal pods away.\ntolerations:\n  - key: node-role.kubernetes.io/control-plane\n    operator: Exists\n    effect: NoSchedule\n\nresources:\n  requests:\n    cpu: 50m\n    memory: 64Mi\n  limits:\n    memory: 128Mi\n\n# Read our YAML file instead of the chart's classic fluent-bit.conf.\nargs:\n  - --workdir=/fluent-bit/etc\n  - --config=/fluent-bit/etc/conf/fluent-bit.yaml\n\nconfig:\n  # Empty the classic sections so nobody mistakes them for the live config.\n  service: \"\"\n  inputs: \"\"\n  filters: \"\"\n  outputs: \"\"\n  customParsers: \"\"\n\n  extraFiles:\n    fluent-bit.yaml: |\n      service:\n        flush: 1\n        log_level: info\n        # The chart's liveness and readiness probes call this HTTP server.\n        http_server: on\n        http_listen: 0.0.0.0\n        http_port: 2020\n        health_check: on\n\n      pipeline:\n        inputs:\n          # Every container's stdout and stderr ends up in a file here,\n          # named <pod>_<namespace>_<container>-<container id>.log\n          - name: tail\n            tag: kube.*\n            path: /var/log/containers/*.log\n            # The kubelet writes lines in the CRI format and splits very long\n            # lines. These parsers unwrap the format and join the pieces.\n            multiline.parser: docker, cri\n            # Remember how far each file was read, so a restarted pod\n            # continues where it stopped instead of sending everything again.\n            db: /var/log/flb_kube.db\n            mem_buf_limit: 5MB\n            skip_long_lines: on\n\n        filters:\n          # Ask the Kubernetes API who wrote each line and add it to the record:\n          # namespace, pod name, container name, labels, host (the node).\n          - name: kubernetes\n            match: 'kube.*'\n            kube_url: https://kubernetes.default.svc:443\n            kube_ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\n            kube_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token\n            kube_tag_prefix: kube.var.log.containers.\n            merge_log: on      # if the line is JSON, lift its keys into fields\n            keep_log: off      # and drop the raw JSON string after that\n            labels: on\n            annotations: off\n            k8s-logging.exclude: on # a pod can opt out: fluentbit.io/exclude: \"true\"\n\n        outputs:\n          - name: es\n            match: 'kube.*'\n            # Docker Desktop (Mac and Windows) resolves host.docker.internal to\n            # your laptop, where logging/compose.yaml publishes port 9200.\n            # On Linux, use the gateway address from `docker network inspect kind`.\n            host: host.docker.internal\n            port: 9200\n            logstash_format: on      # one index per day: k8s-logs-YYYY.MM.DD\n            logstash_prefix: k8s-logs\n            suppress_type_name: on   # required for Elasticsearch 8 and 9\n            # Keep retrying while Elasticsearch is down or busy ...\n            retry_limit: no_limits\n            # ... but drop a record Elasticsearch will never accept (for\n            # example a mapping conflict) instead of retrying it forever.\n            drop_unrecoverable_records: on",
+     "run": "helm upgrade --install fluent-bit fluent/fluent-bit --namespace logging --create-namespace -f logging/fluent-bit-values.yaml"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "helm repo add fluent https://fluent.github.io/helm-charts",
+     "what": "Add the official Fluent Bit chart repository. The chart's README also shows an OCI install."
+    },
+    {
+     "cmd": "helm template fluent-bit fluent/fluent-bit -f logging/fluent-bit-values.yaml | less",
+     "what": "Preview the Kubernetes objects the chart would create, without installing anything."
+    },
+    {
+     "cmd": "helm upgrade --install fluent-bit fluent/fluent-bit --namespace logging --create-namespace -f logging/fluent-bit-values.yaml",
+     "what": "Install or upgrade Fluent Bit as a DaemonSet with the lab's values."
+    },
+    {
+     "cmd": "kubectl -n logging get pods -o wide",
+     "what": "Show the Fluent Bit pods and the node each one runs on. Expect one per node."
+    },
+    {
+     "cmd": "kubectl -n logging logs daemonset/fluent-bit --tail=20",
+     "what": "Read the last lines of one Fluent Bit pod. Connection or HTTP 400 errors show up here first."
+    },
+    {
+     "cmd": "kubectl -n logging get configmap fluent-bit -o yaml",
+     "what": "Show the config the chart really mounted, including your fluent-bit.yaml."
+    },
+    {
+     "cmd": "kubectl -n hello set env deploy/hello-devops GUNICORN_CMD_ARGS=\"--access-logfile=-\"",
+     "what": "Turn on gunicorn's access log in the cluster without editing any file."
+    },
+    {
+     "cmd": "kubectl -n hello annotate pod <pod-name> fluentbit.io/exclude=\"true\"",
+     "what": "Ask Fluent Bit to skip this pod's logs (needs `k8s-logging.exclude: on`)."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/_cat/indices/k8s-logs-*?v'",
+     "what": "Check that cluster logs arrive in Elasticsearch."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/_cat/indices?v&s=store.size:desc'",
+     "what": "List all indices, biggest first, to see where your disk goes."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/_index_template/hello-logs?pretty'",
+     "what": "Show the index template and the settings it gives new indices."
+    },
+    {
+     "cmd": "curl -s 'localhost:9200/hello-logs-*/_ilm/explain?pretty'",
+     "what": "Show which lifecycle policy and phase each index is in."
+    },
+    {
+     "cmd": "helm uninstall fluent-bit -n logging",
+     "what": "Remove Fluent Bit from the cluster."
+    }
+   ],
+   "mistake": "Installing the Fluent Bit chart with its default config and waiting for logs. The default output sends to a host named `elasticsearch-master`, which only exists if you installed Elastic's old chart, and it does not set `suppress_type_name`. Against Elasticsearch 8 or 9 that answers HTTP 400 with `Action/metadata line [1] contains an unknown parameter [_type]`, and with unlimited retries Fluent Bit keeps trying forever. Always set the output yourself, and read one Fluent Bit pod's log with `kubectl logs` before you open Kibana.",
+   "real_world": "A payments company runs Fluent Bit as a DaemonSet in every cluster with one shared Helm values file, so each service's logs arrive with the same Kubernetes fields. The platform team owns the index templates and lifecycle policies. Application logs stay 14 days, while audit logs go to a separate data stream kept much longer in a cheaper tier. Teams that add a noisy debug log see it on the weekly 'biggest indices' report and fix it before it shows up on the bill.",
+   "task": {
+    "title": "Ship your kind cluster's logs to Elasticsearch",
+    "steps": [
+     "Start only Elasticsearch and Kibana from your `logging` folder, so the cluster has somewhere to send logs.",
+     "Check that your kind cluster from Part 7 runs and that hello-devops pods are ready in the `hello` namespace.",
+     "Add `logging/fluent-bit-values.yaml` to your repo, add the Fluent Bit chart repository, and install the chart into a new `logging` namespace.",
+     "Confirm there is one Fluent Bit pod per node, and read one pod's log for errors.",
+     "Turn on gunicorn's access log for hello-devops, wait for the rollout, then send 20 requests to http://localhost:8081/.",
+     "In Kibana, create a data view for `k8s-logs-*` and filter Discover to the `hello` namespace.",
+     "Pick one request and find which pod and which node served it.",
+     "Stretch: drop the kubelet's probe requests at the node with a `grep` filter in the values file, upgrade the release, and check that new probe lines stop arriving."
+    ],
+    "hints": [
+     "If nothing arrives, the pod log usually says why: a host that does not resolve, or an HTTP error from Elasticsearch.",
+     "Fluent Bit reads only lines written after it started, so make new traffic after installing.",
+     "The kubelet's probes send the user agent `kube-probe`, and gunicorn's plain access log line contains it."
+    ],
+    "done_when": "You are done when Discover shows a hello-devops access log line with `kubernetes.pod_name` and `kubernetes.host` filled in."
+   },
+   "explain_back": {
+    "prompt": "Explain to a teammate how a line printed by a hello-devops pod gets into Elasticsearch with its pod name attached, and how old logs get deleted, in 3 to 4 sentences. Mention the DaemonSet, the Kubernetes filter and ILM.",
+    "answer": "The container runtime writes the pod's output to a file under /var/log/containers on its node. The Fluent Bit pod that the DaemonSet runs on that node tails the file. The Kubernetes filter reads the pod name, namespace and container from the file name and asks the API server for the pod's labels, then adds them to the record. Fluent Bit sends the record to that day's k8s-logs index. An index template attaches an ILM policy to each new index, and ILM deletes the index once it is older than the retention we chose."
+   },
+   "recap": [
+    "Fluent Bit runs as a DaemonSet: one pod per node, tailing /var/log/containers.",
+    "The tail input's docker and cri parsers unwrap the runtime's line format and join split lines.",
+    "The Kubernetes filter adds pod, namespace, labels and node; merge_log lifts JSON keys into fields.",
+    "Index templates give new indices their mapping and settings; ILM deletes them when they are old.",
+    "Log cost is volume times copies times days: drop noise at the node first.",
+    "Loki indexes labels only and is cheaper; Elasticsearch indexes everything and searches anything."
+   ],
+   "check": [
+    {
+     "q": "You add a fourth node to your cluster. What happens to the Fluent Bit DaemonSet?",
+     "options": [
+      "Nothing until you raise its replica count to 4",
+      "Kubernetes starts a Fluent Bit pod on the new node by itself",
+      "One existing Fluent Bit pod starts reading the new node's files too",
+      "You must reinstall the Helm chart so it sees the new node"
+     ],
+     "answer": 1,
+     "why": "A DaemonSet has no replica count; it keeps one pod on every node it is allowed on, including new ones."
+    },
+    {
+     "q": "You change the index template so new hello-logs indices have 0 replicas. Today's index is still yellow. Why?",
+     "options": [
+      "Index templates only take effect after a restart of Elasticsearch",
+      "The template's priority is too low to win against the default",
+      "ILM has not reached the delete phase yet",
+      "Templates apply only when an index is created, and today's index already existed"
+     ],
+     "answer": 3,
+     "why": "Templates are read at index creation; existing indices keep their settings until you change them directly."
+    },
+    {
+     "q": "Your team often asks 'which requests mentioned order 8812 in the last 30 days?' across all services. Which store answers that fastest?",
+     "options": [
+      "Elasticsearch, because every word in the log lines is indexed",
+      "Loki, because it stores lines in cheap object storage",
+      "Loki, after adding the order ID as a label on every stream",
+      "Prometheus, by adding order_id as a metric label"
+     ],
+     "answer": 0,
+     "why": "Free-text search over a long window is what a full inverted index is for. Order IDs as Loki or Prometheus labels would explode cardinality."
+    }
+   ],
+   "interview": [
+    {
+     "q": "How would you collect logs from all pods in a Kubernetes cluster?",
+     "a": "Apps write to stdout and stderr, and the runtime stores that in files under /var/log/containers on each node. I run a log agent such as Fluent Bit as a DaemonSet, so one pod per node tails those files with the docker and cri parsers. The Kubernetes filter adds namespace, pod, container and labels, and the output ships to a store such as Elasticsearch or Loki. I add an exclusion annotation for noisy pods, buffer and retry for outages, and alert when the agent itself reports errors."
+    },
+    {
+     "q": "Our logging bill doubled. Where do you start?",
+     "a": "First I find where the volume comes from: the biggest indices, and the top services and messages by count. Most savings come from not shipping noise, such as health checks, debug logs and repeated lines, which I drop at the agent. Then I look at retention per log type, replica counts for low-value logs, and storage options such as logsdb or a cheaper tier for old data. I also agree on a rule with teams, such as a review for new high-volume log statements, so the bill does not drift back."
+    },
+    {
+     "q": "When would you pick Loki over Elasticsearch?",
+     "a": "Loki indexes only labels and keeps compressed lines in object storage, so it is cheaper to run and fits teams that already use Grafana and Prometheus. It works best when queries start from a known service and time window. Elasticsearch indexes every word and field, which costs more but gives fast free-text search and analytics across long periods, useful for security and audit work. With high-cardinality values such as order IDs, Loki needs them in the log line, not in labels."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "You can point Fluent Bit at a data stream instead of daily indices, and it is a good way to see Elastic's defaults at work. I tested this trick against the lab. Keep `logstash_format: on`, so Fluent Bit still adds `@timestamp`, set `logstash_prefix: logs-hello` and `logstash_dateformat: default`. The date format is passed through as plain text, so every write goes to one name: `logs-hello-default`.\n\nThat name matches the `logs-*-*` pattern of Elasticsearch's built-in `logs` template, so the first write creates a data stream. Asking for it with `curl -s 'localhost:9200/_data_stream/logs-hello-default?pretty'` showed:\n- backing index `.ds-logs-hello-default-2026.10.30-000001`\n- template `logs`\n- ILM policy `logs`\n- index mode `logsdb`\n\nThe naming scheme is `type-dataset-namespace`. Here the type is `logs`, the dataset `hello`, and the namespace `default`. Elastic Agent and its integrations name their data streams the same way, which is why so many Kibana views look for `logs-*`.\n\nNow read the policy behind it with `curl -s 'localhost:9200/_ilm/policy/logs?pretty'`. Its only phase is hot, with a rollover at 30 days or 50 GB per primary shard. There is no delete phase. A data stream on defaults keeps everything until the disk fills. To add retention, you can attach your own ILM policy with a delete phase. Or you can use the data stream lifecycle, a simpler mechanism that takes a single `data_retention` value such as `7d`. Read Elastic's data stream lifecycle page before you mix the two, because the data stream lifecycle leaves alone any backing index that ILM already manages. I saw exactly that in the test: setting `data_retention` on the stream was accepted, but the lifecycle explain API reported that the backing index was not managed by it.\n\nTwo practical differences from daily indices:\n- You cannot delete \"today's index\" to pick up a new template, because writes always go to the stream. You trigger a rollover instead (`POST logs-hello-default/_rollover`), and the new backing index uses the current template.\n- Data streams are append-only. If you ever need to update documents in place by `_id`, Elastic's docs point you back to aliases and plain indices.\n\nFor learning, daily indices show every moving part. For production on Elasticsearch 9, data streams with logsdb and an explicit retention are the default I would start from."
+   },
+   "sources": [
+    {
+     "title": "Fluent Bit: Kubernetes installation",
+     "url": "https://docs.fluentbit.io/manual/installation/downloads/kubernetes"
+    },
+    {
+     "title": "Fluent Bit: Kubernetes filter",
+     "url": "https://docs.fluentbit.io/manual/pipeline/filters/kubernetes"
+    },
+    {
+     "title": "Elastic: index lifecycle management",
+     "url": "https://www.elastic.co/docs/manage-data/lifecycle/index-lifecycle-management"
+    },
+    {
+     "title": "Elastic: data stream lifecycle",
+     "url": "https://www.elastic.co/docs/manage-data/lifecycle/data-stream"
+    }
+   ]
+  },
+  {
+   "id": "d49",
+   "title": "Distributed tracing with OpenTelemetry",
+   "minutes": 50,
+   "goal": "By the end you can explain spans, traces and context propagation, run hello-devops under opentelemetry-instrument with a Collector and Jaeger, and use a trace to find the slow step of a request.",
+   "guess": {
+    "q": "One request to hello-devops took 835 ms. Its access log line says status 200, and the error rate on your dashboard is 0%. What shows you where those 835 ms went?",
+    "options": [
+     "The gunicorn access log line for the request",
+     "The Prometheus counter hello_requests_total",
+     "The container's CPU graph for that minute",
+     "A trace of the request, split into timed spans"
+    ],
+    "answer": 3,
+    "why": "Logs and metrics tell you that the request happened and how often. Only a trace records each step of one request with its own start time and duration, so you can see which step was slow."
+   },
+   "terms": [
+    {
+     "term": "Trace",
+     "plain": "The record of one request's whole path, made of spans that share one trace ID."
+    },
+    {
+     "term": "Span",
+     "plain": "One timed operation inside a trace, such as handling GET / or sending one Redis command."
+    },
+    {
+     "term": "Context propagation",
+     "plain": "Passing the trace ID and the current span ID to the next service, usually in an HTTP header."
+    },
+    {
+     "term": "traceparent",
+     "plain": "The W3C HTTP header that carries a version, the trace ID, the parent span ID and a sampled flag."
+    },
+    {
+     "term": "Sampling",
+     "plain": "Keeping only some traces to save money. Head sampling decides at the start, tail sampling after the end."
+    },
+    {
+     "term": "OTLP",
+     "plain": "The OpenTelemetry Protocol for sending telemetry: gRPC on port 4317, HTTP on port 4318."
+    },
+    {
+     "term": "OpenTelemetry Collector",
+     "plain": "A service that receives telemetry, processes it and exports it to one or more backends."
+    },
+    {
+     "term": "Jaeger",
+     "plain": "An open-source tracing backend that stores traces and shows them in a web UI."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Why logs and metrics cannot find the slow step",
+     "body": "Picture a checkout request on a payments site. It enters an API service, which calls a fraud check, which calls a card partner, while the API also writes to a database. The customer waited three seconds. Which hop took them?\n\nMetrics give you averages per service: the 95th percentile of the fraud check went up. Logs give you lines per service, each with its own timestamp, and you have to guess which lines belong to this one request. Neither tells you that this request spent 2.6 of its 3 seconds waiting for the card partner.\n\nA trace does. It is the story of one request, told as a tree of timed steps. Each step is a span: a name, a start time, an end time, and some facts about what happened. Draw the spans on a timeline, one row each, and the slow step is the longest bar with nothing underneath it. That picture is called a waterfall, and it is what Jaeger shows you.\n\nEven hello-devops, one service and Redis, benefits. In the lab I paused Redis writes for 800 ms and sent one request. The trace showed `GET /` taking 835 ms, and its child span `INCRBY` taking 832 ms of them. Without the trace you see a slow request. With it you see a slow Redis call, and you know where to look next.\n\nIn Part 9 you met the signals, and here is how they divide the work in practice. A metric alert says something is wrong. A trace says where. The logs of that one request say why.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: traces",
+       "url": "https://opentelemetry.io/docs/concepts/signals/traces/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Spans and traces",
+     "body": "A span records one operation. In OpenTelemetry every span has:\n- a name, such as `GET /` or `INCRBY`\n- a start and end time, so a duration\n- a trace ID, shared by every span in the same trace\n- its own span ID, and the span ID of its parent\n- attributes: key and value facts, such as `http.response.status_code = 200`\n- events: timestamped notes inside the span, such as an exception\n- a status: Unset, Ok or Error\n- a kind: server, client, internal, producer or consumer\n\nThe parent span IDs make the tree. The first span of a request has no parent and is called the root span. In the lab, a normal request gives two spans with the same trace ID:\n- `GET /`, kind server, 6.5 ms, from the Flask instrumentation. It is the root.\n- `INCRBY`, kind client, 3.4 ms, from the Redis instrumentation. Its parent is the `GET /` span.\n\nWhen Redis was stopped, both spans got status Error and an `exception` event with the type `redis.exceptions.ConnectionError`, its message and the stack trace. The trace carries the error with it, so you do not have to find the matching log line first.\n\nAttribute names follow shared rules called semantic conventions, so every tool agrees that the HTTP method is `http.request.method`. Python instrumentation still uses older names unless you opt in with `OTEL_SEMCONV_STABILITY_OPT_IN=http,database`, which the lab sets. Without it you see `http.method` and `net.peer.ip` instead. Tutorials use both, so do not be surprised by either.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: traces",
+       "url": "https://opentelemetry.io/docs/concepts/signals/traces/",
+       "kind": "docs"
+      },
+      {
+       "title": "OpenTelemetry Python: semantic convention stability",
+       "url": "https://opentelemetry.io/docs/languages/python/instrumentation/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Context propagation and the traceparent header",
+     "body": "Spans from different services only join into one trace if each service tells the next one which trace it is in. That hand-over is context propagation. The caller injects the context into the outgoing request, and the receiver extracts it and starts its own span as a child.\n\nFor HTTP, OpenTelemetry uses the W3C Trace Context header by default:\n\n`traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`\n\nIt has four parts, split by dashes:\n1. `00` is the version of the format.\n2. `4bf92f3577b34da6a3ce929d0e0e4736` is the trace ID: 32 hex characters (16 bytes).\n3. `00f067aa0ba902b7` is the parent span ID: 16 hex characters, the caller's current span.\n4. `01` is the flags. `01` means sampled: the caller is recording this trace.\n\nYou can play the caller yourself with curl, which is what the worked example does. Send that header to hello-devops, and Jaeger files the `GET /` span under trace `4bf92f...` with parent `00f067aa0ba902b7`. Jaeger also warns that this parent is not in the trace, which is true: curl never reported a span.\n\nYou rarely write this header by hand. Instrumented HTTP clients, such as Python's `requests` or the Java agent's HTTP clients, add it to every outgoing call. The trouble starts at hops that do not pass it on: a proxy that strips unknown headers, a message queue without instrumentation, or a homemade HTTP client. The trace then breaks into two traces that look unrelated. When a trace stops early in Jaeger, look for that hop first.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: context propagation",
+       "url": "https://opentelemetry.io/docs/concepts/context-propagation/",
+       "kind": "docs"
+      },
+      {
+       "title": "W3C Trace Context",
+       "url": "https://www.w3.org/TR/trace-context/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "OpenTelemetry: API, SDK, instrumentation",
+     "body": "OpenTelemetry, OTel for short, is a CNCF project that standardizes how apps produce telemetry. It is not a backend: it stores nothing. It gives you these parts:\n- the API: the functions your code calls to start spans\n- the SDK: the engine behind the API, which samples, batches and exports\n- instrumentation libraries, which create spans for frameworks such as Flask, Redis or JDBC\n- OTLP, one protocol for traces, metrics and logs\n- the Collector, covered in the next section\n\nFor many apps you write no tracing code. In Python, zero-code instrumentation takes three steps, and `tracing/Dockerfile.otel` does all three:\n1. `pip install opentelemetry-distro opentelemetry-exporter-otlp`\n2. `opentelemetry-bootstrap -a install` looks at your installed packages and adds the matching instrumentation. For hello-devops it found Flask, Redis and a dozen others.\n3. Prefix your start command with `opentelemetry-instrument`. The lab runs `opentelemetry-instrument gunicorn ...` and `app.py` stays untouched.\n\nSettings come from `OTEL_` environment variables, the same names in every language:\n- `OTEL_SERVICE_NAME=hello-devops` names the service in every backend.\n- `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317` says where to send.\n- `OTEL_TRACES_EXPORTER=console` prints spans to the terminal, handy when no backend runs.\n\nFor your JVM services the idea is the same: add the OpenTelemetry Java agent with `-javaagent:opentelemetry-javaagent.jar`, set the same variables, and Spring, JDBC and HTTP clients get spans.\n\nAuto-instrumentation shows the plumbing. For business steps, such as \"price the basket\", you add a manual span with the API, for example `with tracer.start_as_current_span(\"price-basket\"):` in Python. One caveat from the OTel docs: gunicorn with several workers is fine for traces but breaks auto-instrumented metrics, which is why the lab switches metrics off.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: Python zero-code instrumentation",
+       "url": "https://opentelemetry.io/docs/zero-code/python/",
+       "kind": "docs"
+      },
+      {
+       "title": "OpenTelemetry: Java agent",
+       "url": "https://opentelemetry.io/docs/zero-code/java/agent/",
+       "kind": "docs"
+      },
+      {
+       "title": "OpenTelemetry: the vision, reality, and how to get started (Dotan Horovits, KubeCon NA 2022)",
+       "url": "https://www.youtube.com/watch?v=qE1ggEmvz2Y",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "The Collector: receivers, processors, exporters",
+     "body": "Apps can send spans straight to a backend. Most teams put an OpenTelemetry Collector in between, for three reasons:\n- One place to change data: drop noise, remove personal data, add attributes.\n- Apps stay simple: they send OTLP to one address and never learn about the backend.\n- You can switch or add backends by editing one config file, without redeploying apps.\n\nA Collector config has the same shape as Fluent Bit's pipeline from Day 47. Receivers take data in, processors change it, exporters send it out, and `service.pipelines` wires them together per signal. The lab's `tracing/otel-collector.yaml` reads like this:\n1. The `otlp` receiver listens on 4317 (gRPC) and 4318 (HTTP).\n2. `memory_limiter` refuses data before the Collector runs out of memory.\n3. `transform/scrub` hashes `client.address`, because an IP address is personal data, and deletes `user_agent.original`.\n4. The `otlp_grpc/jaeger` exporter sends batches to Jaeger, and `debug` prints a line per batch in the Collector's log.\n\nIn the lab, the hashed address really arrived in Jaeger as a 64-character hex string. The same caller always gets the same hash, so you can still count unique callers without storing who they are.\n\nVersion drift bites here. Collector v0.144 renamed the `otlp` exporter to `otlp_grpc` and `otlphttp` to `otlp_http`. The old names still work but log a deprecation warning. Older tutorials also show a `jaeger` exporter, which no longer exists. Jaeger speaks OTLP now. Even the core image's `attributes` processor warned that it leaves the core distribution in v0.167, which is why the lab uses `transform`.\n\nThere are two main Collector images. The core image, `otel/opentelemetry-collector`, is small and has the basics. The contrib image has the much larger set of components, including tail sampling.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: Collector configuration",
+       "url": "https://opentelemetry.io/docs/collector/configuration/",
+       "kind": "docs"
+      },
+      {
+       "title": "OpenTelemetry: transforming telemetry",
+       "url": "https://opentelemetry.io/docs/collector/transforming-telemetry/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Sampling: head and tail",
+     "body": "Tracing every request costs CPU in your app, network and storage. At high traffic most teams keep only some traces, which is sampling. The OpenTelemetry docs say that for high-volume systems a rate of 1% or lower often represents the rest very well.\n\nThe SDK's default sampler is `parentbased_always_on`. In plain words: follow the caller's decision if there is one, otherwise keep everything. That is right for a lab and usually wrong for a busy production service.\n\nHead sampling decides when the trace starts, from the trace ID. Set `OTEL_TRACES_SAMPLER=parentbased_traceidratio` and `OTEL_TRACES_SAMPLER_ARG=0.1`, and about 1 trace in 10 is kept. I ran 200 requests that way against the lab and Jaeger held 17 of them. The decision then travels in the sampled flag of `traceparent`, so every service keeps or drops the same trace. You saw that in the lab too: a request with flag `00` left no trace at all.\n\nHead sampling has a blind spot. It decides before anything has happened, so it cannot promise to keep the traces you care about most, the failed and the slow ones.\n\nTail sampling decides after the trace is complete. A Collector buffers the spans for a few seconds, looks at the whole trace, and applies rules such as:\n- keep every trace with an error\n- keep every trace slower than 500 ms\n- keep 10% of everything else\n\nThe price is memory and a design rule: all spans of one trace must reach the same Collector instance. Tail sampling lives in the contrib Collector, and the deeper section shows a config.",
+     "refs": [
+      {
+       "title": "OpenTelemetry: sampling",
+       "url": "https://opentelemetry.io/docs/concepts/sampling/",
+       "kind": "docs"
+      },
+      {
+       "title": "OpenTelemetry: SDK configuration (samplers)",
+       "url": "https://opentelemetry.io/docs/languages/sdk-configuration/general/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Backends, and joining traces to logs and metrics",
+     "body": "The Collector sends spans somewhere that stores and shows them. The common open-source choices:\n- Jaeger. Version 2 is built on the OpenTelemetry Collector itself, and version 1 has reached end of life. The all-in-one image you run in the lab keeps traces in memory, so they vanish on restart. For real use it stores to Elasticsearch, OpenSearch, Cassandra or ClickHouse.\n- Grafana Tempo, from Day 46. It needs only object storage and is queried with TraceQL.\n- Commercial platforms. Dynatrace (Day 50) and Elastic both accept OTLP, so the same Collector config can send there.\n\nTraces get most useful when the three signals point at each other. The thread that ties them together is the trace ID:\n- In logs: write the trace ID on every line. For Python, `OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true` adds it to log records. Then a Kibana search for one trace ID returns every log line of that request, across services.\n- In metrics: Prometheus can attach a trace ID to a histogram sample, called an exemplar, so a latency spike on a Grafana graph links to an example trace.\n- In the UI: Grafana and Kibana can link from a span to its logs and back.\n\nA habit worth building: when you add a log line in a service that is traced, make sure the trace ID ends up in it. It costs a few bytes per line, and it is the difference between 'errors went up' and 'here is request 4bf92f..., and here is everything it did'.",
+     "refs": [
+      {
+       "title": "Jaeger: getting started (v2)",
+       "url": "https://www.jaegertracing.io/docs/2.22/getting-started/",
+       "kind": "docs"
+      },
+      {
+       "title": "Jaeger v2 unveiled: tracing powered by OpenTelemetry (OpenObservability Talks, with Yuri Shkuro)",
+       "url": "https://www.youtube.com/watch?v=lICivVwm-F8",
+       "kind": "watch"
+      }
+     ]
+    }
+   ],
+   "analogy": "A trace is a parcel's tracking history. The tracking number on the label (the trace ID in `traceparent`) is copied onto every new label as the parcel moves on. Each depot adds a scan with its arrival and departure times (a span). Looking at all the scans for one number shows where the parcel sat for two days. Where it breaks: a courier keeps every parcel's history. A busy system usually samples and keeps only some traces, so the request you care about may never have been recorded.",
+   "diagram": "<svg viewBox=\"0 0 560 204\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A trace waterfall: the GET / server span lasts 835 ms and its child INCRBY Redis span lasts 832 ms of that time\"><text class=\"ts\" x=\"16\" y=\"22\" font-size=\"11\" text-anchor=\"start\">one trace: 0d99b605...</text><text class=\"t\" x=\"16\" y=\"62\" font-size=\"13\" text-anchor=\"start\">GET /</text><text class=\"ts\" x=\"16\" y=\"78\" font-size=\"11\" text-anchor=\"start\">server span</text><rect class=\"bxo\" x=\"128\" y=\"42\" width=\"400\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"328\" y=\"64\" font-size=\"13\" text-anchor=\"middle\">835 ms</text><line class=\"lnd\" x1=\"134\" y1=\"78\" x2=\"134\" y2=\"100\"/><text class=\"t\" x=\"16\" y=\"122\" font-size=\"13\" text-anchor=\"start\">INCRBY</text><text class=\"ts\" x=\"16\" y=\"138\" font-size=\"11\" text-anchor=\"start\">client span</text><rect class=\"bxt\" x=\"130\" y=\"102\" width=\"399\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"329.5\" y=\"124\" font-size=\"13\" text-anchor=\"middle\">832 ms</text><line class=\"ln\" x1=\"128\" y1=\"170\" x2=\"528\" y2=\"170\"/><text class=\"ts\" x=\"128\" y=\"188\" font-size=\"11\" text-anchor=\"middle\">0 ms</text><text class=\"ts\" x=\"320\" y=\"188\" font-size=\"11\" text-anchor=\"middle\">400 ms</text><text class=\"ts\" x=\"511\" y=\"188\" font-size=\"11\" text-anchor=\"middle\">800 ms</text><line class=\"ln\" x1=\"128\" y1=\"164\" x2=\"128\" y2=\"176\"/><line class=\"ln\" x1=\"320\" y1=\"164\" x2=\"320\" y2=\"176\"/><line class=\"ln\" x1=\"511\" y1=\"164\" x2=\"511\" y2=\"176\"/></svg>",
+   "diagram_caption": "The real slow trace from the lab: the GET / server span lasted 835 ms, and its Redis child span INCRBY used 832 ms of that, so Redis is the slow step.",
+   "worked": {
+    "title": "Follow a traceparent header into Jaeger",
+    "steps": [
+     {
+      "say": "Start the tracing lab. Compose builds the instrumented image from `tracing/Dockerfile.otel`, then starts Jaeger, the Collector, the app and Redis. A normal request answers as always: the app does not know it is being traced.",
+      "code": "$ cd tracing\n$ docker compose up -d --build\n$ curl -s localhost:8000/\n{\"host\":\"7b9644166a1a\",\"message\":\"Hello, DevOps!\",\"version\":\"1.0.0\",\"visits\":1}",
+      "lang": "console"
+     },
+     {
+      "say": "Now pretend to be an upstream service that is already tracing this request. You choose the trace ID and your own span ID, and set the sampled flag to `01`. The Flask instrumentation extracts the header and makes its server span a child of yours.",
+      "code": "$ curl -s -o /dev/null -w '%{http_code}\\n' -H 'traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' localhost:8000/\n200",
+      "lang": "console"
+     },
+     {
+      "say": "Ask Jaeger's API for that exact trace ID, and let jq from Day 2 print each span's name, own ID and parent ID. The `GET /` span has your fake caller `00f067aa0ba902b7` as its parent, and `INCRBY` hangs under it. Three services would chain the same way. Open http://localhost:16686/trace/4bf92f3577b34da6a3ce929d0e0e4736 to see the waterfall.",
+      "code": "$ curl -s localhost:16686/api/v3/traces/4bf92f3577b34da6a3ce929d0e0e4736 \\\n    | jq -r '.result.resourceSpans[].scopeSpans[].spans[] | [.name, .spanId, (.parentSpanId // \"-\")] | @tsv'\nGET /\t3ac93496b7a0eb5b\t00f067aa0ba902b7\nINCRBY\t0d6fc47a7154a749\t3ac93496b7a0eb5b",
+      "lang": "console"
+     },
+     {
+      "say": "Read the server span's attributes. They use the stable names, `client.address` arrived as a hash because the Collector's transform processor replaced the IP, and `user_agent.original` is gone. The last line is Jaeger noticing that the parent span never arrived, which is true: curl sent no span.",
+      "code": "$ curl -s localhost:16686/api/v3/traces/4bf92f3577b34da6a3ce929d0e0e4736 \\\n    | jq -r '.result.resourceSpans[].scopeSpans[].spans[] | select(.name == \"GET /\") | .attributes[] | \"\\(.key) = \\(.value | to_entries[0].value)\"'\nclient.address = 79f1ed7c3831720253675dcf97a9714711e3e0ec94b6abf77f5bbf0280dc9c0d\nclient.port = 43298\nhttp.request.method = GET\nhttp.response.status_code = 200\nhttp.route = /\nnetwork.protocol.version = 1.1\nserver.address = localhost:8000\nserver.port = 8000\nurl.path = /\nurl.scheme = http\n@jaeger@warnings = {\"values\":[{\"stringValue\":\"parent span ID=00f067aa0ba902b7 is not in the trace; skipping clock skew adjustment\"}]}",
+      "lang": "console"
+     },
+     {
+      "say": "Send a second made-up trace with the flag `00`, meaning 'the caller decided not to sample'. The app's sampler is parent-based, so it obeys and records nothing. Jaeger has no such trace. This is how one sampling decision is kept across every service of a request.",
+      "code": "$ curl -s -o /dev/null -H 'traceparent: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00' localhost:8000/\n$ curl -s localhost:16686/api/v3/traces/0af7651916cd43dd8448eb211c80319c\n{\"error\":{\"httpCode\":404,\"message\":\"No traces found\"}}",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "dockerfile",
+     "title": "tracing/Dockerfile.otel",
+     "src": "# syntax=docker/dockerfile:1\n# hello-devops with OpenTelemetry zero-code instrumentation (Day 49).\n# Same app.py as the main Dockerfile, no code changes. opentelemetry-instrument\n# starts gunicorn and patches Flask and the Redis client so they create spans.\n#\n# Build from the repository root (the folder with app.py):\n#   docker build -f tracing/Dockerfile.otel -t hello-devops:otel .\n# tracing/compose.yaml builds it for you.\n\nFROM python:3.14-slim\nWORKDIR /app\nRUN python -m venv /venv\nENV PATH=\"/venv/bin:$PATH\" PYTHONUNBUFFERED=1\n\n# 1. The app's own dependencies.\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\n# 2. The OpenTelemetry SDK, the OTLP exporter and the opentelemetry-instrument command.\nRUN pip install --no-cache-dir opentelemetry-distro opentelemetry-exporter-otlp\n\n# 3. Look at the installed packages (Flask, Redis, ...) and install the\n#    matching instrumentation packages.\nRUN opentelemetry-bootstrap -a install\n\nCOPY app.py .\nRUN useradd --uid 10001 --no-create-home appuser\nUSER 10001\nEXPOSE 8000\n# opentelemetry-instrument wraps the usual gunicorn command.\nCMD [\"opentelemetry-instrument\", \"gunicorn\", \"--bind\", \"0.0.0.0:8000\", \"--workers\", \"2\", \"--no-control-socket\", \"app:app\"]",
+     "run": "docker build -f tracing/Dockerfile.otel -t hello-devops:otel ."
+    },
+    {
+     "lang": "yaml",
+     "title": "tracing/otel-collector.yaml",
+     "src": "# OpenTelemetry Collector for the tracing lab (Day 49).\n# hello-devops sends spans here over OTLP. The Collector cleans them up and\n# forwards them to Jaeger. Exporter names follow Collector v0.144 and later:\n# otlp_grpc and otlp_http (older tutorials say otlp and otlphttp).\n\nreceivers:\n  # Accept OTLP from apps: gRPC on 4317, HTTP on 4318.\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:4318\n\nprocessors:\n  # Refuse new data before the Collector runs out of memory.\n  memory_limiter:\n    check_interval: 1s\n    limit_mib: 200\n    spike_limit_mib: 50\n\n  # Change spans on their way through, with the OpenTelemetry Transformation\n  # Language (OTTL). One statement per line, run in order.\n  transform/scrub:\n    error_mode: ignore\n    trace_statements:\n      # The caller's IP address is personal data. Keep a hash instead:\n      # the same IP still gives the same value, but nobody can read it.\n      - set(span.attributes[\"client.address\"], SHA256(span.attributes[\"client.address\"])) where span.attributes[\"client.address\"] != nil\n      # Nobody on the team needs the full browser string.\n      - delete_key(span.attributes, \"user_agent.original\")\n\nexporters:\n  # Forward to Jaeger, which speaks OTLP too.\n  otlp_grpc/jaeger:\n    endpoint: jaeger:4317\n    tls:\n      insecure: true # plain text inside the compose network (lab only)\n    sending_queue:\n      batch: # send spans in batches, not one request per span\n\n  # Print one line per batch in the Collector's own log, for debugging.\n  debug:\n    verbosity: basic\n\nextensions:\n  health_check:\n    endpoint: 0.0.0.0:13133\n\nservice:\n  extensions: [health_check]\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, transform/scrub]\n      exporters: [otlp_grpc/jaeger, debug]",
+     "run": "docker run --rm -v \"$PWD/tracing/otel-collector.yaml:/c.yaml:ro\" otel/opentelemetry-collector:0.164.0 validate --config=/c.yaml"
+    },
+    {
+     "lang": "yaml",
+     "title": "tracing/compose.yaml",
+     "src": "# Tracing lab (Day 49): hello-devops -> OpenTelemetry Collector -> Jaeger.\n#\n# Start (from this tracing/ folder):  docker compose up -d --build\n# Jaeger UI:                          http://localhost:16686\n# The app:                            http://localhost:8000\n# Stop:                               docker compose down\n#\n# Jaeger keeps traces in memory only, so they are gone after a restart.\n\nservices:\n  jaeger:\n    image: jaegertracing/jaeger:2.22.0 # Jaeger v2, all-in-one (see README.md)\n    ports:\n      - \"16686:16686\" # the Jaeger UI\n\n  otel-collector:\n    image: otel/opentelemetry-collector:0.164.0\n    command: [\"--config=/etc/otelcol/config.yaml\"]\n    volumes:\n      - ./otel-collector.yaml:/etc/otelcol/config.yaml:ro\n    ports:\n      - \"4317:4317\" # OTLP over gRPC, for apps on your laptop\n      - \"4318:4318\" # OTLP over HTTP\n    depends_on:\n      - jaeger\n\n  web:\n    build:\n      context: ..                         # the folder with app.py\n      dockerfile: tracing/Dockerfile.otel # app.py unchanged, plus OpenTelemetry\n    ports:\n      - \"8000:8000\"\n    environment:\n      REDIS_HOST: redis\n      APP_VERSION: \"1.0.0\"\n      # OpenTelemetry settings. Every one is a standard OTEL_ variable.\n      OTEL_SERVICE_NAME: hello-devops\n      OTEL_RESOURCE_ATTRIBUTES: service.version=1.0.0,deployment.environment.name=lab\n      OTEL_TRACES_EXPORTER: otlp\n      # Gunicorn with several workers breaks OTel metrics (traces are fine), and\n      # Prometheus already covers metrics in this course.\n      OTEL_METRICS_EXPORTER: none\n      OTEL_LOGS_EXPORTER: none\n      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317\n      OTEL_EXPORTER_OTLP_PROTOCOL: grpc\n      # Use the stable attribute names (http.request.method, client.address, ...).\n      OTEL_SEMCONV_STABILITY_OPT_IN: http,database\n      # Keep every trace (the SDK default). Production systems usually sample.\n      OTEL_TRACES_SAMPLER: parentbased_always_on\n    depends_on:\n      redis:\n        condition: service_healthy\n      otel-collector:\n        condition: service_started\n\n  redis:\n    image: redis:8-alpine\n    healthcheck:\n      test: [\"CMD\", \"redis-cli\", \"ping\"]\n      interval: 5s\n      timeout: 3s\n      retries: 5",
+     "run": "cd tracing && docker compose up -d --build"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "cd tracing && docker compose up -d --build",
+     "what": "Build the instrumented app and start Jaeger, the Collector, the app and Redis."
+    },
+    {
+     "cmd": "docker compose logs -f otel-collector",
+     "what": "Follow the Collector's log. The debug exporter prints one line per batch of spans."
+    },
+    {
+     "cmd": "open http://localhost:16686",
+     "what": "Open the Jaeger UI on your Mac. Pick the service hello-devops and select Find Traces."
+    },
+    {
+     "cmd": "curl -s -H 'traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' localhost:8000/",
+     "what": "Send a request that joins a trace you chose, as an upstream service would."
+    },
+    {
+     "cmd": "curl -s localhost:16686/api/v3/services",
+     "what": "List the services Jaeger has seen spans from."
+    },
+    {
+     "cmd": "curl -s localhost:16686/api/v3/traces/<trace-id> | jq .",
+     "what": "Fetch one trace from Jaeger as JSON."
+    },
+    {
+     "cmd": "docker compose exec redis redis-cli CLIENT PAUSE 800 WRITE",
+     "what": "Hold Redis writes for 800 ms, so the next request has a slow span to find."
+    },
+    {
+     "cmd": "docker compose stop redis",
+     "what": "Stop Redis so requests fail and produce error spans. Start it again with `docker compose start redis`."
+    },
+    {
+     "cmd": "docker run --rm -v \"$PWD/otel-collector.yaml:/c.yaml:ro\" otel/opentelemetry-collector:0.164.0 validate --config=/c.yaml",
+     "what": "Check a Collector config without starting it. No output means it is valid."
+    },
+    {
+     "cmd": "pip install opentelemetry-distro opentelemetry-exporter-otlp && opentelemetry-bootstrap -a install",
+     "what": "Add zero-code OpenTelemetry to a Python environment, with instrumentation for the packages it finds."
+    },
+    {
+     "cmd": "OTEL_SERVICE_NAME=hello-devops OTEL_TRACES_EXPORTER=console OTEL_METRICS_EXPORTER=none opentelemetry-instrument python app.py",
+     "what": "Run the app locally and print every span to the terminal, with no backend at all."
+    },
+    {
+     "cmd": "docker compose down",
+     "what": "Stop the tracing lab. Jaeger's in-memory traces are gone after this."
+    }
+   ],
+   "mistake": "Copying a Collector config from an older tutorial. A `jaeger:` exporter now stops the Collector with `'exporters' unknown type: \"jaeger\"`, and `otlp:` still works but logs `\"otlp\" alias is deprecated; use \"otlp_grpc\" instead`. Send OTLP to Jaeger with the `otlp_grpc` exporter, and run `otelcol validate` (the `validate` command in the worked commands) on every config change before you deploy it.",
+   "real_world": "A payments team traces every service with OpenTelemetry. Its Collector tier uses tail sampling to keep all traces with an error, all slower than two seconds, and 5% of the rest. The Collector also hashes client IPs and removes card-related attributes before anything leaves the cluster. When the checkout latency alert fires, on-call opens an example slow trace and sees the time spent in the call to the card partner. Then they search the logs by that trace ID.",
+   "task": {
+    "title": "Find the slow span",
+    "steps": [
+     "Add the three `tracing/` files from this lesson to your hello-devops repo, next to `app.py` one folder up.",
+     "Start the tracing lab and send 20 requests to http://localhost:8000/.",
+     "In the Jaeger UI, open one normal trace and note the duration of each span.",
+     "Pause Redis writes for 800 ms and send one request straight after.",
+     "Search Jaeger for traces of hello-devops longer than 500 ms, open the one you made, and say which span took the time and how much of the total.",
+     "Stop Redis, send a request, start Redis again, and find the error trace. Read the exception event on the span that failed.",
+     "Stretch: run the app with a 10% ratio sampler, send 200 requests, and count how many traces Jaeger kept."
+    ],
+    "hints": [
+     "The Jaeger search form has Min Duration and Max Duration fields.",
+     "`CLIENT PAUSE` only lasts for the milliseconds you give it, so have the curl command ready to run.",
+     "For the stretch, the sampler is set with two `OTEL_TRACES_SAMPLER` variables in compose.yaml."
+    ],
+    "done_when": "You are done when you can point at the INCRBY span in a trace of about 800 ms and say it used almost all of the request's time."
+   },
+   "explain_back": {
+    "prompt": "Explain to a teammate how two services end up in the same trace in Jaeger, in 3 to 4 sentences. Mention spans, the traceparent header and the Collector.",
+    "answer": "Each service creates spans, timed records of its own work, and every span carries a trace ID plus the ID of its parent span. When service A calls service B, its instrumentation puts the trace ID and A's current span ID into the traceparent header. B reads that header and starts its own span as a child in the same trace. Both services send their spans over OTLP to the Collector, which can clean or sample them and then exports them to Jaeger, where they appear as one waterfall."
+   },
+   "recap": [
+    "A trace is one request's story: a tree of timed spans that share a trace ID.",
+    "The traceparent header carries the trace ID, the parent span ID and the sampled flag between services.",
+    "OpenTelemetry gives you the API, SDK, auto-instrumentation, OTLP and the Collector, but no storage.",
+    "opentelemetry-instrument traces a Python app with no code change, configured by OTEL_ variables.",
+    "The Collector's receivers, processors and exporters let you scrub, sample and route in one place.",
+    "Head sampling decides at the start; tail sampling in the Collector can keep every error and slow trace."
+   ],
+   "check": [
+    {
+     "q": "A trace in Jaeger shows the frontend span, but the payment service's spans for the same request appear as a separate trace. What is the most likely cause?",
+     "options": [
+      "Jaeger's in-memory storage dropped half of the spans",
+      "The two services use different service names",
+      "The call between them did not carry the traceparent header",
+      "The payment service samples at 100% and the frontend at 10%"
+     ],
+     "answer": 2,
+     "why": "Without the propagated trace ID and parent span ID, the payment service starts a new trace of its own."
+    },
+    {
+     "q": "You must keep every trace that contains an error, but only about 5% of the successful ones. Where do you decide?",
+     "options": [
+      "In each app's SDK, with a 5% ratio sampler",
+      "In a Collector with tail sampling, after the traces complete",
+      "In Jaeger, by deleting successful traces every night",
+      "In the traceparent header, by setting the flag to 05"
+     ],
+     "answer": 1,
+     "why": "Only a decision made after the trace ends can know whether it contained an error; the flag is just sampled or not."
+    },
+    {
+     "q": "You are about to add `user.email` as a span attribute so support can find a customer's requests. What does today's lab suggest instead?",
+     "options": [
+      "Add it, because span attributes are internal debug data",
+      "Add it as the service name so it is easy to filter",
+      "Put it in the traceparent header so every service sees it",
+      "Hash or drop it in the Collector, or log a non-personal customer ID"
+     ],
+     "answer": 3,
+     "why": "Personal data in telemetry spreads to every backend; the lab's transform processor shows how to hash or delete it in one place."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the difference between a trace and a span, and how does context propagation work?",
+     "a": "A span is one timed operation, such as an HTTP handler or a database call, with attributes, events and a status. A trace is all the spans of one request, linked by a shared trace ID and parent span IDs into a tree. When a service calls another, its instrumentation writes the trace ID and its current span ID into a header, by default the W3C traceparent header. The receiver reads it and makes its spans children of the caller's span, so both appear in one trace."
+    },
+    {
+     "q": "Head sampling or tail sampling: what is the difference and when do you use each?",
+     "a": "Head sampling decides at the start of a trace, usually from the trace ID and a ratio, and the decision travels with the request so all services agree. It is cheap but blind: it may drop the rare error or slow trace. Tail sampling waits until a trace is complete, in a Collector, and can keep every error and slow trace plus a share of the rest. It needs memory for buffering, and all spans of a trace must reach the same Collector. So I use head sampling to cut volume, and tail sampling where error and latency traces matter."
+    },
+    {
+     "q": "Why put an OpenTelemetry Collector between your apps and the tracing backend?",
+     "a": "Apps then only know one OTLP endpoint, so changing or adding a backend is a Collector config change instead of a redeploy of every app. The Collector is also the one place to process data: batching, retries, memory limits, removing personal data and tail sampling. It moves that work out of the app process. The cost is one more component to run and monitor, which is why small setups sometimes send straight to the backend."
+    }
+   ],
+   "deeper": {
+    "minutes": 14,
+    "body": "Tail sampling needs the contrib Collector (`otel/opentelemetry-collector-contrib`), because the `tail_sampling` processor is not in the core image. You add it to the processors of the traces pipeline, after `memory_limiter`. Its settings, from the processor's README:\n- `decision_wait`: how long to buffer a trace's spans before deciding. The default is 30 seconds; 10 seconds is a common choice.\n- `num_traces`: how many traces to hold in memory while waiting.\n- `policies`: a list of rules. If any policy votes to sample, the trace is kept, unless a policy explicitly votes to drop it.\n\nA policy list that matches the lesson looks like this, written in YAML under `policies`:\n- `{name: errors, type: status_code, status_code: {status_codes: [ERROR]}}` keeps every trace with an error span.\n- `{name: slow, type: latency, latency: {threshold_ms: 500}}` keeps every trace longer than 500 ms, measured from the earliest span start to the latest span end.\n- `{name: some-of-the-rest, type: probabilistic, probabilistic: {sampling_percentage: 10}}` keeps 10% of everything else, chosen by hashing the trace ID.\n\nTwo consequences are worth thinking through before you run this in production.\n\nFirst, memory. The Collector holds every span of every trace in flight for `decision_wait`. At 1,000 requests a second with 10 spans each, a 10-second wait means about 100,000 spans in memory at once. That is why `memory_limiter` comes first in the pipeline and why tail sampling Collectors get their own resource limits.\n\nSecond, scale-out. The README says all spans of a trace must be received by the same Collector instance. With three Collector replicas behind a normal load balancer, each one sees a third of every trace and decides badly. The usual fix is two tiers of Collectors. The first tier only forwards, with the load-balancing exporter, which routes spans by trace ID. The second tier does the tail sampling. The OpenTelemetry docs on scaling the Collector describe this layout.\n\nHead and tail sampling can work together. A service can head-sample at 50% to cut the load on its own process, and the Collector then tail-samples what arrives. Just remember that anything head sampling dropped is gone for good, errors included. If you need every error, the SDK has to keep every trace, and only the Collector may sample.\n\nFor hello-devops there is a simple way to see the effect. Run the contrib image with these three policies, send 100 normal requests and 5 slow ones (with `CLIENT PAUSE`), and count traces in Jaeger. You should find all 5 slow ones and roughly 10 of the fast ones."
+   },
+   "sources": [
+    {
+     "title": "OpenTelemetry: traces",
+     "url": "https://opentelemetry.io/docs/concepts/signals/traces/"
+    },
+    {
+     "title": "OpenTelemetry: sampling",
+     "url": "https://opentelemetry.io/docs/concepts/sampling/"
+    },
+    {
+     "title": "OpenTelemetry: Collector configuration",
+     "url": "https://opentelemetry.io/docs/collector/configuration/"
+    },
+    {
+     "title": "Jaeger: getting started (v2)",
+     "url": "https://www.jaegertracing.io/docs/2.22/getting-started/"
+    }
+   ]
+  }
+ ],
+ "recap": [
+  "Centralized logging copies every line to one searchable store, so logs outlive the containers that wrote them.",
+  "Write structured JSON logs with a level, and never log secrets or personal data.",
+  "Elasticsearch stores JSON documents in indices and finds them through an inverted index of whole tokens.",
+  "Mappings set field types: text is split into words, keyword is matched whole, and the first guess sticks.",
+  "A replica never shares a node with its primary, so a one-node cluster with replicas stays yellow.",
+  "On Kubernetes, Fluent Bit runs as a DaemonSet that tails /var/log/containers and adds pod metadata.",
+  "Index templates give new indices their mapping, and ILM deletes indices when they are old enough.",
+  "A trace is a tree of timed spans that share a trace ID, carried between services in the traceparent header.",
+  "OpenTelemetry instruments apps and the Collector scrubs, samples and routes their spans to a backend such as Jaeger.",
+  "Head sampling decides at the start of a trace; tail sampling in a Collector can keep every error and slow trace."
+ ],
+ "flashcards": [
+  {
+   "front": "Why can't you rely on `docker logs` or `kubectl logs` alone in production?",
+   "back": "The logs leave with the container or pod. Centralized logging keeps a copy that outlives them."
+  },
+  {
+   "front": "What is an inverted index?",
+   "back": "A table from each token to the documents that contain it, like the index at the back of a book."
+  },
+  {
+   "front": "Why does a search for `payments` miss a log that says `Payment`?",
+   "back": "The default analyzer stored the token `payment`, and search matches whole tokens."
+  },
+  {
+   "front": "text or keyword: which one for a `status` or `service` field you filter and count on?",
+   "back": "keyword. It stores the whole value, so exact filters and counts work."
+  },
+  {
+   "front": "What does a yellow index mean?",
+   "back": "All primary shards are placed, but at least one replica is not."
+  },
+  {
+   "front": "Which shard count is fixed when an index is created?",
+   "back": "The number of primary shards. Replicas can change at any time."
+  },
+  {
+   "front": "What does EFK stand for?",
+   "back": "Elasticsearch, Fluentd or Fluent Bit, and Kibana."
+  },
+  {
+   "front": "KQL to show only failed requests when `status` is a number field?",
+   "back": "`status >= 500`"
+  },
+  {
+   "front": "Why run Fluent Bit as a DaemonSet?",
+   "back": "It puts one shipper on every node, and each one tails the log files of the pods on its node."
+  },
+  {
+   "front": "What does the Fluent Bit `merge_log` option do?",
+   "back": "If a log line is JSON, it lifts the keys into real fields of the record."
+  },
+  {
+   "front": "When does an index template change affect an index?",
+   "back": "Only when a new matching index is created."
+  },
+  {
+   "front": "Which ILM phase removes old indices?",
+   "back": "The delete phase, once the index is older than its `min_age`."
+  },
+  {
+   "front": "The four parts of a traceparent header?",
+   "back": "Version, trace ID, parent span ID and flags (01 means sampled)."
+  },
+  {
+   "front": "What links a child span to its parent?",
+   "back": "The same trace ID, plus the parent's span ID stored in the child."
+  },
+  {
+   "front": "How do you trace a Python app without changing its code?",
+   "back": "Install opentelemetry-distro, run opentelemetry-bootstrap -a install, and start it with opentelemetry-instrument."
+  },
+  {
+   "front": "The three kinds of Collector components in a pipeline?",
+   "back": "Receivers take data in, processors change it, exporters send it out."
+  },
+  {
+   "front": "What does tail sampling need that head sampling does not?",
+   "back": "All spans of a trace must reach one Collector, which buffers them until the trace is complete."
+  },
+  {
+   "front": "What ties a log line to the trace of its request?",
+   "back": "The trace ID written into the log line."
+  }
+ ],
+ "resources": [
+  {
+   "title": "Exploring and querying your data with Kibana (Elastic)",
+   "url": "https://www.youtube.com/watch?v=t3cebUxRliA",
+   "kind": "watch",
+   "why": "Elastic's own walk through Discover and KQL, so you know your way around before the hands-on."
+  },
+  {
+   "title": "Elastic: index basics",
+   "url": "https://www.elastic.co/docs/manage-data/data-store/index-basics",
+   "kind": "docs",
+   "why": "The official explanation of documents, indices and fields that Day 47 builds on."
+  },
+  {
+   "title": "Elastic: size your shards",
+   "url": "https://www.elastic.co/docs/deploy-manage/production-guidance/optimize-performance/size-shards",
+   "kind": "docs",
+   "why": "How many shards to use and why too many small ones slow a cluster down."
+  },
+  {
+   "title": "Fluent Bit v3: unified layer for logs, metrics and traces (Eduardo Silva at KubeCon, CNCF)",
+   "url": "https://www.youtube.com/watch?v=4SqDRokC7ac",
+   "kind": "watch",
+   "why": "Fluent Bit's creator explains where the project is going and how it handles all three signals."
+  },
+  {
+   "title": "Fluent Bit: Kubernetes filter",
+   "url": "https://docs.fluentbit.io/manual/pipeline/filters/kubernetes",
+   "kind": "docs",
+   "why": "Every option of the filter that adds pod names, namespaces and labels to your logs."
+  },
+  {
+   "title": "OWASP Logging Cheat Sheet",
+   "url": "https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Logging_Cheat_Sheet.md",
+   "kind": "read",
+   "why": "What to log, what never to log, and how to protect logs, from a security point of view."
+  },
+  {
+   "title": "OpenTelemetry: the vision, reality, and how to get started (Dotan Horovits, KubeCon NA 2022)",
+   "url": "https://www.youtube.com/watch?v=qE1ggEmvz2Y",
+   "kind": "watch",
+   "why": "A clear talk on what OpenTelemetry is, what it is not, and where to start."
+  },
+  {
+   "title": "OpenTelemetry: traces",
+   "url": "https://opentelemetry.io/docs/concepts/signals/traces/",
+   "kind": "docs",
+   "why": "The official guide to spans, span context, attributes, events and span kinds."
+  },
+  {
+   "title": "OpenTelemetry: Collector configuration",
+   "url": "https://opentelemetry.io/docs/collector/configuration/",
+   "kind": "docs",
+   "why": "How receivers, processors, exporters and pipelines fit together, with full examples."
+  },
+  {
+   "title": "Jaeger V2 unveiled: distributed tracing powered by OpenTelemetry (OpenObservability Talks)",
+   "url": "https://www.youtube.com/watch?v=lICivVwm-F8",
+   "kind": "watch",
+   "why": "Jaeger's creator, Yuri Shkuro, explains why Jaeger v2 is built on the OpenTelemetry Collector."
+  },
+  {
+   "title": "W3C Trace Context",
+   "url": "https://www.w3.org/TR/trace-context/",
+   "kind": "read",
+   "why": "The standard behind the traceparent header, if you want every field and rule."
+  },
+  {
+   "title": "Distributed Tracing in Practice (O'Reilly book)",
+   "url": "https://www.oreilly.com/library/view/distributed-tracing-in/9781492056621",
+   "kind": "read",
+   "why": "A book-length look at instrumenting, sampling and using traces in real systems."
+  }
+ ],
+ "quiz": [
+  {
+   "q": "A log message says `Payment FAILED for order 42`. With the default analyzer, which match query on the message finds it?",
+   "options": [
+    "`fail`",
+    "`FAIL*` without wildcards enabled",
+    "`failed`",
+    "`ailed`"
+   ],
+   "answer": 2,
+   "why": "The analyzer stored the lowercase token `failed`, and a match query looks up whole tokens."
+  },
+  {
+   "q": "Your cluster turns red. What does that tell you?",
+   "options": [
+    "At least one primary shard is not assigned, so some data cannot be searched",
+    "A replica is missing, but every document can still be searched",
+    "Disk use is above the high watermark on one of the nodes",
+    "Kibana has lost its connection to the cluster"
+   ],
+   "answer": 0,
+   "why": "Red means a primary shard is missing; yellow is the case where only replicas are missing."
+  },
+  {
+   "q": "A pod prints `{\"level\":\"ERROR\",\"path\":\"/pay\"}`, but in Kibana you only see a `log` field holding that whole string. Which Fluent Bit setting is missing?",
+   "options": [
+    "`keep_log: on` in the tail input",
+    "`merge_log: on` in the kubernetes filter",
+    "`suppress_type_name: on` in the output",
+    "`read_from_head: true` in the tail input"
+   ],
+   "answer": 1,
+   "why": "merge_log parses a JSON log line and lifts its keys into fields of the record."
+  },
+  {
+   "q": "Policy says app logs must be deleted 14 days after they are written. Your logs go to one index per day. What does the job?",
+   "options": [
+    "Setting the index's number of replicas to 14",
+    "A Fluent Bit grep filter that drops lines older than 14 days",
+    "A Kibana alert rule that deletes old documents",
+    "An ILM policy with a delete phase at 14 days, set by a template"
+   ],
+   "answer": 3,
+   "why": "ILM moves each index through its phases by age, and the template attaches the policy to every new daily index."
+  },
+  {
+   "q": "A request arrives with `traceparent: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00`. The service uses the default parent-based sampler. What happens?",
+   "options": [
+    "The service starts a new trace with a fresh trace ID",
+    "The service records its spans, because the default is always on",
+    "The service does not record the request, following the caller's decision",
+    "The service rejects the request with an HTTP 400 error"
+   ],
+   "answer": 2,
+   "why": "The flags 00 mean not sampled, and a parent-based sampler follows the parent's decision."
+  },
+  {
+   "q": "You must remove the `enduser.id` attribute from every span before it leaves the cluster, for all services at once. Where is the best place?",
+   "options": [
+    "A processor in the OpenTelemetry Collector's traces pipeline",
+    "A filter in the Jaeger UI that hides the attribute",
+    "An OTEL_ variable in each service that renames it",
+    "The receiver section of each service's Dockerfile"
+   ],
+   "answer": 0,
+   "why": "The Collector sees every span from every service, so one processor there scrubs them all."
+  },
+  {
+   "q": "You run three Collector replicas behind a normal round-robin load balancer and turn on tail sampling. What goes wrong?",
+   "options": [
+    "Jaeger refuses spans that come from more than one Collector",
+    "Each replica sees only some spans of each trace",
+    "The traceparent header is lost between the replicas",
+    "Head sampling in the apps switches itself off"
+   ],
+   "answer": 1,
+   "why": "Tail sampling needs all spans of a trace in one Collector, which is why a load-balancing exporter routes by trace ID."
+  },
+  {
+   "q": "Two Python services run under opentelemetry-instrument, but Jaeger lists both as `unknown_service`. What did you forget?",
+   "options": [
+    "Running opentelemetry-bootstrap a second time",
+    "Opening port 16686 in each service's container",
+    "Adding `@trace` annotations to every handler",
+    "Setting OTEL_SERVICE_NAME for each service"
+   ],
+   "answer": 3,
+   "why": "The service name comes from OTEL_SERVICE_NAME (or the service.name resource attribute), and without it the SDK uses a placeholder."
+  },
+  {
+   "q": "A container with Docker's default json-file logging driver crashes, and someone runs `docker rm` on it. What happens to its logs?",
+   "options": [
+    "They stay in the image layers, so `docker logs` still works",
+    "Docker moves them to the next container started from the same image",
+    "They are deleted together with the container",
+    "They are sent to Docker Hub with the image"
+   ],
+   "answer": 2,
+   "why": "The json-file log belongs to the container and is removed with it, one more reason to ship logs somewhere central.",
+   "from": "Part 3"
+  },
+  {
+   "q": "In Part 9 you kept Prometheus label values few. Which of these is the same mistake in Loki?",
+   "options": [
+    "Using a label for the Kubernetes namespace",
+    "Putting each order ID in a stream label",
+    "Searching log lines for the word `timeout`",
+    "Keeping the log line as JSON text"
+   ],
+   "answer": 1,
+   "why": "Every new label value makes a new stream, so high-cardinality values such as order IDs belong in the line, not in labels.",
+   "from": "Part 9"
+  }
+ ]
+}
