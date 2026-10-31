@@ -28,25 +28,29 @@ tests:
               summary: "hello-devops at web:8000 is down"
               description: "Prometheus has not been able to scrape web:8000 for 1 minute."
 
-  # 5 good requests per second for 90 minutes. From minute 61, 1 failure per second.
+  # 5 good requests per second for 130 minutes. From minute 61, 1 failure per second.
+  # The alert reads recording rules from another group, and groups run
+  # independently, so it may see values from one evaluation earlier.
+  # At minute 130 the whole 1-hour window is inside the errors, so the
+  # ratio is the same either way: 60 failures / 360 requests a minute.
   - interval: 1m
     input_series:
       - series: 'hello_responses_total{job="hello-devops", instance="web:8000", path="/", status="200"}'
-        values: "0+300x90"
+        values: "0+300x130"
       - series: 'hello_responses_total{job="hello-devops", instance="web:8000", path="/", status="500"}'
-        values: "0x60 60+60x29"
+        values: "0x60 60+60x69"
     alert_rule_test:
       - eval_time: 60m # no errors yet
         alertname: HelloErrorBudgetFastBurn
         exp_alerts: []
-      - eval_time: 75m # errors for 15 minutes: the fast burn alert fires
+      - eval_time: 130m # errors for over an hour: the fast burn alert fires
         alertname: HelloErrorBudgetFastBurn
         exp_alerts:
           - exp_labels:
               severity: page
               job: hello-devops
             exp_annotations:
-              summary: "4.762% of hello-devops requests fail (fast burn)"
+              summary: "16.67% of hello-devops requests fail (fast burn)"
               description: "At this rate the 30-day error budget is gone in less than a week."
 
   # A slow leak: 5 good requests per second and 1 failure per minute (0.33%).

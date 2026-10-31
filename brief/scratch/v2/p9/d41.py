@@ -129,8 +129,8 @@ LESSON = {
                 "An SLA (service level agreement) is a contract with a customer that says what happens when you miss, often money back. "
                 "Teams set the SLA looser than the SLO, so they notice trouble before it costs money.\n\n"
                 "Do not aim for 100%. The SRE book's chapter on [embracing risk](https://sre.google/sre-book/embracing-risk/) gives the reason: "
-                "a user on a phone that works 99% of the time cannot tell 99.99% from 99.999%. "
-                "Each extra nine costs far more work, and users never notice it. "
+                "users rarely notice the difference between high and extreme reliability. Their own phone and mobile network fail far more often. "
+                "Each extra nine costs far more work, and users barely notice it. "
                 "So pick a target that keeps users happy and treat it as a floor and a ceiling. "
                 "If you are far more reliable than your SLO, you are probably shipping slower than you could."
             ),
@@ -286,7 +286,7 @@ LESSON = {
         "so people stop trusting the pager. Page on symptoms (error budget burn, the service not answering) and put causes on a dashboard you open once a page fires."
     ),
     "real_world": (
-        "At a payments company with a product called PayFlow, the card team might set an SLO of 99.95% of authorisations answered without error within 2 seconds, over 28 days. "
+        "At a payments company with a product called PayFlow, the card team might set an SLO of 99.95% of authorizations answered without error within 2 seconds, over 28 days. "
         "The on-call engineer is paged only on a fast burn of that budget. "
         "When the budget runs out, the team's written policy freezes feature releases until two weeks of clean numbers come back."
     ),

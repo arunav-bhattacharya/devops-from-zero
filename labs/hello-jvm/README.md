@@ -68,9 +68,9 @@ repository, set `cache-provider: basic` to use the open-source (MIT) provider.
 
 ## How this lab was tested
 
-Tested on 2026-10-30 with Gradle 9.8.2 (wrapper), OpenJDK 21 and Docker 29.9 on Linux amd64:
+Tested on 2026-10-30 and 2026-10-31 with Gradle 9.8.2 (wrapper), OpenJDK 21 and Docker 29.9 on Linux amd64:
 `./gradlew build` (5 tests pass), `:app:run` with curl, `jibDockerBuild --no-configuration-cache`,
 the full multi-stage `docker build` and `docker run` (non-root user, healthcheck healthy,
 `docker stop` in under a second), and `actionlint` on the workflow. The test machine could not
 pull from Docker Hub, so the same images came from `mirror.gcr.io/library/eclipse-temurin`, and
-the build stage had two extra test-only lines to trust the machine's network proxy.
+the build stage had three extra test-only lines to trust and use the machine's network proxy.

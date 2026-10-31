@@ -194,7 +194,7 @@ A habit worth building: when you add a log line in a service that is traced, mak
                 "code": """$ cd tracing
 $ docker compose up -d --build
 $ curl -s localhost:8000/
-{"host":"7f6bb4627694","message":"Hello, DevOps!","version":"1.0.0","visits":1}""",
+{"host":"7b9644166a1a","message":"Hello, DevOps!","version":"1.0.0","visits":1}""",
                 "lang": "console",
             },
             {
@@ -207,16 +207,16 @@ $ curl -s localhost:8000/
                 "say": "Ask Jaeger's API for that exact trace ID and print each span's name, own ID and parent ID, using jq from Day 2. `GET /` has your fake caller `00f067aa0ba902b7` as its parent, and `INCRBY` hangs under `GET /`. Three services would chain the same way. Open http://localhost:16686/trace/4bf92f3577b34da6a3ce929d0e0e4736 to see the waterfall.",
                 "code": """$ curl -s localhost:16686/api/v3/traces/4bf92f3577b34da6a3ce929d0e0e4736 \\
     | jq -r '.result.resourceSpans[].scopeSpans[].spans[] | [.name, .spanId, (.parentSpanId // "-")] | @tsv'
-INCRBY	2f346b9ed12b3eeb	aca3e5ec7a9d05a8
-GET /	aca3e5ec7a9d05a8	00f067aa0ba902b7""",
+GET /	3ac93496b7a0eb5b	00f067aa0ba902b7
+INCRBY	0d6fc47a7154a749	3ac93496b7a0eb5b""",
                 "lang": "console",
             },
             {
                 "say": "Read the server span's attributes. They use the stable names, `client.address` arrived as a hash because the Collector's transform processor replaced the IP, and `user_agent.original` is gone. The last line is Jaeger noticing that the parent span never arrived, which is true: curl sent no span.",
                 "code": """$ curl -s localhost:16686/api/v3/traces/4bf92f3577b34da6a3ce929d0e0e4736 \\
     | jq -r '.result.resourceSpans[].scopeSpans[].spans[] | select(.name == "GET /") | .attributes[] | "\\(.key) = \\(.value | to_entries[0].value)"'
-client.address = 9dd94274ca4fd472906ecc8b3c801ab7a61a154a86df9b261648c1b9834a6ad2
-client.port = 46106
+client.address = 79f1ed7c3831720253675dcf97a9714711e3e0ec94b6abf77f5bbf0280dc9c0d
+client.port = 43298
 http.request.method = GET
 http.response.status_code = 200
 http.route = /
