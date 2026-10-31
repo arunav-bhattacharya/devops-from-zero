@@ -94,7 +94,7 @@ LESSON = {
                 "- `group_interval` (default 5m): wait before telling you about changes to a group already sent.\n"
                 "- `repeat_interval` (default 4h): resend an alert that is still firing.\n\n"
                 "A receiver is the destination. Alertmanager has built-in support for Slack, PagerDuty, email, Microsoft Teams and more, plus a generic webhook. "
-                "The lab's `webhook.py` is a 30-line Python server that prints what it receives, so you can see exactly what Slack would get. "
+                "The lab's `webhook.py` is a 34-line Python server that prints what it receives, so you can see exactly what Slack would get. "
                 "With `send_resolved: true`, Alertmanager also sends a message when the alert stops."
             ),
             "refs": [ref("am_overview"), ref("am_config")],
