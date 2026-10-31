@@ -474,11 +474,3 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 .refs li > span, .res .rb { min-width: 0; overflow-wrap: anywhere; }
 .plate .pd { white-space: nowrap; flex: none; }
 
-/* signed-in learner (Cloudflare site) */
-.who { display: flex; align-items: center; gap: 8px; font-size: 14.5px; color: var(--mute); }
-.who img, .who .ini { width: 26px; height: 26px; border-radius: 50%; flex: none; }
-.who .ini { display: grid; place-items: center; background: var(--teal); color: var(--panel); font-weight: 700; font-size: 13px; }
-.who .linkbtn { font-size: 14px; }
-@media (max-width: 640px) { .who .nm { display: none; } }
-.st.locked { color: var(--faint); }
-.free-note { border-top: 4px solid var(--orange); }

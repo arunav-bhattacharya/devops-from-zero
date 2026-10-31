@@ -1,17 +1,6 @@
 {
   "name": "devops-from-zero",
   "compatibility_date": "2026-10-01",
-  "main": "worker/index.js",
-  // the worker runs first for every request: only enrolled Google accounts can open the course
-  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
-  // progress per learner, plus the cookie-signing key. This is the same namespace as ai-engineer-from-zero;
-  // keys here start with "dfz:" so the two courses never touch each other's data.
-  // To use a separate namespace: npx wrangler kv namespace create PROGRESS, then paste its id here.
-  "kv_namespaces": [{ "binding": "PROGRESS", "id": "db7a4fe1777f4276b3bf62828c86b331" }],
-  "vars": {
-    // the Google OAuth web client (same one as ai-engineer-from-zero); add this site's URL to its authorized JavaScript origins
-    "GOOGLE_CLIENT_ID": "213282967449-rkdia4efp2ptkh0i57ih2vo6fej68qpv.apps.googleusercontent.com",
-    // enrolled learners: comma-separated Gmail addresses (keep in step with the Google sign-in test users)
-    "ALLOWED_EMAILS": "ai.arunav@gmail.com, mbajoria1@gmail.com"
-  }
+  // a static site: Cloudflare serves public/ as it is (no worker code, no sign-in)
+  "assets": { "directory": "./public", "not_found_handling": "single-page-application" }
 }
