@@ -322,7 +322,7 @@ function viewHome() {
   }).join("");
 
   return `<div class="page">
-  ${FREE ? `<section class="card free-note"><span class="label">Free chapters</span><p class="prose" style="margin:0">You can read Start here, the Linux command line and Networking without an account. Sign in to open all ${tot} lessons and save your progress across devices.</p><div class="row"><a class="btn" href="${signInUrl()}">Sign in or sign up ${ICON.arrow}</a><a class="btn ghost" href="#d01">Start Day 01</a></div></section>` : ""}
+  ${FREE ? `<section class="card free-note"><span class="label">Free chapters</span><p class="prose" style="margin:0">You can read Start here, the Linux command line and Networking without an account. Sign in with an enrolled Gmail account to open all ${tot} lessons and save your progress across devices.</p><div class="row"><a class="btn" href="${signInUrl()}">Sign in with Gmail ${ICON.arrow}</a><a class="btn ghost" href="#d01">Start Day 01</a></div></section>` : ""}
   <section class="hero">
     <span class="label">${tot} lessons · about 45 minutes each · at your own pace</span>
     <h1>DevOps,<em>from zero</em></h1>

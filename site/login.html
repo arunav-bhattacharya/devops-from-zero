@@ -11,10 +11,6 @@
 .login h1 { font: 800 clamp(48px, 9vw, 76px)/0.88 var(--f-display); text-transform: uppercase; margin: 0; }
 .login h1 em { font-style: normal; color: var(--orange); display: block; }
 .login p { margin: 0; color: var(--mute); font-size: 18px; }
-.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
-.pane { display: grid; gap: 12px; max-width: 420px; }
-.pane label { display: grid; gap: 4px; font-size: 14.5px; font-weight: 700; }
-.pane .hint2 { font-size: 14px; color: var(--faint); font-weight: 400; }
 #g { min-height: 44px; }
 .msg { min-height: 1.5em; font-size: 15px; color: var(--mute); }
 .msg.bad { color: var(--red); }
@@ -23,81 +19,31 @@
 <body><div class="login" role="main"><div class="login-card">
 <figure class="part-art" style="margin:0">{{PLATE}}</figure>
 <h1>DevOps,<em>from zero</em></h1>
-<p>Sign in to open all 55 lessons and save your progress across devices.</p>
-<div class="tabs" role="tablist">
-  <button class="chip on" role="tab" aria-selected="true" data-tab="google">Google</button>
-  <button class="chip" role="tab" aria-selected="false" data-tab="password">Email or test ID</button>
-  <button class="chip" role="tab" aria-selected="false" data-tab="signup" id="signupTab">Sign up</button>
-</div>
-
-<section class="pane" data-pane="google">
-  <p style="font-size:16px">For Gmail addresses on the enrolled list.</p>
-  <div id="g"></div>
-</section>
-
-<form class="pane" data-pane="password" id="loginForm" hidden>
-  <label for="li-email">Email or test ID<input class="field" id="li-email" name="email" autocomplete="username" required></label>
-  <label for="li-pass">Password<input class="field" id="li-pass" name="password" type="password" autocomplete="current-password" required></label>
-  <div><button class="btn" type="submit">Sign in</button></div>
-</form>
-
-<form class="pane" data-pane="signup" id="signupForm" hidden>
-  <label for="su-name">Your name<input class="field" id="su-name" name="name" autocomplete="name"></label>
-  <label for="su-email">Email<input class="field" id="su-email" name="email" type="email" autocomplete="email" required></label>
-  <label for="su-pass">Password <span class="hint2">at least 10 characters</span><input class="field" id="su-pass" name="password" type="password" autocomplete="new-password" minlength="10" required></label>
-  <label for="su-code">Invite code <span class="hint2">from the course owner</span><input class="field" id="su-code" name="code" autocomplete="off" required></label>
-  <div><button class="btn" type="submit">Create account</button></div>
-</form>
-
+<p>Sign in with your Gmail account to open all 55 lessons and save your progress across devices. Only enrolled Gmail addresses can sign in.</p>
+<div id="g"></div>
 <div class="msg" id="msg" role="status" aria-live="polite"></div>
 <a class="free" href="/">Or keep reading the free chapters: Start here, Linux and Networking</a>
 </div></div>
 <script>
-var msg = document.getElementById("msg"), cfg = {};
+var msg = document.getElementById("msg");
 function say(t, bad) { msg.textContent = t; msg.className = "msg" + (bad ? " bad" : ""); }
 function next() { var n = new URLSearchParams(location.search).get("next") || "/"; return n.charAt(0) === "/" && n.charAt(1) !== "/" ? n : "/"; }
-function tab(name) {
-  document.querySelectorAll("[data-tab]").forEach(function (b) { var on = b.dataset.tab === name; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
-  document.querySelectorAll("[data-pane]").forEach(function (p) { p.hidden = p.dataset.pane !== name; });
-  say("");
-}
-document.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { tab(b.dataset.tab); }); });
-
-async function post(path, body) {
-  var r = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  var d = {}; try { d = await r.json(); } catch (e) {}
-  return { ok: r.ok, status: r.status, d: d };
-}
 async function done(r) {
   say("Checking your account...");
-  var x = await post("/api/session", { credential: r.credential });
+  var x = await fetch("/api/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: r.credential }) });
+  var d = {}; try { d = await x.json(); } catch (e) {}
   if (x.ok) return location.replace(next());
-  if (x.status === 403) say((x.d.email || "This Google account") + " is not on the enrolled list. Ask the course owner to add it, or use Sign up with an invite code.", true);
-  else say("Google sign-in failed (" + (x.d.detail || "unknown reason") + "). Try the email option instead.", true);
+  if (x.status === 403) say((d.email || "This Gmail address") + " is not enrolled. Ask the course owner to add it.", true);
+  else say("Google sign-in failed (" + (d.detail || "unknown reason") + "). Please try again.", true);
 }
-document.getElementById("loginForm").addEventListener("submit", async function (e) {
-  e.preventDefault(); say("Signing in...");
-  var f = e.target, x = await post("/api/login", { email: f.email.value, password: f.password.value });
-  if (x.ok) return location.replace(next());
-  say(x.status === 429 ? "Too many tries. Wait 15 minutes and try again." : "Wrong email, test ID or password.", true);
-});
-document.getElementById("signupForm").addEventListener("submit", async function (e) {
-  e.preventDefault(); say("Creating your account...");
-  var f = e.target, x = await post("/api/signup", { name: f.name.value, email: f.email.value, password: f.password.value, code: f.code.value });
-  if (x.ok) return location.replace(next());
-  var why = { "wrong invite code": "That invite code is not right.", "exists": "That email already has an account. Use the Email tab to sign in.",
-    "password too short": "Use a password of at least 10 characters.", "email": "That email address does not look right.",
-    "sign-up is closed": "Sign-up is closed right now.", "too many tries": "Too many tries. Wait 15 minutes and try again." }[x.d.error];
-  say(why || "Could not create the account. Try again.", true);
-});
-
 async function start() {
+  var cfg = {};
   try { cfg = await (await fetch("/api/config")).json(); } catch (e) {}
-  if (!cfg.signup) document.getElementById("signupTab").hidden = true;
-  if (!window.google || !cfg.clientId) { say("Google sign-in is not available here. Use the email option.", true); return; }
+  if (!window.google || !cfg.clientId) { say("Could not load Google sign-in. Check your connection and reload.", true); return; }
   var dark = document.documentElement.getAttribute("data-theme") === "dark" || (!document.documentElement.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
   google.accounts.id.initialize({ client_id: cfg.clientId, callback: done, itp_support: true });
   google.accounts.id.renderButton(document.getElementById("g"), { theme: dark ? "filled_black" : "outline", size: "large", shape: "rectangular", text: "signin_with", width: 280 });
+  say("If Google shows an error such as origin_mismatch, add " + location.origin + " to the Google client's authorized JavaScript origins.");
 }
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer onload="start()" onerror="start()"></script>

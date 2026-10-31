@@ -39,7 +39,7 @@ every link and video, the finished lab files, and a plan that moves with your pa
 | `design/` | The "Freight Notation" design philosophy and the generator for the part plates |
 | `site/` | The site source: `template.html`, `app.css`, `art.css`, `app.js`, `art/` and `build.py` |
 | `public/` | The built site for Cloudflare: `index.html` (free chapters), `course.html` (full course) and `login.html` (sign-in page) |
-| `worker/index.js` | The Cloudflare Worker: sign-in (Google, password, test IDs), sign-up with an invite code, free chapters, progress in KV |
+| `worker/index.js` | The Cloudflare Worker: Gmail sign-in for enrolled addresses, free chapters, progress in KV |
 | `dist/index.html` | The same page as a fragment, for publishing as a claude.ai artifact |
 
 ## Build
@@ -54,9 +54,9 @@ python3 design/covers.py                       # regenerates the part plates (on
 ## Deploy to Cloudflare (private, Google sign-in)
 
 The course runs on Cloudflare behind a small worker (`worker/index.js`). Signed out, anyone can read the free
-chapters (Start here, Linux, Networking). Signing in opens all 55 lessons and saves progress in Cloudflare KV,
-so it follows learners across devices. Sign in with Google (enrolled Gmail addresses), with an email and password
-made through invite-code sign-up, or with a test ID. Setup and deploy steps are in [DEPLOY.md](DEPLOY.md).
+chapters (Start here, Linux, Networking). Signing in with an enrolled Gmail account (`ALLOWED_EMAILS` in `wrangler.jsonc`)
+opens all 55 lessons and saves progress in Cloudflare KV, so it follows learners across devices.
+Setup and deploy steps are in [DEPLOY.md](DEPLOY.md).
 
 The same page also works as a claude.ai artifact (`dist/index.html`), where claude.ai handles sign-in
 and progress sync, and the "Ask the tutor" box appears.
