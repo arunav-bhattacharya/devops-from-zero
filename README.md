@@ -52,6 +52,8 @@ python3 design/covers.py                       # regenerates the part plates (on
 
 ## Deploy to Cloudflare
 
+Full steps, with troubleshooting, are in [DEPLOY.md](DEPLOY.md).
+
 The site is one static file, so Cloudflare serves it from `public/` with no server code (`wrangler.jsonc`).
 
 The simplest way: connect the repo once, and every push to `main` redeploys.
