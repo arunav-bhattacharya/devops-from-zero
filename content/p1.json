@@ -1,0 +1,2099 @@
+{
+ "part": 1,
+ "title": "The Linux command line",
+ "intro": "Every server, container and CI runner in this course runs Linux, and you drive all of them from a shell. Part 1 takes five days to make that shell feel normal: files, searching logs, chaining tools, processes and services, and scripts that fail safely. Every example runs on the same fake practice files in an Ubuntu container on your Mac, and every output shown is real.",
+ "lessons": [
+  {
+   "id": "d03",
+   "title": "The shell and the file system",
+   "minutes": 45,
+   "goal": "By the end you can open a Linux shell in a container, read any command line as a program plus options and arguments, find help, move around the file system, and create, copy, move and delete files safely.",
+   "guess": {
+    "q": "In a folder with `app.log` and `access.log`, you type `rm *.log`. What does the `rm` program receive?",
+    "options": [
+     "The text `*.log`, which rm matches itself",
+     "The two names `access.log` and `app.log`",
+     "A list of every file in the folder",
+     "Nothing; rm asks the shell for files later"
+    ],
+    "answer": 1,
+    "why": "The shell expands `*.log` into the matching names before rm starts, so rm never sees the star. That is why `echo *.log` is a safe way to preview what a command will get."
+   },
+   "terms": [
+    {
+     "term": "Terminal",
+     "plain": "The app with the window you type into, such as Terminal or iTerm2 on a Mac."
+    },
+    {
+     "term": "Shell",
+     "plain": "The program in the terminal that reads your line and runs it, such as zsh or bash."
+    },
+    {
+     "term": "Argument",
+     "plain": "A word after the command name. The shell splits your line on spaces to make them."
+    },
+    {
+     "term": "Option (flag)",
+     "plain": "An argument that starts with - or --, such as -l or --all, and changes what a command does."
+    },
+    {
+     "term": "Working directory",
+     "plain": "The folder you are in right now. The command pwd prints it."
+    },
+    {
+     "term": "Absolute path",
+     "plain": "A path that starts at the root folder /, such as /var/log/app.log. It means the same from anywhere."
+    },
+    {
+     "term": "Relative path",
+     "plain": "A path that starts from your working directory, such as logs/app.log."
+    },
+    {
+     "term": "Glob (wildcard)",
+     "plain": "A pattern like *.log that the shell turns into matching file names before a command runs."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Terminal, shell and command",
+     "body": "People say \"the command line\" for three different things:\n\n- The terminal is the window. On your Mac that is the Terminal app, iTerm2 or the VS Code panel.\n- The shell is the program running inside that window. It reads the line you type and starts other programs. Your Mac uses zsh. Linux servers and containers almost always use bash.\n- A command is usually a program file on disk. `ls` is the file `/usr/bin/ls`. A few commands, like `cd`, are built into the shell itself.\n\nSo when you type `ls -l` and press Enter, the terminal hands your keys to the shell. The shell finds the `ls` program, starts it, and the terminal shows what it prints.\n\nzsh and bash agree on almost everything in this part, and where they differ, the lesson says so. All the output you see comes from bash on Ubuntu, because that is what you meet on servers, in CI runners and inside Docker images. So you practise in Linux, not in your Mac's own shell. Small differences between the Mac's tools and the Linux ones bite exactly when you are in a hurry.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Introduction to the shell (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/course-shell/",
+       "kind": "read"
+      },
+      {
+       "title": "Lecture 1: Course overview and the shell (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=MSgoeuMqUmU",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Your practice Linux: a container with the lab files",
+     "body": "On Day 2 you ran `docker run -it --rm ubuntu:24.04 bash` and got a throwaway Ubuntu machine. This part adds the course's practice files, so every lesson works on the same data. They are all fake: an app log, a web server log, some JSON and a small pretend server.\n\n1. Copy the course's `labs/linux` folder to `~/code/linux-lab` on your Mac. The folder's README shows how.\n2. In your Mac terminal, run `cd ~/code/linux-lab`.\n3. Run `bash start-lab.sh`. It starts the container and installs a few extra tools, such as less, tree and jq. That takes about 20 seconds.\n\nThe script runs one `docker run` command. Its parts:\n\n- `-it` gives you an interactive terminal.\n- `--rm` deletes the container when you type `exit`.\n- `-v \"$PWD\":/work` shows your Mac folder inside the container as `/work`.\n- `-w /work` starts you in that folder.\n\nFiles in `/work` are your real Mac files, so they survive `--rm`. Anything you install or create elsewhere in the container is gone when you exit. That is a feature: you cannot break anything for long.\n\nYour prompt looks like `root@3f2a9c1d7e4b:/work#`: the user (root), the container's ID, the folder, and `#`, the mark of the all-powerful root user (Day 6). In this course, a line that starts with `$ ` is a command you type. Do not type the `$` itself.",
+     "refs": [
+      {
+       "title": "docker container run reference (Docker docs)",
+       "url": "https://docs.docker.com/reference/cli/docker/container/run/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "How the shell reads one line",
+     "body": "Before any program runs, the shell does some work on your line. It splits the line on spaces into words. The first word is the program to run. Every other word becomes an argument: a plain string handed to that program. Take this line: `ls -l -h server/var/log`.\n\nThe shell runs `ls` with three arguments: `-l`, `-h` and `server/var/log`. As a Kotlin developer you know this shape. It is `fun main(args: Array<String>)`: the shell builds `args`, and the program decides what each one means.\n\nBy convention, arguments that start with a dash are options, also called flags:\n\n- Short options are one letter after one dash: `-l`, `-a`.\n- Short options can usually be grouped: `ls -lh` means `ls -l -h`.\n- Long options are words after two dashes: `--all`, `--help`. `ls -a` and `ls --all` do the same thing.\n- Everything else is usually a file or folder to work on.\n\nThis is only a habit, which is why each tool's help matters (next section).\n\nSpaces split words, so a file name with a space is a trap. `ls my notes.txt` asks for two files, `my` and `notes.txt`, and prints two errors. Quote the name, `ls \"my notes.txt\"`, or escape the space with a backslash, `ls my\\ notes.txt`. Easier still: never put spaces in file names you create.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Command-line environment (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/command-line-environment/",
+       "kind": "read"
+      },
+      {
+       "title": "GNU Bash Reference Manual",
+       "url": "https://www.gnu.org/software/bash/manual/bash.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Getting help: --help, man and tldr",
+     "body": "Nobody remembers every option. Experienced engineers look things up all day. You have three places to look:\n\n- `ls --help` prints a short summary. Almost every Linux tool has it.\n- `man ls` opens the full manual page. Press Space to page down, `/` and a word to search, `n` for the next match and `q` to quit.\n- `tldr ls` shows a handful of common examples. Install it on your Mac with `brew install tlrc`.\n\nStart with the usage line. `ls --help` begins with `Usage: ls [OPTION]... [FILE]...`. Square brackets mean optional, and three dots mean you may repeat it. So ls takes any number of options, then any number of files. Man pages call this part the SYNOPSIS.\n\nOne snag: the Ubuntu image is minimized to keep it small. Inside the container, `man ls` prints a note that begins \"This system has been minimized\" and shows no manual. So use `--help` in the container. `man` works on your Mac, but there it describes the Mac's own version of each tool, which can differ. For the Linux version, search the web for \"man7\" plus the command name.\n\nWhen you meet a long command on the internet, paste it into [explainshell](https://explainshell.com). It shows which part of the manual explains each word.",
+     "refs": [
+      {
+       "title": "tldr pages: short, example-first help",
+       "url": "https://tldr.sh/",
+       "kind": "read"
+      },
+      {
+       "title": "explainshell: see what each part of a command does",
+       "url": "https://explainshell.com",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "The file system is one tree",
+     "body": "Linux keeps every file in one tree. Its top is the root folder, written `/`. There are no drive letters: disks and USB sticks appear as folders somewhere in the tree. Run `ls /` in the container to see the top level. These folders matter most for DevOps work:\n\n- `/etc` holds configuration, such as `/etc/passwd` (the list of users) and `/etc/nginx/` (a web server's settings).\n- `/var/log` holds log files. On a server it is often the first place you look.\n- `/home` holds each normal user's home folder, such as `/home/ubuntu`. Root's home is `/root`.\n- `/usr/bin` holds most programs, such as `/usr/bin/ls`.\n- `/tmp` is scratch space that may be cleared at any time.\n\nThe lab's `server` folder copies this layout in miniature, so you can explore it safely.\n\nA path names a place in the tree. An absolute path starts with `/` and means the same thing wherever you are, such as `/work/server/var/log`. A relative path starts from your working directory, the folder you are in now. From `/work`, the relative path `server/var/log` points to the same place. Four short forms help:\n\n- `.` is the current folder, and `..` is the folder above it.\n- `~` is your home folder: `/root` in the container, `/Users/you` on a Mac.\n- `cd -` jumps back to the folder you were in before.\n- `cd` with no argument takes you home.\n\nUse `pwd` to print where you are and `ls` to list a folder. With `ls`, `-l` adds details, `-a` shows hidden files, `-h` prints sizes as K and M, and `-t` sorts newest first. A hidden file is just a file whose name starts with a dot, like `.env` or `.bashrc`. Plain `ls` skips them. The `tree` command draws a folder and everything below it.\n\nTwo keys save a lot of typing. Tab completes a file or command name, so you type less and make fewer typos. Ctrl+R searches your command history: press it, type part of an old command, and press Enter to run it again.",
+     "refs": [
+      {
+       "title": "hier(7): the Linux file system layout (man7.org)",
+       "url": "https://man7.org/linux/man-pages/man7/hier.7.html",
+       "kind": "docs"
+      },
+      {
+       "title": "The Unix Shell (Software Carpentry)",
+       "url": "https://swcarpentry.github.io/shell-novice/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Creating, copying, moving and deleting",
+     "body": "Five commands do most of the work:\n\n- `mkdir logs` makes a folder. `mkdir -p a/b/c` makes the whole chain and does not complain if it exists.\n- `touch notes.txt` makes an empty file, or updates the time on a file that exists.\n- `cp a.txt b.txt` copies a file. Folders need `-r` (recursive: the folder and everything inside it), as in `cp -r logs logs-backup`.\n- `mv old new` moves or renames. Linux has no separate rename command.\n- `rm file` deletes a file and `rm -r folder` deletes a folder with everything in it. `rmdir folder` deletes only an empty folder, which makes it the safe choice.\n\n`rm` has no trash and no undo. The file is gone the moment you press Enter, and this trips most people up once. Three habits keep you safe:\n\n1. Run `ls` with the same paths first, to see what you are about to delete.\n2. While you learn, add `-i`: `rm -i *.log` asks before each file.\n3. Read any `rm -rf` line twice before you press Enter. The `-f` (force) part switches off every question.\n\nError messages are short and honest, so read them. Without `-p`, `mkdir a/b/c` fails with `No such file or directory`, because `a/b` does not exist yet. Given a folder, `rm` refuses with `Is a directory`. And `rmdir` on a folder with files in it says `Directory not empty`.",
+     "refs": [
+      {
+       "title": "The Unix Shell (Software Carpentry)",
+       "url": "https://swcarpentry.github.io/shell-novice/",
+       "kind": "read"
+      },
+      {
+       "title": "The 50 most popular Linux and terminal commands (freeCodeCamp)",
+       "url": "https://www.youtube.com/watch?v=ZtqBQ68cfJc",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Wildcards: the shell expands them first",
+     "body": "A glob, or wildcard, is a pattern for file names. The shell replaces it with every matching name before the program starts. Three symbols cover nearly every use:\n\n- `*` matches any run of characters, even none. `*.log` matches `app.log` and `access.log`.\n- `?` matches exactly one character. `app-2026-10-2?.log` matches the logs for the 27th, 28th and 29th.\n- `[cp]` matches one character from a set. `logs/[cp]*.log` matches `checkout.log` and `payments.log`.\n\nThe program never sees the pattern, only the names. That makes `echo` the best debugging tool in the shell. Put it in front of a risky command and it prints the line the program would get. In the lab, `echo *.log` prints `access.log app.log`, and `echo rm logs/*.log` shows exactly what rm would delete.\n\nQuotes switch globbing off: `echo \"*.log\"` prints `*.log`. A `*` also skips hidden files, so `*` alone never matches `.env`.\n\nWhen nothing matches, bash and zsh disagree. bash passes the pattern on unchanged, so `echo *.txt` prints `*.txt`. zsh refuses to run the line and prints `no matches found: *.txt`. You will see the zsh behaviour on your Mac and the bash behaviour on every server.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Command-line environment (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/command-line-environment/",
+       "kind": "read"
+      },
+      {
+       "title": "Lecture 2: Command-line environment (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=ccBGsPedE9Q",
+       "kind": "watch"
+      }
+     ]
+    }
+   ],
+   "analogy": "The shell is like a waiter taking your order to the kitchen. You say \"two of today's specials\", and the waiter writes the actual dishes on the ticket. The kitchen (the program) only ever sees the final list, so it cannot know whether you named each dish or said \"the specials\". Where it breaks: a good waiter asks when an order makes no sense, but bash passes a pattern that matches nothing straight through without a word.",
+   "diagram": "<svg viewBox=\"0 0 560 176\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"The shell takes your line, expands globs, splits it into words, finds the program and runs it with the expanded names\"><text x=\"280\" y=\"22\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">What happens after you press Enter</text><rect x=\"8\" y=\"36\" width=\"96\" height=\"52\" rx=\"10\" class=\"bx\"/><text x=\"56\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">you type</text><text x=\"56\" y=\"75\" font-size=\"11\" text-anchor=\"middle\" class=\"t\">rm *.log</text><rect x=\"120.0\" y=\"36\" width=\"96\" height=\"52\" rx=\"10\" class=\"bxo\"/><text x=\"168\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">expand</text><text x=\"168\" y=\"75\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">globs, ~</text><rect x=\"232.0\" y=\"36\" width=\"96\" height=\"52\" rx=\"10\" class=\"bxo\"/><text x=\"280\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">split</text><text x=\"280\" y=\"75\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">into words</text><rect x=\"344.0\" y=\"36\" width=\"96\" height=\"52\" rx=\"10\" class=\"bxo\"/><text x=\"392\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">find</text><text x=\"392\" y=\"75\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">program</text><rect x=\"456.0\" y=\"36\" width=\"96\" height=\"52\" rx=\"10\" class=\"bxt\"/><text x=\"504\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">run</text><text x=\"504\" y=\"75\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">rm + names</text><line x1=\"106\" y1=\"62\" x2=\"118\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"218\" y1=\"62\" x2=\"230\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"330\" y1=\"62\" x2=\"342\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"442\" y1=\"62\" x2=\"454\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"120\" y1=\"106\" x2=\"440\" y2=\"106\" class=\"lnd\"/><text x=\"280\" y=\"124\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">the shell does this part</text><text x=\"280\" y=\"156\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">rm *.log  becomes  rm access.log app.log</text></svg>",
+   "diagram_caption": "The shell rewrites your line before the program starts, so rm only ever sees file names.",
+   "worked": {
+    "title": "Explore the pretend server and archive old logs",
+    "steps": [
+     {
+      "say": "Start the lab with `bash start-lab.sh` in `~/code/linux-lab`. You land in `/work`, which is your Mac folder. `pwd` confirms it, and `ls` shows what is there. The `server` folder imitates the top of a Linux server.",
+      "code": "$ pwd\n/work\n$ ls\naccess.log  app.log  events.jsonl  logs  pods.json  server  start-lab.sh\n$ ls server\netc  home  opt  tmp  var",
+      "lang": "console"
+     },
+     {
+      "say": "Walk down the tree with a relative path, then climb back up with `..`. Then `cd -` returns to the previous folder and prints it, and `cd` alone goes home, which for root is `/root`.",
+      "code": "$ cd server/var/log\n$ pwd\n/work/server/var/log\n$ ls\nnginx  shop\n$ cd shop\n$ pwd\n/work/server/var/log/shop\n$ cd ../../..\n$ pwd\n/work/server\n$ cd -\n/work/server/var/log/shop\n$ cd\n$ pwd\n/root\n$ cd /work",
+      "lang": "console"
+     },
+     {
+      "say": "A long listing shows sizes. The `-h` option turns bytes into K and M, so the big daily logs stand out at once. And `-a` reveals the hidden `.env` file, plus `.` and `..`. Your dates and owner columns will differ: they come from your Mac.",
+      "code": "$ ls -lh server/var/log/shop\ntotal 3.7M\n-rw-r--r-- 1 root root 818K Oct 30 05:03 app-2026-10-27.log\n-rw-r--r-- 1 root root 1.2M Oct 30 05:03 app-2026-10-28.log\n-rw-r--r-- 1 root root 1.7M Oct 30 05:03 app-2026-10-29.log\n-rw-r--r-- 1 root root 3.0K Oct 30 05:03 app.log\n$ ls -a server/etc/shop\n.  ..  .env  config.yaml",
+      "lang": "console"
+     },
+     {
+      "say": "Make an archive folder with `-p`. Before copying with a glob, put `echo` in front. It prints the command after the shell has expanded the `*`. Three files match, which is what you want, so run the real copy.",
+      "code": "$ mkdir -p playground/archive/2026-10\n$ echo cp server/var/log/shop/app-2026-*.log playground/archive/2026-10/\ncp server/var/log/shop/app-2026-10-27.log server/var/log/shop/app-2026-10-28.log server/var/log/shop/app-2026-10-29.log playground/archive/2026-10/\n$ cp server/var/log/shop/app-2026-*.log playground/archive/2026-10/\n$ ls playground/archive/2026-10\napp-2026-10-27.log  app-2026-10-28.log  app-2026-10-29.log",
+      "lang": "console"
+     },
+     {
+      "say": "`mv` renames as it moves. `tree` draws the result. In the container it uses plain ASCII lines; on your Mac it may draw nicer ones.",
+      "code": "$ mv playground/archive/2026-10/app-2026-10-29.log playground/latest.log\n$ tree playground\nplayground\n|-- archive\n|   `-- 2026-10\n|       |-- app-2026-10-27.log\n|       `-- app-2026-10-28.log\n`-- latest.log\n\n3 directories, 3 files",
+      "lang": "console"
+     },
+     {
+      "say": "Delete with the same care. Preview with `echo`, delete the files, then remove the empty folder with `rmdir`. Plain `rm` refuses a folder. `rm -r` removes it and everything inside, with no undo, so you only use it once you are sure.",
+      "code": "$ echo rm playground/archive/2026-10/*.log\nrm playground/archive/2026-10/app-2026-10-27.log playground/archive/2026-10/app-2026-10-28.log\n$ rm playground/archive/2026-10/*.log\n$ rmdir playground/archive/2026-10\n$ rm playground\nrm: cannot remove 'playground': Is a directory\n$ rm -r playground\n$ ls\naccess.log  app.log  events.jsonl  logs  pods.json  server  start-lab.sh",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "bash",
+     "title": "start-lab.sh",
+     "src": "#!/usr/bin/env bash\n# start-lab.sh: open a Linux practice shell for Part 1 of the course.\n# Run it from the folder that holds the practice files:  bash start-lab.sh\n#\n# What the docker run options mean:\n#   -it          interactive, with a terminal, so you can type into bash\n#   --rm         delete the container when you exit (your files stay, see -v)\n#   -v \"$PWD\":/work   show this folder inside the container as /work\n#   -w /work     start in /work\n# Inside, apt-get installs the extra tools the lessons use, then bash starts.\ndocker run -it --rm -v \"$PWD\":/work -w /work ubuntu:24.04 \\\n  bash -c 'apt-get update -qq && apt-get install -y -qq less tree jq file curl lsof iproute2 psmisc shellcheck > /dev/null && exec bash'\n",
+     "run": "bash start-lab.sh"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "pwd",
+     "what": "Print the folder you are in (the working directory)."
+    },
+    {
+     "cmd": "ls -lah",
+     "what": "List everything, hidden files too, with details and readable sizes."
+    },
+    {
+     "cmd": "cd server/var/log",
+     "what": "Move into a folder by a relative path."
+    },
+    {
+     "cmd": "cd ..",
+     "what": "Go up one folder. `cd -` goes back, `cd` alone goes home."
+    },
+    {
+     "cmd": "mkdir -p release/1.4.2/config",
+     "what": "Make a folder and any missing parent folders."
+    },
+    {
+     "cmd": "touch notes.txt",
+     "what": "Create an empty file, or update the time of one that exists."
+    },
+    {
+     "cmd": "cp -r logs logs-backup",
+     "what": "Copy a folder and everything in it."
+    },
+    {
+     "cmd": "mv old.log archive/new.log",
+     "what": "Move or rename a file."
+    },
+    {
+     "cmd": "rm -i *.tmp",
+     "what": "Delete files, asking before each one. There is no undo."
+    },
+    {
+     "cmd": "rm -r playground",
+     "what": "Delete a folder and everything inside it."
+    },
+    {
+     "cmd": "echo rm logs/*.log",
+     "what": "Preview what a glob expands to before you run the real command."
+    },
+    {
+     "cmd": "ls --help",
+     "what": "Show a command's options. `man ls` shows the full manual (on your Mac)."
+    },
+    {
+     "cmd": "tree -L 2 server",
+     "what": "Draw a folder as a tree, two levels deep."
+    },
+    {
+     "cmd": "history",
+     "what": "List your recent commands. Ctrl+R searches them."
+    }
+   ],
+   "mistake": "Deleting with a glob or a path you have not checked. A stray space in `rm -r old logs` deletes two folders, `old` and `logs`, and nothing brings them back. Run `pwd`, preview the line with `echo`, read it once more, then run it.",
+   "real_world": "When an on-call engineer at a made-up payments company gets paged at night, the first minutes on the server look like this lesson. They run `pwd` and `ls -lt /var/log/...` to find the newest log, and copy it aside before it gets rotated away. In code reviews of deploy scripts, \"what does this glob expand to?\" is a normal question, and the answer is checked with `echo`.",
+   "task": {
+    "title": "Build a release folder from a plan",
+    "steps": [
+     "Start the lab and check that you are in `/work`.",
+     "Create three folders with as few commands as you can: `release/1.4.2/config`, `release/1.4.2/logs` and `release/1.4.2/bin`.",
+     "Copy `server/etc/shop/config.yaml` and the hidden `.env` beside it into `release/1.4.2/config`, with one `cp` command.",
+     "Copy every file in `logs` whose name starts with c or p into `release/1.4.2/logs`. Preview the glob with `echo` first.",
+     "Copy `server/opt/shop/bin/start.sh` into `release/1.4.2/bin`, then rename the copy to `run.sh`.",
+     "Move into `release/1.4.2/logs`. Write a relative path to `/work/server/etc/shop/config.yaml` and check it with `ls`.",
+     "Back in `/work`, predict what `echo release/*/*`, `echo release/1.4.?/config/*` and `echo \"release/*\"` print. Then run them and explain any surprise.",
+     "Draw your result with `tree -a release`, then delete the whole `release` folder with one command."
+    ],
+    "hints": [
+     "`mkdir -p` accepts several paths in one command.",
+     "A `*` skips hidden files, so name `.env` on its own.",
+     "From `release/1.4.2/logs`, count how many `..` steps lead back to `/work`."
+    ],
+    "done_when": "You are done when `tree -a release` shows config.yaml, .env, two log files and run.sh in the right folders, and one command then removes `release` completely."
+   },
+   "explain_back": {
+    "prompt": "Explain in 3 to 4 sentences what happens between pressing Enter on `rm *.log` and the files disappearing. Mention globs, arguments and why `echo` helps.",
+    "answer": "The shell reads the line before anything runs. It replaces `*.log` with every matching file name in the current folder and splits the line into words. Then it starts `rm` and passes those names as arguments, so rm never sees the star. Putting `echo` in front prints the exact list rm would get, which is the safe way to check a glob before deleting anything for good."
+   },
+   "recap": [
+    "The terminal is the window, the shell (zsh on a Mac, bash on Linux) reads your line, and most commands are program files.",
+    "The shell splits a line into a program and arguments; options start with - or --.",
+    "`--help`, `man` and `tldr` tell you what a flag does; the usage line uses [ ] for optional and ... for repeatable.",
+    "Paths are absolute from `/` or relative from where you are; `.`, `..`, `~` and `cd -` are shortcuts.",
+    "Globs like `*`, `?` and `[abc]` are expanded by the shell before the program runs.",
+    "`rm` has no undo, so preview with `ls` or `echo` before you delete."
+   ],
+   "check": [
+    {
+     "q": "You are in `/work/server/var/log/shop`. Which command takes you to `/work/server/etc/shop`?",
+     "options": [
+      "`cd ../../etc/shop`",
+      "`cd /etc/shop`",
+      "`cd ../../../etc/shop`",
+      "`cd ~/etc/shop`"
+     ],
+     "answer": 2,
+     "why": "Three `..` steps climb from shop to log to var to server, and from `/work/server` the path `etc/shop` lands in the right folder."
+    },
+    {
+     "q": "A folder holds `report.txt` and `.secret.txt`. What does `echo *.txt` print in bash?",
+     "options": [
+      "`report.txt .secret.txt`",
+      "`report.txt`",
+      "`*.txt`",
+      "An error about hidden files"
+     ],
+     "answer": 1,
+     "why": "A `*` at the start of a glob does not match a leading dot, so hidden files stay out unless you name them."
+    },
+    {
+     "q": "`ls -l my report.txt` prints two `No such file or directory` errors, yet a file called `my report.txt` exists. What fixes it?",
+     "options": [
+      "`ls -l \"my report.txt\"`",
+      "`ls -l --all my report.txt`",
+      "`ls -lr my report.txt`",
+      "`ls -l my, report.txt`"
+     ],
+     "answer": 0,
+     "why": "The shell split the name at the space into two arguments; quotes keep it as one word."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the difference between a terminal and a shell?",
+     "a": "The terminal is the program that draws the window and passes your keystrokes on. The shell is the program inside it that reads each line, expands globs and variables, and starts other programs. You can run different shells in the same terminal, such as zsh on a Mac and bash over SSH on a server. When a command behaves differently on two machines, look at the shell and the tool versions, not the terminal."
+    },
+    {
+     "q": "What happens when you run `rm *.log`?",
+     "a": "The shell expands `*.log` into the matching file names first, then starts `rm` with those names as arguments. It deletes each file, and there is no trash to recover them from. If nothing matches, bash passes the literal `*.log` and rm complains that it does not exist, while zsh refuses to run the line. A safe habit is to run `echo rm *.log` first and read the expansion."
+    },
+    {
+     "q": "How do you find out what an unfamiliar flag does on a server with no internet?",
+     "a": "I try `command --help` first, because most Linux tools print their usage line and options there. If man pages are installed, `man command` and then `/` to search for the flag. The usage line has a grammar: square brackets mean optional and three dots mean repeatable. On minimized images, such as Docker's Ubuntu image, man pages are removed, so `--help` is often the only local option."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Why is `cd` built into the shell when `ls` is a program file? The answer explains a rule you will meet again on Day 7.\n\nAsk the shell itself. `type cd` prints `cd is a shell builtin`, while `which ls` prints `/usr/bin/ls`. Every program the shell starts runs as a separate process, a child of the shell (Day 6 covers processes). Each process has its own working directory. A child can change its own working directory, but it has no way to change its parent's.\n\nSo imagine `cd` were a program. The shell would start it, it would change its own directory, and then it would exit. Your shell would still be exactly where it was. The only way to move the shell is for the shell to do it itself, so `cd` has to be a builtin. The same is true of a few other commands that change the shell's own state, such as `export` and `source`.\n\nThe rule \"a child cannot change its parent\" has a practical side. A script that runs `cd /var/log` does not move your terminal, and Day 7 shows that a script that sets a variable cannot change your terminal's variables either.\n\nOne more difference is worth knowing before you write loops over files. In bash, `*` only matches names inside one folder. In zsh, `**` also means \"any number of folders\". In the container, `zsh -c 'echo server/**/*.sql'` prints both backup files under `server/var/backups`. Bash can do the same after `shopt -s globstar`, but that is off by default. So scripts that must run anywhere use `find` (Day 4) instead.\n\nFinally, a habit for when a command surprises you: ask the shell what it thinks the word means. Inside the container, `type ls` says that ls is an alias for `ls --color=auto`. An alias is a shortcut the shell expands before running, set up in a startup file. Day 7 shows where those files live."
+   },
+   "sources": [
+    {
+     "title": "Missing Semester 2026: Introduction to the shell (MIT)",
+     "url": "https://missing.csail.mit.edu/2026/course-shell/"
+    },
+    {
+     "title": "The Unix Shell (Software Carpentry)",
+     "url": "https://swcarpentry.github.io/shell-novice/"
+    },
+    {
+     "title": "hier(7): the Linux file system layout",
+     "url": "https://man7.org/linux/man-pages/man7/hier.7.html"
+    }
+   ]
+  },
+  {
+   "id": "d04",
+   "title": "Reading and searching text: cat, less, grep and find",
+   "minutes": 50,
+   "goal": "By the end you can read and follow log files, search them with grep and regular expressions, and find files by name, size and age with find.",
+   "guess": {
+    "q": "What does `grep \"ERROR|WARN\" app.log` print?",
+    "options": [
+     "Every line with ERROR or with WARN",
+     "Only lines that contain both words",
+     "Nothing, and it exits with code 1",
+     "An error, because `|` is a pipe"
+    ],
+    "answer": 2,
+    "why": "Without `-E`, grep reads `|` as an ordinary character, and no line contains the text `ERROR|WARN`. `grep -E \"ERROR|WARN\"` does what you meant."
+   },
+   "terms": [
+    {
+     "term": "Pager",
+     "plain": "A program like less that shows a long file one screen at a time."
+    },
+    {
+     "term": "grep",
+     "plain": "A tool that prints the lines of its input that match a pattern."
+    },
+    {
+     "term": "Regular expression (regex)",
+     "plain": "A small pattern language for text, where symbols like . * ^ $ have special meanings."
+    },
+    {
+     "term": "Anchor",
+     "plain": "A regex symbol that matches a position: ^ is the start of a line and $ is the end."
+    },
+    {
+     "term": "Exit code",
+     "plain": "The number a program returns when it ends: 0 means success, anything else means a problem."
+    },
+    {
+     "term": "Recursive",
+     "plain": "Going into every folder inside a folder, and every folder inside those."
+    },
+    {
+     "term": "find",
+     "plain": "A tool that walks a folder tree and lists files by name, type, size or age."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Looking at files: cat, less, head and tail",
+     "body": "Before you search a file, look at it. Four commands cover that, and the right one depends on the file's size:\n\n- `cat app.log` prints the whole file. Fine for 37 lines, useless for a 2 GB log that scrolls past for minutes.\n- `less app.log` opens a pager, a viewer that shows one screen at a time. Space goes down a page, `b` goes back, `g` jumps to the top and `G` to the end. Type `/` and a word to search, `n` for the next match, and `q` to quit.\n- `head -n 3 app.log` prints the first three lines. Without `-n` you get ten.\n- `tail -n 2 app.log` prints the last two lines. Logs grow at the bottom, so tail shows the newest events.\n\nFirst check how big a file is with `wc -l app.log`, which prints `37 app.log`: the file has 37 lines.\n\nLogs change while you read them. `tail -f app.log` (follow) keeps the file open and prints each new line as it arrives. Press Ctrl+C to stop. Servers also rotate logs: they rename `app.log` to `app.log.1` and start a new, empty `app.log`. Plain `-f` keeps watching the renamed old file and goes quiet. `tail -F` (capital F) follows the name and switches to the new file, so use it on servers.",
+     "refs": [
+      {
+       "title": "Learning the shell (LinuxCommand.org)",
+       "url": "https://linuxcommand.org/lc3_learning_the_shell.php",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Searching with grep, one question at a time",
+     "body": "The grep command prints every line that contains a pattern. Start with plain words; the pattern language comes later. Each option below answers one question you ask during an incident, and every example runs on the lab's `app.log`.\n\n- What went wrong? `grep ERROR app.log` prints the 4 error lines.\n- Did I miss any? Logs are messy about case, so `grep -i error app.log` ignores it. It finds 5 lines: the extra one is a WARN line that says \"retrying after error\".\n- How many? `grep -c ERROR app.log` prints `4`. It counts lines, not words.\n- Where in the file? `grep -n WARN app.log` puts the line number in front, like `6:2026-10-30T09:02:40Z WARN ...`.\n- What is left without the noise? `grep -v INFO app.log` inverts the match. It shows every line without INFO, including two Java stack trace lines that have no level at all.\n- Only whole words? `grep -c 200 app.log` prints `16`, because `1200ms` and `code 2001` contain 200 too. With `-w`, only 200 standing alone counts, and the answer is `14`.\n\nOptions combine, and their order does not matter. `grep -n -i -w error app.log` and `grep -niw error app.log` are the same command.\n\ngrep also sets an exit code, the number every program returns when it ends. Zero means success, anything else means a problem. For grep, 0 means \"found a match\", 1 means \"no match\" and 2 means \"something went wrong\", such as a missing file. The shell keeps the last exit code in `$?`. So `grep -q ERROR app.log` prints nothing (`-q` is quiet), and `echo $?` then prints `0`. Day 5 and Day 7 build on this.",
+     "refs": [
+      {
+       "title": "Software Carpentry: Finding things (grep and find)",
+       "url": "https://github.com/swcarpentry/shell-novice/blob/main/episodes/07-find.md",
+       "kind": "read"
+      },
+      {
+       "title": "Lecture 4: Data wrangling (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=sz_dsktIjt4",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Context, files and folders",
+     "body": "A matching line rarely tells the whole story. You want the lines around it, and three options give them:\n\n- `-A 2` adds 2 lines after each match. `grep -A 2 NullPointer app.log` shows the error and both stack trace lines below it.\n- `-B 1` adds 1 line before. It often shows what the app was doing just before it failed.\n- `-C 1` adds 1 line on each side. With `-n`, grep marks matches with a colon and context lines with a dash, so `15:` is a hit and `14-` is a neighbour.\n\ngrep also searches many files at once. Give it several names, or a glob like `logs/*.log`, and it prefixes each hit with the file it came from. With `-r` (recursive) it searches a folder and every folder inside it. Two options pair well with `-r`:\n\n- `-l` lists only the names of files that match. `grep -r -l ERROR logs` prints five file names, one of them in `logs/archive`.\n- `-c` prints a count per file, such as `logs/payments.log:4`.\n\nFinally, `-o` prints only the part of the line that matched, not the whole line. That turns grep into an extractor, which becomes useful once your pattern is more than a plain word.",
+     "refs": [
+      {
+       "title": "GNU grep manual",
+       "url": "https://www.gnu.org/software/grep/manual/grep.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Regular expressions: a tiny pattern language",
+     "body": "A regular expression, or regex, describes a set of strings. A plain word is already a regex: it matches itself. A handful of symbols add power, and these work in plain grep:\n\n- `.` matches any one character. So `grep orders.db app.log` also matches `orders-db`, which may surprise you.\n- `*` means \"zero or more of the thing before it\". `grep -o 'req=[0-9a-f]*'` happily matches `req=` with nothing after it.\n- `^` anchors to the start of a line and `$` to the end. `grep -v '^2026' app.log` prints the two stack trace lines, the only lines that do not start with a date.\n- `[...]` matches one character from a set. `[0-9]` is any digit, `[a-f]` any letter from a to f, and `[^ ]` anything except a space.\n- A backslash makes a symbol literal again: `orders\\.db` matches only a real dot.\n\nAdd `-E` for extended regular expressions, which most people find easier to read:\n\n- `+` means one or more. `grep -o -E '[0-9]+ms' app.log` pulls out durations like `34ms` and `1200ms`.\n- `?` means optional. `https?://` matches both http and https.\n- `{4}` means exactly four times. `[0-9]{4}ms` finds requests that took 1,000 ms or more.\n- `|` means or, and parentheses group: `grep -E '(GET|POST) /api/checkout' app.log`.\n\nHere is the classic trap. Without `-E`, `grep 'WARN|ERROR'` treats `|` as a normal character and finds nothing; with `-E` it finds 8 lines.\n\nPut every pattern in single quotes, so the shell does not treat `*`, `$`, `|` or `{}` as its own symbols first. To search for text full of dots, such as an IP address, use `grep -F`, which switches the pattern language off. And do not bring `\\d` from Kotlin or Java. GNU grep reads `-E '\\d'` as the letter d, so `grep -c -E '\\d' app.log` prints `24`, the lines that contain a d. Write `[0-9]` instead; it works everywhere.",
+     "refs": [
+      {
+       "title": "GNU grep manual: Regular expressions",
+       "url": "https://www.gnu.org/software/grep/manual/html_node/Regular-Expressions.html",
+       "kind": "docs"
+      },
+      {
+       "title": "GNU grep manual: Basic vs extended regular expressions",
+       "url": "https://www.gnu.org/software/grep/manual/html_node/Basic-vs-Extended.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Globs and regex are different languages",
+     "body": "Day 3's globs and today's regular expressions look alike, and mixing them up causes real bugs. The shell uses globs to match file names. Tools such as grep, sed and awk use regex to match text inside files. The same symbols mean different things:\n\n- `*` in a glob means \"anything\". In a regex it means \"zero or more of the previous character\", so the regex for anything is `.*`.\n- `.` in a glob is just a dot. In a regex it is any character, so a real dot is `\\.`.\n- `?` in a glob is exactly one character. In an extended regex it makes the previous thing optional.\n\nSo the glob `*.log` means \"file names ending in .log\", while the regex for \"text ending in .log\" is `\\.log$`.\n\nOne command can contain both. In `grep -E 'ERROR|WARN' logs/*.log`, the shell expands the unquoted glob into file names and leaves the quoted regex alone for grep. Quoting decides who gets each symbol: the shell or the tool.",
+     "refs": [
+      {
+       "title": "Missing Semester 2020: Data wrangling notes (MIT)",
+       "url": "https://missing.csail.mit.edu/2020/data-wrangling/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Finding files by name, size and age",
+     "body": "Where grep searches inside files, find searches for files. It walks down through every folder under a starting point and tests each file. Its shape is `find START TESTS`:\n\n- `-name '*.sql'` keeps names that match a glob. `-iname` does the same but ignores case.\n- `-type f` keeps only files and `-type d` only directories (folders).\n- `-size +1M` keeps files over 1 MB, and `-size -10k` files under 10 kB.\n- `-mtime +7` keeps files last changed more than 7 days ago, and `-mtime -1` those changed in the last day.\n- `-maxdepth 2` stops two levels down. Put it straight after the start folder.\n\nTests combine with an unwritten \"and\": `find server -type f -size +1M` lists the four big files in the lab.\n\nQuote the pattern after `-name`. In `/work`, the unquoted `find server -name *.log` turns into `find server -name access.log app.log` before find runs, and find fails with `paths must precede expression`. In a folder with exactly one .log file, the same mistake silently searches for that one name, which is worse.\n\nfind can act on what it finds:\n\n- `-exec ls -lh {} +` runs one command with all the found files in place of `{}`.\n- `-exec cat {} \\;` runs the command once for each file.\n- `-delete` deletes every match. Run the same find without `-delete` first and read the list, because there is no undo.\n\nOn a Mac, always give find a start folder, as in `find . -name '*.log'`. The last section explains why.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Introduction to the shell (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/course-shell/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Mac and Linux differences for today",
+     "body": "Your Mac ships BSD versions of these tools, while servers and containers have GNU versions. Most of today's commands behave the same on both, but three details differ:\n\n- The Mac's grep has no `-P` (Perl-style patterns, where `\\d` means a digit). Use `-E` with `[0-9]`, which works on both.\n- The Mac's find needs a start folder. GNU find assumes the current folder, so `find -name '*.log'` works in the container and fails on the Mac. Write `find . -name '*.log'` everywhere.\n- On the Mac, `wc -l` pads the number with spaces, so a script that compares its output as text can break.\n\nThe grep options from this lesson (`-i -n -c -v -w -r -l -A -B -C -o -E -F`) and tail's `-f` and `-F` exist on both. That is why the course runs everything in the container: what you practise there is what servers and CI runners have. When you copy a one-liner into a script for your Mac, test it there once.",
+     "refs": [
+      {
+       "title": "macOS and Unix: BSD vs GNU tools",
+       "url": "https://cloudstreet-dev.github.io/macOS-and-Unix/part6-commands/bsd-vs-gnu.html",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "The grep command is a highlighter dragged down a printout: it keeps every line with the word you want and drops the rest. The find command is a filing clerk who pulls every folder that fits a description, such as \"older than a week\", without opening any of them. Where it breaks: a real clerk would ask before shredding a pile, but `find -delete` never asks.",
+   "diagram": "<svg viewBox=\"0 0 560 190\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"find walks a folder tree and picks files by name, size or age; grep reads those files and keeps the lines that match a pattern\"><text x=\"280\" y=\"24\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">Two searches: find picks files, grep picks lines</text><rect x=\"8\" y=\"40\" width=\"80\" height=\"56\" rx=\"10\" class=\"bx\"/><text x=\"48\" y=\"65\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">server/</text><text x=\"48\" y=\"81\" font-size=\"11\" text-anchor=\"middle\" class=\"t\">folders</text><rect x=\"106.0\" y=\"40\" width=\"104\" height=\"56\" rx=\"10\" class=\"bxt\"/><text x=\"158\" y=\"65\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">find</text><text x=\"158\" y=\"81\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">name, size</text><rect x=\"228.0\" y=\"40\" width=\"96\" height=\"56\" rx=\"10\" class=\"bx\"/><text x=\"276\" y=\"65\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">file list</text><text x=\"276\" y=\"81\" font-size=\"11\" text-anchor=\"middle\" class=\"t\">paths</text><rect x=\"342.0\" y=\"40\" width=\"104\" height=\"56\" rx=\"10\" class=\"bxo\"/><text x=\"394\" y=\"65\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">grep</text><text x=\"394\" y=\"81\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">regex</text><rect x=\"464.0\" y=\"40\" width=\"88\" height=\"56\" rx=\"10\" class=\"bx\"/><text x=\"508\" y=\"65\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">lines</text><text x=\"508\" y=\"81\" font-size=\"11\" text-anchor=\"middle\" class=\"t\">you read</text><line x1=\"90\" y1=\"68\" x2=\"104\" y2=\"68\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"212\" y1=\"68\" x2=\"226\" y2=\"68\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"326\" y1=\"68\" x2=\"340\" y2=\"68\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"448\" y1=\"68\" x2=\"462\" y2=\"68\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"158\" y=\"120\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">never opens files</text><text x=\"394\" y=\"120\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">reads every line</text><text x=\"280\" y=\"160\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">find logs -name '*.log' -exec grep -l 7f3a9c {} +</text></svg>",
+   "diagram_caption": "find picks files by name, size or age; grep reads them and keeps the lines that match.",
+   "worked": {
+    "title": "Follow one request across four services",
+    "steps": [
+     {
+      "say": "A customer reports a failed checkout at about 09:06 and quotes the reference `7f3a9c`. The services write that request ID on every log line. Start with the service you know about: checkout.",
+      "code": "$ grep 7f3a9c logs/checkout.log\n2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c POST /api/checkout started for cart 5521\n2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c calling payments-api: charge 59.90 EUR\n2026-10-30T09:06:21Z WARN  checkout-api req=7f3a9c payments-api answered slowly: 2900ms\n2026-10-30T09:06:24Z ERROR checkout-api req=7f3a9c timeout talking to payments-api after 3000ms\n2026-10-30T09:06:24Z INFO  checkout-api req=7f3a9c POST /api/checkout 504 6012ms",
+      "lang": "console"
+     },
+     {
+      "say": "One file is not the whole story. With `-r`, grep searches the whole `logs` folder and puts the file name before each hit. Four services touched this request. The order of files may differ on your machine.",
+      "code": "$ grep -r 7f3a9c logs\nlogs/gateway.log:2026-10-30T09:06:18Z INFO  gateway req=7f3a9c POST /api/checkout -> checkout-api\nlogs/gateway.log:2026-10-30T09:06:24Z ERROR gateway req=7f3a9c upstream checkout-api answered 504 after 6013ms\nlogs/worker.log:2026-10-30T09:06:31Z WARN  orders-worker req=7f3a9c no order found for cart 5521, skipping email\nlogs/payments.log:2026-10-30T09:06:18Z INFO  payments-api req=7f3a9c charge started: 59.90 EUR for cart 5521\nlogs/payments.log:2026-10-30T09:06:18Z INFO  payments-api req=7f3a9c calling bank-gateway\nlogs/payments.log:2026-10-30T09:06:21Z WARN  payments-api req=7f3a9c bank-gateway slow: 2800ms so far\nlogs/payments.log:2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c bank-gateway timeout after 3000ms\nlogs/payments.log:2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c charge failed, returning 504\nlogs/checkout.log:2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c POST /api/checkout started for cart 5521\nlogs/checkout.log:2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c calling payments-api: charge 59.90 EUR\nlogs/checkout.log:2026-10-30T09:06:21Z WARN  checkout-api req=7f3a9c payments-api answered slowly: 2900ms\nlogs/checkout.log:2026-10-30T09:06:24Z ERROR checkout-api req=7f3a9c timeout talking to payments-api after 3000ms\nlogs/checkout.log:2026-10-30T09:06:24Z INFO  checkout-api req=7f3a9c POST /api/checkout 504 6012ms",
+      "lang": "console"
+     },
+     {
+      "say": "To answer \"which files?\" use `-l`, one name per line. find can ask the same question, which helps when you also want to filter files by name or age first.",
+      "code": "$ grep -r -l 7f3a9c logs\nlogs/gateway.log\nlogs/worker.log\nlogs/payments.log\nlogs/checkout.log\n$ find logs -name '*.log' -exec grep -l 7f3a9c {} +\nlogs/gateway.log\nlogs/worker.log\nlogs/payments.log\nlogs/checkout.log",
+      "lang": "console"
+     },
+     {
+      "say": "Now only the errors for this request. The regex `ERROR .*req=7f3a9c` means ERROR, then anything, then the ID. Four errors, in three services.",
+      "code": "$ grep -r -E 'ERROR .*req=7f3a9c' logs\nlogs/gateway.log:2026-10-30T09:06:24Z ERROR gateway req=7f3a9c upstream checkout-api answered 504 after 6013ms\nlogs/payments.log:2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c bank-gateway timeout after 3000ms\nlogs/payments.log:2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c charge failed, returning 504\nlogs/checkout.log:2026-10-30T09:06:24Z ERROR checkout-api req=7f3a9c timeout talking to payments-api after 3000ms",
+      "lang": "console"
+     },
+     {
+      "say": "Put the story in time order. `-h` drops the file names, and `sort` (Day 5) orders the lines. ISO timestamps sort correctly as plain text, so the result is a timeline across all services.",
+      "code": "$ grep -r -h 7f3a9c logs | sort\n2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c POST /api/checkout started for cart 5521\n2026-10-30T09:06:18Z INFO  checkout-api req=7f3a9c calling payments-api: charge 59.90 EUR\n2026-10-30T09:06:18Z INFO  gateway req=7f3a9c POST /api/checkout -> checkout-api\n2026-10-30T09:06:18Z INFO  payments-api req=7f3a9c calling bank-gateway\n2026-10-30T09:06:18Z INFO  payments-api req=7f3a9c charge started: 59.90 EUR for cart 5521\n2026-10-30T09:06:21Z WARN  checkout-api req=7f3a9c payments-api answered slowly: 2900ms\n2026-10-30T09:06:21Z WARN  payments-api req=7f3a9c bank-gateway slow: 2800ms so far\n2026-10-30T09:06:24Z ERROR checkout-api req=7f3a9c timeout talking to payments-api after 3000ms\n2026-10-30T09:06:24Z ERROR gateway req=7f3a9c upstream checkout-api answered 504 after 6013ms\n2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c bank-gateway timeout after 3000ms\n2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c charge failed, returning 504\n2026-10-30T09:06:24Z INFO  checkout-api req=7f3a9c POST /api/checkout 504 6012ms\n2026-10-30T09:06:31Z WARN  orders-worker req=7f3a9c no order found for cart 5521, skipping email",
+      "lang": "console"
+     },
+     {
+      "say": "Read the earliest failure with context. `-B 3` shows the three lines before payments gave up. The cause sits at the bottom of the chain: bank-gateway took more than 3 seconds, and every other error is a reaction to that.",
+      "code": "$ grep -B 3 'charge failed' logs/payments.log\n2026-10-30T09:06:18Z INFO  payments-api req=7f3a9c calling bank-gateway\n2026-10-30T09:06:21Z WARN  payments-api req=7f3a9c bank-gateway slow: 2800ms so far\n2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c bank-gateway timeout after 3000ms\n2026-10-30T09:06:24Z ERROR payments-api req=7f3a9c charge failed, returning 504",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "text",
+     "title": "alert-patterns.txt",
+     "src": "ERROR\n[Tt]imeout\nrefused\n[0-9]{4}ms\n",
+     "run": "grep -n -E -f alert-patterns.txt app.log"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "less app.log",
+     "what": "Page through a file. `/` searches, `n` finds the next match, `q` quits."
+    },
+    {
+     "cmd": "tail -n 20 app.log",
+     "what": "Show the last 20 lines, where the newest events are."
+    },
+    {
+     "cmd": "tail -F app.log",
+     "what": "Print new lines as they arrive, even after the log is rotated. Ctrl+C stops."
+    },
+    {
+     "cmd": "grep -i error app.log",
+     "what": "Print lines that contain error, in any case."
+    },
+    {
+     "cmd": "grep -c ERROR app.log",
+     "what": "Count the matching lines."
+    },
+    {
+     "cmd": "grep -n -C 2 'connection refused' app.log",
+     "what": "Show matches with line numbers and 2 lines of context."
+    },
+    {
+     "cmd": "grep -v INFO app.log",
+     "what": "Show every line that does not match."
+    },
+    {
+     "cmd": "grep -r -l ERROR logs",
+     "what": "List the files under a folder that contain a match."
+    },
+    {
+     "cmd": "grep -o -E '[0-9]+ms' app.log",
+     "what": "Print only the matched text: here, every duration."
+    },
+    {
+     "cmd": "grep -E 'WARN|ERROR' app.log",
+     "what": "Extended regex: match either word."
+    },
+    {
+     "cmd": "grep -F '10.0.0.2' access.log",
+     "what": "Search for exact text, with no regex symbols."
+    },
+    {
+     "cmd": "grep -q ERROR app.log && echo found",
+     "what": "Use grep as a yes or no test: exit code 0 means found."
+    },
+    {
+     "cmd": "find . -name '*.log' -mtime +7",
+     "what": "Find .log files changed more than 7 days ago."
+    },
+    {
+     "cmd": "find . -type f -size +100M -exec ls -lh {} +",
+     "what": "Find big files and list them with sizes."
+    },
+    {
+     "cmd": "find /tmp -name '*.part' -delete",
+     "what": "Delete what find matches. Run it without -delete first."
+    }
+   ],
+   "mistake": "Leaving a pattern unquoted. `find . -name *.log` looks right, but the shell expands the glob first, and with one .log file in the folder you silently search for that single name. Put every pattern in single quotes: `find . -name '*.log'`, `grep -E '5[0-9]{2}'`.",
+   "real_world": "In a team with many small services, every request gets an ID where it enters, and each service writes it on its log lines. On-call engineers at a made-up payments company paste that ID into a search and get the timeline you built in the worked example. With a few servers they do it with grep over SSH. With hundreds, a central log store runs the same search (Day 47), and the questions and the regex stay the same.",
+   "task": {
+    "title": "Incident drill on the access log",
+    "steps": [
+     "Count the lines in `access.log` and print the first one. Find the status code and the path in that line.",
+     "Count the requests that got a 404, a 429 and any 5xx status. Use `-E` and a character class for the 5xx case.",
+     "Print the line numbers of every POST to `/api/checkout` that failed with a 5xx.",
+     "One client asked for paths like `/wp-login.php` and `/.env`. Find its IP with grep, then count how many requests that IP made.",
+     "Count the lines whose referrer is `http://` rather than `https://`. Then write one regex that matches both and compare the counts.",
+     "Use find to list every file under `server` larger than 500 kB, with sizes.",
+     "Age two files with `touch -d '20 days ago' FILE`, then find files under `server/var/log` older than 14 days.",
+     "Delete only the `.part` file in `server/tmp` with find, after previewing what it matches."
+    ],
+    "hints": [
+     "In this log the status sits between the closing quote of the request and the byte count, so `'\" 404 '` is a precise pattern.",
+     "For the scanner, search for one of its paths with `-F`, read the first field of the result, then search for that IP.",
+     "find sizes use k and M, as in `-size +500k`."
+    ],
+    "done_when": "You are done when your own commands show 11 server errors (5xx) in `access.log` and name the one IP that probed for `/.env`."
+   },
+   "explain_back": {
+    "prompt": "Explain in 3 to 4 sentences the difference between a glob and a regular expression. Mention who reads each one and what `*` means in each.",
+    "answer": "A glob is a pattern for file names that the shell expands before a command runs, so `*.log` becomes a list of matching names. A regular expression is a pattern for text that a tool like grep applies to every line inside files. In a glob `*` means any characters, while in a regex it means zero or more of the previous character, so the regex for anything is `.*`. Single quotes keep a regex away from the shell, so the tool receives it unchanged."
+   },
+   "recap": [
+    "Use `less`, `head` and `tail` on big files, and `tail -F` to follow a live log.",
+    "grep options answer questions: `-i` any case, `-c` how many, `-n` where, `-v` the rest, `-w` whole words.",
+    "`-A`, `-B` and `-C` add context; `-r` searches folders, `-l` lists files and `-o` extracts the match.",
+    "Regex symbols: `.` `*` `^` `$` `[...]`, plus `+` `?` `{n}` `|` `()` with `-E`. Quote every pattern.",
+    "Globs match file names in the shell; regular expressions match text inside tools.",
+    "find selects files by name, type, size and age; preview the list before `-delete`."
+   ],
+   "check": [
+    {
+     "q": "Which command counts the lines in `app.log` that end with `ms`?",
+     "options": [
+      "`grep -c '^ms' app.log`",
+      "`grep -c 'ms*' app.log`",
+      "`grep -c 'ms$' app.log`",
+      "`grep -c -F 'ms$' app.log`"
+     ],
+     "answer": 2,
+     "why": "`$` anchors the pattern to the end of the line, while `-F` would search for the text `ms$` itself."
+    },
+    {
+     "q": "`find . -name *.yaml` works in one folder, but in a folder that holds `values.yaml` it only finds files called `values.yaml`. Why?",
+     "options": [
+      "find cannot search for yaml files",
+      "The shell turned `*.yaml` into `values.yaml`",
+      "find needs `-type f` before `-name`",
+      "The other folder has hidden files"
+     ],
+     "answer": 1,
+     "why": "Unquoted, the glob expands to the one local match before find starts, so find searches for that exact name."
+    },
+    {
+     "q": "You need log lines with a status from 400 to 499, written as ` 404 ` or ` 429 ` between spaces. Which command fits?",
+     "options": [
+      "`grep -E ' 4[0-9]{2} ' access.log`",
+      "`grep ' 4* ' access.log`",
+      "`grep -F ' 4[0-9]{2} ' access.log`",
+      "`grep -E ' 4{3} ' access.log`"
+     ],
+     "answer": 0,
+     "why": "`4[0-9]{2}` means a 4 and then exactly two digits; `-F` would look for the brackets as plain text."
+    }
+   ],
+   "interview": [
+    {
+     "q": "How would you find all the errors for one request across several log files?",
+     "a": "If the services log a request or trace ID, I search for it in all logs at once with `grep -r ID logdir`. Then I narrow it with a regex such as `ERROR .*ID`. With ISO timestamps, `grep -h ID ... | sort` gives a timeline across services. I read the earliest error with `-B` and `-A` context, because later errors are often reactions to the first one."
+    },
+    {
+     "q": "What is the difference between `grep`, `grep -E` and `grep -F`?",
+     "a": "Plain grep uses basic regular expressions. There, `+`, `?`, `|` and braces are ordinary characters unless you escape them. `grep -E` uses extended regular expressions, where those symbols work directly, which is easier to read. With `-F`, grep switches patterns off and searches for the exact text, which suits IP addresses and strings full of dots. All three exist on Linux and macOS, unlike `-P`, which is GNU only."
+    },
+    {
+     "q": "A disk is filling up with old logs. How would you clean up safely with find?",
+     "a": "First I list the candidates, for example `find /var/log -type f -name '*.log' -mtime +14 -size +100M`, with the pattern quoted. I read the list and check that no running program still writes to those files. Then I run the same command with `-delete`, or archive the files instead. Deleting a file that a process still holds open does not free the space until the process closes it. So for a live log I would rotate or empty it instead."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Watching a log live is a daily task, and two details make it work. Try it with two terminals.\n\n1. In the container, in `/work`, create an empty file with `touch live.log`, then run `tail -f live.log | grep --line-buffered ERROR`.\n2. Open a second terminal tab on your Mac and go to `~/code/linux-lab`. It is the same folder, seen from outside the container.\n3. Append a line: `echo \"$(date -u +%FT%TZ) ERROR checkout-api req=ab12cd disk full\" >> live.log`. It appears in the first terminal at once.\n4. Append an INFO line the same way. Nothing appears, because grep drops it. Press Ctrl+C in the first terminal when you are done.\n\nWhy `--line-buffered`? When grep writes to your screen, it prints each line straight away. When its output goes into another pipe, it collects lines in a buffer and writes them in big chunks, which is faster. Put another command after grep, such as `| tee alerts.txt`, and lines can sit in that buffer for a long time. `--line-buffered` tells grep to pass each line on at once. The Mac's grep has the same option.\n\nNow rotation. Busy servers do not let one log grow forever. A tool called logrotate runs each night: it renames `app.log` to `app.log.1`, starts a fresh `app.log` and compresses older copies. `tail -f` follows the open file, not the name. After the rename it keeps watching `app.log.1`. Nobody writes there any more, so it goes silent without an error. `tail -F` follows the name and retries, so it notices the new file. In the container, `tail --help` describes `-F` as \"same as --follow=name --retry\". On any server where you expect to watch for more than a few minutes, use `-F`.\n\nOne more trap from the same family: deleting a big log that a program still has open does not free the disk space. The program still holds the file, so the space only returns when the program closes it or restarts. That is why log rotation tools often empty a file in place instead of deleting it, and Day 6 shows how to see which program holds which file."
+   },
+   "sources": [
+    {
+     "title": "GNU grep manual",
+     "url": "https://www.gnu.org/software/grep/manual/grep.html"
+    },
+    {
+     "title": "Software Carpentry: Finding things (grep and find)",
+     "url": "https://github.com/swcarpentry/shell-novice/blob/main/episodes/07-find.md"
+    },
+    {
+     "title": "Missing Semester 2020: Data wrangling (MIT)",
+     "url": "https://missing.csail.mit.edu/2020/data-wrangling/"
+    }
+   ]
+  },
+  {
+   "id": "d05",
+   "title": "Pipes, redirection and text tools",
+   "minutes": 50,
+   "goal": "By the end you can connect programs with pipes, send output and errors where you want them, and answer real questions about logs with sort, uniq, cut, awk, sed, xargs and jq.",
+   "guess": {
+    "q": "You run `sort names.txt > names.txt`. What is in names.txt afterwards?",
+    "options": [
+     "The same names, now sorted",
+     "Nothing: the file is now empty",
+     "The names twice, sorted and unsorted",
+     "An error, and the file is unchanged"
+    ],
+    "answer": 1,
+    "why": "The shell opens names.txt for writing, which empties it, before sort starts. sort then reads an empty file. Write to a new file and rename it instead."
+   },
+   "terms": [
+    {
+     "term": "Stream",
+     "plain": "A flow of bytes that a program reads or writes, such as the text it prints."
+    },
+    {
+     "term": "stdin, stdout, stderr",
+     "plain": "The three standard streams: input (0), normal output (1) and error messages (2)."
+    },
+    {
+     "term": "File descriptor",
+     "plain": "The small number a program uses for an open stream or file. 0, 1 and 2 are the standard ones."
+    },
+    {
+     "term": "Redirection",
+     "plain": "Sending a stream to or from a file with >, >> or <."
+    },
+    {
+     "term": "Pipe",
+     "plain": "The | symbol, which connects one program's stdout to the next program's stdin."
+    },
+    {
+     "term": "Filter",
+     "plain": "A program that reads lines, selects or changes them, and writes lines, such as sort or grep."
+    },
+    {
+     "term": "/dev/null",
+     "plain": "A special file that throws away everything written to it."
+    },
+    {
+     "term": "jq",
+     "plain": "A command-line tool that selects and reshapes JSON, the way grep and awk work on text."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Every program has three streams",
+     "body": "A stream is a flow of bytes. Every Linux program starts with three of them already open:\n\n- stdin (standard input, number 0) is where it reads input. By default, that is your keyboard.\n- stdout (standard output, number 1) is where it writes its results. By default, your screen.\n- stderr (standard error, number 2) is where it writes error messages. Also your screen, by default.\n\nThe numbers are file descriptors: the small numbers a program uses for its open streams and files. You know these three from the JVM as `System.in`, `System.out` and `System.err`.\n\nWhy two output streams? So results and complaints can go to different places. Run `ls app.log nosuch` and both look the same on screen: one error line and one result line. They travel separately, though, and the rest of this lesson is about steering them.\n\nMany tools read stdin when you give them no file. Type `wc -l` on its own and it waits. Type two lines, press Ctrl+D (which means \"end of input\"), and it prints `2`. If a command ever seems to hang, it may be waiting for stdin. Ctrl+D or Ctrl+C gets you out.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Command-line environment (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/command-line-environment/",
+       "kind": "read"
+      },
+      {
+       "title": "Lecture 2: Command-line environment (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=ccBGsPedE9Q",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Redirection: streams to and from files",
+     "body": "Redirection connects a stream to a file instead of the screen. The shell sets it up before the program starts:\n\n- `> file` sends stdout to a file, replacing what was in it.\n- `>> file` adds stdout to the end of a file.\n- `< file` feeds a file into stdin. `wc -l < app.log` prints `37` with no file name, because wc only saw a stream.\n- `2> file` sends stderr to a file.\n- `> file 2>&1` sends both to the same file. Read `2>&1` as \"send 2 wherever 1 goes right now\".\n- `&> file` is a short form of the line above in bash and zsh.\n- `2> /dev/null` throws error messages away. `/dev/null` is a special file that discards everything written to it.\n\nTwo traps catch everyone:\n\n1. A single `>` empties the file at once, before the command runs. `sort copy.log > copy.log` leaves you with an empty file. Type `set -o noclobber` and the shell refuses instead: `bash: notes.txt: cannot overwrite existing file`.\n2. Order matters with `2>&1`, because the shell reads redirections left to right. In `ls app.log nosuch > out.txt 2>&1`, stdout goes to the file first, then stderr follows it there. In `ls app.log nosuch 2>&1 > out.txt`, stderr is pointed at the screen, where stdout was at that moment, and the error still lands on your screen.\n\nUse `>>` for logs you keep adding to, and `>` only for files you mean to replace.",
+     "refs": [
+      {
+       "title": "Bash manual: Redirections",
+       "url": "https://www.gnu.org/software/bash/manual/html_node/Redirections.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Learning the shell: I/O redirection (LinuxCommand.org)",
+       "url": "https://linuxcommand.org/lc3_lts0070.php",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Pipes: build a pipeline one step at a time",
+     "body": "A pipe, written `|`, connects the stdout of one program to the stdin of the next. In `grep ERROR app.log | wc -l`, grep picks lines and wc counts them: `4`. Programs that read lines, select or change them, and write lines are called filters. Pipes let you chain small filters into an answer.\n\nAll the programs in a pipeline start at the same moment and pass lines along as they go, much like a Kotlin `Sequence`. No step waits for the previous one to finish, which is why `tail -f app.log | grep ERROR` works on a log that never ends.\n\nBuild a pipeline the way you build a Kotlin call chain: add one step, run it, look at the output, then add the next. Cap long output with `| head` while you work. A step you have checked is a step you will not debug later.\n\nOnly stdout goes through a pipe. In `ls nosuch | grep x`, the error from ls skips the pipe and lands on your screen, which is exactly what stderr is for.\n\nA pipeline also has an exit code (Day 4). By default it is the last program's. So `grep nosuch app.log | wc -l` prints `0`, and `echo $?` prints `0` too: grep failed, but wc succeeded. Day 7 shows how `set -o pipefail` changes that. Two operators run a command based on the last exit code:\n\n- `a && b` runs b only if a succeeded.\n- `a || b` runs b only if a failed.\n- Together: `grep -q ERROR app.log && echo 'has errors' || echo 'clean'` prints `has errors`.",
+     "refs": [
+      {
+       "title": "Software Carpentry: Pipes and filters",
+       "url": "https://github.com/swcarpentry/shell-novice/blob/main/episodes/04-pipefilter.md",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Sort, count and cut",
+     "body": "These filters turn lines into numbers:\n\n- `sort` sorts lines as text. Add `-n` to sort as numbers, `-r` to reverse, `-k 3` to sort by the third field, and `-t :` to split fields on colons instead of spaces.\n- `uniq` removes repeated lines, but only when they sit next to each other. That is why it nearly always comes after sort. With `-c` it puts a count in front of each line.\n- `wc -l` counts lines, `-w` words and `-c` bytes.\n- `cut -d ' ' -f 1` splits each line on spaces and keeps field 1. `-f 1,3` keeps fields 1 and 3.\n- `tr` translates characters. `tr a-z A-Z` upper-cases text, `tr -d 'Z'` deletes every Z and `tr -s ' '` squeezes runs of spaces into one.\n- `head -n 5` keeps the first five lines, so it doubles as a top-5 limiter.\n- `tee file` copies its input into a file and passes it on. `grep ERROR app.log | tee errors.txt | wc -l` saves the error lines and counts them.\n\nFor example, `sort -t : -k 3 -n /etc/passwd` sorts the user list by user ID, a number in the third colon-separated field.\n\nThe cut command has a sharp edge: every single space is a separator. The lab's `app.log` pads short levels, so `INFO  checkout-api` has two spaces in it. As a result, `cut -d ' ' -f 3 app.log | sort | uniq -c` reports 33 empty fields and only 4 service names. Squeeze the spaces first with `tr -s ' '`, or use awk, which treats a run of spaces as one.",
+     "refs": [
+      {
+       "title": "Missing Semester 2020: Data wrangling notes (MIT)",
+       "url": "https://missing.csail.mit.edu/2020/data-wrangling/",
+       "kind": "read"
+      },
+      {
+       "title": "Lecture 4: Data wrangling (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=sz_dsktIjt4",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Columns, conditions and sums with awk",
+     "body": "The awk tool is a small programming language for columns. For each line it splits the text on runs of spaces into fields `$1`, `$2` and so on (`$0` is the whole line), then runs your program. Three patterns cover most DevOps work:\n\n1. Print columns. `awk '{print $1, $9}' access.log` prints the client IP and the status code of each request.\n2. Keep rows that meet a condition. `awk '$9 >= 500' access.log` prints only server errors. A regex works as a condition too: `awk '/^2026/ {print $2}' app.log` prints the level of each line that starts with a date.\n3. Add things up. `awk '{sum += $10} END {print sum}' access.log` adds the bytes column and prints `850599` after the last line.\n\nThe option `-F` changes the field separator. Access log lines put quotes around the request and the user agent (the software that sent it). So `awk -F '\"' '{print $6}' access.log` splits on quotes and prints the user agent.\n\nAlways put an awk program in single quotes. Otherwise the shell reads `$1` as one of its own variables and replaces it before awk starts.\n\nOn Ubuntu, `awk` is a small version called mawk, and on the Mac it is BSD awk. These examples use only standard awk, which both understand.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Introduction to the shell (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/course-shell/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Editing streams with sed, and xargs",
+     "body": "The sed tool edits text as it streams past. Its most used command is substitute, `s/old/new/`:\n\n- `sed 's/ERROR/ERR/' app.log` prints the file with the first ERROR on each line changed. Add `g` at the end to change every match on the line.\n- The old part is a regex, and `-E` turns on extended regex. So `sed -E 's/req=[0-9a-f]+/req=XXXXXX/g' app.log` masks every request ID before you paste a log into a ticket.\n- `sed -n '8,10p' app.log` prints only lines 8 to 10.\n- `-i` edits the file in place, with no undo.\n\nThe `-i` option is where Mac and Linux part ways. GNU sed on Linux takes `sed -i 's/a/b/' file`. BSD sed on the Mac needs a backup suffix right after `-i`, even an empty one: `sed -i '' 's/a/b/' file`. Each form breaks on the other system. On Linux, `sed -i ''` fails with `sed: can't read s/a/b/: No such file or directory`. The form `sed -i.bak 's/a/b/' file` works on both and keeps a backup copy.\n\nThe xargs tool turns lines on stdin into arguments for a command. Some commands, like `ls` and `rm`, ignore stdin and only take arguments. So `grep -r -l 7f3a9c logs | xargs wc -l` takes the four file names grep printed and runs `wc -l` on all of them.\n\nBy default xargs splits on spaces, so a file called `old report.tmp` becomes two arguments, `old` and `report.tmp`, and rm fails on both. For file names you do not control, use `find ... -print0 | xargs -0 ...`, which separates names with a byte that cannot appear in a file name.",
+     "refs": [
+      {
+       "title": "macOS and Unix: BSD vs GNU tools",
+       "url": "https://cloudstreet-dev.github.io/macOS-and-Unix/part6-commands/bsd-vs-gnu.html",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "JSON with jq, and command substitution",
+     "body": "Kubernetes, cloud tools and most web APIs speak JSON, and grep handles it badly. The jq tool does for JSON what grep, cut and awk do for text. You give it a filter, and it applies the filter to each JSON value it reads. The lab's `pods.json` is shaped like what Kubernetes returns when you list running apps (Day 31):\n\n- `.` prints the input, nicely indented: `jq . pods.json`.\n- `.field` picks a field, and fields chain: `.items[0].metadata.name`.\n- `.[]` unpacks an array into its elements. `jq '.items[].metadata.name' pods.json` prints four names, in quotes.\n- `-r` (raw) prints strings without quotes, which is what you want before a pipe.\n- Inside a filter, `|` works like a shell pipe, and `select(condition)` keeps only the values that match.\n\nTogether: `jq -r '.items[] | select(.status.phase != \"Running\") | .metadata.name' pods.json` prints the one item that is not running. The file `events.jsonl` holds one JSON object per line, and jq reads them one by one, so `jq -r '.service' events.jsonl | sort | uniq -c` counts events per service.\n\nCommand substitution, written `$(command)`, runs a command and pastes its output into your line. `count=$(grep -c ERROR app.log)` stores `4` in a variable, and `echo \"app.log has $count errors\"` uses it. Likewise, `wc -l $(grep -r -l 7f3a9c logs)` hands grep's file list to wc as arguments, a simpler cousin of xargs.",
+     "refs": [
+      {
+       "title": "jq manual",
+       "url": "https://jqlang.org/manual/",
+       "kind": "docs"
+      },
+      {
+       "title": "jq tutorial",
+       "url": "https://jqlang.org/tutorial/",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "A pipeline is a small assembly line. One worker picks out the parts you want (grep) and the next sorts them (sort). Another counts identical parts (uniq -c), and the last writes the tally on a board (> report.txt). Parts move along the belt one at a time while everyone works at once. Where it breaks: on a real line a broken part travels down the belt, but here error messages leave by a side door (stderr) and never reach the next worker.",
+   "diagram": "<svg viewBox=\"0 0 560 214\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A pipeline: access.log flows through awk, sort, uniq -c, sort -rn and head, each joined by a pipe, while error messages go straight to the screen\"><text x=\"280\" y=\"24\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">Each | joins one program's stdout (1) to the next one's stdin (0)</text><rect x=\"8\" y=\"44\" width=\"104\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"60\" y=\"71\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">access.log</text><rect x=\"132.8\" y=\"44\" width=\"56\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"160.8\" y=\"71\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">awk</text><rect x=\"209.60000000000002\" y=\"44\" width=\"56\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"237.6\" y=\"71\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">sort</text><rect x=\"286.40000000000003\" y=\"44\" width=\"80\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"326.4\" y=\"71\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">uniq -c</text><rect x=\"387.20000000000005\" y=\"44\" width=\"88\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"431.2\" y=\"71\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">sort -rn</text><rect x=\"496.00000000000006\" y=\"44\" width=\"56\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"524\" y=\"71\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">head</text><line x1=\"114\" y1=\"66\" x2=\"130.8\" y2=\"66\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"190.8\" y1=\"66\" x2=\"207.6\" y2=\"66\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"267.6\" y1=\"66\" x2=\"284.4\" y2=\"66\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"368.4\" y1=\"66\" x2=\"385.2\" y2=\"66\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"477.2\" y1=\"66\" x2=\"494\" y2=\"66\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"199.2\" y=\"60\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">|</text><text x=\"276\" y=\"60\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">|</text><text x=\"376.8\" y=\"60\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">|</text><text x=\"485.6\" y=\"60\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">|</text><line x1=\"160.8\" y1=\"90\" x2=\"160.8\" y2=\"146\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"170.8\" y=\"122\" font-size=\"11\" text-anchor=\"start\" class=\"ts\">stderr (2)</text><rect x=\"112.80000000000001\" y=\"148\" width=\"96\" height=\"40\" rx=\"10\" class=\"bx\"/><text x=\"160.8\" y=\"173\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">screen</text><text x=\"524\" y=\"112\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">top 5 lines</text><text x=\"524\" y=\"128\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">to stdout</text></svg>",
+   "diagram_caption": "The top-5 pipeline from the worked example: stdout flows through the pipes, while stderr goes straight to the screen.",
+   "worked": {
+    "title": "Top client IPs and top error paths from access.log",
+    "steps": [
+     {
+      "say": "Look at one line before you write a pipeline. Split on spaces, the IP is field 1, the path is field 7 and the status is field 9. A quick awk confirms the numbers.",
+      "code": "$ head -n 1 access.log\n203.0.113.7 - - [30/Oct/2026:09:00:08 +0000] \"GET /api/products?page=3 HTTP/1.1\" 429 162 \"-\" \"curl/8.5.0\"\n$ head -n 1 access.log | awk '{print $1, $7, $9}'\n203.0.113.7 /api/products?page=3 429\n$ awk '{print $1}' access.log | head -n 4\n203.0.113.7\n10.0.0.2\n198.51.100.23\n203.0.113.99",
+      "lang": "console"
+     },
+     {
+      "say": "Count requests per IP. Without sort, uniq only merges neighbours, so every count is 1. After sort, identical IPs sit together and `uniq -c` counts them. Note that sort orders text, so `10.0.0.2` comes first.",
+      "code": "$ awk '{print $1}' access.log | uniq -c | head -n 4\n      1 203.0.113.7\n      1 10.0.0.2\n      1 198.51.100.23\n      1 203.0.113.99\n$ awk '{print $1}' access.log | sort | uniq -c\n     18 10.0.0.2\n     12 192.0.2.101\n     37 192.0.2.15\n     44 198.51.100.23\n      7 198.51.100.77\n     21 198.51.100.8\n     29 203.0.113.42\n     61 203.0.113.7\n      9 203.0.113.99",
+      "lang": "console"
+     },
+     {
+      "say": "Rank by count. `sort -rn` sorts the counts as numbers, largest first, and `head -n 5` keeps the top five. One client sent 61 of the 238 requests.",
+      "code": "$ awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -n 5\n     61 203.0.113.7\n     44 198.51.100.23\n     37 192.0.2.15\n     29 203.0.113.42\n     21 198.51.100.8",
+      "lang": "console"
+     },
+     {
+      "say": "Now the server errors, status 500 and up. Printing the status with the path keeps 500 and 504 apart. Checkout is the failing endpoint.",
+      "code": "$ awk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn\n      6 500 /api/checkout\n      3 502 /api/payments/charge\n      2 504 /api/checkout",
+      "lang": "console"
+     },
+     {
+      "say": "Client errors tell a different story. The top 404 paths are files that this shop never had. Grouping 404s by IP shows that one client sent almost all of them: a scanner probing for weak spots, not broken links.",
+      "code": "$ awk '$9 == 404 {print $7}' access.log | sort | uniq -c | sort -rn | head -n 5\n      7 /wp-login.php\n      5 /.env\n      4 /admin\n      3 /phpmyadmin/\n      2 /.git/config\n$ awk '$9 == 404 {print $1}' access.log | sort | uniq -c | sort -rn\n     21 198.51.100.8\n      1 203.0.113.42\n      1 192.0.2.15",
+      "lang": "console"
+     },
+     {
+      "say": "Save the answers. The first command writes `report.txt` with `>`, and the second adds to it with `>>`. Use `>` twice by mistake and the first part is gone.",
+      "code": "$ awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -n 5 > report.txt\n$ awk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn >> report.txt\n$ wc -l report.txt\n8 report.txt",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "bash",
+     "title": "traffic-report.sh",
+     "src": "# traffic-report.sh: a quick report on the nginx access log in this folder.\n# Run it with:  bash traffic-report.sh | tee report.txt\n# A script is just your pipelines saved in a file. Day 7 covers scripts properly.\n\necho \"== Requests\"\nwc -l < access.log\necho\necho \"== Top 5 client IPs\"\nawk '{print $1}' access.log | sort | uniq -c | sort -rn | head -n 5\necho\necho \"== Status codes\"\nawk '{print $9}' access.log | sort | uniq -c | sort -rn\necho\necho \"== Server errors (5xx) by path\"\nawk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn\necho\necho \"== Top 5 paths that returned 404\"\nawk '$9 == 404 {print $7}' access.log | sort | uniq -c | sort -rn | head -n 5\n",
+     "run": "bash traffic-report.sh | tee report.txt"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "cmd > out.txt 2>&1",
+     "what": "Send normal output and errors to one file."
+    },
+    {
+     "cmd": "cmd 2> /dev/null",
+     "what": "Throw away error messages."
+    },
+    {
+     "cmd": "cmd >> log.txt",
+     "what": "Add to the end of a file instead of replacing it."
+    },
+    {
+     "cmd": "sort | uniq -c | sort -rn | head",
+     "what": "The count-and-rank pipeline: how often does each line appear?"
+    },
+    {
+     "cmd": "cut -d ' ' -f 1 access.log",
+     "what": "Keep one space-separated field from each line."
+    },
+    {
+     "cmd": "awk '{print $1, $9}' access.log",
+     "what": "Print chosen columns."
+    },
+    {
+     "cmd": "awk '$9 >= 500' access.log",
+     "what": "Print only the rows that meet a condition."
+    },
+    {
+     "cmd": "awk '{s += $10} END {print s}' access.log",
+     "what": "Add up a column."
+    },
+    {
+     "cmd": "sed -E 's/req=[0-9a-f]+/req=X/g' app.log",
+     "what": "Replace every match of a regex on each line."
+    },
+    {
+     "cmd": "sed -i.bak 's/old/new/' file",
+     "what": "Edit a file in place and keep a backup. Works on Mac and Linux."
+    },
+    {
+     "cmd": "find . -name '*.tmp' -print0 | xargs -0 rm",
+     "what": "Hand found files to a command, safely even with spaces in names."
+    },
+    {
+     "cmd": "cmd | tee out.txt",
+     "what": "Save a copy of the stream and pass it on."
+    },
+    {
+     "cmd": "jq -r '.items[].metadata.name' pods.json",
+     "what": "Pull plain strings out of JSON."
+    },
+    {
+     "cmd": "jq -c 'select(.level == \"error\")' events.jsonl",
+     "what": "Keep only the JSON objects that match, one per line."
+    },
+    {
+     "cmd": "echo \"$(date -u +%F)\"",
+     "what": "Command substitution: paste a command's output into a line."
+    }
+   ],
+   "mistake": "Redirecting into the file you are reading, as in `sort app.log > app.log` or `sed 's/a/b/' f > f`. The shell empties the file before the command starts, so the data is gone. Write to a new file and move it into place, as in `sort f > f.new && mv f.new f`, or use the tool's own in-place option.",
+   "real_world": "When traffic spikes at a made-up payments company, the first questions are \"who is calling us?\" and \"what is failing?\". Often the first answer comes from the worked example's pipeline, run on a load balancer log before anyone opens a dashboard. The same engineers pipe Kubernetes JSON into jq every day, for example to list the apps that keep restarting.",
+   "task": {
+    "title": "A status report from the logs",
+    "steps": [
+     "Count how many requests got each status code in `access.log`, most common first.",
+     "Add up the bytes sent to the client `198.51.100.23`.",
+     "Find the three most common user agents by splitting each line on quotes with awk.",
+     "Write `report.txt`: a heading line, the status counts, a second heading and the top 5 IPs. Use `>` for the first line and `>>` for the rest, then `cat` the file.",
+     "Run `ls access.log nosuch` three ways: errors only into `err.txt`, both streams into `all.txt`, and errors thrown away.",
+     "From `events.jsonl`, print the request ID and error type of every error event as plain text, one per line.",
+     "From `pods.json`, list the names of the items with more than 5 restarts.",
+     "Mask every request ID in `app.log` with sed and save the result as `app-masked.log`, without changing `app.log`."
+    ],
+    "hints": [
+     "The status is field 9 and the byte count field 10.",
+     "In jq, a string like `\"\\(.request_id) \\(.error.type)\"` combines two fields.",
+     "Keep `| head` on the end while you build a pipeline, and remove it when the output looks right."
+    ],
+    "done_when": "You are done when `cat report.txt` shows your two headings, 165 requests with status 200, and 203.0.113.7 at the top of the IP list with 61 requests."
+   },
+   "explain_back": {
+    "prompt": "Explain in 3 to 4 sentences what `awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -n 5` does. Mention streams, why sort comes before uniq, and what the last two steps add.",
+    "answer": "First awk prints the first field of each line, the client IP, and each pipe feeds that stream into the next program's stdin. Then sort puts identical IPs next to each other, which uniq needs, because it only merges neighbouring duplicates. Then `uniq -c` prints each IP once with its count. Finally `sort -rn` orders those counts from highest to lowest as numbers, and `head -n 5` keeps the top five."
+   },
+   "recap": [
+    "Every program has stdin (0), stdout (1) and stderr (2), and redirection points them at files.",
+    "`>` replaces, `>>` appends, `2>&1` joins errors to output, and `/dev/null` discards.",
+    "A pipe joins stdout to the next stdin; build pipelines one step at a time.",
+    "`sort | uniq -c | sort -rn | head` turns raw lines into a ranked count.",
+    "awk handles columns, conditions and sums; sed substitutes; xargs turns lines into arguments.",
+    "jq does the same for JSON with `.field`, `.[]`, `select()` and `-r`."
+   ],
+   "check": [
+    {
+     "q": "A job runs `./backup.sh > backup.log`, but its error messages still appear on screen and are missing from the log. What fixes it?",
+     "options": [
+      "`./backup.sh 2>&1 > backup.log`",
+      "`./backup.sh > backup.log 2>&1`",
+      "`./backup.sh | backup.log`",
+      "`./backup.sh >> backup.log`"
+     ],
+     "answer": 1,
+     "why": "Redirections run left to right, so stdout must point at the file before `2>&1` sends stderr to the same place."
+    },
+    {
+     "q": "`cut -d ' ' -f 1 visits.log | uniq -c` shows many IPs with a count of 1, even though some IPs appear often. What is missing?",
+     "options": [
+      "A `-n` flag on uniq",
+      "A `-r` flag on cut",
+      "`tr -s ' '` after uniq",
+      "`sort` before `uniq -c`"
+     ],
+     "answer": 3,
+     "why": "uniq only merges identical lines that are next to each other, so the input must be sorted first."
+    },
+    {
+     "q": "An API returns `{\"users\":[{\"name\":\"ana\",\"active\":true},{\"name\":\"ben\",\"active\":false}]}`. Which filter prints `ben` with no quotes?",
+     "options": [
+      "`jq -r '.users[] | select(.active == false) | .name'`",
+      "`jq '.users[] | select(.active == false) | .name'`",
+      "`jq -r '.users | select(.active == false) | .name'`",
+      "`jq -r '.users[] | select(.name) | .active'`"
+     ],
+     "answer": 0,
+     "why": "`.users[]` unpacks the array, select keeps the inactive user, `.name` picks the field, and `-r` drops the quotes."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the difference between `>` and `>>`, and what does `2>&1` do?",
+     "a": "Both send stdout to a file; `>` empties the file first, while `>>` appends. The shell sets them up before the command runs. That is why `sort f > f` leaves f empty. `2>&1` makes stderr go wherever stdout points at that moment, so in `cmd > log 2>&1` both end up in the log. Written the other way round, errors still reach the terminal, because redirections are processed left to right."
+    },
+    {
+     "q": "How would you find the top 10 client IPs in an nginx access log?",
+     "a": "I would pull out the IP field and count it: `awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -n 10`. sort has to come before uniq, because uniq only merges neighbouring duplicates. First I would look at one line to check that the IP really is field 1. A load balancer in front can change which address the log records (Day 9)."
+    },
+    {
+     "q": "When would you use xargs instead of piping into a command?",
+     "a": "When the command takes its input as arguments and ignores stdin, like `rm`, `ls` or `kill`. xargs reads lines and adds them as arguments, batching many into one call. With file names that may contain spaces, I use `find -print0 | xargs -0`, or `find -exec ... {} +`, which avoids the splitting problem."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Plain jq works on one JSON value at a time. Many questions need all of them at once: a total, a count per group, a ranking. The `-s` (slurp) option reads every value into one array first, and then the full language opens up. All of these run on the lab's `events.jsonl`:\n\n- `jq -s 'length' events.jsonl` prints `18`, the number of events.\n- `jq -s '[.[] | select(.event == \"order.created\") | .amount] | add' events.jsonl` prints `86.5`, the total of the orders that went through. The square brackets collect the selected amounts into a new array, and `add` sums it.\n- `jq -r -s 'group_by(.service)[] | \"\\(.[0].service) \\(length)\"' events.jsonl` prints one line per service with its count: checkout-api 9, orders-worker 3 and payments-api 6. The function `group_by` makes an array of arrays, one per service.\n- `jq -r '[.ts, .service, .level] | @tsv' events.jsonl` turns each object into one tab-separated line, ready for sort, cut and awk.\n- `jq -r 'select(.duration_ms > 1000) | \"\\(.duration_ms) \\(.service) \\(.event)\"' events.jsonl | sort -rn` lists the slow events, slowest first. The top line is `6012 checkout-api checkout.failed`.\n\nThe last two show the habit worth keeping. Let jq turn JSON into plain lines, then use the text tools you already know. You do not need to learn all of jq; `select`, string templates and `@tsv` go a long way.\n\nMissing fields are worth a note. Not every event has `duration_ms`. For jq a missing field is `null`, and null counts as smaller than any number. So `null > 1000` is false, and those events drop out quietly. When a field may be missing, write a default with `//`: `.duration_ms // 0`.\n\nA practice idea for later: when you meet `kubectl get pods -o json` on Day 31, the filters from today work almost unchanged. Swap `pods.json` for the live output and the same select finds the pods that are not running."
+   },
+   "sources": [
+    {
+     "title": "Missing Semester 2026: Introduction to the shell (MIT)",
+     "url": "https://missing.csail.mit.edu/2026/course-shell/"
+    },
+    {
+     "title": "Software Carpentry: Pipes and filters",
+     "url": "https://github.com/swcarpentry/shell-novice/blob/main/episodes/04-pipefilter.md"
+    },
+    {
+     "title": "Bash manual: Redirections",
+     "url": "https://www.gnu.org/software/bash/manual/html_node/Redirections.html"
+    },
+    {
+     "title": "jq manual",
+     "url": "https://jqlang.org/manual/"
+    }
+   ]
+  },
+  {
+   "id": "d06",
+   "title": "Users, permissions, processes and services",
+   "minutes": 50,
+   "goal": "By the end you can read and change file permissions, find a process and stop it with the right signal, run a program as a systemd service, and check disk, memory and ports.",
+   "guess": {
+    "q": "You press Ctrl+Z while `sleep 300` runs in your terminal. What happened to it?",
+    "options": [
+     "It was killed, as with Ctrl+C",
+     "It is paused and can carry on later",
+     "It keeps running in the background",
+     "It moved to a new terminal tab"
+    ],
+    "answer": 1,
+    "why": "Ctrl+Z sends a signal called SIGTSTP, which pauses the process. `jobs` still lists it as Stopped, and `fg` or `bg` brings it back."
+   },
+   "terms": [
+    {
+     "term": "User and group",
+     "plain": "An account that permissions are checked against. A group is a named set of users."
+    },
+    {
+     "term": "root",
+     "plain": "The superuser, with user ID 0, which skips almost every permission check."
+    },
+    {
+     "term": "Permission bits",
+     "plain": "Read (r), write (w) and execute (x) rights, set separately for the owner, the group and everyone else."
+    },
+    {
+     "term": "Process",
+     "plain": "A running program. Each one has an ID number called a PID."
+    },
+    {
+     "term": "PID",
+     "plain": "Process ID: the number the system gives each running process."
+    },
+    {
+     "term": "Signal",
+     "plain": "A short message the system delivers to a process, such as SIGTERM (please stop) or SIGKILL (stop now)."
+    },
+    {
+     "term": "Service",
+     "plain": "A program that runs in the background, started and watched by a manager such as systemd."
+    },
+    {
+     "term": "Unit file",
+     "plain": "A small text file that tells systemd how to run a service."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Users, groups and root",
+     "body": "Linux is built for many users on one machine, and every file and every process belongs to a user. Two commands tell you who you are:\n\n- `whoami` prints your user name.\n- `id` prints your user ID (UID), your main group and every group you are in. In the container it prints `uid=0(root) gid=0(root) groups=0(root)`.\n\nA group is a named set of users, so one rule can cover a whole team. Users are listed in `/etc/passwd`, one per line. Programs get their own users too: on Ubuntu the web server nginx runs as `www-data`.\n\nThe superuser is called root and has UID 0. The kernel, the core of the operating system, skips almost every permission check for root. That is why your container prompt ends with `#`: you are root. A normal user's prompt ends with `$`.\n\nOn a real server you log in as a normal user and borrow root for one command with `sudo`, as in `sudo apt install nginx`. Do not put sudo in front of everything. It hides the real problem, such as a wrong owner or folder, and the files it creates belong to root, so your normal tools cannot change them later. When something says \"Permission denied\", ask why before you reach for sudo.\n\nIn the container you are root, so make a normal user to feel a denial: `useradd -m -s /bin/bash dev`. Then `su - dev -c 'cat /etc/shadow'` runs one command as dev and prints `cat: /etc/shadow: Permission denied`.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Command-line environment (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/command-line-environment/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Reading ls -l, column by column",
+     "body": "Run `ls -l deploy.sh` and you get a line like `-rw-r--r-- 1 root root 29 Oct 30 05:10 deploy.sh`. From left to right:\n\n1. `-` is the type: `-` for a file, `d` for a directory, `l` for a link.\n2. `rw-` is what the owner may do.\n3. `r--` is what the group may do.\n4. `r--` is what everyone else (others) may do.\n5. `1` is the number of links to the file. You can ignore it for now.\n6. `root root` are the owner and the group.\n7. `29` is the size in bytes, and then come the last change time and the name.\n\nEach permission triplet has three slots: `r` is read, `w` is write and `x` is execute (run). A dash means \"not allowed\".\n\nOn a directory the same letters mean something else, and this trips most people up:\n\n- `r` lets you list the names inside.\n- `w` lets you create, rename and delete entries inside.\n- `x` lets you enter the directory and reach the files in it.\n\nSo a directory with `x` but no `r` works like an unlisted address. In the container, with `/tmp/vault` set to `drwx--x--x`, the user dev got `Permission denied` from `ls /tmp/vault`. Yet `cat /tmp/vault/key.txt` worked, because dev knew the exact name.",
+     "refs": [
+      {
+       "title": "Learning the shell: Permissions (LinuxCommand.org)",
+       "url": "https://linuxcommand.org/lc3_lts0090.php",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Changing permissions: chmod, chown and umask",
+     "body": "The chmod command changes permissions, and you can write them in two ways. The symbolic form says who, then plus or minus, then what. Here `u` is the owner (user), `g` the group, `o` others and `a` all:\n\n- `chmod u+x deploy.sh` lets the owner run it.\n- `chmod go-rx deploy.sh` takes read and execute away from group and others.\n\nThe octal form gives each triplet one digit, adding r = 4, w = 2 and x = 1:\n\n- `755` is `rwxr-xr-x`: everyone can run it and only the owner can change it. Normal for scripts and folders.\n- `644` is `rw-r--r--`: everyone can read and only the owner writes. Normal for files.\n- `600` is `rw-------`: the owner only. Use it for private keys and secrets.\n\nTo change the owner and group, use `chown dev:dev key.txt`, which needs root. New files do not start with random rights either: a setting called the umask removes rights from every new file and folder. The usual value, `0022`, removes write for group and others, so new files come out as 644 and new folders as 755.\n\nThe execute bit explains why a fresh script fails. Running `./deploy.sh` (the `./` means \"in this folder\") prints `Permission denied` with exit code 126 until you run `chmod u+x deploy.sh`.\n\nTwo habits from real teams. Never fix a permission problem with `chmod 777`, which lets every user change the file. And do not run containers as root. Root inside a container is UID 0, the same number as root on the host, so an attacker who escapes starts with full power. The Docker part of this course switches the app's image to a normal user.",
+     "refs": [
+      {
+       "title": "GNU coreutils: chmod",
+       "url": "https://www.gnu.org/software/coreutils/chmod",
+       "kind": "docs"
+      },
+      {
+       "title": "Docker building best practices (see USER)",
+       "url": "https://docs.docker.com/build/building/best-practices/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Processes, PIDs and jobs",
+     "body": "A process is a running program. The kernel gives each one a process ID, or PID. Every process also has a parent, the process that started it, whose PID is called the PPID. Your shell is the parent of every command you type. These commands show processes:\n\n- `ps aux` lists every process with its user, PID, CPU and memory use, and command.\n- `ps -o pid,ppid,stat,cmd` lists your own processes with the columns you choose.\n- `pgrep -a sleep` finds processes by name and prints their PIDs.\n- `top` shows a live view, busiest first; `q` quits. `htop` is a friendlier version (`apt-get install htop`, or `brew install htop` on a Mac).\n\nIn a fresh container, `ps aux` shows just two processes: `bash` with PID 1 and the `ps` command itself. PID 1 is the first process. In a container it is whatever you started; on a normal Linux machine it is systemd, which starts everything else.\n\nA command you type runs in the foreground, and the shell waits for it. Add `&` to run it in the background and get your prompt back. The shell calls these jobs:\n\n- `sleep 300 &` prints a job number and the PID, like `[1] 15`. Afterwards, `$!` holds that PID.\n- `jobs` lists your jobs. `fg` brings one back to the foreground, and `bg` lets a paused one carry on in the background.\n- Ctrl+Z pauses the foreground job. It does not end it.\n- `nohup cmd &` keeps a command alive after you close the terminal and writes its output to `nohup.out`.\n\nFor anything that must keep running for days, use a service instead (two sections down).",
+     "refs": [
+      {
+       "title": "Lecture 5: Command-line environment, 2020 (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=e8BO_dYxk5c",
+       "kind": "watch"
+      },
+      {
+       "title": "The Linux Command Line, free book (William Shotts)",
+       "url": "https://linuxcommand.org/tlcl.php",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Signals: asking a process to stop",
+     "body": "A signal is a short message the kernel delivers to a process. A program can catch most signals and decide what to do. Four matter most:\n\n- SIGINT (signal 2) is what Ctrl+C sends: \"the user wants you to stop\".\n- SIGTERM (15) is a polite request to shut down, and `kill PID` sends it by default. A well-behaved program finishes its work, closes its connections and exits.\n- SIGKILL (9) ends the process at once. It cannot be caught, so no cleanup runs. Send it with `kill -9 PID`.\n- SIGHUP (1) once meant \"your terminal hung up\". Many servers, nginx included, treat it as \"reload your configuration\".\n\nThe exit code tells you how a process ended. When a signal kills it, the code is 128 plus the signal number. So 130 means Ctrl+C, 143 means SIGTERM and 137 means SIGKILL. You will meet 137 again when Docker or Kubernetes kills a container that used too much memory.\n\nThe lesson's `worker.sh` catches SIGTERM with `trap`. After a plain `kill`, its log ends with `worker: got SIGTERM, finishing job 3, then exiting` and `worker: stopped cleanly after job 3`, and it exits with 0. After `kill -9`, the log just stops mid-job and the exit code is 137.\n\nThat pair is how the container world stops programs. The `docker stop` command sends SIGTERM, waits 10 seconds, then sends SIGKILL, and Kubernetes does the same with a 30 second default. So send SIGTERM first, give it a moment, and keep `kill -9` for a process that ignores it.",
+     "refs": [
+      {
+       "title": "docker container stop (Docker docs)",
+       "url": "https://docs.docker.com/reference/cli/docker/container/stop/",
+       "kind": "docs"
+      },
+      {
+       "title": "Pod lifecycle: termination of pods (Kubernetes docs)",
+       "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+       "kind": "docs"
+      },
+      {
+       "title": "systemd.kill(5): how systemd stops services (man7.org)",
+       "url": "https://man7.org/linux/man-pages/man5/systemd.kill.5.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Services with systemd",
+     "body": "A service is a program that runs in the background without a terminal: a web server, a database, a queue worker. On almost every Linux server, a program called systemd starts services at boot, restarts them when they crash and collects their logs. It describes each service in a unit file, a short text file in INI format. The nginx package ships one at `/usr/lib/systemd/system/nginx.service`, with three sections:\n\n- `[Unit]` has a description and says what must start first.\n- `[Service]` has `ExecStart`, the command to run, and how to stop and reload it.\n- `[Install]` has `WantedBy=multi-user.target`, which means \"start at boot\".\n\nYou control services with systemctl:\n\n- `systemctl status nginx` shows whether it runs, its main PID and its last log lines.\n- `sudo systemctl start nginx` starts it, and `stop` and `restart` do what they say.\n- `sudo systemctl enable nginx` makes it start at boot, but does not start it now. `enable --now` does both.\n- `sudo systemctl daemon-reload` makes systemd read unit files again after you change one.\n\nThe journalctl command reads the logs that systemd collects. Add `-u nginx` for one service, `-f` to follow new lines like `tail -f`, `-n 50` for the last 50, and `--since '10 min ago'` to limit by time.\n\nsystemd does not run in a plain container, where PID 1 is your own shell. There, `systemctl status nginx` prints `bash: systemctl: command not found`. Install systemd and you get `System has not been booted with systemd as init system (PID 1). Can't operate.` instead. So for services you use a small Ubuntu virtual machine made with Multipass, which the task sets up.",
+     "refs": [
+      {
+       "title": "systemctl manual (freedesktop.org)",
+       "url": "https://www.freedesktop.org/software/systemd/man/latest/systemctl.html",
+       "kind": "docs"
+      },
+      {
+       "title": "journalctl basics (Learn Linux TV)",
+       "url": "https://www.youtube.com/watch?v=0dG3vUYt7Uk",
+       "kind": "watch"
+      },
+      {
+       "title": "Getting started with Multipass (Canonical docs)",
+       "url": "https://canonical.com/multipass/docs/latest/tutorial/getting-started/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Disk, memory, load and ports",
+     "body": "Five quick checks answer \"is this machine healthy?\":\n\n- `df -h` shows each disk's size, used space and free space. A full disk breaks logs, databases and deploys.\n- `du -sh server/*` shows how much space each folder uses. Add `| sort -h` to sort sizes like 60K and 2.9M correctly.\n- `free -h` shows memory. Read the `available` column, because Linux borrows spare memory as a disk cache and gives it back when needed.\n- `uptime` shows how long the machine has run and three load averages over 1, 5 and 15 minutes. The load is the average number of processes running or waiting for a CPU, so compare it with the CPU count from `nproc`.\n- `ss -tlnp` lists the TCP ports that something listens on, and which process owns each one. `lsof -i :80` asks the same question about one port.\n\nA port is a numbered door on a machine that a program listens behind; Day 8 explains them properly. On your Mac, `df`, `du`, `uptime` and `lsof` exist, but `free` and `ss` do not. There, `lsof -iTCP -sTCP:LISTEN -n -P` lists listening ports.",
+     "refs": [
+      {
+       "title": "The Linux Command Line, free book (William Shotts)",
+       "url": "https://linuxcommand.org/tlcl.php",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "Stopping a process is like closing a restaurant. SIGTERM is the manager saying \"we close in ten minutes\": the kitchen finishes the plates on the stove and the staff lock up. SIGKILL is a power cut, and everything stops mid-order. systemd is the manager who opens the place each morning and calls in a new cook when one walks out. Where it breaks: staff cannot ignore the manager, but a program can ignore SIGTERM, and only SIGKILL cannot be ignored.",
+   "diagram": "<svg viewBox=\"0 0 560 212\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"The permission string -rwxr-x--- split into type, owner rwx, group r-x and others ---, which add up to the octal digits 7, 5 and 0\"><text x=\"280\" y=\"24\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">ls -l shows -rwxr-x--- after chmod 750 deploy.sh</text><rect x=\"8\" y=\"44\" width=\"64\" height=\"56\" rx=\"10\" class=\"bx\"/><text x=\"40\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">-</text><text x=\"40\" y=\"85\" font-size=\"11\" text-anchor=\"middle\" class=\"t\">type</text><rect x=\"120\" y=\"44\" width=\"112\" height=\"56\" rx=\"10\" class=\"bxo\"/><text x=\"176\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">rwx</text><text x=\"176\" y=\"85\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">owner (u)</text><rect x=\"280\" y=\"44\" width=\"112\" height=\"56\" rx=\"10\" class=\"bxt\"/><text x=\"336\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">r-x</text><text x=\"336\" y=\"85\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">group (g)</text><rect x=\"440\" y=\"44\" width=\"112\" height=\"56\" rx=\"10\" class=\"bxg\"/><text x=\"496\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">---</text><text x=\"496\" y=\"85\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">others (o)</text><line x1=\"176\" y1=\"104\" x2=\"176\" y2=\"128\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"176\" y=\"150\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">7</text><text x=\"176\" y=\"170\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">4 + 2 + 1</text><line x1=\"336\" y1=\"104\" x2=\"336\" y2=\"128\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"336\" y=\"150\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">5</text><text x=\"336\" y=\"170\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">4 + 0 + 1</text><line x1=\"496\" y1=\"104\" x2=\"496\" y2=\"128\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"496\" y=\"150\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">0</text><text x=\"496\" y=\"170\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">0 + 0 + 0</text><text x=\"40\" y=\"150\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">file</text><text x=\"280\" y=\"198\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">r = 4 (read), w = 2 (write), x = 1 (execute)</text></svg>",
+   "diagram_caption": "Each permission triplet adds up to one octal digit: rwx = 7, r-x = 5, --- = 0.",
+   "worked": {
+    "title": "Find, reload and stop nginx in the container",
+    "steps": [
+     {
+      "say": "Install nginx quietly and start it by hand, since the container has no systemd. Then list its processes. One master runs as root and starts four workers as the `www-data` user (one per CPU here). The PPID column shows that the workers are the master's children.",
+      "code": "$ apt-get install -y -qq nginx > /dev/null 2>&1\n$ nginx\n$ ps -o user,pid,ppid,cmd -C nginx\nUSER         PID    PPID CMD\nroot          98       1 nginx: master process nginx\nwww-data      99      98 nginx: worker process\nwww-data     100      98 nginx: worker process\nwww-data     101      98 nginx: worker process\nwww-data     102      98 nginx: worker process",
+      "lang": "console"
+     },
+     {
+      "say": "Who listens on port 80? `ss -tlnp` names nginx and the master's PID, and `lsof` agrees. A request with curl gets `200 OK`. On your machine you may also see a line for `[::]:80`, the IPv6 version of the same port.",
+      "code": "$ ss -tlnp\nState    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process\nLISTEN   0        511              0.0.0.0:80            0.0.0.0:*      users:((\"nginx\",pid=98,fd=5))\n$ lsof -iTCP -sTCP:LISTEN -n -P\nCOMMAND PID USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME\nnginx    98 root    5u  IPv4 1297776      0t0  TCP *:80 (LISTEN)\n$ curl -sI localhost | head -n 1\nHTTP/1.1 200 OK",
+      "lang": "console"
+     },
+     {
+      "say": "Send SIGHUP to the master. nginx treats it as \"reload\": the master keeps its PID, starts new workers with the new settings and lets the old ones finish. The worker PIDs change while the server never stops listening.",
+      "code": "$ cat /run/nginx.pid\n98\n$ kill -HUP $(cat /run/nginx.pid)\n$ sleep 1\n$ ps -o user,pid,ppid,cmd -C nginx\nUSER         PID    PPID CMD\nroot          98       1 nginx: master process nginx\nwww-data     110      98 nginx: worker process\nwww-data     111      98 nginx: worker process\nwww-data     112      98 nginx: worker process\nwww-data     113      98 nginx: worker process",
+      "lang": "console"
+     },
+     {
+      "say": "Now stop it politely with SIGTERM. `pgrep` finds nothing and exits 1, and curl exits 7, which means it could not connect at all.",
+      "code": "$ kill $(cat /run/nginx.pid)\n$ sleep 1\n$ pgrep nginx\n$ echo $?\n1\n$ curl -s localhost\n$ echo $?\n7",
+      "lang": "console"
+     },
+     {
+      "say": "In a real server, systemd would do all of this. In the container it cannot. First the command is missing; after installing systemd, it refuses to work because it is not PID 1.",
+      "code": "$ systemctl status nginx\nbash: systemctl: command not found\n$ systemctl status nginx\nSystem has not been booted with systemd as init system (PID 1). Can't operate.\nFailed to connect to bus: Host is down",
+      "lang": "console"
+     },
+     {
+      "say": "The unit file still arrives with the nginx package, so you can read it. Its `ExecStart` line is how systemd starts nginx, and `ExecReload` sends the reload. The `WantedBy` line makes `enable` start it at boot. The task does the same with your own service in a VM.",
+      "code": "$ head -n 3 /usr/lib/systemd/system/nginx.service\n# Stop dance for nginx\n# =======================\n#\n$ grep -E '^(\\[|Exec|Wanted)' /usr/lib/systemd/system/nginx.service\n[Unit]\n[Service]\nExecStartPre=/usr/sbin/nginx -t -q -g 'daemon on; master_process on;'\nExecStart=/usr/sbin/nginx -g 'daemon on; master_process on;'\nExecReload=/usr/sbin/nginx -g 'daemon on; master_process on;' -s reload\nExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid\n[Install]\nWantedBy=multi-user.target",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "bash",
+     "title": "worker.sh",
+     "src": "#!/usr/bin/env bash\n# worker.sh: a pretend background worker for Day 6.\n# Every 2 seconds it \"processes\" one job and prints a line.\n# On SIGTERM it finishes the job it is on, then exits cleanly with code 0.\n# SIGKILL cannot be caught, so with kill -9 it stops at once, mid-job.\n\njob=0\nstop=0\n\n# on_term runs when SIGTERM arrives. shellcheck cannot see that, so we tell it.\n# shellcheck disable=SC2317\non_term() {\n  echo \"worker: got SIGTERM, finishing job $job, then exiting\"\n  stop=1\n}\n# trap: when SIGTERM arrives, run on_term instead of dying at once.\ntrap on_term TERM\n\necho \"worker: started with PID $$\"\nwhile [ \"$stop\" -eq 0 ]; do\n  job=$((job + 1))\n  echo \"worker: processing job $job\"\n  sleep 2\ndone\necho \"worker: stopped cleanly after job $job\"\nexit 0\n",
+     "run": "chmod +x worker.sh && ./worker.sh"
+    },
+    {
+     "lang": "ini",
+     "title": "hello-worker.service",
+     "src": "# hello-worker.service: run worker.sh as a systemd service (Day 6).\n# Install: sudo cp hello-worker.service /etc/systemd/system/\n#          sudo systemctl daemon-reload\n[Unit]\nDescription=Practice worker from Day 6\nAfter=network.target\n\n[Service]\n# The program to run. systemd starts it and keeps track of its PID.\nExecStart=/usr/local/bin/worker.sh\n# Start it again if it crashes, but not after a clean stop.\nRestart=on-failure\n# Run as the normal ubuntu user, not as root.\nUser=ubuntu\n# On stop, send SIGTERM to worker.sh only, so it can finish its current job.\n# Any other process left over afterwards gets SIGKILL.\nKillMode=mixed\n\n[Install]\n# Start at boot (when the machine reaches normal multi-user mode).\nWantedBy=multi-user.target\n",
+     "run": "sudo systemctl daemon-reload && sudo systemctl enable --now hello-worker"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "id",
+     "what": "Show your user, user ID and groups."
+    },
+    {
+     "cmd": "sudo systemctl restart nginx",
+     "what": "Run one command as root."
+    },
+    {
+     "cmd": "ls -l deploy.sh",
+     "what": "Show type, permissions, owner, group, size and time."
+    },
+    {
+     "cmd": "chmod 755 deploy.sh",
+     "what": "Set permissions in octal: rwx for the owner, r-x for group and others."
+    },
+    {
+     "cmd": "chmod u+x deploy.sh",
+     "what": "Let the owner run a script."
+    },
+    {
+     "cmd": "chown dev:dev key.txt",
+     "what": "Change owner and group. Needs root."
+    },
+    {
+     "cmd": "ps aux",
+     "what": "List every process with its user, PID and command."
+    },
+    {
+     "cmd": "pgrep -a nginx",
+     "what": "Find processes by name."
+    },
+    {
+     "cmd": "kill PID",
+     "what": "Send SIGTERM. Use `kill -9 PID` (SIGKILL) only if the process ignores it."
+    },
+    {
+     "cmd": "jobs",
+     "what": "List background and paused jobs. `fg` and `bg` resume them."
+    },
+    {
+     "cmd": "systemctl status nginx",
+     "what": "Is a service running? Shows its PID and recent log lines."
+    },
+    {
+     "cmd": "sudo systemctl enable --now nginx",
+     "what": "Start a service now and at every boot."
+    },
+    {
+     "cmd": "journalctl -u nginx -f",
+     "what": "Follow one service's logs. Ctrl+C stops."
+    },
+    {
+     "cmd": "df -h",
+     "what": "Show disk space for each file system."
+    },
+    {
+     "cmd": "du -sh * | sort -h",
+     "what": "Show folder sizes, smallest to largest."
+    },
+    {
+     "cmd": "ss -tlnp",
+     "what": "Show which process listens on which TCP port (Linux)."
+    }
+   ],
+   "mistake": "Reaching for `kill -9` or `sudo` first. SIGKILL gives the program no chance to finish requests or close files. sudo hides the real cause of a permission error and leaves root-owned files behind. Send SIGTERM and wait a few seconds; for \"Permission denied\", read `ls -l` and fix the owner or the one missing bit.",
+   "real_world": "At a made-up payments company, every service runs under systemd or Kubernetes, and both stop programs the same way: SIGTERM, a grace period, then SIGKILL. Code reviews check that services handle SIGTERM by finishing in-flight payments before they exit. When a machine misbehaves, on-call starts with `systemctl status`, `journalctl -u NAME --since`, `df -h` and `ss -tlnp`.",
+   "task": {
+    "title": "Run the worker as a systemd service in a VM",
+    "steps": [
+     "Install Multipass on your Mac with the installer from [canonical.com/multipass/install](https://canonical.com/multipass/install) (it needs macOS 14 or later). Then run `multipass launch 24.04 --name devbox` and `multipass shell devbox`.",
+     "In the VM, run `whoami`, `id` and `ps -p 1 -o pid,cmd`. Note your user, your groups, and what PID 1 is this time.",
+     "From your Mac, copy this lesson's two files into the VM's home folder with `multipass transfer worker.sh hello-worker.service devbox:.`.",
+     "In the VM, install the script so systemd can run it: put it in `/usr/local/bin` with mode 755, owned by root. Copy the unit file into `/etc/systemd/system/` and make systemd read it.",
+     "Start the service and check it with `systemctl status hello-worker`. Find its main PID and that PID's parent.",
+     "Follow its log with `journalctl -u hello-worker -f`. In a second Mac terminal, open another shell into the VM and stop the service. Find the two lines from the trap in the log.",
+     "Enable the service, reboot the VM with `sudo reboot`, wait a minute, open a shell again and check that it started on its own.",
+     "Check the VM's health: disk space, memory, load average and listening ports. Keep the VM for Day 7."
+    ],
+    "hints": [
+     "`sudo install -m 755 worker.sh /usr/local/bin/worker.sh` copies the file and sets its mode in one step.",
+     "After you add or change a unit file, systemd needs `sudo systemctl daemon-reload` before it sees the change.",
+     "`ps -o ppid= -p PID` prints only the parent's PID."
+    ],
+    "done_when": "You are done when, after the reboot, `systemctl is-active hello-worker` prints `active` and `journalctl -u hello-worker` shows the worker's \"stopped cleanly\" line from your earlier stop."
+   },
+   "explain_back": {
+    "prompt": "Explain in 3 to 4 sentences what happens when you run `docker stop` or `systemctl stop` on a program. Mention SIGTERM, SIGKILL, the grace period and exit code 137.",
+    "answer": "Both first send SIGTERM, a polite request that the program can catch to finish its work and exit. Then they wait a grace period: 10 seconds by default for docker stop. If the program is still running after that, they send SIGKILL, which cannot be caught and ends it at once. A process ended that way exits with 137, which is 128 plus signal 9, a sign that it ignored or mishandled SIGTERM."
+   },
+   "recap": [
+    "Every file has an owner, a group and rwx bits for owner, group and others; root (UID 0) skips the checks.",
+    "Octal adds r=4, w=2 and x=1: 755 for scripts and folders, 644 for files, 600 for secrets.",
+    "On a directory, `x` means you may enter it and `r` means you may list it.",
+    "Processes have PIDs and parents; `&`, `jobs`, `fg`, `bg` and Ctrl+Z manage jobs.",
+    "SIGTERM asks and SIGKILL forces; exit codes 130, 143 and 137 tell you which signal ended a process.",
+    "systemd runs services from unit files; `systemctl` controls them and `journalctl` reads their logs."
+   ],
+   "check": [
+    {
+     "q": "A file shows `-rw-r-----` and belongs to `app:ops`. User dana is in the group `ops` but is not the owner. What can dana do with it?",
+     "options": [
+      "Read it and write it",
+      "Read it only",
+      "Nothing at all",
+      "Run it as a program"
+     ],
+     "answer": 1,
+     "why": "Dana falls under the group triplet, which is `r--`."
+    },
+    {
+     "q": "`systemctl stop api` takes about 90 seconds every time, and the log ends with the service being killed. What should you check first?",
+     "options": [
+      "Whether the disk is full",
+      "Whether the unit is enabled",
+      "Whether port 80 is open",
+      "Whether api handles SIGTERM"
+     ],
+     "answer": 3,
+     "why": "systemd sent SIGTERM, waited out its stop timeout, then had to force the stop; a program that handles SIGTERM exits long before that."
+    },
+    {
+     "q": "You created `backup.sh` with mode 644, and `./backup.sh` says Permission denied. Which fix is right?",
+     "options": [
+      "`sudo ./backup.sh`",
+      "`chmod 777 backup.sh`",
+      "`chmod u+x backup.sh`",
+      "`chown root backup.sh`"
+     ],
+     "answer": 2,
+     "why": "Only the owner's execute bit is missing; sudo and 777 give away far more than the problem needs."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the difference between SIGTERM and SIGKILL, and why does it matter for containers?",
+     "a": "SIGTERM asks a process to stop, and the process can catch it to finish its work and exit cleanly. SIGKILL cannot be caught and ends the process immediately, with no cleanup. Docker and Kubernetes send SIGTERM first, wait a grace period (10 seconds for docker stop, 30 by default for a pod), then send SIGKILL. An app that handles SIGTERM can finish its requests during a rollout instead of dropping them."
+    },
+    {
+     "q": "What do 755 and 644 mean, and what does x mean on a directory?",
+     "a": "Each digit covers one of owner, group and others, adding read 4, write 2 and execute 1. So 755 is rwxr-xr-x, typical for scripts and folders, and 644 is rw-r--r--, typical for plain files. On a directory, x means you may enter it and reach the files inside by name, and r means you may list its contents. With x but no r, people can open a file only if they know its exact name."
+    },
+    {
+     "q": "A service on a Linux server keeps failing. How do you investigate?",
+     "a": "I start with `systemctl status NAME`, which shows the state, the last exit code and the latest log lines. Then `journalctl -u NAME --since '1 hour ago'` gives the full story, or `-f` while I restart it. I check the usual suspects: `df -h` for a full disk, `free -h` for memory and `ss -tlnp` for a port that another program already holds. If someone edited the unit file, I make sure `daemon-reload` ran."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Learning to read `systemctl status` pays off on every server you touch. The course container cannot run systemd, so this walk-through uses the example from the official systemctl manual, for a Bluetooth service:\n\n- `● bluetooth.service - Bluetooth service` is the unit name and its description. The dot shows the state at a glance: a green dot for active, a white circle for inactive, a red cross for failed.\n- `Loaded: loaded (/usr/lib/systemd/system/bluetooth.service; enabled; preset: enabled)` gives the unit file's path and says the service is enabled, so it starts at boot.\n- `Active: active (running) since Wed 2017-01-04 13:54:04 EST; 1 weeks 0 days ago` is the current state and how long it has been in it. A crashed service shows `failed` here, often with an exit code.\n- `Main PID: 930 (bluetoothd)` is the process systemd watches. When it exits, systemd decides whether to restart it.\n- `Tasks: 1`, `Memory: 648.0K` and `CPU: 435ms` are what the service uses right now.\n- `CGroup: /system.slice/bluetooth.service` lists every process in the service's control group, a kernel feature that keeps a service's processes together.\n\nAfter a blank line come the last log lines, in the same format as journalctl: date and time, host name, process name with its PID in brackets, then the message. For example: `Jan 12 10:46:45 example.com bluetoothd[8900]: Not enough free handles to register service`.\n\nTwo settings in your own unit file connect to today's signals. `Restart=on-failure` makes systemd start the worker again if it crashes or is killed, but not after a clean stop. Try it in the VM: find the main PID and send it `kill -9`. Then run `systemctl status hello-worker` again and the Main PID has changed, because systemd started a fresh copy.\n\n`KillMode=mixed` controls what `systemctl stop` does. By default systemd sends SIGTERM to every process in the control group at once, including the `sleep` inside the worker's loop. With `mixed`, only the main process gets SIGTERM, so the worker can finish its current job and exit cleanly. Any process still around afterwards gets SIGKILL. The nginx unit file you read in the worked example uses the same setting."
+   },
+   "sources": [
+    {
+     "title": "systemctl manual (freedesktop.org)",
+     "url": "https://www.freedesktop.org/software/systemd/man/latest/systemctl.html"
+    },
+    {
+     "title": "systemd.kill(5) manual page",
+     "url": "https://man7.org/linux/man-pages/man5/systemd.kill.5.html"
+    },
+    {
+     "title": "docker container stop (Docker docs)",
+     "url": "https://docs.docker.com/reference/cli/docker/container/stop/"
+    },
+    {
+     "title": "Missing Semester 2026: Command-line environment (MIT)",
+     "url": "https://missing.csail.mit.edu/2026/command-line-environment/"
+    }
+   ]
+  },
+  {
+   "id": "d07",
+   "title": "Environment, packages, SSH and shell scripts",
+   "minutes": 50,
+   "goal": "By the end you can set and pass on environment variables, explain how the shell finds a command, install packages, log in to a server with SSH keys, and write a safe bash script that CI can trust.",
+   "guess": {
+    "q": "A script `setenv.sh` contains `export GREETING=hi`. You run `./setenv.sh`, then `echo $GREETING` in the same terminal. What prints?",
+    "options": [
+     "`hi`",
+     "An empty line",
+     "`GREETING=hi`",
+     "An error: GREETING not found"
+    ],
+    "answer": 1,
+    "why": "The script runs as a child process with its own copy of the environment, and its export dies with it. Running `source setenv.sh` runs the lines inside your shell instead."
+   },
+   "terms": [
+    {
+     "term": "Environment variable",
+     "plain": "A named setting that a process passes down to every program it starts, such as PATH."
+    },
+    {
+     "term": "export",
+     "plain": "The shell command that turns a shell variable into an environment variable."
+    },
+    {
+     "term": "PATH",
+     "plain": "A colon-separated list of folders the shell searches, in order, to find a command."
+    },
+    {
+     "term": "Package manager",
+     "plain": "A tool that downloads, installs and updates software, such as apt on Ubuntu or brew on a Mac."
+    },
+    {
+     "term": "SSH key pair",
+     "plain": "A private key you keep secret and a public key you give to servers, used to log in without a password."
+    },
+    {
+     "term": "Shebang",
+     "plain": "The first line of a script, such as #!/usr/bin/env bash, which names the program that runs it."
+    },
+    {
+     "term": "Strict mode",
+     "plain": "The line set -euo pipefail: stop on errors, on unset variables and on failures inside pipes."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Variables and the environment",
+     "body": "The shell has variables. Set one with `name=value` and read it with `$name`:\n\n- After `GREETING=hi`, the command `echo $GREETING` prints `hi`.\n- There are no spaces around `=`. The line `name = alice` runs a program called `name` with two arguments, and bash answers `name: command not found`.\n- Values are strings. Quote a value that has spaces: `name=\"Ada Lovelace\"`.\n\nA plain variable lives only in the current shell. An environment variable is one that the shell hands down to every program it starts, and `export GREETING` turns one into the other. The lab shows the difference:\n\n- Before export, `bash -c 'echo \"child sees [$GREETING]\"'` prints `child sees []`.\n- After `export GREETING`, the same line prints `child sees [hi]`.\n- Writing `GREETING=hey cmd` sets the variable for that one command only.\n- `unset GREETING` removes it.\n\nThe copy only flows down. A child gets a copy of its parent's environment, and nothing the child changes ever flows back up. That is why a script that runs `export` cannot change your terminal, just as Day 3's `cd` inside a script cannot move you.\n\nTo see the whole environment, run `env` or `printenv`, and `printenv HOME` prints one value. This is how one hello-devops image runs everywhere: it reads `APP_VERSION`, `GREETING`, `REDIS_HOST` and `PORT` from its environment, and Docker, Compose and Kubernetes each set them.",
+     "refs": [
+      {
+       "title": "Missing Semester 2026: Command-line environment (MIT)",
+       "url": "https://missing.csail.mit.edu/2026/command-line-environment/",
+       "kind": "read"
+      },
+      {
+       "title": "Lecture 2: Command-line environment (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=ccBGsPedE9Q",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "PATH: how the shell finds a command",
+     "body": "When you type `jq`, the shell must find a program file called jq. It looks through the folders in the `PATH` variable, in order, and runs the first match. Colons separate the folders. In the container, `echo $PATH` prints `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`. Two commands show what will run:\n\n- `which jq` prints the file it found: `/usr/bin/jq`.\n- `type` also knows the shell's own commands. For `type cd ls jq` it says that cd is a shell builtin, ls is an alias for `ls --color=auto`, and jq is `/usr/bin/jq`.\n\nIf no folder has the program, you get `command not found` and exit code 127. To add your own folder, put it in front of the list: `export PATH=\"$HOME/bin:$PATH\"`. The `$PATH` at the end keeps the old folders.\n\nAn export lasts until you close the terminal. To keep a setting, put the line in a startup file, which the shell reads when it starts:\n\n- On your Mac, zsh reads `~/.zshrc` for every interactive shell. Homebrew's setup from Day 2 lives in `~/.zprofile`, which login shells read first.\n- On Linux, bash reads `~/.bashrc` for interactive shells. A login shell, such as an SSH session, reads `~/.profile`, and Ubuntu's default `~/.profile` then loads `~/.bashrc`.\n\nAfter editing one, open a new terminal, or run `source ~/.zshrc` to load it into the shell you are in.",
+     "refs": [
+      {
+       "title": "GNU Bash Reference Manual",
+       "url": "https://www.gnu.org/software/bash/manual/bash.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Package managers: apt, dnf, apk and brew",
+     "body": "A package manager downloads software, puts its files in the right places, remembers what it installed and updates it later. Each Linux family has its own:\n\n- Ubuntu and Debian use apt. Run `apt-get update` first to refresh the list of available packages, then `apt-get install -y jq`. On a server, put `sudo` in front.\n- Fedora and Red Hat use dnf, as in `sudo dnf install jq`.\n- Alpine Linux, popular for small container images, uses apk: `apk add --no-cache jq`.\n- Your Mac uses Homebrew: `brew install jq`.\n\nOn Ubuntu there are two commands. The newer `apt` is friendly at a terminal, with progress bars and `apt search`. The older `apt-get` keeps its output stable, which is what scripts and Dockerfiles need. Pipe `apt` into another command and it warns you itself: `WARNING: apt does not have a stable CLI interface. Use with caution in scripts.`\n\nTwo lookups help when something is missing. `dpkg -S /usr/bin/jq` tells you which package owns a file; here it prints `jq: /usr/bin/jq`. And [command-not-found.com](https://command-not-found.com) tells you which package provides a command on each system. You will write `apt-get` and `apk` lines in Dockerfiles from Day 13 on.",
+     "refs": [
+      {
+       "title": "command-not-found.com: which package gives you a command",
+       "url": "https://command-not-found.com",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "SSH: log in to another machine with keys",
+     "body": "SSH (Secure Shell) gives you a shell on another machine over an encrypted connection. Running `ssh ubuntu@192.168.64.5` logs you in as ubuntu. Passwords work, but keys are safer and quicker. A key pair is two files:\n\n- The private key, `~/.ssh/id_ed25519`, stays on your laptop. It works like a password, so never copy it anywhere else.\n- The public key, `~/.ssh/id_ed25519.pub`, is safe to share. You put it on servers and in GitHub.\n\nCreate a pair with `ssh-keygen -t ed25519 -C \"you@example.com\"`, and set a passphrase when it asks. Afterwards, `ls -l ~/.ssh` shows the private key with mode `-rw-------` (600) and the public one with `-rw-r--r--` (644).\n\nA server keeps the public keys it trusts in `~/.ssh/authorized_keys`, one per line. When you connect, it checks that you hold the matching private key. The private key itself never leaves your laptop.\n\nTrust also runs the other way. The first time you connect, ssh shows the server's fingerprint and asks `Are you sure you want to continue connecting (yes/no/[fingerprint])?`. Saying yes stores it in `~/.ssh/known_hosts`. If that fingerprint ever changes, ssh refuses to connect, because someone may be pretending to be your server.\n\nFour more tools make SSH pleasant:\n\n- The file `~/.ssh/config` gives hosts short names, so `ssh devbox` replaces a long command (see the files below).\n- The ssh-agent program holds your unlocked key, so you type the passphrase once. On a Mac, `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` keeps it in your Keychain.\n- `scp app.log devbox:/tmp/` copies a file over SSH.\n- `rsync -av logs/ devbox:/tmp/logs/` copies a folder. Run it again and it sends only what changed.",
+     "refs": [
+      {
+       "title": "Generating a new SSH key and adding it to the ssh-agent (GitHub docs)",
+       "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent",
+       "kind": "docs"
+      },
+      {
+       "title": "ssh-keygen(1) manual page (man7.org)",
+       "url": "https://www.man7.org/linux/man-pages/man1/ssh-keygen.1.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Your first bash script",
+     "body": "A script is a text file of commands. Three things make it runnable:\n\n1. The first line is a shebang, `#!/usr/bin/env bash`. It tells the system to run the file with bash, wherever bash is installed. Use it on your Mac too, so scripts behave the same everywhere.\n2. The file needs the execute bit: `chmod +x script.sh` (Day 6).\n3. You run it with a path, `./script.sh`, because your current folder is not in PATH.\n\nScripts get their arguments as numbered variables:\n\n- `$1`, `$2` and so on are the arguments, and `$0` is the script's own name.\n- `$#` is how many arguments there are.\n- `\"$@\"` is all of them, each kept as a separate word. Running `./args.sh deploy \"eu west\" 3` gives three arguments, and `eu west` stays one of them.\n\nQuoting decides what the shell does to a value. It causes more script bugs than anything else:\n\n- Single quotes keep everything literal: `echo 'Hello, $name'` prints `Hello, $name`.\n- Double quotes still replace variables: `echo \"Hello, $name\"` prints `Hello, Ada Lovelace`.\n- No quotes means the shell splits the value on spaces and expands globs in it. With `file=\"my notes.txt\"`, `ls $file` looks for two files, while `ls \"$file\"` works.\n\nSo write `\"$var\"` and `\"$(command)\"` in double quotes unless you have a reason not to.\n\nEvery command returns an exit code, and so does your script. The variable `$?` holds the last one. `exit 0` ends a script with success, and `exit 1` (or any number up to 255) with failure. CI systems such as GitHub Actions (Day 18) look only at that number: anything but 0 fails the step.",
+     "refs": [
+      {
+       "title": "Lecture 2: Shell tools and scripting (Missing Semester, MIT)",
+       "url": "https://www.youtube.com/watch?v=kgII-YWo3Zw",
+       "kind": "watch"
+      },
+      {
+       "title": "Bash in 100 seconds (Fireship)",
+       "url": "https://www.youtube.com/watch?v=I4EWvMFj37g",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Conditions, loops and functions",
+     "body": "The `if` keyword runs a command and checks its exit code. In bash, `[[ ... ]]` is a command made for tests:\n\n- `[[ -f app.log ]]` is true if the file exists, and `-d` checks for a directory.\n- `[[ \"$a\" == \"$b\" ]]` compares strings, and `[[ $n -gt 9 ]]` compares numbers. Its friends are `-lt`, `-ge`, `-le`, `-eq` and `-ne`.\n- `if grep -q ERROR app.log; then ... fi` works because grep returns 0 on a match.\n- The older `[ ... ]`, also called `test`, works in every shell but has more quoting traps. Prefer `[[ ]]` in bash.\n\nLoops repeat work:\n\n- `for f in logs/*.log; do echo \"$f: $(grep -c ERROR \"$f\")\"; done` prints an error count for each file.\n- `while IFS= read -r line; do ...; done < app.log` reads a file line by line, keeping spaces and backslashes exactly as they are.\n\nA function is a named group of commands, such as `log() { echo \"healthcheck: $*\" >&2; }`. Inside it, `$1` and friends are the function's own arguments, and `local` keeps a variable from leaking out. The line `return 1` sets the function's exit code, which `if` and `||` can test. And `>&2` sends a message to stderr, so it never mixes with the script's real output.",
+     "refs": [
+      {
+       "title": "Bash manual: Conditional expressions",
+       "url": "https://www.gnu.org/software/bash/manual/html_node/Bash-Conditional-Expressions.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Safe scripts: strict mode, trap and ShellCheck",
+     "body": "By default bash forgives too much. A failed command does not stop the script, a typo in a variable name becomes an empty string, and a pipe hides failures. One line at the top fixes most of that: `set -euo pipefail`.\n\n- `-e` exits as soon as a command fails. Commands in an `if` test or before `&&` and `||` are exempt, because there a failure is expected.\n- `-u` makes an unset variable an error. Under it, `echo \"deploying to $DEPLOY_DIR\"` stops with `DEPLOY_DIR: unbound variable` instead of deploying to an empty path.\n- `-o pipefail` makes a pipe fail when any part fails. `cat nope.txt | sort` exits 0 without it and 1 with it.\n\nStrict mode has a cost. Because grep exits 1 when it finds nothing, under `-e` an empty search ends your script. Write `grep -q FATAL app.log || true` when no match is fine. For a variable that must be set, `${DIR:?DIR is not set}` stops the script with that message. Here is why that matters: with an empty `DIR`, the line `rm -rf \"$DIR/\"*` expands to every folder under `/`.\n\nTo clean up whatever happens, use `trap 'cleanup commands' EXIT`. It runs when the script ends, on success or failure, so temp files made with `mktemp` always get deleted.\n\nFinally, run ShellCheck on every script: `shellcheck script.sh`. It is installed in the lab container, and on a Mac you add it with `brew install shellcheck`. It knows hundreds of bash traps and explains each one with a code. For an unquoted variable it reports SC2086, \"Double quote to prevent globbing and word splitting.\" ShellCheck exits non-zero when it finds problems, so CI can run it too. Once a script needs real data structures or grows past about a hundred lines, write it in Python or Kotlin instead.",
+     "refs": [
+      {
+       "title": "Bash manual: The Set Builtin",
+       "url": "https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html",
+       "kind": "docs"
+      },
+      {
+       "title": "ShellCheck: finds bugs in shell scripts",
+       "url": "https://www.shellcheck.net/",
+       "kind": "read"
+      },
+      {
+       "title": "Writing shell scripts: errors, signals and traps (LinuxCommand.org)",
+       "url": "https://linuxcommand.org/lc3_wss0150.php",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "Environment variables work like a family recipe card. When a child leaves home, the parent gives it a photocopy. The child can scribble on that copy and pass copies to its own children, but the parent's card never changes. Where it breaks: a real child can phone home with news, while a Linux process has no way at all to edit its parent's environment.",
+   "diagram": "<svg viewBox=\"0 0 560 196\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Exported variables are copied from your shell to each child process and on to its children; a change made in a child never flows back to the parent\"><text x=\"280\" y=\"24\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">export copies variables down to every child process</text><rect x=\"8\" y=\"44\" width=\"112\" height=\"54\" rx=\"10\" class=\"bxo\"/><text x=\"64\" y=\"68\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">your shell</text><text x=\"64\" y=\"84\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">GREETING=hi</text><rect x=\"216.0\" y=\"44\" width=\"128\" height=\"54\" rx=\"10\" class=\"bxt\"/><text x=\"280\" y=\"68\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">python app.py</text><text x=\"280\" y=\"84\" font-size=\"11\" text-anchor=\"middle\" class=\"tk\">gets a copy</text><rect x=\"440.0\" y=\"44\" width=\"112\" height=\"54\" rx=\"10\" class=\"bx\"/><text x=\"496\" y=\"68\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">its child</text><text x=\"496\" y=\"84\" font-size=\"11\" text-anchor=\"middle\" class=\"t\">copy of copy</text><line x1=\"122\" y1=\"71\" x2=\"214\" y2=\"71\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"346\" y1=\"71\" x2=\"438\" y2=\"71\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"168\" y=\"62\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">copy</text><text x=\"392\" y=\"62\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">copy</text><line x1=\"280\" y1=\"100\" x2=\"280\" y2=\"140\" class=\"lnd\"/><line x1=\"280\" y1=\"140\" x2=\"64\" y2=\"140\" class=\"lnd\"/><line x1=\"64\" y1=\"140\" x2=\"64\" y2=\"102\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"172\" y=\"160\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">no way back: a child cannot change its parent</text><text x=\"280\" y=\"184\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">GREETING=hey inside python app.py leaves your shell's value alone</text></svg>",
+   "diagram_caption": "Exported variables flow down as copies. Nothing a child changes reaches its parent.",
+   "worked": {
+    "title": "A health check script for hello-devops, ready for CI",
+    "steps": [
+     {
+      "say": "Save `healthcheck.sh` (below) in `~/code/hello-devops` and make it executable. ShellCheck prints nothing and exits 0, which means it found nothing to warn about. `bash -n` checks the syntax without running anything.",
+      "code": "$ chmod +x healthcheck.sh\n$ shellcheck healthcheck.sh\n$ echo $?\n0\n$ bash -n healthcheck.sh && echo 'syntax OK'\nsyntax OK",
+      "lang": "console"
+     },
+     {
+      "say": "With the app stopped, curl cannot connect: it prints nothing and exits 7. The script retries, then fails the way CI needs, with exit code 1. Here `RETRIES` and `DELAY` are environment variables set for this one run, so the test is quick.",
+      "code": "$ curl -s localhost:8000/healthz\n$ echo $?\n7\n$ RETRIES=3 DELAY=1 ./healthcheck.sh\nhealthcheck: try 1/3: /healthz answered 000\nhealthcheck: try 2/3: /healthz answered 000\nhealthcheck: try 3/3: /healthz answered 000\nhealthcheck: FAIL /healthz never answered 200\n$ echo $?\n1",
+      "lang": "console"
+     },
+     {
+      "say": "Start the app in a second terminal with `python app.py` (in your venv from Day 2). Both checks pass and the exit code is 0. With `2> /dev/null` the log lines disappear, and `&&` runs the next step only after success.",
+      "code": "$ curl -s localhost:8000/healthz\n{\"status\":\"ok\"}\n$ ./healthcheck.sh\nhealthcheck: OK   /healthz answered 200\nhealthcheck: OK   /readyz answered 200\nhealthcheck: all checks passed for http://localhost:8000\n$ echo $?\n0\n$ ./healthcheck.sh 2> /dev/null && echo 'smoke test passed: carry on with the deploy'\nsmoke test passed: carry on with the deploy",
+      "lang": "console"
+     },
+     {
+      "say": "Wrong usage is a different failure, so it gets its own exit code, 2, and a usage line on stderr. A caller can tell \"the app is down\" apart from \"you called me wrong\".",
+      "code": "$ ./healthcheck.sh http://localhost:8000 extra\nusage: ./healthcheck.sh [BASE_URL]\n$ echo $?\n2",
+      "lang": "console"
+     },
+     {
+      "say": "Readiness matters too. Restart the app as `REDIS_HOST=127.0.0.1 python app.py`, where no Redis runs. Then `/healthz` still answers 200, because the process is alive, but `/readyz` answers 503, so the script fails on readiness.",
+      "code": "$ curl -s localhost:8000/readyz\n{\"status\":\"redis unavailable\"}\n$ RETRIES=3 DELAY=1 ./healthcheck.sh\nhealthcheck: OK   /healthz answered 200\nhealthcheck: try 1/3: /readyz answered 503\nhealthcheck: try 2/3: /readyz answered 503\nhealthcheck: try 3/3: /readyz answered 503\nhealthcheck: FAIL /readyz never answered 200\n$ echo $?\n1",
+      "lang": "console"
+     },
+     {
+      "say": "In CI, the script is one step. GitHub Actions (Day 18) runs it and fails the job on any exit code other than 0, with no extra wiring. This is the whole point of exit codes: one number that every tool understands.",
+      "code": "- name: Smoke test the app\n  run: ./healthcheck.sh http://localhost:8000",
+      "lang": "yaml"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "bash",
+     "title": "healthcheck.sh",
+     "src": "#!/usr/bin/env bash\n# healthcheck.sh: check that hello-devops is alive and ready.\n# Usage:    ./healthcheck.sh [BASE_URL]     (default: http://localhost:8000)\n# Settings: RETRIES (default 5) and DELAY in seconds (default 2).\n# Exit code: 0 healthy, 1 a check failed, 2 wrong usage. CI reads this number.\nset -euo pipefail\n\nif [[ $# -gt 1 ]]; then\n  echo \"usage: $0 [BASE_URL]\" >&2\n  exit 2\nfi\n\nbase_url=\"${1:-http://localhost:8000}\"\nretries=\"${RETRIES:-5}\"\ndelay=\"${DELAY:-2}\"\n\n# log: print a message to stderr, so it never mixes with real output.\nlog() {\n  echo \"healthcheck: $*\" >&2\n}\n\n# check PATH: ask for one URL until it answers 200, or give up.\ncheck() {\n  local path=\"$1\"\n  local attempt code\n  for ((attempt = 1; attempt <= retries; attempt++)); do\n    # -s: no progress bar. -o /dev/null: throw the body away.\n    # -w '%{http_code}': print only the status code (000 if nothing answered).\n    # --max-time 5: give up on this try after 5 seconds.\n    # || true: curl fails when it cannot connect; we handle that ourselves.\n    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \"${base_url}${path}\" || true)\n    if [[ \"$code\" == \"200\" ]]; then\n      log \"OK   ${path} answered 200\"\n      return 0\n    fi\n    log \"try ${attempt}/${retries}: ${path} answered ${code}\"\n    if ((attempt < retries)); then\n      sleep \"$delay\"\n    fi\n  done\n  log \"FAIL ${path} never answered 200\"\n  return 1\n}\n\ncheck /healthz || exit 1\ncheck /readyz || exit 1\nlog \"all checks passed for ${base_url}\"\n",
+     "run": "chmod +x healthcheck.sh && ./healthcheck.sh; echo \"exit code: $?\""
+    },
+    {
+     "lang": "text",
+     "title": "~/.ssh/config",
+     "src": "# ~/.ssh/config: short names for machines you connect to often.\n# Lines that start with # are comments. Comments must be on their own line.\n\n# Your Multipass VM from Day 6. Replace the address with the IPv4\n# that `multipass info devbox` prints.\nHost devbox\n    HostName 192.168.64.5\n    User ubuntu\n    IdentityFile ~/.ssh/id_ed25519\n\n# macOS only: keep the key's passphrase in your Keychain.\nHost *\n    AddKeysToAgent yes\n    UseKeychain yes\n",
+     "run": "chmod 600 ~/.ssh/config && ssh devbox uptime"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "export NAME=value",
+     "what": "Set a variable for this shell and every program it starts."
+    },
+    {
+     "cmd": "printenv PATH",
+     "what": "Print one environment variable."
+    },
+    {
+     "cmd": "type jq",
+     "what": "Show whether a name is a builtin, an alias or a program file, and where."
+    },
+    {
+     "cmd": "source ~/.zshrc",
+     "what": "Run a startup file again inside the current shell."
+    },
+    {
+     "cmd": "sudo apt-get update && sudo apt-get install -y jq",
+     "what": "Install a package on Ubuntu or Debian."
+    },
+    {
+     "cmd": "apk add --no-cache curl",
+     "what": "Install a package in an Alpine container."
+    },
+    {
+     "cmd": "ssh-keygen -t ed25519 -C \"you@example.com\"",
+     "what": "Create an SSH key pair."
+    },
+    {
+     "cmd": "ssh devbox 'uptime'",
+     "what": "Run one command on a server over SSH."
+    },
+    {
+     "cmd": "scp app.log devbox:/tmp/",
+     "what": "Copy a file to a server over SSH."
+    },
+    {
+     "cmd": "rsync -av logs/ devbox:/tmp/logs/",
+     "what": "Copy a folder; later runs send only what changed."
+    },
+    {
+     "cmd": "chmod +x script.sh && ./script.sh",
+     "what": "Make a script runnable and run it."
+    },
+    {
+     "cmd": "echo $?",
+     "what": "Print the exit code of the last command."
+    },
+    {
+     "cmd": "set -euo pipefail",
+     "what": "Strict mode: stop on errors, unset variables and failed pipes."
+    },
+    {
+     "cmd": "shellcheck script.sh",
+     "what": "Find bugs and risky habits in a shell script."
+    },
+    {
+     "cmd": "bash -x script.sh",
+     "what": "Run a script and print each command before it runs, for debugging."
+    }
+   ],
+   "mistake": "Leaving variables unquoted. A line like `rm $file` works until the value holds a space or a `*`, and then the shell splits or expands it and the command hits the wrong files. Write `\"$var\"` every time, and let ShellCheck point out the ones you missed.",
+   "real_world": "At a made-up payments company, every deploy pipeline ends with a smoke test much like `healthcheck.sh`. It is a short strict-mode script that exits non-zero and stops the rollout when the new version does not answer. Engineers reach servers over SSH with keys and a shared config file, never with passwords. ShellCheck runs in CI on every script in the repository.",
+   "task": {
+    "title": "A log alert script, run on your VM over SSH",
+    "steps": [
+     "On your Mac, run `ls ~/.ssh`. If there is no `id_ed25519`, create a key pair with a passphrase.",
+     "Give the VM your public key: run `multipass transfer ~/.ssh/id_ed25519.pub devbox:mac.pub`, then add that file's line to `~/.ssh/authorized_keys` inside the VM.",
+     "Find the VM's address with `multipass info devbox`, add a `Host devbox` entry to `~/.ssh/config`, and run `ssh devbox uptime`. Answer the fingerprint question once.",
+     "Write `log-alert.sh`. It takes a log file and a threshold, counts the ERROR lines, prints the count, and exits 1 if the count reaches the threshold, otherwise 0. Use strict mode, quote every variable and check that the file exists.",
+     "Make it print a usage line to stderr and exit 2 when it gets the wrong number of arguments.",
+     "Run ShellCheck until it is quiet. Test the script on `app.log` with thresholds 3 and 10, printing the exit code each time.",
+     "Copy the script and `app.log` to the VM with scp, and the `logs` folder with rsync. Run the rsync twice and compare the two outputs.",
+     "Run the script on the VM from your Mac in one line: `ssh devbox './log-alert.sh app.log 3'; echo $?`.",
+     "When you have finished Part 1, delete the VM with `multipass delete devbox`. Older Multipass versions also need `multipass purge`."
+    ],
+    "hints": [
+     "`[[ $# -eq 2 ]] || usage` checks the argument count in one line.",
+     "`grep -c` exits 1 when the count is zero, so put `|| true` inside the `$( )` to keep strict mode from stopping the script.",
+     "Inside the VM, `cat ~/mac.pub >> ~/.ssh/authorized_keys` appends without replacing what is there."
+    ],
+    "done_when": "You are done when `ssh devbox './log-alert.sh app.log 3'; echo $?` shows a count of 4 and then exit code 1, and ShellCheck has nothing to say about your script."
+   },
+   "explain_back": {
+    "prompt": "Explain in 3 to 4 sentences what `set -euo pipefail` protects against. Give one example for each part, and one case where you need `|| true`.",
+    "answer": "The `-e` part stops the script when a command fails, so a failed build does not go on to deploy. The `-u` part turns an unset variable into an error, so a typo like `$DEPLOY_DIRR` stops the script instead of becoming an empty path. With `-o pipefail` a pipe fails when any part fails, so `build | tee build.log` reports the build's failure instead of tee's success. Because grep returns 1 when it finds nothing, you write `grep ... || true` when no match is acceptable."
+   },
+   "recap": [
+    "Exported variables are copied to child processes, and nothing flows back to the parent.",
+    "The shell finds commands through PATH; `which` and `type` show what will run, and 127 means not found.",
+    "apt, dnf, apk and brew install software; scripts and Dockerfiles use `apt-get`.",
+    "SSH keys: the private key stays home, the public key goes in `authorized_keys`, and `~/.ssh/config` names hosts.",
+    "Scripts need a shebang, `chmod +x`, quoted `\"$var\"`, and explicit exit codes; `$1`, `\"$@\"` and `$#` hold the arguments.",
+    "Start scripts with `set -euo pipefail`, clean up with `trap ... EXIT`, and run ShellCheck."
+   ],
+   "check": [
+    {
+     "q": "A script with `set -e` runs `count=$(grep -c TODO notes.md)`, and notes.md has no TODO lines. What happens?",
+     "options": [
+      "count becomes 0 and the script goes on",
+      "The script stops, because grep exited 1",
+      "count stays unset, and -u reports it",
+      "bash prints a warning and keeps going"
+     ],
+     "answer": 1,
+     "why": "grep -c prints 0 but exits 1 when nothing matches, and set -e stops on that; add `|| true` inside the `$( )` if zero is fine."
+    },
+    {
+     "q": "You installed a tool in `~/tools/bin` and ran `export PATH=\"$HOME/tools/bin:$PATH\"`. The next day a new terminal says command not found. Why?",
+     "options": [
+      "The tool lost its execute bit overnight",
+      "The tool must live in /usr/bin to work",
+      "The export lasted one shell; put it in ~/.zshrc",
+      "PATH is reset whenever the Mac sleeps"
+     ],
+     "answer": 2,
+     "why": "An export only lives in the shell where you ran it; a startup file sets it again in every new shell."
+    },
+    {
+     "q": "Which line passes a file name that may contain spaces to `deploy.sh` as one argument?",
+     "options": [
+      "`./deploy.sh \"$file\"`",
+      "`./deploy.sh $file`",
+      "`./deploy.sh '$file'`",
+      "`./deploy.sh ${file}`"
+     ],
+     "answer": 0,
+     "why": "Double quotes expand the variable but stop word splitting; single quotes would pass the text `$file` itself."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What does `set -euo pipefail` do, and what is the catch?",
+     "a": "It makes bash stop on the first failing command (-e), treat unset variables as errors (-u) and fail a pipeline when any part fails (-o pipefail). Together they stop a script from carrying on after a failure and reporting success. The catch is that some commands use non-zero codes for normal results. For example, grep returns 1 for no match, so you add `|| true` where that is fine. Also, `-e` has exceptions inside conditions, so treat it as a safety net and still check the important steps yourself."
+    },
+    {
+     "q": "How does SSH key authentication work?",
+     "a": "You generate a key pair; the private key stays on your machine and the public key goes into the server's `~/.ssh/authorized_keys`. When you connect, the server sends a challenge that only the holder of the private key can sign. It checks the signature with the public key, so the private key never crosses the network. The client also checks the server's host key against `known_hosts`, which protects you from talking to an impostor."
+    },
+    {
+     "q": "Why can't a script change the environment variables of the terminal that ran it?",
+     "a": "Running `./script.sh` starts a new bash process, a child of your shell. The child gets a copy of the parent's environment, and an export in the child changes only that copy, which disappears when the child exits. To change your current shell you `source` the file, which runs its lines in the current process. The same rule is why `cd` inside a script does not move your terminal."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Three details make the difference between a script that works on your laptop and one that works everywhere.\n\nFirst, the Mac's own bash is old. macOS still ships bash 3.2 from 2007, and its default shell has been zsh since 2019. A script with `#!/usr/bin/env bash` runs under that bash 3.2 unless you installed a newer one with Homebrew. Linux servers and CI runners have bash 5. So avoid bash 4 features in scripts you share, such as associative arrays (`declare -A`) and `mapfile`. Everything in `healthcheck.sh` works in both versions.\n\nSecond, strict mode is a trade-off, and some experienced engineers argue against `set -e` ([one such argument](https://jmmv.dev/2018/03/shell-readability-strict-mode.html)). Its exceptions are subtle. It does not fire inside `if` tests, on the left of `&&` or `||`, or inside a function called from such a place. A script can therefore keep running after a failure you expected to stop it. The practical answer most teams use is to keep strict mode as a safety net and still check the steps that matter explicitly, as `healthcheck.sh` does with `check /healthz || exit 1`.\n\nThird, when a script misbehaves, make it show its work. Run it with `bash -x script.sh`, or put `set -x` near the top. bash then prints every command after expansion, with a `+` in front, before running it. You see the real values of variables and the real result of each glob, which is Day 3's `echo` habit, built in. Turn it off again with `set +x`.\n\nA last habit for scripts that run in CI: send messages for humans to stderr and keep stdout for data. `healthcheck.sh` does this with its `log` function. Then `./healthcheck.sh 2> /dev/null` stays quiet, and a later step can still pipe the real output into jq or grep without the chatter getting in the way."
+   },
+   "sources": [
+    {
+     "title": "Missing Semester 2026: Command-line environment (MIT)",
+     "url": "https://missing.csail.mit.edu/2026/command-line-environment/"
+    },
+    {
+     "title": "Bash manual: The Set Builtin",
+     "url": "https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html"
+    },
+    {
+     "title": "Generating a new SSH key and adding it to the ssh-agent (GitHub docs)",
+     "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent"
+    },
+    {
+     "title": "ShellCheck",
+     "url": "https://www.shellcheck.net/"
+    }
+   ]
+  }
+ ],
+ "recap": [
+  "The shell splits and expands your line before a program runs, and `echo` shows you the result.",
+  "Paths are absolute from `/` or relative from where you are, and `rm` has no undo.",
+  "grep finds lines, regular expressions describe text, and find finds files; quote every pattern.",
+  "Every program has stdin, stdout and stderr, and redirection and pipes reconnect them.",
+  "`sort | uniq -c | sort -rn | head`, awk, sed and jq turn logs and JSON into answers.",
+  "Permissions are rwx for owner, group and others; root skips the checks, so borrow it rarely.",
+  "SIGTERM asks and SIGKILL forces; Docker, systemd and Kubernetes send them in that order.",
+  "systemd runs services from unit files; `systemctl` controls them and `journalctl` reads their logs.",
+  "Child processes get a copy of exported variables, and PATH decides which program runs.",
+  "Scripts start with a shebang and `set -euo pipefail`, quote `\"$var\"` and pass ShellCheck."
+ ],
+ "flashcards": [
+  {
+   "front": "What does the shell do to `rm *.log` before rm runs?",
+   "back": "It replaces `*.log` with the matching file names, so rm only ever sees names."
+  },
+  {
+   "front": "What is the difference between an absolute and a relative path?",
+   "back": "An absolute path starts at `/` and works from anywhere; a relative path starts from the current folder."
+  },
+  {
+   "front": "How do you preview what a glob will match?",
+   "back": "Put `echo` in front of the command, as in `echo rm *.log`."
+  },
+  {
+   "front": "Which grep options ignore case, count, number lines and invert the match?",
+   "back": "`-i`, `-c`, `-n` and `-v`."
+  },
+  {
+   "front": "Why does `grep 'WARN|ERROR' app.log` find nothing?",
+   "back": "Without `-E`, `|` is a plain character. Use `grep -E 'WARN|ERROR'`."
+  },
+  {
+   "front": "In a regular expression, what do `.` and `*` mean?",
+   "back": "`.` is any one character; `*` is zero or more of the item before it."
+  },
+  {
+   "front": "What does `find . -name '*.log' -mtime +7` list?",
+   "back": "Files named *.log that were last changed more than 7 days ago."
+  },
+  {
+   "front": "What are file descriptors 0, 1 and 2?",
+   "back": "stdin, stdout and stderr."
+  },
+  {
+   "front": "What does `cmd > out.txt 2>&1` do?",
+   "back": "It sends both normal output and error messages to out.txt."
+  },
+  {
+   "front": "Why must sort come before `uniq -c`?",
+   "back": "uniq only merges duplicate lines that are next to each other."
+  },
+  {
+   "front": "What do the modes 755, 644 and 600 mean?",
+   "back": "rwxr-xr-x, rw-r--r-- and rw-------: owner, group and others, with r=4, w=2, x=1."
+  },
+  {
+   "front": "What do exit codes 130, 143 and 137 mean?",
+   "back": "The process ended from Ctrl+C (SIGINT), SIGTERM or SIGKILL: 128 plus the signal number."
+  },
+  {
+   "front": "What does `docker stop` send to a container?",
+   "back": "SIGTERM first, then SIGKILL if it is still running after 10 seconds."
+  },
+  {
+   "front": "What is the difference between `systemctl enable` and `systemctl start`?",
+   "back": "enable makes it start at boot, start runs it now, and `enable --now` does both."
+  },
+  {
+   "front": "Can a child process change its parent's environment variables?",
+   "back": "No. It gets a copy, and its changes never flow back."
+  },
+  {
+   "front": "Where does your SSH public key go on a server?",
+   "back": "Into `~/.ssh/authorized_keys` of the user you log in as."
+  },
+  {
+   "front": "What does `set -euo pipefail` do?",
+   "back": "Exit on errors, treat unset variables as errors, and fail a pipe when any part fails."
+  }
+ ],
+ "resources": [
+  {
+   "title": "Lecture 1: Course overview and the shell (Missing Semester, MIT)",
+   "url": "https://www.youtube.com/watch?v=MSgoeuMqUmU",
+   "kind": "watch",
+   "why": "MIT's 2026 lecture on the shell from zero, with notes and exercises to match."
+  },
+  {
+   "title": "Missing Semester 2026 lecture notes (MIT)",
+   "url": "https://missing.csail.mit.edu/2026/",
+   "kind": "read",
+   "why": "Free notes that cover the shell, its environment, SSH and scripting in a sensible order."
+  },
+  {
+   "title": "Lecture 4: Data wrangling (Missing Semester, MIT)",
+   "url": "https://www.youtube.com/watch?v=sz_dsktIjt4",
+   "kind": "watch",
+   "why": "A real log taken apart with grep, sed, sort, uniq and awk, one pipe at a time."
+  },
+  {
+   "title": "The Unix Shell (Software Carpentry)",
+   "url": "https://swcarpentry.github.io/shell-novice/",
+   "kind": "read",
+   "why": "A gentle beginner lesson with many small exercises on files, pipes, loops and grep."
+  },
+  {
+   "title": "The Linux Command Line, free book (William Shotts)",
+   "url": "https://linuxcommand.org/tlcl.php",
+   "kind": "read",
+   "why": "A complete, friendly book from your first command to shell scripts, free as a PDF."
+  },
+  {
+   "title": "The 50 most popular Linux and terminal commands (freeCodeCamp)",
+   "url": "https://www.youtube.com/watch?v=ZtqBQ68cfJc",
+   "kind": "watch",
+   "why": "A long course to dip into when you want to see one command used several ways."
+  },
+  {
+   "title": "journalctl basics (Learn Linux TV)",
+   "url": "https://www.youtube.com/watch?v=0dG3vUYt7Uk",
+   "kind": "watch",
+   "why": "A short, clear walk through reading service logs with journalctl."
+  },
+  {
+   "title": "ShellCheck",
+   "url": "https://www.shellcheck.net/",
+   "kind": "docs",
+   "why": "Paste any script and get each bug explained, with a wiki page per warning."
+  },
+  {
+   "title": "jq manual",
+   "url": "https://jqlang.org/manual/",
+   "kind": "docs",
+   "why": "The reference for every jq filter, with runnable examples."
+  },
+  {
+   "title": "GNU grep manual",
+   "url": "https://www.gnu.org/software/grep/manual/grep.html",
+   "kind": "docs",
+   "why": "The full story on grep options and both kinds of regular expressions."
+  },
+  {
+   "title": "explainshell",
+   "url": "https://explainshell.com",
+   "kind": "read",
+   "why": "Paste a long command and see which manual text explains each part."
+  },
+  {
+   "title": "tldr pages",
+   "url": "https://tldr.sh/",
+   "kind": "read",
+   "why": "Short, example-first help pages for hundreds of commands."
+  }
+ ],
+ "quiz": [
+  {
+   "q": "You are in `/work/logs/archive`. Which path reaches `/work/app.log`?",
+   "options": [
+    "`../app.log`",
+    "`../../app.log`",
+    "`/app.log`",
+    "`~/app.log`"
+   ],
+   "answer": 1,
+   "why": "One `..` climbs to `/work/logs` and the second to `/work`, where app.log lives."
+  },
+  {
+   "q": "Which command lists the files under `server` that are larger than 1 MB?",
+   "options": [
+    "`find server -type f -size +1M`",
+    "`grep -r -size +1M server`",
+    "`ls -lh server | grep M`",
+    "`du -sh server -min 1M`"
+   ],
+   "answer": 0,
+   "why": "find tests every file under a folder, and `-size +1M` keeps those over 1 MB."
+  },
+  {
+   "q": "`grep -c 200 app.log` prints 16, but `grep -c -w 200 app.log` prints 14. Why the difference?",
+   "options": [
+    "`-w` skips the first and last lines",
+    "`-w` ignores lines in upper case",
+    "Two lines contain 200 inside a longer word",
+    "`-c` counts words, not lines"
+   ],
+   "answer": 2,
+   "why": "`1200ms` and `2001` contain 200, and `-w` only matches 200 standing alone as a word."
+  },
+  {
+   "q": "Which pipeline counts requests per status code (field 9), most common first?",
+   "options": [
+    "`awk '{print $9}' access.log | uniq -c | sort -rn`",
+    "`sort -k 9 access.log | uniq -c | sort -rn | head`",
+    "`cut -d ' ' -f 9 access.log | sort -rn | uniq`",
+    "`awk '{print $9}' access.log | sort | uniq -c | sort -rn`"
+   ],
+   "answer": 3,
+   "why": "Sort first so uniq can count neighbours, then sort the counts as numbers in reverse."
+  },
+  {
+   "q": "What does `2> /dev/null` do at the end of a command?",
+   "options": [
+    "Throws away the error messages",
+    "Throws away the normal output",
+    "Saves errors into a file called null",
+    "Stops the command on its first error"
+   ],
+   "answer": 0,
+   "why": "It points stderr (2) at /dev/null, which discards everything written to it."
+  },
+  {
+   "q": "`kill 4242` did not stop a process, even after a minute. What is the usual next step?",
+   "options": [
+    "`sudo kill 4242`",
+    "`kill -9 4242`",
+    "`kill -HUP 4242`",
+    "Reboot the machine"
+   ],
+   "answer": 1,
+   "why": "The process is ignoring SIGTERM, so SIGKILL (9), which cannot be caught, is the last resort."
+  },
+  {
+   "q": "`ls -ld reports` shows `drwxr-x---`, owned by `app:ops`. User sam is not in ops. What can sam do?",
+   "options": [
+    "Nothing: no listing and no entry",
+    "List the names but not enter it",
+    "Enter it and read files by name",
+    "Create new files inside it"
+   ],
+   "answer": 0,
+   "why": "The others triplet is `---`, so sam has no read, write or execute rights on the folder."
+  },
+  {
+   "q": "A deploy script runs `./build.sh | tee build.log` and then deploys. It deploys even when the build fails. Which line at the top stops it?",
+   "options": [
+    "`set -u`",
+    "`set -eo pipefail`",
+    "`trap 'rm -f build.log' EXIT`",
+    "`chmod +x build.sh`"
+   ],
+   "answer": 1,
+   "why": "With pipefail the pipe fails when build.sh fails, and -e then stops the script."
+  },
+  {
+   "q": "A team made 40 deployments last month, and 6 of them needed a hotfix or a rollback. Which DORA metric is 15 percent?",
+   "options": [
+    "Deployment frequency",
+    "Change lead time",
+    "Change fail rate",
+    "Failed deployment recovery time"
+   ],
+   "answer": 2,
+   "why": "Change fail rate is the share of deployments that needed immediate action: 6 of 40 is 15 percent.",
+   "from": "Part 0"
+  },
+  {
+   "q": "You installed tree inside `docker run -it --rm ubuntu:24.04 bash`, typed exit, and ran the same command again. Why is tree missing now?",
+   "options": [
+    "tree only works on a Mac",
+    "apt needs sudo inside a container",
+    "The image updated itself overnight",
+    "`--rm` deleted the container; each run starts clean"
+   ],
+   "answer": 3,
+   "why": "Each run makes a new container from the unchanged image, and `--rm` removed the old one with its changes.",
+   "from": "Part 0"
+  }
+ ]
+}

@@ -10,7 +10,7 @@ SECTIONS = [
             "Everything on AWS today is optional. The rest of the course runs on your laptop, and the worked example below needs no account. Day 10 explained cloud costs and free plans. This is the checklist to finish before your first apply, in order:\n"
             "1. Sign up and choose the Free plan. Accounts created since July 15, 2025 pick a plan. The Free plan gives up to $200 in credits for six months and cannot charge your card. When the credits or the six months run out, the account closes, and you have 90 days to upgrade if you want it back.\n"
             "2. Protect the root user, the email login you signed up with. It can do anything, even close the account. Turn on MFA for it and never use it for daily work.\n"
-            "3. In Billing and Cost Management, open Budgets and create a zero spend budget from a template. It emails you as soon as you spend anything.\n"
+            "3. In Billing and Cost Management, open Budgets and create a zero spend budget from a template. It emails you once your spending goes above the free usage.\n"
             "4. Make an everyday login that is not root (next section).\n\n"
             "Older accounts stay on the previous free tier and can be billed, so the budget matters even more there. Also, do not create an AWS Organization on a learning account: AWS lists joining Organizations among the actions that move a Free plan account to the Paid plan.\n\n"
             "A budget alert only sends email. It stops nothing, and its numbers can lag by hours. Destroying what you create is what protects you, and it is the last step today. IAM roles and the OIDC provider cost nothing. S3 charges per gigabyte stored each month plus a little per request, and a state file is a few kilobytes, so today's bucket costs close to nothing. Check the S3 pricing page for your Region anyway."
@@ -24,7 +24,7 @@ SECTIONS = [
     {
         "h": "A login for your laptop that is not root",
         "body": (
-            "Terraform's AWS provider finds credentials the same way as the AWS CLI. Its docs list the order: arguments in the provider block, then environment variables such as `AWS_PROFILE`, then the shared files in `~/.aws`, and finally the credentials of a container or a machine in AWS. Install the CLI with `brew install awscli`, and check the current AWS docs if anything differs.\n\n"
+            "Terraform's AWS provider finds credentials the same way as the AWS CLI. Its docs list the order. Arguments in the provider block come first, then environment variables such as `AWS_PROFILE`, then the shared files in `~/.aws`. Last come the credentials of a container or a machine running in AWS. Install the CLI with `brew install awscli`, and check the current AWS docs if anything differs.\n\n"
             "You have two common ways to get a login that is not root:\n"
             "- IAM Identity Center, AWS's single sign-on. You sign in through the browser and get short-lived credentials. Run `aws configure sso` once, then `aws sso login` each day.\n"
             "- An IAM user with MFA and an access key, saved with `aws configure`. It is simpler, but the key is a long-lived password on your disk. Delete it when you finish.\n\n"
@@ -197,7 +197,7 @@ LESSON = {
         {"term": "Budget alert", "plain": "An email from AWS Budgets when your spending passes, or is expected to pass, a limit."},
     ],
     "sections": SECTIONS,
-    "analogy": "OIDC works like a hotel key card. At the front desk (GitHub) you prove who you are, and you get a card that opens one room (the IAM role) and stops working at checkout. Nobody carries a master key that works forever. The picture misses one thing: a hotel checks your passport in person, while AWS only trusts GitHub's signature, which is why the trust policy must name exactly which repo may get a card.",
+    "analogy": "OIDC works like a hotel key card. At the front desk (GitHub) you prove who you are, and you get a card that opens one room (the IAM role) and stops working at checkout. Nobody carries a master key that works forever. The picture misses one thing. A hotel checks your passport in person, while AWS only trusts GitHub's signature. That is why the trust policy must name exactly which repo may get a card.",
     "diagram": D29,
     "diagram_caption": "Checks and a plan run on pull requests. After merge and approval the apply job runs. Both AWS jobs swap a GitHub OIDC token for short-lived AWS credentials.",
     "worked": WORKED,

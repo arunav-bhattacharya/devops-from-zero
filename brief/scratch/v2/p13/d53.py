@@ -110,7 +110,7 @@ SECTIONS = [
             "- A ClusterRoleBinding gives a ClusterRole to a subject everywhere.\n\n"
             "The subject is a user, a group or a ServiceAccount. A ServiceAccount is an identity for a program: a Pod, a CI job, an AI agent. "
             "Day 38 taught you to read `forbidden` errors. Today you write the rules.\n\n"
-            "The official good practices fit in four lines:\n"
+            "The [official good practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/) fit in four lines:\n"
             "1. Bind inside a namespace with a RoleBinding whenever you can.\n"
             "2. Avoid wildcards. A `*` grants every resource type that exists today and every type added later.\n"
             "3. Do not use `cluster-admin` for daily work.\n"
@@ -133,7 +133,7 @@ SECTIONS = [
             "3. Admission: is this particular object acceptable?\n\n"
             "**Admission control** is that third gate. Admission controllers can change an object (mutating) or reject it (validating) before it is stored in etcd. "
             "RBAC decides whether you may create Deployments at all. Admission decides whether this Deployment, with `privileged: true` or an image tagged `:latest`, is allowed.\n\n"
-            "Kubernetes ships one admission check you can use today: Pod Security Admission. It enforces the Pod Security Standards, which have three levels:\n"
+            "Kubernetes has a built-in admission check made for Pod hardening: Pod Security Admission. It enforces the Pod Security Standards, which have three levels:\n"
             "- privileged: no restrictions.\n"
             "- baseline: blocks known ways to escape to the node, such as privileged containers and sharing the host's network.\n"
             "- restricted: current hardening practice. Run as non-root, no privilege escalation, drop all Linux capabilities, use a seccomp profile.\n\n"
@@ -380,7 +380,7 @@ lesson = {
     "task": {
         "title": "Lock down namespace hello",
         "steps": [
-            "Run `gitleaks git -v` in your hello-devops repository. Then make a throwaway repository, commit a fake token in one commit, delete it in the next, and compare `gitleaks dir` with `gitleaks git`.",
+            "Run `gitleaks git -v` in your hello-devops repository. Then make a throwaway repository and commit a fake GitHub token: `ghp_` followed by 36 random letters and digits. Delete it in the next commit, and compare `gitleaks dir` with `gitleaks git`.",
             "Install Kyverno with Helm on your kind cluster and apply `policy/disallow-latest-tag.yaml` and `policy/require-run-as-nonroot.yaml`.",
             "Run `kubectl -n hello run test --image=nginx:latest` and read the message. Try again with `busybox:1.37`, then delete the test Pod.",
             "Read the PolicyReports in namespace hello. Which workloads fail the non-root rule, and why?",
