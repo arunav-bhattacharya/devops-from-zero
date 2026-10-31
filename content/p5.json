@@ -1,0 +1,1509 @@
+{
+ "part": 5,
+ "title": "Builds with Gradle",
+ "intro": "You use Gradle every day through IntelliJ, but in DevOps work you run builds where there is no IDE: on CI runners and inside Docker builds. This part teaches Gradle's model from the ground up with a new lab, hello-jvm, a small Kotlin web service that mirrors hello-devops. It comes after Docker and GitHub Actions because Day 24 uses both to build, cache and ship that service.",
+ "lessons": [
+  {
+   "id": "d22",
+   "title": "What a build tool does, and how Gradle thinks",
+   "minutes": 50,
+   "goal": "By the end you can explain Gradle's model of projects, tasks and phases, create a project with the Gradle Wrapper, and predict which tasks a build will run or skip.",
+   "guess": {
+    "q": "You run `./gradlew test`, change nothing, and run it again. What does Gradle do with the tests the second time?",
+    "options": [
+     "Compiles everything again and reruns every test",
+     "Reruns only the tests that failed last time",
+     "Skips the test task and marks it UP-TO-DATE",
+     "Asks you whether the tests should run again"
+    ],
+    "answer": 2,
+    "why": "Gradle fingerprints every task's inputs and outputs. Nothing changed, so the last results still hold and the task is skipped; `--rerun` forces it to run."
+   },
+   "terms": [
+    {
+     "term": "Build tool",
+     "plain": "A program that turns source code and libraries into tested, packaged software, the same way every time."
+    },
+    {
+     "term": "Task",
+     "plain": "One named unit of work in Gradle, such as compileKotlin or test, with declared inputs and outputs."
+    },
+    {
+     "term": "Task graph",
+     "plain": "The tasks Gradle needs for what you asked, ordered so each one runs after the tasks it depends on."
+    },
+    {
+     "term": "Plugin",
+     "plain": "A package of build logic that adds tasks and settings to a project, such as the application plugin."
+    },
+    {
+     "term": "Project",
+     "plain": "One buildable unit in a Gradle build, usually a folder with its own build.gradle.kts file."
+    },
+    {
+     "term": "Configuration phase",
+     "plain": "The step where Gradle runs the build scripts to set up tasks, before any task does real work."
+    },
+    {
+     "term": "Gradle Wrapper",
+     "plain": "The gradlew script and its files, which download and run the exact Gradle version a project pins."
+    },
+    {
+     "term": "UP-TO-DATE",
+     "plain": "A task label: Gradle compared the task's inputs and outputs with the last run, found no change, and skipped it."
+    }
+   ],
+   "sections": [
+    {
+     "h": "What a build tool does",
+     "body": "Turning Kotlin source into something you can ship takes more steps than it looks. For one small web service you have to:\n\n- download the libraries it uses, and the libraries those libraries use\n- compile the Kotlin code against them\n- compile and run the tests\n- package the classes into a jar, with start scripts\n- do all of it the same way on your laptop and on the CI server\n\nA shell script that calls `kotlinc` and `java` works for one file. Then the classpath grows to 40 jars, a teammate has another JDK, and every run recompiles everything because the script cannot tell what changed.\n\nA **build tool** does these jobs from a description of the project that lives in git. Gradle is the one most Kotlin and Android projects use, and you already use it every day through IntelliJ. This lesson opens the box. In DevOps work you run builds where there is no IDE: on CI runners, in Docker build stages and in release jobs. There you need to know what Gradle is doing and why.",
+     "refs": [
+      {
+       "title": "Gradle course for beginners (Tom Gregory)",
+       "url": "https://www.youtube.com/watch?v=R6Z-Sxb837I",
+       "kind": "watch"
+      },
+      {
+       "title": "What's new in Gradle 9",
+       "url": "https://gradle.org/whats-new/gradle-9/",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Tasks and the task graph",
+     "body": "Gradle's unit of work is a task. A task has a name such as `compileKotlin`, `test` or `jar`. It also declares its inputs (source files, the classpath, compiler flags) and its outputs (class files, a jar, a test report).\n\nTasks depend on other tasks. `jar` needs compiled classes, so it depends on `classes`, which depends on `compileKotlin`. When you ask for `build`, Gradle collects every task it needs and puts them in a task graph. The graph is a DAG (directed acyclic graph): the arrows point one way and never loop back. Gradle runs each task once, in an order that respects the arrows. `build` itself does no work. It groups `assemble`, which makes the outputs, and `check`, which runs the tests.\n\nDeclaring inputs and outputs pays off on the second run. Before a task runs, Gradle fingerprints its inputs and outputs and compares them with the last run. If nothing changed, it prints `UP-TO-DATE` and skips the task. You will see these labels on task lines:\n\n- `UP-TO-DATE`: nothing changed since the last run, so the task was skipped.\n- `NO-SOURCE`: there was nothing to work on, like `compileJava` in a Kotlin-only project.\n- `SKIPPED`: skipped on purpose, for example under `--dry-run`.\n- `FROM-CACHE`: the outputs were copied from the build cache (Day 24).\n\nNo label means the task did real work.",
+     "refs": [
+      {
+       "title": "Gradle docs: Incremental builds and build caching basics",
+       "url": "https://docs.gradle.org/current/userguide/gradle_optimizations.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Projects, plugins and the build files",
+     "body": "A Gradle build is a set of projects. A project is usually one folder with its own build script. Today your hello-jvm build has a root project and one subproject, `app`. Tomorrow you add a second one.\n\nThree files describe the build:\n\n- `settings.gradle.kts` is read first, once per build. It names the build, lists the projects with `include(...)`, and says where libraries come from.\n- `build.gradle.kts` is the build script of one project. It applies plugins and lists the libraries the project needs.\n- `gradle.properties` holds flags for Gradle itself, such as turning on the configuration cache.\n\nThe `.kts` ending means Kotlin script. This is the Kotlin DSL: the build files are real Kotlin, so IntelliJ autocompletes them and the compiler catches typos. Older projects use `build.gradle` files written in Groovy. They do the same job with looser syntax. Since Gradle 8, `gradle init` writes Kotlin build files by default.\n\nOn its own a build script does very little. Plugins bring the tasks. In `app/build.gradle.kts`, `kotlin(\"jvm\")` adds `compileKotlin`, `test` and `jar`, and the `application` plugin adds `run`, `installDist` and start scripts. That is why `./gradlew tasks` lists more than 30 tasks for a build script with a dozen real lines.",
+     "refs": [
+      {
+       "title": "Understanding Gradle #01: the settings file (Jendrik Johannes)",
+       "url": "https://www.youtube.com/watch?v=Ajs8pTbg8as",
+       "kind": "watch"
+      },
+      {
+       "title": "Understanding Gradle #02: the build files (Jendrik Johannes)",
+       "url": "https://www.youtube.com/watch?v=OKjE_Lt_66U",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Three phases: initialization, configuration, execution",
+     "body": "This is the idea that trips up most people, so take it slowly. Every Gradle run goes through three phases, in this order:\n\n1. Initialization. Gradle reads `settings.gradle.kts` and decides which projects take part.\n2. Configuration. Gradle runs the build scripts of those projects. The scripts register tasks and set their properties, and Gradle builds the task graph for what you asked.\n3. Execution. Gradle runs the actions of the tasks in the graph, in dependency order.\n\nHere is the trap. A build script does not do the work; it describes the work. Code at the top level of `build.gradle.kts` runs during configuration. So does code inside `tasks.register(\"x\") { ... }`. Only the code inside `doLast { ... }` runs when the task executes. A `println` at the top of a build script prints before any task starts.\n\n`tasks.register` is lazy: Gradle only sets up a task when the graph needs it. Still, keep slow work out of configuration. No network calls, no big file reads, no running programs at the top level. Configuration happens on every run that is not cached, even `./gradlew help`.\n\nGradle 9 adds the configuration cache. It saves the result of phases 1 and 2, and the next run with the same scripts and tasks goes straight to execution. In return, a running task may not reach back into `project`, the live build model. The worked example shows the error and the fix.",
+     "refs": [
+      {
+       "title": "Gradle docs: Build lifecycle",
+       "url": "https://docs.gradle.org/current/userguide/build_lifecycle.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Gradle docs: Configuration cache",
+       "url": "https://docs.gradle.org/current/userguide/configuration_cache.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "The Gradle Wrapper: one Gradle version per project",
+     "body": "You will almost never type `gradle`. You type `./gradlew`. That script is the **Gradle Wrapper**, and it is why a fresh clone builds the same way on every machine. The wrapper is four files, and you commit all of them:\n\n- `gradlew`, a shell script for macOS and Linux\n- `gradlew.bat`, the same for Windows\n- `gradle/wrapper/gradle-wrapper.jar`, a small program that downloads Gradle\n- `gradle/wrapper/gradle-wrapper.properties`, which names the exact Gradle version\n\nOn the first run, `./gradlew` downloads that version into `~/.gradle/wrapper/dists`. After that, you, your teammates and every CI runner use the same Gradle. Think of it as a lockfile for the build tool. A global `gradle` from Homebrew is whatever version you installed last, and Gradle 9 removed several old APIs. A build can pass on 8.14 and fail on 9.8, or the other way round.\n\nYou need a global Gradle only once, to create the wrapper in a new project with `gradle wrapper` (or `gradle init`). Add `--gradle-distribution-sha256-sum` and the wrapper checks every download against that checksum and refuses anything else. To upgrade later, run `./gradlew wrapper --gradle-version <new version>`.\n\nTwo JDKs are in play. Gradle 9 itself needs Java 17 or newer to run. The JDK that compiles your code is picked separately, by `kotlin { jvmToolchain(21) }` in the build script. Day 24 covers toolchains.",
+     "refs": [
+      {
+       "title": "Gradle docs: The Gradle Wrapper",
+       "url": "https://docs.gradle.org/current/userguide/gradle_wrapper.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Gradle docs: Best practices for security",
+       "url": "https://docs.gradle.org/current/userguide/best_practices_security.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Running tasks and reading the output",
+     "body": "Run any task by name: `./gradlew build`, `./gradlew test`, `./gradlew clean`. In a build with several projects, a bare name runs that task in every project that has it. A path picks one project: `./gradlew :app:run` runs `run` in `app` only. The first colon means the root project, like `/` in a file path.\n\nThese options come up every week:\n\n- `./gradlew tasks` lists the tasks you can run, by group. `--all` shows every task.\n- `./gradlew help --task :app:run` explains one task and its options.\n- `--dry-run` lists what would run, without running it.\n- `--task-graph` prints the graph as a tree.\n- `-q` hides everything except errors and your program's own output.\n- `--console=plain` prints one plain line per task, which reads better in CI logs.\n- `--args=\"...\"` passes arguments to your program in `./gradlew :app:run`.\n\nRead the output from the bottom. `BUILD SUCCESSFUL in 7s` or `BUILD FAILED` comes last. Above it, a line like `7 actionable tasks: 7 executed` says how many tasks did work and how many were up to date. When a test fails, Gradle prints the path of an HTML report, such as `app/build/reports/tests/test/index.html`. Open it in your browser: it shows each test, its output and the stack trace.",
+     "refs": [
+      {
+       "title": "Gradle docs: Command-line interface",
+       "url": "https://docs.gradle.org/current/userguide/command_line_interface.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Gradle and Maven, briefly",
+     "body": "You will meet Maven at work, often in older Java services. Both tools download from the same repositories, such as Maven Central, and both produce the same kind of jar. The model is what differs:\n\n- Maven describes a project in XML (`pom.xml`) and runs a fixed list of phases, such as `compile`, `test`, `package` and `install`. `mvn package` runs every phase up to `package`.\n- Gradle builds a graph of tasks from Kotlin or Groovy scripts, and skips each task whose inputs did not change.\n- Maven has a wrapper too, `mvnw`, for the same reason Gradle has `gradlew`.\n- Rough mapping: `mvn package` is close to `./gradlew assemble`, `mvn verify` is close to `./gradlew build`, and `mvn dependency:tree` is `./gradlew dependencies`.\n\nFor one plain service, neither tool is clearly better. Gradle pulls ahead in big builds, because it reuses so much earlier work (Day 24 shows how). Android builds require Gradle. Spring Initializr offers both, so the choice was usually made before you joined the team. As a DevOps engineer you need to read both and run both in CI.",
+     "refs": [
+      {
+       "title": "Gradle vs Maven (Gradle's own comparison)",
+       "url": "https://gradle.org/maven-vs-gradle",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "Gradle works like a careful cook with a recipe book. First the cook reads the recipes for tonight's menu and writes down which dish needs which (configuration). Then the cook works through that list in order (execution). If a sauce from an hour ago was made from exactly the same ingredients, the cook uses it again instead of making it twice (UP-TO-DATE). Where it breaks: a cook judges by eye, while Gradle compares exact fingerprints of every input file, so one changed byte means the task runs again.",
+   "diagram": "<svg viewBox=\"0 0 560 170\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Gradle's three phases: the settings file is read, build scripts build the task graph, then tasks run; a configuration cache hit jumps straight to the task graph\"><rect class=\"bx\" x=\"8\" y=\"66\" width=\"128\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"72\" y=\"90.5\" font-size=\"13\" text-anchor=\"middle\">settings file</text><rect class=\"bxt\" x=\"160\" y=\"66\" width=\"128\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"224\" y=\"90.5\" font-size=\"13\" text-anchor=\"middle\">build scripts</text><rect class=\"bxg\" x=\"312\" y=\"66\" width=\"112\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"368\" y=\"90.5\" font-size=\"13\" text-anchor=\"middle\">task graph</text><rect class=\"bxo\" x=\"448\" y=\"66\" width=\"104\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"500\" y=\"90.5\" font-size=\"13\" text-anchor=\"middle\">run tasks</text><line class=\"ln\" x1=\"138\" y1=\"86\" x2=\"157\" y2=\"86\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"290\" y1=\"86\" x2=\"309\" y2=\"86\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"426\" y1=\"86\" x2=\"445\" y2=\"86\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"72\" y1=\"62\" x2=\"72\" y2=\"34\"/><line class=\"lnd\" x1=\"72\" y1=\"34\" x2=\"368\" y2=\"34\"/><line class=\"lnd\" x1=\"368\" y1=\"34\" x2=\"368\" y2=\"62\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"220\" y=\"26\" font-size=\"11\" text-anchor=\"middle\">configuration cache hit</text><text class=\"ts\" x=\"72\" y=\"128\" font-size=\"11\" text-anchor=\"middle\">1 initialization</text><text class=\"ts\" x=\"292\" y=\"128\" font-size=\"11\" text-anchor=\"middle\">2 configuration</text><text class=\"ts\" x=\"500\" y=\"128\" font-size=\"11\" text-anchor=\"middle\">3 execution</text><text class=\"ts\" x=\"72\" y=\"148\" font-size=\"11\" text-anchor=\"middle\">which projects?</text><text class=\"ts\" x=\"292\" y=\"148\" font-size=\"11\" text-anchor=\"middle\">register and set up tasks</text><text class=\"ts\" x=\"500\" y=\"148\" font-size=\"11\" text-anchor=\"middle\">doLast code runs</text></svg>",
+   "diagram_caption": "Every run reads settings, runs the build scripts to build the task graph, then runs task actions. A configuration cache hit skips the first two phases.",
+   "worked": {
+    "title": "Watch the three phases happen",
+    "steps": [
+     {
+      "say": "Make a folder `lifecycle-demo`, copy `gradlew` and the `gradle/wrapper/` folder into it from hello-jvm, and put `org.gradle.configuration-cache=true` in `gradle.properties`. Then write a settings file that prints one line. It runs in the initialization phase.",
+      "code": "$ cat settings.gradle.kts\nprintln(\"1. initialization: reading settings.gradle.kts\")\nrootProject.name = \"lifecycle-demo\"",
+      "lang": "console"
+     },
+     {
+      "say": "The build script prints at the top level, inside the setup block of `hello`, and inside `doLast`. A second task, `bad`, reads `project` inside `doLast`. Before you run anything, predict which lines print for `./gradlew hello`.",
+      "code": "println(\"2. configuration: running build.gradle.kts\")\n\ntasks.register(\"hello\") {\n    println(\"2b. configuration: setting up the hello task\")\n    doLast { println(\"3. execution: hello runs its action\") }\n}\n\ntasks.register(\"bad\") {\n    doLast { println(\"version is ${project.version}\") } // reads the project while running\n}",
+      "lang": "text"
+     },
+     {
+      "say": "First run. Lines 1 and 2 print before any task starts, and line 2b prints because the graph needs `hello`. Only line 3 comes from the task's action.",
+      "code": "$ ./gradlew hello --console=plain\nCalculating task graph as no cached configuration is available for tasks: hello\n1. initialization: reading settings.gradle.kts\n\n> Configure project :\n2. configuration: running build.gradle.kts\n2b. configuration: setting up the hello task\n\n> Task :hello\n3. execution: hello runs its action\n\nBUILD SUCCESSFUL in 2s\n1 actionable task: 1 executed\nConfiguration cache entry stored.",
+      "lang": "console"
+     },
+     {
+      "say": "Same command again. The configuration cache saved the task graph, so Gradle skipped initialization and configuration. Nothing from the scripts printed. The task still ran: it declares no outputs, so Gradle cannot call it up to date.",
+      "code": "$ ./gradlew hello --console=plain\nReusing configuration cache.\n\n> Task :hello\n3. execution: hello runs its action\n\nBUILD SUCCESSFUL in 1s\n1 actionable task: 1 executed\nConfiguration cache entry reused.",
+      "lang": "console"
+     },
+     {
+      "say": "Now run `bad`. Line 2b is missing: Gradle never set up `hello`, because `register` is lazy. Then `bad` fails. With the configuration cache on, a running task may not touch `project`.",
+      "code": "$ ./gradlew bad --console=plain\n1. initialization: reading settings.gradle.kts\n\n> Configure project :\n2. configuration: running build.gradle.kts\n\n> Task :bad FAILED\n...\n* What went wrong:\nExecution failed for task ':bad' (registered in build file 'build.gradle.kts').\n> Invocation of 'Task.project' by task ':bad' at execution time is unsupported with the configuration cache.",
+      "lang": "console"
+     },
+     {
+      "say": "The fix: read the value during configuration and keep only the result. Add a `good` task and run it. `unspecified` is what a project's version is when nobody set one.",
+      "code": "$ tail -4 build.gradle.kts\ntasks.register(\"good\") {\n    val v = project.version.toString() // read during configuration instead\n    doLast { println(\"version is $v\") }\n}\n$ ./gradlew good -q\nversion is unspecified",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "text",
+     "title": "settings.gradle.kts",
+     "src": "// settings.gradle.kts: read first. It names the build and lists its projects.\n\nplugins {\n    // Lets Gradle download a matching JDK when none is installed (used by toolchains).\n    id(\"org.gradle.toolchains.foojay-resolver-convention\") version \"1.0.0\"\n}\n\nrootProject.name = \"hello-jvm\"\n\ndependencyResolutionManagement {\n    // Every project gets its libraries from Maven Central.\n    repositories {\n        mavenCentral()\n    }\n}\n\ninclude(\"app\")",
+     "run": "./gradlew projects"
+    },
+    {
+     "lang": "ini",
+     "title": "gradle.properties",
+     "src": "# Build flags for everyone who builds this project.\n# Reuse the task graph from the last run when the build scripts did not change.\norg.gradle.configuration-cache=true",
+     "run": "./gradlew help"
+    },
+    {
+     "lang": "text",
+     "title": ".gitignore",
+     "src": "# Gradle's per-project cache folder\n.gradle/\n# Build output of every project\nbuild/\n# Kotlin compiler data\n.kotlin/",
+     "run": "git status --short"
+    },
+    {
+     "lang": "ini",
+     "title": "gradle/wrapper/gradle-wrapper.properties (written by the wrapper task, do not edit by hand)",
+     "src": "distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionSha256Sum=21bd5da2de49b642904077f38c0efdc7778e92b3ed0889392dca61b97e389607\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-9.8.2-bin.zip\nnetworkTimeout=10000\nretries=0\nretryBackOffMs=500\nvalidateDistributionUrl=true\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists",
+     "run": "./gradlew --version"
+    },
+    {
+     "lang": "text",
+     "title": "app/build.gradle.kts",
+     "src": "// app/build.gradle.kts: the build script for the app project.\nplugins {\n    // Compiles Kotlin for the JVM. Also adds the java plugin's tasks (jar, test, build).\n    kotlin(\"jvm\") version \"2.4.21\"\n    // Adds run, installDist and start scripts for a program with a main().\n    application\n}\n\nkotlin {\n    // Compile and test with JDK 21, whatever JDK runs Gradle itself.\n    jvmToolchain(21)\n}\n\ndependencies {\n    // kotlin.test assertions, run by JUnit.\n    testImplementation(kotlin(\"test\"))\n}\n\napplication {\n    // The class Kotlin generates for the top-level main() in Main.kt.\n    mainClass = \"hello.app.MainKt\"\n}\n\ntasks.test {\n    // Run tests on the JUnit Platform.\n    useJUnitPlatform()\n}",
+     "run": "./gradlew :app:tasks"
+    },
+    {
+     "lang": "text",
+     "title": "app/src/main/kotlin/hello/app/Main.kt",
+     "src": "package hello.app\n\nimport com.sun.net.httpserver.HttpExchange\nimport com.sun.net.httpserver.HttpServer\nimport java.net.InetAddress\nimport java.net.InetSocketAddress\nimport java.util.concurrent.atomic.AtomicLong\n\n/** The JSON for GET /. A plain function, so a test can call it without a server. */\nfun reply(message: String, version: String, host: String, visits: Long): String =\n    \"\"\"{\"message\":\"$message\",\"version\":\"$version\",\"host\":\"$host\",\"visits\":$visits}\"\"\"\n\nfun main() {\n    // Settings come from environment variables, with defaults for your laptop.\n    val version = System.getenv(\"APP_VERSION\") ?: \"dev\"\n    val message = System.getenv(\"GREETING\") ?: \"Hello, JVM!\"\n    val port = System.getenv(\"PORT\")?.toIntOrNull() ?: 8080\n    val host = InetAddress.getLocalHost().hostName\n    val visits = AtomicLong()\n\n    // The JDK's built-in web server: no framework, no extra downloads.\n    val server = HttpServer.create(InetSocketAddress(port), 0)\n    server.createContext(\"/\") { it.sendJson(reply(message, version, host, visits.incrementAndGet())) }\n    server.createContext(\"/healthz\") { it.sendJson(\"\"\"{\"status\":\"ok\"}\"\"\") }\n    server.start()\n    println(\"hello-jvm $version listening on port $port\")\n}\n\nprivate fun HttpExchange.sendJson(body: String) {\n    val bytes = body.toByteArray()\n    responseHeaders.add(\"Content-Type\", \"application/json\")\n    sendResponseHeaders(200, bytes.size.toLong())\n    responseBody.use { it.write(bytes) }\n}",
+     "run": "./gradlew :app:run"
+    },
+    {
+     "lang": "text",
+     "title": "app/src/test/kotlin/hello/app/MainTest.kt",
+     "src": "package hello.app\n\nimport kotlin.test.Test\nimport kotlin.test.assertEquals\n\nclass MainTest {\n    @Test\n    fun replyIsJson() {\n        assertEquals(\n            \"\"\"{\"message\":\"Hi\",\"version\":\"1.0.0\",\"host\":\"laptop\",\"visits\":2}\"\"\",\n            reply(\"Hi\", \"1.0.0\", \"laptop\", 2),\n        )\n    }\n}",
+     "run": "./gradlew test"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "brew install gradle",
+     "what": "Install a global Gradle once. You only use it to create the wrapper in a new project."
+    },
+    {
+     "cmd": "curl -s https://services.gradle.org/versions/current",
+     "what": "Show the newest Gradle version and the SHA-256 checksum of its download."
+    },
+    {
+     "cmd": "gradle wrapper --gradle-version 9.8.2 --gradle-distribution-sha256-sum 21bd5da2de49b642904077f38c0efdc7778e92b3ed0889392dca61b97e389607",
+     "what": "Create gradlew, gradlew.bat and gradle/wrapper/, pinned to one version and checksum."
+    },
+    {
+     "cmd": "./gradlew --version",
+     "what": "Show the Gradle, Kotlin and JVM versions the wrapper uses."
+    },
+    {
+     "cmd": "./gradlew build",
+     "what": "Compile, test and package every project: assemble plus check."
+    },
+    {
+     "cmd": "./gradlew test",
+     "what": "Compile the code and run the tests only."
+    },
+    {
+     "cmd": "./gradlew :app:run",
+     "what": "Run main() of the app project (added by the application plugin)."
+    },
+    {
+     "cmd": "./gradlew :app:installDist",
+     "what": "Put start scripts and all jars in app/build/install/app."
+    },
+    {
+     "cmd": "./gradlew clean",
+     "what": "Delete the build folders."
+    },
+    {
+     "cmd": "./gradlew tasks --all",
+     "what": "List every task you can run, grouped."
+    },
+    {
+     "cmd": "./gradlew help --task :app:run",
+     "what": "Explain one task: its type, group and options."
+    },
+    {
+     "cmd": "./gradlew build --dry-run",
+     "what": "List the tasks a build would run, without running them."
+    },
+    {
+     "cmd": "./gradlew :app:assemble --task-graph",
+     "what": "Print the task graph as a tree, without running it."
+    },
+    {
+     "cmd": "./gradlew test --rerun",
+     "what": "Run a task even when it is up to date."
+    },
+    {
+     "cmd": "./gradlew :app:compileKotlin --info",
+     "what": "Show detail, including why a task was not up to date."
+    },
+    {
+     "cmd": "./gradlew wrapper --gradle-version 9.8.2",
+     "what": "Change the Gradle version the wrapper pins (run it again to refresh the scripts)."
+    }
+   ],
+   "mistake": "Running `gradle build` with a global Gradle instead of `./gradlew build`. The global one is whatever version you installed last, so the build can pass for you and fail in CI, or the other way round. Always run `./gradlew`, and keep IntelliJ on the wrapper (its default). Use a global Gradle only to create the wrapper once.",
+   "real_world": "At a payments company (call it Paylane), the ledger service has many Gradle projects, and CI runs `./gradlew build` on every pull request. The wrapper pins Gradle, so laptops and runners agree, and a Gradle upgrade is an ordinary pull request that changes `gradle-wrapper.properties`. When CI gets slow, the first thing the team reads is which tasks did work and which were UP-TO-DATE or FROM-CACHE.",
+   "task": {
+    "title": "Start hello-jvm",
+    "steps": [
+     "Check that you have a JDK 17 or newer with `java -version`. If not, install one, for example `brew install --cask temurin@21`.",
+     "Install Gradle once with `brew install gradle`. You only need it for the next step but one.",
+     "Create `~/code/hello-jvm` and add `settings.gradle.kts`, `gradle.properties`, `.gitignore` and `app/build.gradle.kts` from Files. Create the `app` folder before you run Gradle: Gradle 9 refuses to set up a project whose folder does not exist.",
+     "Create the wrapper with `gradle wrapper`, pinning version 9.8.2 and its checksum. Check it with `./gradlew --version`.",
+     "Add `Main.kt` and `MainTest.kt` from Files. Run `./gradlew build` and read which tasks ran and which had NO-SOURCE.",
+     "Run `./gradlew build` again and count the UP-TO-DATE tasks. Then change only `MainTest.kt`, predict which tasks will run, and check.",
+     "Start the service with `./gradlew :app:run` and call `curl localhost:8080` a few times from a second terminal. Stop it with Ctrl+C.",
+     "Run `./gradlew :app:installDist`, then start the service without Gradle: `app/build/install/app/bin/app`.",
+     "Run `git init`, commit everything (including the four wrapper files), create a `hello-jvm` repository on GitHub and push."
+    ],
+    "hints": [
+     "`curl -s https://services.gradle.org/versions/current` prints the version and the checksum to pass with `--gradle-distribution-sha256-sum`.",
+     "A test-only change should leave `compileKotlin` and `jar` UP-TO-DATE. Only test compilation and the tests do work."
+    ],
+    "done_when": "The second `./gradlew build` ends with `7 actionable tasks: 7 up-to-date`, and `curl localhost:8080` shows `visits` going up."
+   },
+   "explain_back": {
+    "prompt": "Explain Gradle's three phases in 3 to 4 sentences. Mention when a `println` at the top of build.gradle.kts runs, and what the configuration cache lets Gradle skip.",
+    "answer": "First Gradle reads the settings file to find out which projects are in the build. Then it runs the build scripts of those projects, which register and set up tasks, and it builds a graph of the tasks I asked for. Only after that does it run the tasks' actions, in dependency order. A `println` at the top of a build script runs in the configuration phase, before any task starts. The configuration cache saves the task graph, so a repeat run with the same scripts skips the first two phases and goes straight to execution."
+   },
+   "recap": [
+    "A build tool turns source and libraries into tested, packaged software, the same way every time.",
+    "Plugins add tasks; `build` pulls in `assemble` (outputs) and `check` (tests).",
+    "Every run has three phases: initialization (settings), configuration (build scripts) and execution (task actions).",
+    "Build scripts describe the work; only `doLast` code runs when a task executes.",
+    "A task whose inputs and outputs did not change is skipped as UP-TO-DATE.",
+    "Always run `./gradlew`: the wrapper pins the Gradle version and can check its checksum."
+   ],
+   "check": [
+    {
+     "q": "A teammate puts `val token = File(\"/tmp/token\").readText()` at the top of build.gradle.kts. When is the file read?",
+     "options": [
+      "Only when a task that uses `token` runs",
+      "During configuration, before any task runs",
+      "Only during `./gradlew build`, not `test`",
+      "Once, when the wrapper first downloads Gradle"
+     ],
+     "answer": 1,
+     "why": "Top-level script code runs in the configuration phase of every run that is not served from the configuration cache."
+    },
+    {
+     "q": "CI runs `gradle build` with Gradle 8.14 from the runner image. Your laptop runs `./gradlew build` on 9.8.2. CI fails on a removed API. What is the best fix?",
+     "options": [
+      "Install Gradle 9.8.2 on the CI image",
+      "Delete gradle-wrapper.properties from git",
+      "Add `--rerun` to the CI command",
+      "Change CI to run `./gradlew build`"
+     ],
+     "answer": 3,
+     "why": "The wrapper makes CI download and use the version the project pins, so it can never drift from laptops again."
+    },
+    {
+     "q": "`./gradlew :app:jar` prints `> Task :app:compileKotlin UP-TO-DATE` and then `> Task :app:jar` with no label. What happened?",
+     "options": [
+      "Compiling was skipped; the jar was rebuilt",
+      "Compiling failed without an error message",
+      "Neither task did any work this time",
+      "Both outputs came from another machine"
+     ],
+     "answer": 0,
+     "why": "UP-TO-DATE means skipped because nothing changed, and a task line with no label did real work (here, perhaps because the old jar was deleted)."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the Gradle Wrapper, and why commit it?",
+     "a": "The wrapper is the `gradlew` script, a small jar and a properties file that names one Gradle version. Running `./gradlew` downloads exactly that version and uses it, so every developer and CI runner builds with the same Gradle. You commit all four files so a fresh clone needs only a JDK. I also set `distributionSha256Sum`, so a tampered download is refused, and upgrades become a reviewed one-line change."
+    },
+    {
+     "q": "Walk me through Gradle's build lifecycle.",
+     "a": "Initialization reads the settings file and decides which projects take part. Configuration runs their build scripts, which register tasks, and Gradle builds the task graph for the requested tasks. Execution runs the task actions in dependency order and skips tasks whose inputs and outputs are unchanged. The common mistake is heavy work at configuration time, which slows every run, even `help`. The configuration cache skips the first two phases when nothing relevant changed."
+    },
+    {
+     "q": "How does Gradle decide that a task is UP-TO-DATE?",
+     "a": "Each task declares inputs, such as source files, the classpath and flags, and outputs, such as class files. After a run, Gradle stores fingerprints of both. Next time it compares fresh fingerprints with the stored ones, and if nothing differs and the outputs are still there, it skips the task. A task that declares no outputs can never be up to date, so it always runs."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "Gradle does not guess when it skips a task. Ask it why a task ran with `--info`. After adding a comment to `Main.kt`, `./gradlew :app:compileKotlin --info` printed:\n\n- `Task ':app:compileKotlin' is not up-to-date because:`\n- `Input property 'sources' file .../app/src/main/kotlin/hello/app/Main.kt has changed.`\n\nSo what goes into the comparison? Four things:\n\n1. Input files, by content hash. Timestamps do not matter: `touch Main.kt` leaves all 7 tasks up to date, while one changed byte does not.\n2. Input properties, such as the JVM target or compiler flags.\n3. The task's own code. Upgrade the Kotlin plugin and every Kotlin compile task runs again.\n4. Output files. Delete `app/build/libs/app.jar` and only `jar` runs again. The tasks after it stay up to date, because Gradle 9 builds the same jar byte for byte.\n\nThis explains a few things you will see. A task with no declared outputs, like `hello` in the worked example, always runs. A test-only change runs `compileTestKotlin` and `test`, but `compileKotlin` and `jar` stay up to date, because their inputs are the main source files only. And a task's outputs are the next task's inputs. If `compileKotlin` runs but produces byte-for-byte the same class files, the tasks after it can still be skipped. Day 24 uses that to explain compile avoidance across projects.\n\nTwo flags force work. `--rerun` reruns the one task you name, for example `./gradlew test --rerun` when you suspect a flaky test. `--rerun-tasks` reruns every task in the graph, which is slow and almost never what you want. If you reach for it often, a task is probably missing an input, and the real fix is in the build logic.\n\nOne more habit worth building now: when a build surprises you, read the task lines before you read the error. They tell you what Gradle thought had changed. If you want to see the whole graph first, `--task-graph` prints it without running anything."
+   },
+   "sources": [
+    {
+     "title": "Gradle docs: Build lifecycle",
+     "url": "https://docs.gradle.org/current/userguide/build_lifecycle.html"
+    },
+    {
+     "title": "Gradle docs: The Gradle Wrapper",
+     "url": "https://docs.gradle.org/current/userguide/gradle_wrapper.html"
+    },
+    {
+     "title": "Gradle docs: Command-line interface",
+     "url": "https://docs.gradle.org/current/userguide/command_line_interface.html"
+    },
+    {
+     "title": "What's new in Gradle 9",
+     "url": "https://gradle.org/whats-new/gradle-9/"
+    }
+   ]
+  },
+  {
+   "id": "d23",
+   "title": "Dependencies and multi-project builds",
+   "minutes": 50,
+   "goal": "By the end you can declare dependencies in the right configuration, explain which version Gradle picked and why, and split a build into projects that share a version catalog and a convention plugin.",
+   "guess": {
+    "q": "Your app asks for commons-lang3 3.17.0. A library your app uses needs commons-lang3 3.18.0. Which version is on the app's runtime classpath?",
+    "options": [
+     "3.17.0, because your own declaration wins",
+     "3.18.0, because Gradle picks the highest",
+     "Both, each library gets its own copy",
+     "Neither: the build stops with a conflict"
+    ],
+    "answer": 1,
+    "why": "When two versions of one library meet, Gradle picks the highest by default. Maven picks the declaration nearest your project instead, so the same dependencies can resolve differently there."
+   },
+   "terms": [
+    {
+     "term": "Repository",
+     "plain": "A server that stores published libraries and plugins, such as Maven Central."
+    },
+    {
+     "term": "Coordinates",
+     "plain": "The group, name and version that identify a library, written as group:name:version."
+    },
+    {
+     "term": "Dependency configuration",
+     "plain": "A named bucket such as implementation or api that decides which classpaths a dependency joins."
+    },
+    {
+     "term": "Transitive dependency",
+     "plain": "A library you get because a library you asked for needs it."
+    },
+    {
+     "term": "Conflict resolution",
+     "plain": "Gradle's rule for picking one version when several are requested; by default the highest version wins."
+    },
+    {
+     "term": "Version catalog",
+     "plain": "The file gradle/libs.versions.toml, which names your libraries and plugins and their versions in one place."
+    },
+    {
+     "term": "Platform (BOM)",
+     "plain": "A published list of versions for a family of libraries, added with platform(...) so they move together."
+    },
+    {
+     "term": "Convention plugin",
+     "plain": "Your own small plugin, kept in build-logic, that holds setup shared by several projects."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Repositories and coordinates",
+     "body": "A dependency is a library your code needs, such as JUnit or a JSON parser. To fetch one, Gradle needs two facts: where to look and what to ask for.\n\nWhere to look is a repository, a server that stores published jars with their metadata. You will meet three kinds:\n\n- Maven Central (`mavenCentral()`), where most open-source JVM libraries live\n- the Gradle Plugin Portal (`gradlePluginPortal()`), where most Gradle plugins live\n- your company's own repository, often a mirror of both (Nexus or Artifactory)\n\nWhat to ask for is the coordinates: group, name and version in one string. `org.junit:junit-bom:6.1.3` has the group `org.junit`, the name `junit-bom` and the version `6.1.3`. Maven uses the same coordinates. Gradle downloads each file once into `~/.gradle/caches/modules-2` and reuses it in every project on your laptop.\n\nDeclare repositories once, in `settings.gradle.kts`. In hello-jvm, `repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS` fails the build if a project adds its own. That sounds strict, but at work it is what you want. There is one place to point at the company mirror, and no project can quietly pull from a random server.",
+     "refs": [
+      {
+       "title": "Gradle docs: Dependency management basics",
+       "url": "https://docs.gradle.org/current/userguide/dependency_management_basics.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Configurations: which classpath a dependency joins",
+     "body": "You never add a dependency to a project in general. You add it to a configuration, and the configuration decides which classpaths it joins. A classpath is the list of jars that the compiler or the JVM can see. Each project has one for compiling the main code, one for running it, and the same two for tests. The configurations you will use:\n\n- `implementation`: needed to compile and run this project. Projects that use yours cannot see it when they compile.\n- `api`: like `implementation`, but also on the compile classpath of every project that uses yours. It needs the `java-library` plugin.\n- `compileOnly`: needed to compile, but provided by someone else at runtime.\n- `runtimeOnly`: needed only when the program runs, such as a database driver.\n- `testImplementation` and `testRuntimeOnly`: the same ideas, for the tests.\n\nMake `implementation` your default. It keeps a library's insides private: a consumer cannot import a class from a library you only use internally. It also saves build time. When you upgrade an `implementation` dependency, the projects that use yours do not recompile.\n\nUse `api` only when a type from that library appears in your public functions. If your function returns a `Money` from a money library, every caller needs that library to compile, so it is part of your API.",
+     "refs": [
+      {
+       "title": "Gradle docs: The Java Library plugin (api and implementation)",
+       "url": "https://docs.gradle.org/current/userguide/java_library_plugin.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Tom Gregory: How to use Gradle api vs implementation dependencies",
+       "url": "https://tomgregory.com/how-to-use-gradle-api-vs-implementation-dependencies-with-the-java-library-plugin",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Transitive dependencies and highest-wins",
+     "body": "Libraries have dependencies of their own. Ask for `commons-text` and you also get `commons-lang3`, because `commons-text` needs it. These are transitive dependencies, and in a real service they often outnumber the ones you declared.\n\nSooner or later, two paths ask for different versions of the same library. Gradle settles this conflict with one rule: the highest version wins. Your own declaration gets no extra weight. This surprises people who know Maven, where the declaration nearest your project wins.\n\nTwo reports show what really happened:\n\n- `./gradlew :app:dependencies --configuration runtimeClasspath` prints the whole tree. An arrow such as `3.17.0 -> 3.18.0` means one version was asked for and another was chosen. `(*)` marks a subtree already printed above.\n- `./gradlew :app:dependencyInsight --dependency commons-lang3 --configuration runtimeClasspath` explains one library: the version picked, the reason (such as `By conflict resolution`) and every path that asked for it.\n\nGradle resolves each classpath separately. So the compile classpath can hold 3.17.0 while the runtime classpath holds 3.18.0. The worked example shows exactly that, and the deeper section shows how to make the two agree.",
+     "refs": [
+      {
+       "title": "Gradle docs: Viewing dependencies",
+       "url": "https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Gradle docs: Graph resolution",
+       "url": "https://docs.gradle.org/current/userguide/graph_resolution.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Version catalogs: one file for names and versions",
+     "body": "In a build with ten projects, the same version string ends up in ten build files, and one upgrade means ten edits. A version catalog fixes that. It is a TOML file at `gradle/libs.versions.toml`, and Gradle reads it automatically. It has up to four sections:\n\n- `[versions]`: named version numbers, such as `kotlin = \"2.4.21\"`\n- `[libraries]`: short names for coordinates, such as `junit-bom`\n- `[bundles]`: groups of libraries you often add together\n- `[plugins]`: names for plugins and their versions\n\nBuild scripts then say `libs.junit.bom` instead of `\"org.junit:junit-bom:6.1.3\"`, and `alias(libs.plugins.jib)` for a plugin. Dashes in names become dots. IntelliJ completes these names, and a typo fails the build at once instead of fetching the wrong thing.\n\nKnow what a catalog does not do. It only gives names to coordinates. It does not force any version onto the dependency graph, so highest-wins still decides the transitive ones. That job belongs to platforms, next.",
+     "refs": [
+      {
+       "title": "Gradle docs: Version catalogs",
+       "url": "https://docs.gradle.org/current/userguide/version_catalogs.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Understanding Gradle #09: catalogs, platforms and constraints (Jendrik Johannes)",
+       "url": "https://www.youtube.com/watch?v=8044F5gc1dE",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Platforms and BOMs: versions that move together",
+     "body": "Some libraries come as a family of modules that must share one version. JUnit is one: `junit-jupiter-api`, `junit-jupiter-engine` and `junit-platform-launcher` have to match, or tests fail in confusing ways.\n\nA BOM (bill of materials) is a published list of recommended versions for such a family. Gradle calls it a platform, and you add it like a dependency, wrapped in `platform(...)`. hello-jvm does this in its convention plugin: `testImplementation(platform(...junit-bom...))`.\n\nHere is why. `kotlin(\"test\")` pulls in `kotlin-test-junit5`, which asks for JUnit 5.10.1. The JUnit 6.1.3 BOM moves every JUnit module to 6.1.3. The dependency report shows it as `junit-jupiter-engine:5.10.1 -> 6.1.3`, with lines marked `(c)` for the BOM's constraints.\n\nYou will see BOMs all over the JVM world. Spring Boot and Jackson both publish one. A normal `platform()` takes part in highest-wins like everything else. `enforcedPlatform()` forces its versions, even downward. Use it rarely, because it can silently downgrade something a library needs.",
+     "refs": [
+      {
+       "title": "Gradle docs: Centralizing dependencies (catalogs and platforms)",
+       "url": "https://docs.gradle.org/current/userguide/centralizing_dependencies.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Multi-project builds",
+     "body": "So far hello-jvm has one project. Today you split it in two:\n\n- `greeting` is a library. It builds the JSON reply, escapes text properly, and knows nothing about HTTP.\n- `app` is the web service. It depends on `greeting` and adds the server.\n\nWhy bother for a tiny service? The Day 22 version builds JSON by gluing strings. Start it with a `GREETING` that contains a double quote and `curl` returns `{\"message\":\"Say \"hi\"\",...}`, which no JSON parser accepts. Escaping is exactly the kind of logic that deserves its own module and its own tests. In a big codebase the same split gives clear boundaries and faster builds, because a change in `app` never recompiles `greeting`.\n\nThe wiring is two lines. `include(\"app\", \"greeting\")` in the settings file declares both projects. `implementation(project(\":greeting\"))` in `app/build.gradle.kts` makes `app` use `greeting` like any library, except that Gradle builds it first.\n\nTask paths matter now. `./gradlew build` at the root builds both projects. `./gradlew :greeting:test` tests only the library. `./gradlew :app:build` builds `app` and only the parts of `greeting` it needs, such as its jar. `./gradlew projects` prints the tree.",
+     "refs": [
+      {
+       "title": "Gradle docs: Structuring multi-project builds",
+       "url": "https://docs.gradle.org/current/userguide/multi_project_builds_intermediate.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Share setup with a convention plugin",
+     "body": "Split a build and the build scripts start repeating themselves. Both projects need the Kotlin plugin, `jvmToolchain(21)`, kotlin.test, the JUnit BOM and `useJUnitPlatform()`. Copy that into ten projects and the copies drift apart. Older builds put shared setup in `allprojects {}` or `subprojects {}` blocks in the root script. Gradle now advises against that, because it ties every project to the root.\n\nThe current answer is a **convention plugin**: your own small plugin that holds the shared setup. In hello-jvm it lives in `build-logic`, a separate little Gradle build inside the repository:\n\n1. `settings.gradle.kts` says `pluginManagement { includeBuild(\"build-logic\") }`, so Gradle builds `build-logic` first and offers its plugins.\n2. `build-logic/build.gradle.kts` applies `kotlin-dsl`, which turns each `*.gradle.kts` file in `src/main/kotlin` into a plugin.\n3. The file `hello.kotlin-jvm.gradle.kts` becomes the plugin `hello.kotlin-jvm`.\n4. Each project applies it with `id(\"hello.kotlin-jvm\")`, and keeps only what is special about it.\n\nOlder projects often use a `buildSrc` folder for this. It works, but Gradle's best-practice guide prefers an included build like `build-logic`, partly because any change in `buildSrc` makes the whole build out of date.\n\nPublishing a library takes one more plugin, `maven-publish`. Give `greeting` a `group` and `version`, and `./gradlew :greeting:publishToMavenLocal` installs it in `~/.m2`; other publish tasks push to a company repository. In the generated `pom.xml`, `api` dependencies get `compile` scope and `implementation` ones get `runtime` scope, so Maven users see the same split.",
+     "refs": [
+      {
+       "title": "Gradle docs: Best practices for structuring builds",
+       "url": "https://docs.gradle.org/current/userguide/best_practices_structuring_builds.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Understanding Gradle #03: plugins (Jendrik Johannes)",
+       "url": "https://www.youtube.com/watch?v=N95YI-szd78",
+       "kind": "watch"
+      },
+      {
+       "title": "Now in Android: build-logic README (a real convention plugin layout)",
+       "url": "https://github.com/android/nowinandroid/blob/main/build-logic/README.md",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "`implementation` and `api` work like `private` and `public` in Kotlin, applied to your dependencies. A `private` helper can change freely because no caller can see it; an `implementation` dependency can be upgraded without the projects that use yours recompiling. An `api` dependency is part of your public face, like a public function's return type, so callers depend on it too. Where it breaks: a private member truly stays inside, but an `implementation` dependency still travels to consumers at runtime, on their runtime classpath.",
+   "diagram": "<svg viewBox=\"0 0 560 250\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"app depends on greeting, which brings commons-text and commons-lang3 3.18.0; app also asks for commons-lang3 3.17.0; Gradle picks 3.18.0\"><rect class=\"bxo\" x=\"16\" y=\"20\" width=\"104\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"68\" y=\"44.5\" font-size=\"13\" text-anchor=\"middle\">app</text><rect class=\"bxt\" x=\"200\" y=\"20\" width=\"120\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"260\" y=\"44.5\" font-size=\"13\" text-anchor=\"middle\">greeting</text><rect class=\"bx\" x=\"400\" y=\"20\" width=\"144\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"472\" y=\"44.5\" font-size=\"13\" text-anchor=\"middle\">commons-text</text><rect class=\"bx\" x=\"16\" y=\"180\" width=\"160\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"96\" y=\"204.5\" font-size=\"13\" text-anchor=\"middle\">lang3 3.17.0</text><rect class=\"bxg\" x=\"384\" y=\"180\" width=\"160\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"464\" y=\"204.5\" font-size=\"13\" text-anchor=\"middle\">lang3 3.18.0</text><line class=\"ln\" x1=\"122\" y1=\"40\" x2=\"197\" y2=\"40\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"322\" y1=\"40\" x2=\"397\" y2=\"40\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"68\" y1=\"62\" x2=\"92\" y2=\"177\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"472\" y1=\"62\" x2=\"466\" y2=\"177\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"178\" y1=\"200\" x2=\"381\" y2=\"200\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"160\" y=\"32\" font-size=\"11\" text-anchor=\"middle\">implementation</text><text class=\"ts\" x=\"360\" y=\"32\" font-size=\"11\" text-anchor=\"middle\">implementation</text><text class=\"ts\" x=\"40\" y=\"124\" font-size=\"11\" text-anchor=\"start\">asks for</text><text class=\"ts\" x=\"476\" y=\"124\" font-size=\"11\" text-anchor=\"start\">needs</text><text class=\"ts\" x=\"280\" y=\"192\" font-size=\"11\" text-anchor=\"middle\">highest wins</text><text class=\"ts\" x=\"280\" y=\"240\" font-size=\"11\" text-anchor=\"middle\">runtime classpath gets 3.18.0</text></svg>",
+   "diagram_caption": "Two paths ask for commons-lang3. Gradle keeps one copy, the highest version, on the runtime classpath.",
+   "worked": {
+    "title": "Why did I get commons-lang3 3.18.0?",
+    "steps": [
+     {
+      "say": "In a scratch copy of hello-jvm, add two real libraries. `greeting` uses `commons-text` internally, and `app` asks for `commons-lang3` 3.17.0 directly. Plain coordinate strings are fine for an experiment; for keeps they go in the catalog.",
+      "code": "// greeting/build.gradle.kts\ndependencies {\n    implementation(\"org.apache.commons:commons-text:1.14.0\")\n}\n\n// app/build.gradle.kts\ndependencies {\n    implementation(project(\":greeting\"))\n    implementation(\"org.apache.commons:commons-lang3:3.17.0\")\n}",
+      "lang": "text"
+     },
+     {
+      "say": "Print the runtime classpath. `commons-text` brings `commons-lang3` 3.18.0 along. `app` asked for 3.17.0, and the arrow shows it got 3.18.0: highest wins.",
+      "code": "$ ./gradlew :app:dependencies --configuration runtimeClasspath -q\nruntimeClasspath - Runtime classpath of 'main'.\n+--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21\n|    \\--- org.jetbrains:annotations:13.0\n+--- project ':greeting'\n|    +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)\n|    \\--- org.apache.commons:commons-text:1.14.0\n|         \\--- org.apache.commons:commons-lang3:3.18.0\n\\--- org.apache.commons:commons-lang3:3.17.0 -> 3.18.0",
+      "lang": "console"
+     },
+     {
+      "say": "Ask Gradle why. The reason is conflict resolution, and the two trees at the bottom are the two paths that asked for the library.",
+      "code": "$ ./gradlew :app:dependencyInsight --dependency commons-lang3 --configuration runtimeClasspath -q\norg.apache.commons:commons-lang3:3.18.0\n  Variant runtime:\n    ...\n   Selection reasons:\n      - By conflict resolution: between versions 3.18.0 and 3.17.0\n\norg.apache.commons:commons-lang3:3.18.0\n\\--- org.apache.commons:commons-text:1.14.0\n     \\--- project ':greeting'\n          \\--- runtimeClasspath\n\norg.apache.commons:commons-lang3:3.17.0 -> 3.18.0\n\\--- runtimeClasspath",
+      "lang": "console"
+     },
+     {
+      "say": "Now the compile classpath. `commons-text` is missing, because `greeting` declared it as `implementation`. And `commons-lang3` is still 3.17.0 here, because each classpath is resolved on its own.",
+      "code": "$ ./gradlew :app:dependencies --configuration compileClasspath -q\ncompileClasspath - Compile classpath for 'main'.\n+--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21\n|    \\--- org.jetbrains:annotations:13.0\n+--- project ':greeting'\n|    \\--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)\n\\--- org.apache.commons:commons-lang3:3.17.0",
+      "lang": "console"
+     },
+     {
+      "say": "So `app` cannot use `commons-text` itself. Add a file in `app` that imports `org.apache.commons.text.WordUtils`, and the compiler says so.",
+      "code": "$ ./gradlew :app:compileKotlin\n> Task :app:compileKotlin FAILED\ne: file:///Users/you/code/hello-jvm/app/src/main/kotlin/hello/app/Title.kt:3:27 Unresolved reference 'text'.\ne: file:///Users/you/code/hello-jvm/app/src/main/kotlin/hello/app/Title.kt:5:35 Unresolved reference 'WordUtils'.",
+      "lang": "console"
+     },
+     {
+      "say": "If `greeting` really returned `commons-text` types from public functions, `api` would be right. Change that one line to `api(...)` and the compile classpath gains `commons-text`. Then throw the experiment away: the real `greeting` has no outside dependencies.",
+      "code": "$ ./gradlew :app:dependencies --configuration compileClasspath -q\ncompileClasspath - Compile classpath for 'main'.\n+--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21\n|    \\--- org.jetbrains:annotations:13.0\n+--- project ':greeting'\n|    +--- org.apache.commons:commons-text:1.14.0\n|    |    \\--- org.apache.commons:commons-lang3:3.18.0\n|    \\--- org.jetbrains.kotlin:kotlin-stdlib:2.4.21 (*)\n\\--- org.apache.commons:commons-lang3:3.17.0 -> 3.18.0",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "text",
+     "title": "settings.gradle.kts",
+     "src": "// settings.gradle.kts: read first, during the initialization phase.\n// It names the build and lists which projects take part.\n\npluginManagement {\n    // Our own convention plugins live in the build-logic folder (an included build).\n    includeBuild(\"build-logic\")\n}\n\nplugins {\n    // Lets Gradle download a matching JDK when none is installed (used by toolchains).\n    id(\"org.gradle.toolchains.foojay-resolver-convention\") version \"1.0.0\"\n}\n\nrootProject.name = \"hello-jvm\"\n\ndependencyResolutionManagement {\n    // One place for repositories. A project that adds its own fails the build.\n    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS\n    repositories {\n        mavenCentral()\n    }\n}\n\ninclude(\"app\", \"greeting\")",
+     "run": "./gradlew projects"
+    },
+    {
+     "lang": "ini",
+     "title": "gradle/libs.versions.toml",
+     "src": "# The version catalog: every library and plugin version in one file.\n# Build scripts use these as libs.<name> and libs.plugins.<name>.\n\n[versions]\nkotlin = \"2.4.21\"\njunit = \"6.1.3\"\n\n[libraries]\n# The Kotlin Gradle plugin as a normal library, so build-logic can apply it.\nkotlin-gradle-plugin = { module = \"org.jetbrains.kotlin:kotlin-gradle-plugin\", version.ref = \"kotlin\" }\n# JUnit's BOM: keeps every JUnit module on the same version.\njunit-bom = { module = \"org.junit:junit-bom\", version.ref = \"junit\" }",
+     "run": "./gradlew build"
+    },
+    {
+     "lang": "text",
+     "title": "build-logic/settings.gradle.kts",
+     "src": "// build-logic is a small, separate Gradle build that holds our convention plugins.\n\ndependencyResolutionManagement {\n    repositories {\n        // Plugins and their dependencies come from the Gradle Plugin Portal.\n        gradlePluginPortal()\n    }\n    versionCatalogs {\n        // Reuse the main build's version catalog, so versions live in one file.\n        create(\"libs\") {\n            from(files(\"../gradle/libs.versions.toml\"))\n        }\n    }\n}\n\nrootProject.name = \"build-logic\"",
+     "run": "./gradlew build"
+    },
+    {
+     "lang": "text",
+     "title": "build-logic/build.gradle.kts",
+     "src": "plugins {\n    // Turns every *.gradle.kts file in src/main/kotlin into a plugin.\n    `kotlin-dsl`\n}\n\ndependencies {\n    // The convention plugin applies the Kotlin plugin, so it needs it on its classpath.\n    implementation(libs.kotlin.gradle.plugin)\n}",
+     "run": "./gradlew build"
+    },
+    {
+     "lang": "text",
+     "title": "build-logic/src/main/kotlin/hello.kotlin-jvm.gradle.kts",
+     "src": "// Convention plugin \"hello.kotlin-jvm\": the setup every Kotlin project in hello-jvm shares.\n// A project applies it with: plugins { id(\"hello.kotlin-jvm\") }\n\nplugins {\n    id(\"org.jetbrains.kotlin.jvm\")\n}\n\n// Compile and test with JDK 21, whatever JDK runs Gradle itself.\nkotlin {\n    jvmToolchain(21)\n}\n\n// Read the junit-bom entry from gradle/libs.versions.toml.\nval libs = versionCatalogs.named(\"libs\")\n\ndependencies {\n    // kotlin.test assertions, run by JUnit.\n    testImplementation(kotlin(\"test\"))\n    // The BOM moves every JUnit module to the version in the catalog.\n    testImplementation(platform(libs.findLibrary(\"junit-bom\").get()))\n}\n\ntasks.test {\n    // Run tests on the JUnit Platform.\n    useJUnitPlatform()\n}",
+     "run": "./gradlew build"
+    },
+    {
+     "lang": "text",
+     "title": "greeting/build.gradle.kts",
+     "src": "// greeting: a small library. It builds the JSON reply and knows nothing about HTTP.\nplugins {\n    id(\"hello.kotlin-jvm\")\n    `java-library`\n}",
+     "run": "./gradlew :greeting:build"
+    },
+    {
+     "lang": "text",
+     "title": "greeting/src/main/kotlin/hello/greeting/Greeting.kt",
+     "src": "package hello.greeting\n\n/** What GET / returns. It has no web code, so it is easy to test on its own. */\ndata class Greeting(\n    val message: String,\n    val version: String,\n    val host: String,\n    val visits: Long,\n) {\n    fun toJson(): String =\n        jsonObject(\n            \"message\" to message,\n            \"version\" to version,\n            \"host\" to host,\n            \"visits\" to visits,\n        )\n}\n\n/** Turns pairs into one JSON object. Numbers and booleans stay bare; everything else becomes a string. */\nfun jsonObject(vararg fields: Pair<String, Any>): String =\n    fields.joinToString(separator = \",\", prefix = \"{\", postfix = \"}\") { (key, value) ->\n        val json = if (value is Number || value is Boolean) value.toString() else quote(value.toString())\n        \"${quote(key)}:$json\"\n    }\n\n/** Puts text in double quotes and escapes the characters JSON does not allow as they are. */\nfun quote(text: String): String =\n    buildString {\n        append('\"')\n        for (c in text) {\n            when {\n                c == '\"' -> append(\"\\\\\\\"\")\n                c == '\\\\' -> append(\"\\\\\\\\\")\n                c == '\\n' -> append(\"\\\\n\")\n                c == '\\r' -> append(\"\\\\r\")\n                c == '\\t' -> append(\"\\\\t\")\n                c < ' ' -> append(\"\\\\u%04x\".format(c.code))\n                else -> append(c)\n            }\n        }\n        append('\"')\n    }",
+     "run": "./gradlew :greeting:test"
+    },
+    {
+     "lang": "text",
+     "title": "greeting/src/test/kotlin/hello/greeting/GreetingTest.kt",
+     "src": "package hello.greeting\n\nimport kotlin.test.Test\nimport kotlin.test.assertEquals\n\nclass GreetingTest {\n    @Test\n    fun buildsTheJsonReply() {\n        val json = Greeting(\"Hello, JVM!\", \"1.0.0\", \"laptop\", 3).toJson()\n        assertEquals(\"\"\"{\"message\":\"Hello, JVM!\",\"version\":\"1.0.0\",\"host\":\"laptop\",\"visits\":3}\"\"\", json)\n    }\n\n    @Test\n    fun escapesQuotesAndNewlines() {\n        assertEquals(\"\"\"\"say \\\"hi\\\"\\nbye\"\"\"\", quote(\"say \\\"hi\\\"\\nbye\"))\n    }\n}",
+     "run": "./gradlew :greeting:test"
+    },
+    {
+     "lang": "text",
+     "title": "app/build.gradle.kts",
+     "src": "// app: the runnable web service.\nplugins {\n    id(\"hello.kotlin-jvm\")\n    application\n}\n\ndependencies {\n    // Use the greeting library from this same build.\n    implementation(project(\":greeting\"))\n}\n\napplication {\n    // The class Kotlin generates for the top-level main() in Main.kt.\n    mainClass = \"hello.app.MainKt\"\n}",
+     "run": "./gradlew :app:build"
+    },
+    {
+     "lang": "text",
+     "title": "app/src/main/kotlin/hello/app/Main.kt",
+     "src": "package hello.app\n\nimport com.sun.net.httpserver.HttpExchange\nimport com.sun.net.httpserver.HttpServer\nimport hello.greeting.Greeting\nimport hello.greeting.jsonObject\nimport java.net.InetAddress\nimport java.net.InetSocketAddress\nimport java.util.concurrent.Executors\nimport java.util.concurrent.atomic.AtomicLong\n\n/** Settings come from environment variables, so the same image runs anywhere. */\ndata class Settings(\n    val version: String = System.getenv(\"APP_VERSION\") ?: \"dev\",\n    val greeting: String = System.getenv(\"GREETING\") ?: \"Hello, JVM!\",\n    val port: Int = System.getenv(\"PORT\")?.toIntOrNull() ?: 8080,\n)\n\n/** Starts the web server and returns it. Port 0 means \"any free port\" (the tests use that). */\nfun startServer(settings: Settings, port: Int = settings.port): HttpServer {\n    val visits = AtomicLong()\n    val host = InetAddress.getLocalHost().hostName // which container or pod answered\n\n    val server = HttpServer.create(InetSocketAddress(port), 0)\n    server.createContext(\"/\") { exchange ->\n        // \"/\" matches every path, so answer 404 for anything that is not exactly \"/\".\n        if (exchange.requestURI.path != \"/\") {\n            exchange.sendJson(404, jsonObject(\"error\" to \"not found\"))\n        } else {\n            val reply = Greeting(settings.greeting, settings.version, host, visits.incrementAndGet())\n            exchange.sendJson(200, reply.toJson())\n        }\n    }\n    server.createContext(\"/healthz\") { exchange ->\n        // Liveness: the process is up and can answer.\n        exchange.sendJson(200, jsonObject(\"status\" to \"ok\"))\n    }\n    // One cheap virtual thread per request (Java 21).\n    server.executor = Executors.newVirtualThreadPerTaskExecutor()\n    server.start()\n    return server\n}\n\nprivate fun HttpExchange.sendJson(status: Int, body: String) {\n    val bytes = body.toByteArray()\n    responseHeaders.add(\"Content-Type\", \"application/json\")\n    sendResponseHeaders(status, bytes.size.toLong())\n    responseBody.use { it.write(bytes) }\n}\n\nfun main() {\n    val settings = Settings()\n    val server = startServer(settings)\n    // docker stop sends SIGTERM. The JVM then runs this hook and stops the server cleanly.\n    Runtime.getRuntime().addShutdownHook(Thread { server.stop(1) })\n    println(\"hello-jvm ${settings.version} listening on port ${server.address.port}\")\n}",
+     "run": "./gradlew :app:run"
+    },
+    {
+     "lang": "text",
+     "title": "app/src/test/kotlin/hello/app/AppTest.kt (replaces MainTest.kt)",
+     "src": "package hello.app\n\nimport java.net.URI\nimport java.net.http.HttpClient\nimport java.net.http.HttpRequest\nimport java.net.http.HttpResponse\nimport kotlin.test.AfterTest\nimport kotlin.test.Test\nimport kotlin.test.assertContains\nimport kotlin.test.assertEquals\n\nclass AppTest {\n    // Start a real server on a free port for each test.\n    private val server = startServer(Settings(version = \"test\", greeting = \"Hi\"), port = 0)\n    private val client = HttpClient.newHttpClient()\n\n    @AfterTest\n    fun stop() = server.stop(0)\n\n    private fun get(path: String): HttpResponse<String> {\n        val uri = URI(\"http://localhost:${server.address.port}$path\")\n        return client.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofString())\n    }\n\n    @Test\n    fun rootSaysHelloAndCountsVisits() {\n        assertContains(get(\"/\").body(), \"\\\"visits\\\":1\")\n        val second = get(\"/\")\n        assertEquals(200, second.statusCode())\n        assertContains(second.body(), \"\\\"message\\\":\\\"Hi\\\"\")\n        assertContains(second.body(), \"\\\"visits\\\":2\")\n    }\n\n    @Test\n    fun healthzIsOk() {\n        val response = get(\"/healthz\")\n        assertEquals(200, response.statusCode())\n        assertEquals(\"\"\"{\"status\":\"ok\"}\"\"\", response.body())\n    }\n\n    @Test\n    fun unknownPathIs404() {\n        assertEquals(404, get(\"/nope\").statusCode())\n    }\n}",
+     "run": "./gradlew :app:test"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "./gradlew projects",
+     "what": "Show the projects in the build and any included builds."
+    },
+    {
+     "cmd": "./gradlew :app:dependencies --configuration runtimeClasspath",
+     "what": "Print the tree of everything app needs at runtime, with -> where a version changed."
+    },
+    {
+     "cmd": "./gradlew :app:dependencies --configuration compileClasspath",
+     "what": "Print what the compiler sees for app's main code."
+    },
+    {
+     "cmd": "./gradlew :app:dependencyInsight --dependency commons-lang3 --configuration runtimeClasspath",
+     "what": "Explain one library: the version chosen, why, and who asked for it."
+    },
+    {
+     "cmd": "./gradlew :greeting:dependencies --configuration testRuntimeClasspath",
+     "what": "See the test classpath, including what a BOM changed."
+    },
+    {
+     "cmd": "./gradlew :greeting:test",
+     "what": "Run only the library's tests."
+    },
+    {
+     "cmd": "./gradlew :app:build",
+     "what": "Build app and the parts of greeting it needs."
+    },
+    {
+     "cmd": "./gradlew build",
+     "what": "Build and test every project from the root."
+    },
+    {
+     "cmd": "./gradlew :greeting:tasks",
+     "what": "List the tasks of one project."
+    },
+    {
+     "cmd": "./gradlew buildEnvironment",
+     "what": "Show the plugins and libraries on the build scripts' own classpath."
+    },
+    {
+     "cmd": "GREETING='Say \"hi\"' ./gradlew :app:run",
+     "what": "Start the app with a setting from an environment variable."
+    },
+    {
+     "cmd": "curl -s localhost:8080 | python3 -m json.tool",
+     "what": "Pretty-print the reply, or fail loudly if the JSON is broken."
+    },
+    {
+     "cmd": "./gradlew :greeting:publishToMavenLocal",
+     "what": "With maven-publish applied, install the library into ~/.m2 for other local builds."
+    }
+   ],
+   "mistake": "Trusting the version in your build file. With highest-wins, the version that runs can be higher than the one you wrote, and a library can sit on the classpath without being in any build file at all. When a scanner reports a vulnerable version, run `dependencyInsight` to see which path brings it in, then declare the fixed version yourself; highest-wins then lifts every path to it.",
+   "real_world": "At Paylane (a made-up payments company), a security scan flagged an old JSON library that no build file mentioned. `dependencyInsight` showed it arrived through a client SDK. The team added the fixed version to the catalog and declared it in the affected project; highest-wins lifted every path, and a convention plugin made sure all services got the same setup.",
+   "task": {
+    "title": "Split hello-jvm into app and greeting",
+    "steps": [
+     "Create the `greeting` project: `Greeting.kt` and `GreetingTest.kt` from Files. In `app`, delete the old `reply()` function and `MainTest.kt`.",
+     "Update `settings.gradle.kts`: include both projects, add `pluginManagement { includeBuild(\"build-logic\") }`, and set `repositoriesMode`.",
+     "Create `gradle/libs.versions.toml` with the Kotlin and JUnit versions and the two library entries.",
+     "Create the `build-logic` build: its settings file, its build file, and the `hello.kotlin-jvm` convention plugin.",
+     "Write `greeting/build.gradle.kts` and shrink `app/build.gradle.kts` so each applies the convention plugin plus only what is special to it.",
+     "Replace `Main.kt`, add `AppTest.kt`, and run `./gradlew build` until it passes.",
+     "Prove the split: run `./gradlew :greeting:test` alone, then find `project ':greeting'` in `./gradlew :app:dependencies --configuration runtimeClasspath`.",
+     "Find the BOM at work: look for `5.10.1 -> 6.1.3` in greeting's `testRuntimeClasspath`.",
+     "Start the app with `GREETING='Say \"hi\"'` and check the reply with `curl -s localhost:8080 | python3 -m json.tool`.",
+     "Commit and push."
+    ],
+    "hints": [
+     "If Gradle cannot find plugin `hello.kotlin-jvm`, check the file name in `build-logic/src/main/kotlin` and that `includeBuild` sits inside `pluginManagement`.",
+     "The convention plugin already applies the Kotlin plugin, so each subproject's plugins block needs only `id(\"hello.kotlin-jvm\")` plus `application` or `java-library`."
+    ],
+    "done_when": "`./gradlew build` passes and `curl -s localhost:8080 | python3 -m json.tool` prints valid JSON that contains your quoted greeting."
+   },
+   "explain_back": {
+    "prompt": "Explain the difference between `implementation` and `api` in 3 to 4 sentences. Mention which classpaths each one reaches and why `implementation` is the default.",
+    "answer": "Both put a library on my project's own compile and runtime classpaths. An `api` dependency also lands on the compile classpath of every project that uses mine, while an `implementation` one reaches them only at runtime. So with `implementation`, consumers cannot import that library by accident, and upgrading it does not force them to recompile. I use `api` only when the library's types appear in my public functions, because then callers need it to compile."
+   },
+   "recap": [
+    "Repositories say where to look, coordinates (group:name:version) say what to fetch; declare repositories once in settings.",
+    "The configuration decides the classpath: default to `implementation`, use `api` only for types in your public functions.",
+    "On a version conflict the highest version wins; `dependencies` and `dependencyInsight` show what you really got.",
+    "A version catalog names coordinates in one file; a platform (BOM) actually moves a family of versions together.",
+    "`include` plus `project(\":x\")` make a multi-project build; task paths like `:greeting:test` pick one project.",
+    "Shared setup belongs in a convention plugin in a `build-logic` included build."
+   ],
+   "check": [
+    {
+     "q": "Your library `billing` has a public function that returns `org.joda.money.Money`. Which configuration should `joda-money` use in billing?",
+     "options": [
+      "`implementation`",
+      "`compileOnly`",
+      "`api`",
+      "`runtimeOnly`"
+     ],
+     "answer": 2,
+     "why": "Callers need the Money type to compile code that calls billing, so the library is part of billing's API."
+    },
+    {
+     "q": "`dependencies` prints `jackson-databind:2.17.0 -> 2.18.2`. What does the arrow mean?",
+     "options": [
+      "2.17.0 was requested and 2.18.2 was chosen",
+      "2.18.2 failed to download, so 2.17.0 is used",
+      "The app will load both versions at runtime",
+      "2.17.0 is in the cache and 2.18.2 is remote"
+     ],
+     "answer": 0,
+     "why": "Something else asked for 2.18.2, and conflict resolution picked the highest version for every path."
+    },
+    {
+     "q": "Five Kotlin projects repeat the same toolchain, test and BOM setup in their build files. Where should that setup live?",
+     "options": [
+      "In an `allprojects {}` block in the root",
+      "In each project's `gradle.properties`",
+      "In the catalog's `[bundles]` section",
+      "In a convention plugin in `build-logic`"
+     ],
+     "answer": 3,
+     "why": "A convention plugin keeps one copy of the setup that each project applies by id, without tying projects to the root script."
+    }
+   ],
+   "interview": [
+    {
+     "q": "What is the difference between api and implementation in Gradle?",
+     "a": "Both make a dependency available to the project that declares it. An `api` dependency is also exposed on the compile classpath of consumers, while `implementation` keeps it internal and only ships it at runtime. `implementation` is the default because it prevents accidental use of a library's internals and means fewer projects recompile when it changes. I use `api` only for libraries whose types appear in public signatures. It needs the `java-library` plugin."
+    },
+    {
+     "q": "Two libraries need different versions of the same dependency. What does Gradle do, and how do you investigate?",
+     "a": "By default Gradle picks the highest requested version for the whole graph, unlike Maven's nearest-wins. I run `dependencies` on the relevant classpath to see arrows like `1.2 -> 1.4`, then `dependencyInsight` on that one module to get the selection reason and every path that asked for it. If the result is wrong, I declare the version I need, use a platform for families of libraries, or as a last resort a strict version."
+    },
+    {
+     "q": "How would you share build configuration across many Gradle projects?",
+     "a": "I would write convention plugins as precompiled script plugins in an included build called `build-logic`, and apply them by id in each project. Versions go in the version catalog, which `build-logic` can read too. I avoid `allprojects` and `subprojects` blocks, because they couple every project to the root. Each project's own build script then only holds what is special about it."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "The worked example left a loose end. `app` compiled against commons-lang3 3.17.0 but ran with 3.18.0. Usually that is harmless, because libraries try to stay compatible within a major version. But if 3.18.0 changed a method you call, the code compiles fine and then fails at runtime with `NoSuchMethodError`. That is the worst kind of failure, because no build catches it.\n\nYou can make Gradle use the runtime versions when it compiles too. Add this to `app/build.gradle.kts`:\n\n`java { consistentResolution { useRuntimeClasspathVersions() } }`\n\nWith that block, the compile classpath report for the same experiment showed `org.apache.commons:commons-lang3:3.17.0 -> 3.18.0`. `dependencyInsight` on the compile classpath gave a new reason: `By constraint: version resolved in configuration ':app:runtimeClasspath' by consistent resolution`. Now the compiler sees the jar that will really run.\n\nGradle has more tools for taking control of versions. Reach for them in this order:\n\n1. Declare the version you need directly. Highest-wins then lifts every path in that project to it. This is the usual fix for a security alert.\n2. Add a dependency constraint, such as `constraints { implementation(\"group:name:1.4.2\") }`. It sets a version for a library you do not use directly, without adding it as a dependency. `gradle init` writes one of these in its generated builds.\n3. Use a platform for a whole family, as hello-jvm does for JUnit.\n4. As a last resort, use a strict version or `enforcedPlatform`, which can force a version downward. Check the graph afterwards, because you may have broken a library that needed the newer one.\n\nThere is also a switch for teams that want to decide every conflict by hand. With `configurations.runtimeClasspath { resolutionStrategy.failOnVersionConflict() }` in `app`, the dependency report marked both commons-lang3 entries `FAILED`. Put the same rule on every configuration with `configurations.all` and it fails first on the Kotlin compiler's own classpath, so keep it to the classpaths you care about.\n\nDay 24 adds two more tools that sit on top of all this: dependency locking, which records the exact result of resolution in a file, and dependency verification, which checks the bytes of every downloaded jar."
+   },
+   "sources": [
+    {
+     "title": "Gradle docs: The Java Library plugin",
+     "url": "https://docs.gradle.org/current/userguide/java_library_plugin.html"
+    },
+    {
+     "title": "Gradle docs: Viewing dependencies",
+     "url": "https://docs.gradle.org/current/userguide/viewing_debugging_dependencies.html"
+    },
+    {
+     "title": "Gradle docs: Version catalogs",
+     "url": "https://docs.gradle.org/current/userguide/version_catalogs.html"
+    },
+    {
+     "title": "Gradle docs: Best practices for structuring builds",
+     "url": "https://docs.gradle.org/current/userguide/best_practices_structuring_builds.html"
+    }
+   ]
+  },
+  {
+   "id": "d24",
+   "title": "Fast builds, CI and containers for JVM apps",
+   "minutes": 50,
+   "goal": "By the end you can explain and use Gradle's caches, run the build in GitHub Actions with setup-gradle, and package a JVM app in a small, non-root image with sensible memory settings.",
+   "guess": {
+    "q": "The build cache is on. You run `./gradlew clean build`. What happens to `compileKotlin`?",
+    "options": [
+     "It compiles again, since clean deleted its output",
+     "Gradle copies its output back and marks it FROM-CACHE",
+     "It is UP-TO-DATE, because the source did not change",
+     "It fails until you turn the build cache off"
+    ],
+    "answer": 1,
+    "why": "`clean` deleted the outputs, so the task is not up to date. But its inputs match a stored cache entry, so Gradle restores the outputs instead of compiling."
+   },
+   "terms": [
+    {
+     "term": "Build cache",
+     "plain": "A store of task outputs, keyed by a hash of each task's inputs, that any later build with the same inputs can reuse."
+    },
+    {
+     "term": "Configuration cache",
+     "plain": "A saved task graph that lets a repeat run skip the initialization and configuration phases."
+    },
+    {
+     "term": "Gradle Daemon",
+     "plain": "A background JVM that Gradle keeps running between builds, so each build starts faster."
+    },
+    {
+     "term": "Toolchain",
+     "plain": "The JDK version a build asks for to compile and test, chosen separately from the JDK that runs Gradle."
+    },
+    {
+     "term": "Compile avoidance",
+     "plain": "Not recompiling a project when a dependency changed only inside function bodies, not in its public API."
+    },
+    {
+     "term": "Build Scan",
+     "plain": "A web report of one build, with task timings, tests and dependencies, published to a Develocity server."
+    },
+    {
+     "term": "Jib",
+     "plain": "A Gradle and Maven plugin from Google that builds container images for JVM apps without a Dockerfile."
+    },
+    {
+     "term": "MaxRAMPercentage",
+     "plain": "A JVM flag that sets the largest heap as a percentage of the memory the container may use."
+    }
+   ],
+   "sections": [
+    {
+     "h": "Four ways Gradle skips work",
+     "body": "A slow build costs you on every run, on your laptop and on every CI job. Gradle's answer is to avoid repeating work, and it has four separate tricks. Keep them apart in your head:\n\n- Up-to-date checks skip a task whose inputs and outputs did not change since the last run in the same folder (Day 22).\n- The build cache copies a task's outputs from an earlier run anywhere, even in another folder or on another machine, when the inputs match.\n- The configuration cache skips running the build scripts when they did not change.\n- The daemon keeps a warm JVM between builds, so Gradle itself starts fast.\n\nThe Kotlin plugin adds compile avoidance on top. We changed `greeting` in three ways and watched `app`:\n\n1. Add a comment: only `:greeting:compileKotlin` ran. It produced the same class files, so the jar and everything in `app` stayed UP-TO-DATE.\n2. Change a function body: the `greeting` jar and both test tasks ran, but `:app:compileKotlin` stayed UP-TO-DATE. The ABI (the public signatures other code compiles against) had not changed.\n3. Add a public function: now `:app:compileKotlin` ran too.\n\nSo a change behind a stable public API does not ripple through the build. That is one more reason to split code into projects and to prefer `implementation`.",
+     "refs": [
+      {
+       "title": "Gradle docs: Improve the performance of Gradle builds",
+       "url": "https://docs.gradle.org/current/userguide/performance.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Understanding Gradle #23: caching (Jendrik Johannes)",
+       "url": "https://www.youtube.com/watch?v=nHb0kIcTrFE",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "The build cache and the configuration cache",
+     "body": "Turn the **build cache** on with `org.gradle.caching=true` in `gradle.properties`. Before a cacheable task runs, Gradle hashes all its inputs into a cache key. If the cache already holds outputs for that key, Gradle copies them in and prints `FROM-CACHE`. The folder path is not part of the key, so a fresh clone in another folder gets hits too. A fresh clone of hello-jvm on the same laptop built with `20 actionable tasks: 8 executed, 12 from cache`.\n\nThe local cache lives in `~/.gradle/caches/build-cache-1`. Many teams also run a remote cache, an HTTP server that every build can read. The usual setup is that CI writes to it and laptops only read. Pull main in the morning, and most of it is already compiled. Develocity, Gradle's commercial server, is one common choice.\n\nThe configuration cache is a different thing. It stores the task graph from Day 22's first two phases, keyed by your build files and the tasks you asked for. Gradle 9 calls it the preferred mode and plans to turn it on by default in Gradle 10. Two things to know:\n\n- Some plugins are not compatible yet. They fail with `Invocation of 'Task.project' ... is unsupported with the configuration cache`, and `--no-configuration-cache` turns the cache off for one run.\n- Entries can hold values from your build, including secrets, so treat the project's `.gradle` folder as private.\n- A miss is only slower, never wrong: Gradle runs the scripts again and stores a new entry.",
+     "refs": [
+      {
+       "title": "Gradle docs: Build cache",
+       "url": "https://docs.gradle.org/current/userguide/build_cache.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Gradle docs: Adopting the configuration cache",
+       "url": "https://docs.gradle.org/current/userguide/configuration_cache_adoption.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "The daemon, parallel builds and toolchains",
+     "body": "The daemon is the background JVM behind `./gradlew`. The first build of the day starts one, which is why it is the slowest. Later builds reuse it, with classes already loaded and code already JIT-compiled. It stops after three idle hours. `./gradlew --status` lists daemons and `./gradlew --stop` stops them, the classic fix when builds act strangely after a JDK change. In CI, setup-gradle stops them at the end of a job that saves the cache.\n\n`org.gradle.parallel=true` lets Gradle run tasks from different projects at the same time. hello-jvm is too small to notice. A build with dozens of projects can finish much sooner, because many projects only depend on a few others.\n\nA toolchain separates the JDK that compiles your code from the JDK that runs Gradle. `kotlin { jvmToolchain(21) }` in the convention plugin asks for Java 21:\n\n1. Gradle first looks for an installed JDK 21 (`./gradlew -q javaToolchains` lists what it found).\n2. If there is none, the foojay plugin in `settings.gradle.kts` downloads one.\n3. Compiling and testing then use that JDK, whatever `java -version` says in your terminal.\n\nSo your laptop can run Gradle on a newer Java and still compile for 21, and CI compiles with exactly the same version. This also explains the \"works in IntelliJ, fails in the terminal\" puzzle: there are two JDKs, and only one of them compiles your code.",
+     "refs": [
+      {
+       "title": "Gradle docs: Toolchains for JVM projects",
+       "url": "https://docs.gradle.org/current/userguide/toolchains.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Kotlin docs: Configure a Gradle project (jvmToolchain)",
+       "url": "https://kotlinlang.org/docs/gradle-configure-project.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Trust: checksums, locking and Build Scans",
+     "body": "Speed is half the job. The other half is knowing exactly what went into a build. Gradle has three tools for that, and each answers a different question:\n\n- Is this the right Gradle? The wrapper's `distributionSha256Sum` refuses a download that does not match. We broke one character on purpose and got `Verification of Gradle distribution failed!`.\n- Are these the same versions as last week? Dependency locking writes the exact resolved version of every library to `gradle.lockfile`. Turn it on with `dependencyLocking { lockAllConfigurations() }`, run `./gradlew dependencies --write-locks`, and commit the file. A new version then fails the build, for example `Resolved 'org.opentest4j:opentest4j:1.3.0' which is not part of the dependency lock state`, until you update the lock on purpose.\n- Are these the same bytes? Dependency verification keeps a SHA-256 checksum of every downloaded file in `gradle/verification-metadata.xml`. Create it with `./gradlew --write-verification-metadata sha256 help`. A swapped jar then fails the build.\n\nWhen a build is slow or flaky, a Build Scan shows why. `./gradlew build --scan` uploads a report of the run, with task timings, test results and the dependency graph, and prints a link. The free service is scans.gradle.com. It asks you to accept its terms first, and your build data goes to Gradle's servers, so keep it for open code. Companies run their own Develocity server for private code, and since Gradle 9.5 `--develocity-url` points a build at one without editing it.",
+     "refs": [
+      {
+       "title": "Gradle docs: Locking versions",
+       "url": "https://docs.gradle.org/current/userguide/dependency_locking.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Gradle docs: Verifying dependencies",
+       "url": "https://docs.gradle.org/current/userguide/dependency_verification.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Gradle in GitHub Actions",
+     "body": "In CI you run the same command as on your laptop, `./gradlew build`. The workflow only prepares the runner, and `.github/workflows/jvm-ci.yml` does that in two steps:\n\n1. `actions/setup-java` installs JDK 21, so the toolchain finds it and nothing extra is downloaded.\n2. `gradle/actions/setup-gradle` does the Gradle work. It checks `gradle-wrapper.jar` against the checksums of real Gradle releases, so a tampered wrapper fails. It caches downloaded libraries, the wrapper's Gradle and the local build cache between runs. And it writes a Job Summary listing every Gradle command and its result.\n\nThree details save you pain. The cache is written only from the default branch; other branches only read it. Do not also turn on `cache: gradle` in setup-java or add an `actions/cache` step for `~/.gradle`, because they get in the way of setup-gradle. And since CI runs `./gradlew`, it reads the same `gradle.properties`, so the build cache and configuration cache work there too.\n\nVersion 6 of setup-gradle changed the licensing. The default cache provider is closed-source: free for public repositories, a free preview for private ones, with paid tiers planned for large companies. To stay fully open source, set `cache-provider: basic`, an MIT-licensed provider built on `actions/cache`. hello-jvm's workflow has that line ready, commented out, for private repositories.",
+     "refs": [
+      {
+       "title": "setup-gradle documentation (gradle/actions)",
+       "url": "https://github.com/gradle/actions/blob/main/docs/setup-gradle.md",
+       "kind": "docs"
+      },
+      {
+       "title": "gradle/actions: distribution and licensing",
+       "url": "https://github.com/gradle/actions/blob/main/DISTRIBUTION.md",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "A Dockerfile for a JVM app",
+     "body": "The image needs a JRE and your jars, nothing more. The JDK, Gradle and the Kotlin compiler are build tools. That is the multi-stage pattern from Day 16, and hello-jvm's Dockerfile has two stages:\n\n1. The build stage starts from `eclipse-temurin:21-jdk` and runs `./gradlew :app:installDist`. That task leaves `bin/app` (a start script) and `lib/` (every jar) in `app/build/install/app`.\n2. The run stage starts from `eclipse-temurin:21-jre`, copies only that folder, adds a non-root user and a healthcheck, and starts `/app/bin/app`.\n\nLayer order matters, as on Day 13. The wrapper files are copied and run first, so the layer that downloads Gradle (about 170 MB) stays cached until you change the Gradle version. The build line also uses a BuildKit cache mount: `RUN --mount=type=cache,target=/root/.gradle/caches`. That folder of downloaded libraries survives between builds, even when the layer itself has to rerun after a code change. In our test, the first build downloaded everything; after a one-line change in `Main.kt`, the whole image rebuilt in 25 seconds with no downloads.\n\nTwo more things. The cache mount lives in your local builder, so a fresh CI runner starts with it empty; `cache-from: type=gha` still saves the Gradle layer. And on an Apple Silicon Mac, `docker build` makes an arm64 image. Both temurin images ship amd64 and arm64 variants, so add `--platform linux/amd64` when the image must run on amd64 servers.",
+     "refs": [
+      {
+       "title": "Docker docs: Optimize cache usage in builds (cache mounts)",
+       "url": "https://docs.docker.com/build/cache/optimize/",
+       "kind": "docs"
+      },
+      {
+       "title": "Docker docs: Multi-stage builds",
+       "url": "https://docs.docker.com/build/building/multi-stage/",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "JVM memory in containers, and images without a Dockerfile",
+     "body": "The JVM reads the container's memory limit and sizes its heap from it. By default the largest heap is only 25% of that limit. We checked in a 512 MB container: `MaxHeapSize` was 134217728 bytes (128 MB). With `-XX:MaxRAMPercentage=75.0` it became 402653184 (384 MB). The Dockerfile sets that flag in `JAVA_OPTS`, which the start script passes to `java`. Stay well below 100%: threads, class metadata and the JIT need memory outside the heap. If the total crosses the limit, the kernel kills the container (Day 35 covers memory limits in Kubernetes).\n\nYou do not always need a Dockerfile:\n\n- Jib is a Gradle plugin that builds the image itself, with separate layers for dependencies and for your classes. `jibDockerBuild` loads the image into Docker, and `jib` pushes to a registry with no Docker at all. By default it uses an `eclipse-temurin` JRE base and builds for amd64 only.\n- Spring Boot's Gradle plugin has a `bootBuildImage` task that builds an image with Cloud Native Buildpacks.\n- Quarkus has container-image extensions (Jib, Docker, Podman, Buildpacks) that build the image as part of the Quarkus build.\n\nJib has a catch today. Version 3.5.4 does not work with the configuration cache, so you run it with `--no-configuration-cache`, and Gradle warns that the build will break on Gradle 10. For learning, the Dockerfile wins, because you can see every step. At work, use what your framework and platform team already use.",
+     "refs": [
+      {
+       "title": "JVMs in containers: best practices (David Delabassee)",
+       "url": "https://www.youtube.com/watch?v=QCpMoQsZTa0",
+       "kind": "watch"
+      },
+      {
+       "title": "Jib Gradle plugin README",
+       "url": "https://github.com/GoogleContainerTools/jib/tree/master/jib-gradle-plugin",
+       "kind": "docs"
+      },
+      {
+       "title": "Spring Boot docs: Packaging OCI images (bootBuildImage)",
+       "url": "https://docs.spring.io/spring-boot/gradle-plugin/packaging-oci-image.html",
+       "kind": "docs"
+      }
+     ]
+    }
+   ],
+   "analogy": "The build cache works like a coat check. When a task finishes, Gradle hangs its outputs on a hook and keeps the ticket: a fingerprint of everything that went in. When the same ticket comes up again, in any folder or on any machine that shares the cloakroom, Gradle hands back the coat instead of making a new one. Where it breaks: a coat check returns your own coat, while the build cache happily gives you outputs that another build made. That is safe only because the ticket covers every input.",
+   "diagram": "<svg viewBox=\"0 0 560 200\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Multi-stage image: source code goes into a JDK 21 build stage that uses a Gradle cache mount, produces bin and lib, and only those are copied into a JRE 21 run stage\"><rect class=\"bx\" x=\"12\" y=\"44\" width=\"112\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"68\" y=\"68.5\" font-size=\"13\" text-anchor=\"middle\">source code</text><rect class=\"bxt\" x=\"148\" y=\"44\" width=\"128\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"212\" y=\"68.5\" font-size=\"13\" text-anchor=\"middle\">build: JDK 21</text><rect class=\"bxg\" x=\"300\" y=\"44\" width=\"96\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"348\" y=\"68.5\" font-size=\"13\" text-anchor=\"middle\">bin + lib</text><rect class=\"bxo\" x=\"420\" y=\"44\" width=\"112\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"476\" y=\"68.5\" font-size=\"13\" text-anchor=\"middle\">run: JRE 21</text><line class=\"ln\" x1=\"126\" y1=\"64\" x2=\"145\" y2=\"64\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"278\" y1=\"64\" x2=\"297\" y2=\"64\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"398\" y1=\"64\" x2=\"417\" y2=\"64\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"212\" y=\"30\" font-size=\"11\" text-anchor=\"middle\">stage 1</text><text class=\"ts\" x=\"476\" y=\"30\" font-size=\"11\" text-anchor=\"middle\">stage 2</text><text class=\"ts\" x=\"348\" y=\"104\" font-size=\"11\" text-anchor=\"middle\">app/build/install</text><text class=\"ts\" x=\"476\" y=\"104\" font-size=\"11\" text-anchor=\"middle\">the image you ship</text><rect class=\"bxp\" x=\"152\" y=\"144\" width=\"120\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"212\" y=\"168.5\" font-size=\"13\" text-anchor=\"middle\">Gradle cache</text><line class=\"lnd\" x1=\"212\" y1=\"142\" x2=\"212\" y2=\"86\"/><text class=\"ts\" x=\"222\" y=\"120\" font-size=\"11\" text-anchor=\"start\">cache mount</text></svg>",
+   "diagram_caption": "The JDK, Gradle and its cache stay in stage 1. Only bin/ and lib/ reach the JRE image you ship.",
+   "worked": {
+    "title": "Watch each speed-up, then put the JVM in a box",
+    "steps": [
+     {
+      "say": "Start cold: delete the outputs and switch the build cache off for one run. Every task does its work.",
+      "code": "$ ./gradlew clean build --no-build-cache\n...\nBUILD SUCCESSFUL in 7s\n13 actionable tasks: 13 executed",
+      "lang": "console"
+     },
+     {
+      "say": "Same command with the cache on, as hello-jvm's `gradle.properties` sets it. `clean` deleted the outputs, but the inputs match stored entries, so compiling and testing come back FROM-CACHE. The jars and zips are rebuilt, because copying files is cheaper than caching them.",
+      "code": "$ ./gradlew clean build\n> Task :greeting:compileKotlin FROM-CACHE\n> Task :app:compileKotlin FROM-CACHE\n> Task :greeting:compileTestKotlin FROM-CACHE\n> Task :greeting:test FROM-CACHE\n> Task :app:compileTestKotlin FROM-CACHE\n> Task :app:test FROM-CACHE\nBUILD SUCCESSFUL in 1s\n13 actionable tasks: 7 executed, 6 from cache",
+      "lang": "console"
+     },
+     {
+      "say": "Clone the repository into a second folder and build there. The path is not part of the cache key, so even the convention plugin in build-logic comes from the cache. A remote cache does the same across machines.",
+      "code": "$ git clone ~/code/hello-jvm /tmp/hello-jvm-2 && cd /tmp/hello-jvm-2\n$ ./gradlew build\n> Task :build-logic:compileKotlin FROM-CACHE\n> Task :greeting:compileKotlin FROM-CACHE\n> Task :app:compileKotlin FROM-CACHE\n> Task :greeting:test FROM-CACHE\n> Task :app:test FROM-CACHE\n...\nBUILD SUCCESSFUL in 24s\n20 actionable tasks: 8 executed, 12 from cache",
+      "lang": "console"
+     },
+     {
+      "say": "Now the JVM in a container. Give a plain JRE container 512 MB and print the heap limit, first with defaults, then with the flag from the Dockerfile. 134217728 bytes is 128 MB (25%); 402653184 is 384 MB (75%).",
+      "code": "$ docker run --rm -m 512m eclipse-temurin:21-jre java -XX:+PrintFlagsFinal -version | grep -E ' MaxHeapSize| MaxRAMPercentage'\n   size_t MaxHeapSize                              = 134217728                                 {product} {ergonomic}\n   double MaxRAMPercentage                         = 25.000000                                 {product} {default}\n$ docker run --rm -m 512m eclipse-temurin:21-jre java -XX:MaxRAMPercentage=75.0 -XX:+PrintFlagsFinal -version | grep -E ' MaxHeapSize| MaxRAMPercentage'\n   size_t MaxHeapSize                              = 402653184                                 {product} {ergonomic}\n   double MaxRAMPercentage                         = 75.000000                                 {product} {command line}",
+      "lang": "console"
+     },
+     {
+      "say": "Try Jib as the Dockerfile-free option. Load the plugin once in a root `build.gradle.kts` with `apply false`: without that line Gradle warned that the Kotlin plugin was loaded multiple times in different subprojects. Then add `alias(libs.plugins.jib)` to app's plugins block, plus this block.",
+      "code": "// build.gradle.kts (root)\nplugins { alias(libs.plugins.jib) apply false }\n\n// app/build.gradle.kts\njib {\n    from { image = \"eclipse-temurin:21-jre\" }\n    to { image = \"hello-jvm:jib\" }\n    container {\n        ports = listOf(\"8080\")\n        jvmFlags = listOf(\"-XX:MaxRAMPercentage=75.0\")\n        user = \"10001\"\n    }\n}",
+      "lang": "text"
+     },
+     {
+      "say": "Run it. With the configuration cache on, Jib fails, because its task reads `project` while it runs (the Day 22 error). Turn the cache off for this one command and it works, with a warning about Gradle 10.",
+      "code": "$ ./gradlew :app:jibDockerBuild\n> Task :app:jibDockerBuild FAILED\n...\n> Invocation of 'Task.project' by task ':app:jibDockerBuild' at execution time is unsupported with the configuration cache.\n$ ./gradlew :app:jibDockerBuild --no-configuration-cache\nContainerizing application to Docker daemon as hello-jvm:jib...\n...\nBuilding dependencies layer...\nBuilding project dependencies layer...\nBuilding classes layer...\nBuilding jvm arg files layer...\n...\nContainer entrypoint set to [java, -XX:MaxRAMPercentage=75.0, -cp, @/app/jib-classpath-file, hello.app.MainKt]\nBuilt image to Docker daemon as hello-jvm:jib\nDeprecated Gradle features were used in this build, making it incompatible with Gradle 10.\nBUILD SUCCESSFUL in 21s",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "dockerfile",
+     "title": "Dockerfile",
+     "src": "# syntax=docker/dockerfile:1\n\n# ---- build stage: a full JDK runs the Gradle wrapper ----\nFROM eclipse-temurin:21-jdk AS build\nWORKDIR /src\n\n# 1. The wrapper on its own. This layer downloads Gradle itself, and Docker\n#    reuses it until gradle/wrapper/gradle-wrapper.properties changes.\nCOPY gradlew ./\nCOPY gradle/wrapper/ gradle/wrapper/\nRUN ./gradlew --version --no-daemon\n\n# 2. Everything the build reads: settings, flags, catalog, build logic, both projects.\nCOPY settings.gradle.kts gradle.properties ./\nCOPY gradle/libs.versions.toml gradle/\nCOPY build-logic/ build-logic/\nCOPY greeting/ greeting/\nCOPY app/ app/\n\n# 3. Compile and package. The cache mount keeps downloaded dependencies between\n#    builds, even when the source code changed. Tests already ran in CI.\nRUN --mount=type=cache,target=/root/.gradle/caches \\\n    ./gradlew --no-daemon --console=plain :app:installDist\n\n# ---- run stage: only a JRE and the app ----\nFROM eclipse-temurin:21-jre\nWORKDIR /app\n# installDist made bin/app (a start script) and lib/ (every jar the app needs).\nCOPY --from=build /src/app/build/install/app/ ./\n# The version is baked in at build time: docker build --build-arg APP_VERSION=1.0.0 .\nARG APP_VERSION=dev\nENV APP_VERSION=$APP_VERSION\n# The start script passes JAVA_OPTS to the JVM. Let the heap use up to 75%\n# of the container's memory limit (the default is 25%).\nENV JAVA_OPTS=\"-XX:MaxRAMPercentage=75.0\"\n# Run as a normal user, not root.\nRUN useradd --uid 10001 --no-create-home appuser\nUSER 10001\nEXPOSE 8080\nHEALTHCHECK --interval=30s --timeout=3s CMD curl -fsS http://localhost:8080/healthz || exit 1\n# Exec form: the start script ends with exec, so the JVM becomes PID 1 and gets SIGTERM.\nENTRYPOINT [\"/app/bin/app\"]",
+     "run": "docker build --build-arg APP_VERSION=1.0.0 -t hello-jvm:1.0.0 . && docker run --rm -p 8080:8080 -m 512m hello-jvm:1.0.0"
+    },
+    {
+     "lang": "text",
+     "title": ".dockerignore",
+     "src": "# Keep the build context small: Docker sends all of it to the builder.\n.git\n.github\n.idea\n*.md\n# Build output and local caches (at any depth). The image builds its own.\n**/build\n**/.gradle\n**/.kotlin",
+     "run": "docker build -t hello-jvm:1.0.0 ."
+    },
+    {
+     "lang": "ini",
+     "title": "gradle.properties (adds the build cache and parallel execution)",
+     "src": "# Build flags for everyone who builds this project, on laptops and in CI.\n\n# Reuse the task graph from the last run when nothing in the build scripts changed.\norg.gradle.configuration-cache=true\n# Reuse task outputs (compiled classes, test results) from earlier builds.\norg.gradle.caching=true\n# Run tasks from different projects at the same time.\norg.gradle.parallel=true",
+     "run": "./gradlew clean build"
+    },
+    {
+     "lang": "ini",
+     "title": "gradle/libs.versions.toml (adds the optional Jib plugin)",
+     "src": "# The version catalog: every library and plugin version in one file.\n# Build scripts use these as libs.<name> and libs.plugins.<name>.\n\n[versions]\nkotlin = \"2.4.21\"\njunit = \"6.1.3\"\n\n[libraries]\n# The Kotlin Gradle plugin as a normal library, so build-logic can apply it.\nkotlin-gradle-plugin = { module = \"org.jetbrains.kotlin:kotlin-gradle-plugin\", version.ref = \"kotlin\" }\n# JUnit's BOM: keeps every JUnit module on the same version.\njunit-bom = { module = \"org.junit:junit-bom\", version.ref = \"junit\" }\n\n[plugins]\n# Jib builds container images without a Dockerfile (optional, Day 24).\njib = { id = \"com.google.cloud.tools.jib\", version = \"3.5.4\" }",
+     "run": "./gradlew build"
+    },
+    {
+     "lang": "yaml",
+     "title": ".github/workflows/jvm-ci.yml",
+     "src": "name: jvm-ci\n\non:\n  push:\n    branches: [main]\n  pull_request:\n  workflow_dispatch:\n\n# One run per branch or pull request. A new push cancels the older run,\n# except on main, where every merge gets a full result.\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}\n\n# The GITHUB_TOKEN in this workflow can only read the repository.\npermissions:\n  contents: read\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v7\n\n      # A JDK to run Gradle. build-logic asks for a Java 21 toolchain,\n      # so Gradle also uses this JDK to compile and test (no extra download).\n      # Do not add \"cache: gradle\" here: setup-gradle does the caching.\n      - uses: actions/setup-java@v6\n        with:\n          distribution: temurin\n          java-version: \"21\"\n\n      # Checks gradle-wrapper.jar against known checksums, caches Gradle's\n      # downloads (written on main, read on other branches) and adds a Job Summary.\n      - uses: gradle/actions/setup-gradle@v6\n        # In a private repository, uncomment the next two lines to use the\n        # open-source (MIT) cache provider instead of the default one.\n        # with:\n        #   cache-provider: basic\n\n      # The same command you run on your laptop, with the same gradle.properties.\n      - name: Build and test\n        run: ./gradlew build\n\n      - name: Upload test reports\n        # Upload even when tests fail: that is when you need the report most.\n        if: ${{ !cancelled() }}\n        uses: actions/upload-artifact@v7\n        with:\n          name: test-reports\n          path: \"**/build/reports/tests/\"\n          retention-days: 7\n\n  image:\n    needs: build\n    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    steps:\n      - uses: actions/checkout@v7\n      - uses: docker/setup-buildx-action@v4\n      - name: Build the image (no push)\n        uses: docker/build-push-action@v7\n        with:\n          context: .\n          push: false\n          tags: hello-jvm:ci\n          build-args: APP_VERSION=${{ github.sha }}\n          # Reuse image layers from earlier runs (GitHub Actions cache).\n          cache-from: type=gha\n          cache-to: type=gha,mode=max",
+     "run": "git add .github && git commit -m 'Add JVM CI' && git push"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "./gradlew clean build",
+     "what": "Rebuild from nothing; with the build cache on, look for FROM-CACHE."
+    },
+    {
+     "cmd": "./gradlew clean build --no-build-cache",
+     "what": "Rebuild without the build cache, to compare times."
+    },
+    {
+     "cmd": "./gradlew build --no-configuration-cache",
+     "what": "Run once without the configuration cache, for a plugin that does not support it."
+    },
+    {
+     "cmd": "./gradlew --status",
+     "what": "List the Gradle daemons and whether they are busy or idle."
+    },
+    {
+     "cmd": "./gradlew --stop",
+     "what": "Stop all daemons of this Gradle version."
+    },
+    {
+     "cmd": "./gradlew -q javaToolchains",
+     "what": "Show the JDKs Gradle found and whether it may download more."
+    },
+    {
+     "cmd": "./gradlew build --scan",
+     "what": "Publish a Build Scan of this build to scans.gradle.com, after accepting the terms."
+    },
+    {
+     "cmd": "./gradlew dependencies --write-locks",
+     "what": "Write gradle.lockfile with the exact versions (needs dependencyLocking turned on)."
+    },
+    {
+     "cmd": "./gradlew --write-verification-metadata sha256 help",
+     "what": "Create gradle/verification-metadata.xml with a checksum for every dependency."
+    },
+    {
+     "cmd": "docker build --build-arg APP_VERSION=1.0.0 -t hello-jvm:1.0.0 .",
+     "what": "Build the two-stage image with a version baked in."
+    },
+    {
+     "cmd": "docker run -d --name hello-jvm -p 8080:8080 -m 512m hello-jvm:1.0.0",
+     "what": "Run it in the background with a 512 MB memory limit."
+    },
+    {
+     "cmd": "docker build --platform linux/amd64 -t hello-jvm:1.0.0-amd64 .",
+     "what": "On an Apple Silicon Mac, build an image for amd64 servers."
+    },
+    {
+     "cmd": "docker exec hello-jvm sh -c 'java $JAVA_OPTS -XX:+PrintFlagsFinal -version | grep -w MaxHeapSize'",
+     "what": "Print the heap limit the JVM picks inside the running container."
+    },
+    {
+     "cmd": "./gradlew :app:jibDockerBuild --no-configuration-cache",
+     "what": "Build the image with Jib instead of a Dockerfile (Jib 3.5.4 needs the flag)."
+    },
+    {
+     "cmd": "openssl rand -base64 16",
+     "what": "Make a key for setup-gradle's cache-encryption-key secret."
+    }
+   ],
+   "mistake": "Writing `./gradlew clean build` in CI to be safe, and adding `actions/cache` next to setup-gradle. `clean` throws away the outputs the caches exist to reuse, and two caching systems on one folder get in each other's way. Run `./gradlew build` and let setup-gradle do the caching. If you distrust a cache hit, the real fix is a task input that is missing from the build logic.",
+   "real_world": "At Paylane (a made-up payments company), CI on main writes to a remote build cache and developers' laptops only read from it, so a fresh clone of main is mostly FROM-CACHE. Every service image uses the same two-stage Dockerfile pattern with `MaxRAMPercentage` set, and memory limits are tuned with a load test, not guessed.",
+   "task": {
+    "title": "Ship hello-jvm in a container, with CI",
+    "steps": [
+     "Add `org.gradle.caching=true` and `org.gradle.parallel=true` to `gradle.properties`. Run `./gradlew clean build` twice and find the FROM-CACHE lines in the second run.",
+     "Create the `Dockerfile` and `.dockerignore` from Files.",
+     "Build `hello-jvm:1.0.0` with `APP_VERSION=1.0.0` and note how long it takes. Change one line in `Main.kt`, rebuild, and compare.",
+     "Run the image with a 512 MB limit on port 8080. Call `/` and `/healthz`, wait for `docker ps` to say healthy, and check the user with `docker exec <name> id`.",
+     "Print the heap limit inside the container and check it is about 75% of 512 MB.",
+     "Stop the container and check how long `docker stop` takes and which exit code it leaves.",
+     "Add `.github/workflows/jvm-ci.yml`, push, and open the run on GitHub. Read the Job Summary that setup-gradle wrote.",
+     "Push a second, small commit and compare the run time of the build job with the first run."
+    ],
+    "hints": [
+     "`docker stop` should take well under a second and leave exit code 143 (SIGTERM). If it takes 10 seconds, check that ENTRYPOINT uses the exec form (Day 13).",
+     "The first CI run starts with an empty cache, so it is always the slowest. The cache is saved only from main."
+    ],
+    "done_when": "`docker ps` shows the container as healthy, `curl localhost:8080` reports version 1.0.0, and the jvm-ci workflow is green on GitHub."
+   },
+   "explain_back": {
+    "prompt": "Explain the difference between the build cache and the configuration cache in 3 to 4 sentences. Say what each one stores and what a hit looks like in the output.",
+    "answer": "The build cache stores task outputs, such as compiled classes and test results, under a key made from a hash of the task's inputs. When another build has the same inputs, even in another folder or on CI, Gradle copies the outputs back and marks the task FROM-CACHE. The configuration cache stores the task graph that the build scripts produced, so a repeat run can skip running the scripts. A hit prints `Reusing configuration cache.` at the start, and tasks then run or are skipped as usual."
+   },
+   "recap": [
+    "Up-to-date checks, the build cache, the configuration cache and the daemon each skip a different kind of work.",
+    "Compile avoidance means a change inside function bodies does not recompile the projects that depend on yours.",
+    "A toolchain picks the JDK that compiles your code, separate from the JDK that runs Gradle.",
+    "In GitHub Actions, use setup-java plus setup-gradle and nothing else for Gradle caching; set `cache-provider: basic` to stay fully open source.",
+    "Build in a JDK stage, ship `installDist` output on a JRE image, run as non-root, and set `MaxRAMPercentage` (the default heap is 25%).",
+    "Jib, `bootBuildImage` and Quarkus extensions build images without a Dockerfile; Jib 3.5.4 needs `--no-configuration-cache`."
+   ],
+   "check": [
+    {
+     "q": "On a fresh clone, a colleague's build shows `> Task :core:compileKotlin FROM-CACHE`. What happened?",
+     "options": [
+      "Its inputs matched a stored cache entry",
+      "Its old outputs were still in build/",
+      "Gradle reused last run's task graph",
+      "It failed, so old classes were used"
+     ],
+     "answer": 0,
+     "why": "FROM-CACHE means the inputs hashed to a key that the build cache already had, so Gradle copied the outputs in instead of compiling."
+    },
+    {
+     "q": "A JVM service runs with `docker run -m 1g` and no memory flags at all. Roughly how large can its heap grow?",
+     "options": [
+      "About 1 GB, the whole limit",
+      "About 750 MB, three quarters",
+      "About 256 MB, a quarter",
+      "As much as the host has free"
+     ],
+     "answer": 2,
+     "why": "The JVM sees the container limit and by default caps the heap at 25% of it, which is why images set MaxRAMPercentage."
+    },
+    {
+     "q": "A workflow uses setup-java with `cache: gradle` and also setup-gradle. Caching behaves oddly. What should you change?",
+     "options": [
+      "Add an `actions/cache` step for `~/.gradle`",
+      "Run `./gradlew clean build` on every push",
+      "Add `--no-daemon` to every Gradle command",
+      "Remove `cache: gradle` from setup-java"
+     ],
+     "answer": 3,
+     "why": "setup-gradle should own the Gradle cache; a second mechanism on the same folder interferes with it."
+    }
+   ],
+   "interview": [
+    {
+     "q": "A Gradle build in CI is slow. How do you speed it up?",
+     "a": "First I look at which tasks actually ran, using the console output or a Build Scan. Then I make sure caching works: setup-gradle restoring Gradle User Home, the build cache on, ideally a remote cache that CI writes and laptops read, and no `clean` in the CI command. I turn on the configuration cache and parallel execution, and fix plugins that break them. If one project dominates, I look at compile avoidance: splitting modules and preferring `implementation` stops changes from rippling."
+    },
+    {
+     "q": "How do you package a JVM service as a container image?",
+     "a": "With a multi-stage Dockerfile: a JDK stage runs the Gradle wrapper and `installDist`, and a JRE stage gets only the start script and jars. I copy the wrapper first so the Gradle download stays in a cached layer, and use a BuildKit cache mount for dependencies. The run stage uses a non-root user, an exec-form ENTRYPOINT so SIGTERM reaches the JVM, and `-XX:MaxRAMPercentage` so the heap fits the container limit. Jib or Spring Boot's `bootBuildImage` are good alternatives when a team prefers no Dockerfile."
+    },
+    {
+     "q": "What is the difference between dependency locking and dependency verification?",
+     "a": "Locking records which versions were resolved, in a `gradle.lockfile`, so a build fails if the graph changes until someone updates the lock. Verification records checksums or signatures of the files themselves, in `verification-metadata.xml`, so a tampered or swapped jar fails the build. Locking guards against drift and surprise upgrades; verification guards against supply-chain tampering. You can use both together."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "The cache mount that made local rebuilds fast does not help much on a fresh CI runner. Each runner starts with an empty BuildKit cache, so the build stage downloads every library again whenever the source changed. In our test the mount held about 900 MB after one build: libraries, the Kotlin compiler, transformed jars and the local build cache. `cache-from: type=gha` brings back image layers, including the 170 MB Gradle layer, but not the contents of a cache mount.\n\nTeams handle this in one of three ways:\n\n1. Accept it. For a small service, the image job takes a minute or two longer than it could. hello-jvm's workflow does this, because the Dockerfile stays simple and the same everywhere.\n2. Build outside Docker, and only package inside it. The build job runs `./gradlew build :app:installDist` with setup-gradle's warm cache, and a one-stage Dockerfile copies `app/build/install/app` onto the JRE image. The trade-off is that the image now depends on what the runner built, so laptops and CI must use the same steps.\n3. Use Jib in CI. It runs inside Gradle, so it shares setup-gradle's cache, and `jib` pushes without a Docker daemon. Today that means `--no-configuration-cache` for that step.\n\nThe configuration cache has a CI angle too. Gradle 9.1 added a read-only mode, `-Dorg.gradle.configuration-cache.read-only=true`, meant for builds that should use entries but not write them, such as pull request builds. And because entries can contain secrets, setup-gradle can encrypt them in the GitHub Actions cache with a key you give it. Make one with `openssl rand -base64 16`, store it as a repository secret, and pass it as `cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}`.\n\nFinally, the remote build cache is where large teams win the most time. The setup-gradle documentation recommends the usual pattern: CI builds push to the remote cache and switch off the local one, and local builds then read what CI wrote. The same pattern works with Develocity or any other HTTP build cache server."
+   },
+   "sources": [
+    {
+     "title": "Gradle docs: Build cache",
+     "url": "https://docs.gradle.org/current/userguide/build_cache.html"
+    },
+    {
+     "title": "Gradle docs: Configuration cache",
+     "url": "https://docs.gradle.org/current/userguide/configuration_cache.html"
+    },
+    {
+     "title": "setup-gradle documentation (gradle/actions)",
+     "url": "https://github.com/gradle/actions/blob/main/docs/setup-gradle.md"
+    },
+    {
+     "title": "Quarkus guide: Container images",
+     "url": "https://quarkus.io/guides/container-image/"
+    }
+   ]
+  }
+ ],
+ "recap": [
+  "The Gradle Wrapper pins one Gradle version per project, so always run `./gradlew`.",
+  "Every run has three phases; build scripts set up tasks, and only task actions do the work.",
+  "Gradle skips a task whose inputs and outputs did not change (UP-TO-DATE) or copies its outputs from the build cache (FROM-CACHE).",
+  "Default to `implementation`; use `api` only for types that appear in your public functions.",
+  "A version conflict resolves to the highest version, and `dependencyInsight` tells you why.",
+  "A version catalog names versions in one file; a BOM moves a family of libraries together.",
+  "Convention plugins in a `build-logic` included build replace copied build logic.",
+  "In GitHub Actions, setup-java plus setup-gradle give you wrapper validation and caching; `cache-provider: basic` keeps it fully open source.",
+  "Ship JVM apps on a JRE image with the `installDist` output, a non-root user and `MaxRAMPercentage`."
+ ],
+ "flashcards": [
+  {
+   "front": "Which four files make up the Gradle Wrapper?",
+   "back": "gradlew, gradlew.bat, gradle/wrapper/gradle-wrapper.jar and gradle/wrapper/gradle-wrapper.properties. Commit all four."
+  },
+  {
+   "front": "Name Gradle's three build phases in order.",
+   "back": "Initialization (settings), configuration (build scripts and task graph), execution (task actions)."
+  },
+  {
+   "front": "Which part of a registered task runs at execution time?",
+   "back": "Only the doLast (or doFirst) actions. The rest of the register block runs during configuration."
+  },
+  {
+   "front": "What does UP-TO-DATE mean on a task line?",
+   "back": "Gradle compared the task's inputs and outputs with the last run, found no change, and skipped it."
+  },
+  {
+   "front": "What does FROM-CACHE mean on a task line?",
+   "back": "The task's inputs matched a build cache entry, so Gradle copied the outputs in instead of running it."
+  },
+  {
+   "front": "Which two tasks does `build` run?",
+   "back": "assemble (makes the outputs) and check (runs the tests and other checks)."
+  },
+  {
+   "front": "implementation or api: which reaches the compile classpath of consumers?",
+   "back": "api. implementation stays private at compile time and only reaches consumers at runtime."
+  },
+  {
+   "front": "How does Gradle resolve a version conflict by default?",
+   "back": "It picks the highest requested version for the whole graph."
+  },
+  {
+   "front": "Which command explains why a library has a certain version?",
+   "back": "./gradlew :app:dependencyInsight --dependency <name> --configuration runtimeClasspath"
+  },
+  {
+   "front": "Where does the version catalog live, and how do scripts use it?",
+   "back": "gradle/libs.versions.toml; build scripts refer to entries as libs.<name> and libs.plugins.<name>."
+  },
+  {
+   "front": "What does platform(...) add to a build?",
+   "back": "A BOM: recommended versions for a family of libraries, so they move together."
+  },
+  {
+   "front": "Where should setup shared by many projects live?",
+   "back": "In a convention plugin inside a build-logic included build, applied by id."
+  },
+  {
+   "front": "Configuration cache or build cache: which stores the task graph?",
+   "back": "The configuration cache. The build cache stores task outputs."
+  },
+  {
+   "front": "How do you see which JDKs Gradle can compile with?",
+   "back": "./gradlew -q javaToolchains. The build's jvmToolchain(21) picks one, not the java in your terminal."
+  },
+  {
+   "front": "In GitHub Actions, which action should own Gradle caching?",
+   "back": "gradle/actions/setup-gradle. Do not also use setup-java's cache: gradle or actions/cache on ~/.gradle."
+  },
+  {
+   "front": "How do you keep setup-gradle v6 caching fully open source?",
+   "back": "Set cache-provider: basic, the MIT-licensed provider built on actions/cache."
+  },
+  {
+   "front": "What is the JVM's default maximum heap inside a container?",
+   "back": "25% of the container's memory limit. Raise it with -XX:MaxRAMPercentage."
+  },
+  {
+   "front": "Which task produces bin/ and lib/ for a container image?",
+   "back": "installDist from the application plugin, in app/build/install/app."
+  },
+  {
+   "front": "Why does Jib 3.5.4 need --no-configuration-cache?",
+   "back": "Its task reads project at execution time, which the configuration cache does not allow."
+  },
+  {
+   "front": "Dependency locking or verification: which checks file checksums?",
+   "back": "Verification (gradle/verification-metadata.xml). Locking pins which versions resolve (gradle.lockfile)."
+  }
+ ],
+ "resources": [
+  {
+   "title": "Gradle User Manual",
+   "url": "https://docs.gradle.org",
+   "kind": "docs",
+   "why": "The official reference; start from the lifecycle, dependency and caching chapters linked in the lessons."
+  },
+  {
+   "title": "What's new in Gradle 9",
+   "url": "https://gradle.org/whats-new/gradle-9/",
+   "kind": "read",
+   "why": "What changed in the Gradle 9 line, so you can spot advice in older tutorials that no longer works."
+  },
+  {
+   "title": "Gradle docs: Best practices for performance",
+   "url": "https://docs.gradle.org/current/userguide/best_practices_performance.html",
+   "kind": "docs",
+   "why": "Gradle's own checklist for fast builds, written for current versions."
+  },
+  {
+   "title": "DPE University: free Gradle courses",
+   "url": "https://blog.gradle.org/dpe-university-and-gradle-courses",
+   "kind": "read",
+   "why": "Gradle's free self-paced courses, if you want structured exercises after this part."
+  },
+  {
+   "title": "Gradle course for beginners (Tom Gregory)",
+   "url": "https://www.youtube.com/watch?v=R6Z-Sxb837I",
+   "kind": "watch",
+   "why": "An hour-long beginner course that builds a project step by step; check details against Gradle 9."
+  },
+  {
+   "title": "Understanding Gradle video series (Jendrik Johannes)",
+   "url": "https://www.youtube.com/@jjohannes",
+   "kind": "watch",
+   "why": "Short videos by a former Gradle engineer on one concept each: settings, plugins, catalogs, caching."
+  },
+  {
+   "title": "setup-gradle documentation (gradle/actions)",
+   "url": "https://github.com/gradle/actions/blob/main/docs/setup-gradle.md",
+   "kind": "docs",
+   "why": "Every option of the CI action: cache providers, read-only branches, encryption keys and Build Scans."
+  },
+  {
+   "title": "Kotlin docs: Configure a Gradle project",
+   "url": "https://kotlinlang.org/docs/gradle-configure-project.html",
+   "kind": "docs",
+   "why": "The Kotlin side of the build: toolchains, compatible Gradle versions and plugin setup."
+  },
+  {
+   "title": "Jib Gradle plugin README",
+   "url": "https://github.com/GoogleContainerTools/jib/tree/master/jib-gradle-plugin",
+   "kind": "docs",
+   "why": "All Jib settings, including base images, platforms and pushing without Docker."
+  },
+  {
+   "title": "JVMs in containers: best practices (David Delabassee)",
+   "url": "https://www.youtube.com/watch?v=QCpMoQsZTa0",
+   "kind": "watch",
+   "why": "A talk on how the JVM sees container limits and which flags matter."
+  },
+  {
+   "title": "Now in Android: build-logic README",
+   "url": "https://github.com/android/nowinandroid/blob/main/build-logic/README.md",
+   "kind": "read",
+   "why": "A real, well-known project that uses convention plugins the way Day 23 does."
+  }
+ ],
+ "quiz": [
+  {
+   "q": "Which command should a CI job use to build a Gradle project?",
+   "options": [
+    "`gradle build`",
+    "`./gradlew build`",
+    "`mvn package`",
+    "`./gradlew build --rerun-tasks`"
+   ],
+   "answer": 1,
+   "why": "The wrapper runs the Gradle version the project pins, so CI matches every laptop; rerunning all tasks only wastes time."
+  },
+  {
+   "q": "A task is `tasks.register(\"count\") { val n = fileTree(\"src\").files.size; doLast { println(n) } }`. When does Gradle count the files?",
+   "options": [
+    "Only when the doLast action runs",
+    "Every time any Gradle task runs",
+    "When the task is configured, before execution",
+    "Only the first time the wrapper runs"
+   ],
+   "answer": 2,
+   "why": "Everything in the register block outside doLast runs while Gradle configures the task, which happens before execution."
+  },
+  {
+   "q": "You fix a typo inside a function body in library `core`. `app` depends on `core`. Which task is most likely UP-TO-DATE on the next build?",
+   "options": [
+    "`:app:compileKotlin`",
+    "`:core:compileKotlin`",
+    "`:core:jar`",
+    "`:app:test`"
+   ],
+   "answer": 0,
+   "why": "core's public API did not change, so compile avoidance skips recompiling app, while core itself and app's tests still run."
+  },
+  {
+   "q": "`./gradlew :app:dependencies` shows `guava:31.0-jre -> 33.2.1-jre`, but app's build file says 31.0-jre. Why?",
+   "options": [
+    "Gradle always fetches the newest release",
+    "The catalog silently overrides build files",
+    "31.0-jre was removed from Maven Central",
+    "Another dependency needs 33.2.1-jre, and highest wins"
+   ],
+   "answer": 3,
+   "why": "Two paths requested different versions, and Gradle's default conflict resolution picks the highest."
+  },
+  {
+   "q": "You want to upgrade Kotlin for every project in hello-jvm with one edit. Which file do you change?",
+   "options": [
+    "`gradle.properties`",
+    "`gradle/libs.versions.toml`",
+    "`gradle-wrapper.properties`",
+    "`app/build.gradle.kts`"
+   ],
+   "answer": 1,
+   "why": "The catalog's kotlin version feeds the Kotlin Gradle plugin that the convention plugin applies to every project."
+  },
+  {
+   "q": "A Dockerfile does `COPY . .` and then `RUN ./gradlew installDist`. Every code change downloads Gradle again. What is the best fix?",
+   "options": [
+    "Add `--no-daemon` to the RUN line",
+    "Switch the build stage to a JRE image",
+    "Copy and run the wrapper in an earlier layer",
+    "Delete the .dockerignore file"
+   ],
+   "answer": 2,
+   "why": "A layer that only depends on the wrapper files stays cached across code changes, so Gradle is downloaded once."
+  },
+  {
+   "q": "Your pull request builds never save anything to setup-gradle's cache. Why?",
+   "options": [
+    "By default only the default branch writes the cache",
+    "Pull requests cannot use the Actions cache at all",
+    "Caching only works with `cache-provider: basic`",
+    "Gradle turns caching off when a test fails"
+   ],
+   "answer": 0,
+   "why": "setup-gradle writes the cache from the default branch and only reads it elsewhere, which fits GitHub's cache scoping rules."
+  },
+  {
+   "q": "You set `-XX:MaxRAMPercentage=100` in a container with a 2 GB limit. What is the risk?",
+   "options": [
+    "The JVM refuses to start with that value",
+    "The heap can never grow past 512 MB",
+    "Docker ignores JVM flags in containers",
+    "Total memory passes 2 GB and it gets killed"
+   ],
+   "answer": 3,
+   "why": "Threads, class metadata and the JIT use memory outside the heap, so a heap as large as the limit pushes the process over it."
+  },
+  {
+   "q": "hello-jvm's Dockerfile ends with `ENTRYPOINT [\"/app/bin/app\"]`, and the start script ends with `exec java ...`. Why does `docker stop` finish in under a second?",
+   "options": [
+    "The JRE image ships a faster kernel",
+    "Java becomes PID 1 and receives SIGTERM",
+    "Docker sends SIGKILL to Java at once",
+    "The healthcheck stops the app first"
+   ],
+   "answer": 1,
+   "why": "Exec form plus exec in the script leaves java as process 1, so it gets the SIGTERM, runs its shutdown hook and exits with code 143.",
+   "from": "Part 3"
+  },
+  {
+   "q": "In jvm-ci.yml the `image` job has `needs: build`. What does that do?",
+   "options": [
+    "image starts only after build succeeds",
+    "Both jobs start at the same time",
+    "image runs on the same runner as build",
+    "build is skipped when image fails"
+   ],
+   "answer": 0,
+   "why": "needs makes a job wait for the listed jobs and skips it if they fail, so no image is built from code that failed its tests.",
+   "from": "Part 4"
+  }
+ ]
+}
