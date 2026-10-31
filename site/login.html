@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sign in · DevOps from Zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Big+Shoulders+Stencil+Display:wght@700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Atkinson+Hyperlegible+Mono:wght@400&display=swap">
+<script>try{var t=localStorage.getItem("dfz-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>/*CSS*/
+.login { min-height: 100vh; display: grid; place-items: center; padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.login-card { width: min(100%, 620px); display: grid; gap: 22px; }
+.login h1 { font: 800 clamp(48px, 9vw, 76px)/0.88 var(--f-display); text-transform: uppercase; margin: 0; }
+.login h1 em { font-style: normal; color: var(--orange); display: block; }
+.login p { margin: 0; color: var(--mute); font-size: 18px; }
+#g { min-height: 44px; }
+.msg { min-height: 1.5em; font-size: 15px; color: var(--mute); }
+.msg.bad { color: var(--red); }
+</style></head>
+<body><div class="login" role="main"><div class="login-card">
+<figure class="part-art" style="margin:0">{{PLATE}}</figure>
+<h1>DevOps,<em>from zero</em></h1>
+<p>This course is for enrolled learners. Sign in with the Google account you enrolled with.</p>
+<div id="g"></div>
+<div class="msg" id="msg" role="status" aria-live="polite">Loading Google sign-in...</div>
+</div></div>
+<script>
+var msg = document.getElementById("msg");
+function say(t, bad) { msg.textContent = t; msg.className = "msg" + (bad ? " bad" : ""); }
+function next() { var n = new URLSearchParams(location.search).get("next") || "/"; return n.charAt(0) === "/" && n.charAt(1) !== "/" ? n : "/"; }
+async function done(r) {
+  say("Checking your account...");
+  var x = await fetch("/api/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: r.credential }) });
+  if (x.ok) location.replace(next());
+  else say(x.status === 403 ? "This Google account is not enrolled. Ask the course owner to add it." : "Sign-in failed. Please try again.", true);
+}
+async function start() {
+  var cfg = await (await fetch("/api/config")).json();
+  var dark = document.documentElement.getAttribute("data-theme") === "dark" || (!document.documentElement.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+  google.accounts.id.initialize({ client_id: cfg.clientId, callback: done, auto_select: true, itp_support: true });
+  google.accounts.id.renderButton(document.getElementById("g"), { theme: dark ? "filled_black" : "outline", size: "large", shape: "rectangular", text: "signin_with", width: 280 });
+  google.accounts.id.prompt();
+  setTimeout(function () { if (document.querySelector("#g iframe, #g div[role=button]")) say(""); else say("Google sign-in did not load. If this site address is new, add it to the Google client's authorized origins, then reload.", true); }, 5000);
+}
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="start()" onerror="say('Could not reach Google. Check your connection and reload.', true)"></script>
+</body></html>

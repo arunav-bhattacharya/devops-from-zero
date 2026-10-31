@@ -480,6 +480,13 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 .kind svg { vertical-align: -1px; }
 .refs li > span, .res .rb { min-width: 0; overflow-wrap: anywhere; }
 .plate .pd { white-space: nowrap; flex: none; }
+
+/* signed-in learner (Cloudflare site) */
+.who { display: flex; align-items: center; gap: 8px; font-size: 14.5px; color: var(--mute); }
+.who img, .who .ini { width: 26px; height: 26px; border-radius: 50%; flex: none; }
+.who .ini { display: grid; place-items: center; background: var(--teal); color: var(--panel); font-weight: 700; font-size: 13px; }
+.who .linkbtn { font-size: 14px; }
+@media (max-width: 640px) { .who .nm { display: none; } }
 /* Freight Notation plates (design/freight-notation.md): every color is a theme token */
 .cv { display: block; width: 100%; height: auto; }
 .cv path { fill: none; }
@@ -522,6 +529,7 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
     <a href="#labs" data-nav="labs">Lab files</a>
   </nav>
   <span class="grow"></span>
+  <span class="who" id="who" hidden></span>
   <button class="iconbtn" id="themeBtn" aria-label="Theme: system" title="Theme: system"></button>
 </header>
 <div class="shell">
@@ -569,16 +577,50 @@ function merge(a, raw) {
 }
 const sig = (x) => JSON.stringify(norm(x));
 let P = norm(ls.get(KEY, {}));
-let ref = null, sync = "local", writing = false, again = false, wTimer = null;
+// two ways to sync: the claude.ai artifact store (ref), or the course's own server with Google sign-in (me)
+let ref = null, me = null, sync = "local", writing = false, again = false, wTimer = null;
+const toLogin = () => location.replace("/login?next=" + encodeURIComponent(location.pathname + location.hash));
 async function write() {
-  if (!ref) return;
+  if (!ref && !me) return;
   if (writing) { again = true; return; }
   writing = true;
-  try { await ref.set({ ...P, updatedAt: nowIso() }); sync = "cloud"; } catch { sync = "local"; }
+  try {
+    if (ref) await ref.set({ ...P, updatedAt: nowIso() });
+    else {
+      const r = await fetch("api/progress", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(P) });
+      if (r.status === 401) { toLogin(); return; }
+      if (!r.ok) throw new Error("save failed");
+    }
+    sync = "cloud";
+  } catch { sync = "local"; }
   writing = false; sideFoot();
   if (again) { again = false; write(); }
 }
-function commit() { ls.set(KEY, P); if (ref) { clearTimeout(wTimer); wTimer = setTimeout(write, 600); } chrome(); }
+function commit() { ls.set(KEY, P); if (ref || me) { clearTimeout(wTimer); wTimer = setTimeout(write, 600); } chrome(); }
+async function pullServer() {
+  try {
+    const r = await fetch("api/progress");
+    if (r.status === 401) { toLogin(); return; }
+    if (!r.ok) return;
+    const d = await r.json(), m = merge(P, d), changed = sig(m) !== sig(P);
+    P = m; ls.set(KEY, P); sync = "cloud";
+    if (sig(m) !== sig(d)) write();
+    if (changed) { chrome(); if (["home", "plan", "review-idle"].includes(viewKind())) render(false); }
+    sideFoot();
+  } catch { /* offline: keep the local copy */ }
+}
+// Cloudflare site: who is signed in, then load their saved progress
+(async () => {
+  if (window.claude) return;
+  let r;
+  try { r = await fetch("api/me"); } catch { return; }   // opened as a local file: no server
+  if (r.status === 401) { toLogin(); return; }
+  if (!r.ok) return;
+  try { me = await r.json(); } catch { return; }
+  showWho();
+  await pullServer();
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pullServer(); });
+})();
 function activity() { const t = today(); P.days[t] = (P.days[t] || 0) + 1; }
 
 const cap = (name) => { try { return window.claude && window.claude.use ? Promise.resolve(window.claude.use(name)).catch(() => null) : Promise.resolve(null); } catch { return Promise.resolve(null); } };
@@ -679,6 +721,14 @@ const glyph = (id) => { const s = stateOf(id); return `<span class="st ${s}" tit
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const toastEl = $("#toast");
 let toastT = null;
+function showWho() {
+  const w = $("#who");
+  if (!w || !me) return;
+  const name = me.name || (me.email || "").split("@")[0];
+  w.innerHTML = `${me.picture ? `<img src="${esc(me.picture)}" alt="" referrerpolicy="no-referrer">` : `<span class="ini">${esc(name.slice(0, 1).toUpperCase())}</span>`}<span class="nm">${esc(name)}</span><button class="linkbtn" data-act="signout">Sign out</button>`;
+  w.title = me.email || "";
+  w.hidden = false;
+}
 function toast(t) { toastEl.textContent = t; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (toastEl.hidden = true), 3200); }
 const ICON = {
   arrow: '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -710,7 +760,7 @@ function sideHTML() {
 }
 function sideFoot() {
   const f = $("#sideFoot");
-  if (f) f.textContent = sync === "cloud" ? "Progress syncs to your account, so your phone and laptop match." : "Progress is saved in this browser.";
+  if (f) f.textContent = sync === "cloud" ? `Progress syncs to ${me && me.email ? me.email : "your account"}, so your phone and laptop match.` : "Progress is saved in this browser.";
 }
 function chrome() {
   const keep = side.scrollTop;
@@ -1230,7 +1280,8 @@ document.addEventListener("click", async (e) => {
   else if (a === "sidetog") { const n = +b.dataset.p, cur = b.getAttribute("aria-expanded") === "true"; sideOpen[n] = !cur; chrome(); }
   else if (a === "reset") {
     $("#resetRow").innerHTML = `<span>This clears every lesson, score and review card${ref ? " on all your devices" : ""}.</span><button class="btn sm" data-act="reset2">Yes, reset</button><button class="btn ghost sm" data-act="reset0">Keep my progress</button>`;
-  } else if (a === "reset2") { P = norm({}); commit(); if (ref) write(); render(); toast("Progress reset."); }
+  } else if (a === "reset2") { P = norm({}); commit(); if (ref || me) write(); render(); toast("Progress reset."); }
+  else if (a === "signout") { try { await fetch("api/logout", { method: "POST" }); } catch { /* offline */ } location.replace("/login"); }
   else if (a === "reset0") { render(false); }
   else if (a === "ask") { const ta = $("#tq-" + r); ask(r, b.dataset.q || (ta && ta.value)); }
   else if (a === "askreset") { chat[r] = { msgs: [], busy: false, err: "" }; renderTutor(r); }

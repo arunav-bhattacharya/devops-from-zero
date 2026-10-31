@@ -38,7 +38,8 @@ every link and video, the finished lab files, and a plan that moves with your pa
 | `research_notes/`, `reports/` | The research behind the second edition |
 | `design/` | The "Freight Notation" design philosophy and the generator for the part plates |
 | `site/` | The site source: `template.html`, `app.css`, `art.css`, `app.js`, `art/` and `build.py` |
-| `public/index.html` | The built site as a complete web page (what Cloudflare serves) |
+| `public/` | The built site for Cloudflare: `index.html` (the course) and `login.html` (sign-in page) |
+| `worker/index.js` | The Cloudflare Worker: Google sign-in, the enrolled list, and progress in KV |
 | `dist/index.html` | The same page as a fragment, for publishing as a claude.ai artifact |
 
 ## Build
@@ -50,24 +51,11 @@ python3 brief/validate.py content/p3.json      # checks one part against the bri
 python3 design/covers.py                       # regenerates the part plates (only after design changes)
 ```
 
-## Deploy to Cloudflare
+## Deploy to Cloudflare (private, Google sign-in)
 
-Full steps, with troubleshooting, are in [DEPLOY.md](DEPLOY.md).
+The course runs on Cloudflare behind a small worker (`worker/index.js`): only enrolled Gmail addresses
+(`ALLOWED_EMAILS` in `wrangler.jsonc`) can sign in, and each learner's progress is saved in Cloudflare KV,
+so it follows them across devices. Setup, enrolment and deploy steps are in [DEPLOY.md](DEPLOY.md).
 
-The site is one static file, so Cloudflare serves it from `public/` with no server code (`wrangler.jsonc`).
-
-The simplest way: connect the repo once, and every push to `main` redeploys.
-
-1. In the Cloudflare dashboard, open **Workers & Pages**, then **Create**, then **Import a repository**.
-2. Pick `devops-from-zero` and keep the defaults: no build command, deploy command `npx wrangler deploy`.
-3. Deploy. The site appears at `https://devops-from-zero.<your-subdomain>.workers.dev`.
-
-Or deploy from your laptop:
-
-```bash
-npx wrangler login
-npx wrangler deploy
-```
-
-Progress is saved in the browser. When the page is opened as a claude.ai artifact, progress also
-syncs across devices and the "Ask the tutor" box appears.
+The same page also works as a claude.ai artifact (`dist/index.html`), where claude.ai handles sign-in
+and progress sync, and the "Ask the tutor" box appears.

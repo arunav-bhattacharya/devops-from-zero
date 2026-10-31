@@ -234,6 +234,11 @@ def main():
                                     '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
                                     '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect x=%223%22 y=%2214%22 width=%225%22 height=%227%22 fill=%22%230a6a7e%22/%3E%3Crect x=%2210%22 y=%228%22 width=%225%22 height=%2213%22 fill=%22%23c84410%22/%3E%3Crect x=%2217%22 y=%222%22 width=%225%22 height=%2219%22 fill=%22%23e8ad00%22/%3E%3C/svg%3E">'
                                     '</head><body>\n' + page + '\n</body></html>\n')
+    # sign-in page for the Cloudflare site (the worker serves it at /login)
+    login = (SITE / "login.html").read_text()
+    login = login.replace("/*CSS*/", (SITE / "app.css").read_text() + (SITE / "art.css").read_text())
+    login = login.replace("{{PLATE}}", (SITE / "art/p0.svg").read_text())
+    (WEB / "login.html").write_text(login)
     ready = sum(1 for L in course["lessons"].values() if not L.get("pending"))
     print(f"{OUT}  {OUT.stat().st_size // 1024} KB  {ready}/{len(course['order'])} lessons ready  {len(course['labs'])} lab files")
 

@@ -1,15 +1,54 @@
 # Deploy to Cloudflare
 
-The site is one static page: `public/index.html`. `wrangler.jsonc` in the repo root tells Cloudflare
-to serve the `public/` folder. There is no server code and nothing to build on Cloudflare's side.
+The course is private. A small Cloudflare Worker (`worker/index.js`) sits in front of every page:
 
-Cloudflare's dashboard changes now and then, so button names may differ a little from these steps.
+- Anyone who is not signed in is sent to `/login`, a "Sign in with Google" page.
+- Only Gmail addresses on the enrolled list (`ALLOWED_EMAILS` in `wrangler.jsonc`) get in. Anyone else sees
+  "This Google account is not enrolled".
+- Each learner's progress (lessons passed, quiz scores, review cards) is saved in Cloudflare KV under their
+  Google account, so it follows them between laptop and phone.
 
-## Option A: connect the GitHub repo (recommended)
+This works the same way as ai-engineer-from-zero, with one difference: here nothing is free to browse,
+so the whole course needs sign-in.
+
+Cloudflare's and Google's dashboards change now and then, so button names may differ a little from these steps.
+
+## 1. Check the settings in `wrangler.jsonc`
+
+```jsonc
+"kv_namespaces": [{ "binding": "PROGRESS", "id": "db7a4fe1777f4276b3bf62828c86b331" }],
+"vars": {
+  "GOOGLE_CLIENT_ID": "213282967449-rkdia4efp2ptkh0i57ih2vo6fej68qpv.apps.googleusercontent.com",
+  "ALLOWED_EMAILS": "ai.arunav@gmail.com"
+}
+```
+
+- `ALLOWED_EMAILS`: the enrolled learners. Add more as a comma-separated list, for example
+  `"ai.arunav@gmail.com, friend@gmail.com"`. Removing an address signs that person out on their next request.
+- `GOOGLE_CLIENT_ID`: the same Google sign-in client as ai-engineer-from-zero, so you don't need a new one.
+- The KV namespace is also the one ai-engineer-from-zero uses. This course stores its keys under `dfz:`,
+  so the two courses never touch each other's data. Deploy both from the same Cloudflare account.
+  If you'd rather keep them apart, run `npx wrangler kv namespace create PROGRESS` and paste the new id here.
+
+## 2. Allow the new site address in Google
+
+Google only shows the sign-in button on addresses it knows.
+
+1. Open https://console.cloud.google.com and pick the project that holds the ai-engineer-from-zero sign-in client.
+2. Go to **APIs & Services** → **Credentials**, and open the OAuth 2.0 Client ID that ends in `...6fej68qpv`.
+3. Under **Authorized JavaScript origins**, click **Add URI** and add
+   `https://devops-from-zero.ai-arunav.workers.dev` (and your custom domain, if you add one later).
+4. Save. Google can take a few minutes, sometimes a few hours, to accept a new origin.
+5. If the consent screen is in **Testing** mode, open **OAuth consent screen** → **Test users** (in newer
+   consoles: **Google Auth Platform** → **Audience**) and make sure every enrolled Gmail address is listed.
+
+## 3. Deploy
+
+### Option A: connect the GitHub repo (recommended)
 
 Do this once. After that, every push to `main` redeploys the site by itself.
 
-1. Sign in at https://dash.cloudflare.com with the account you used for ai-engineer-from-zero.
+1. Sign in at https://dash.cloudflare.com with the same account as ai-engineer-from-zero.
 2. In the left menu, open **Workers & Pages**, then click **Create** (or **Create application**).
 3. Choose **Import a repository** and pick **GitHub**.
 4. The first time, GitHub asks you to install the Cloudflare app. Choose **Only select repositories**,
@@ -23,14 +62,8 @@ Do this once. After that, every push to `main` redeploys the site by itself.
    - Deploy command: `npx wrangler deploy`
    - Root directory: leave as `/`
 7. Click **Save and Deploy** (or **Deploy**) and wait about a minute.
-8. Open `https://devops-from-zero.<your-subdomain>.workers.dev`. Your subdomain is the same one the
-   AI course uses, so it should be `https://devops-from-zero.ai-arunav.workers.dev`.
 
-To see past deploys or a failed one, open the Worker in the dashboard and look at its builds or deployments tab.
-
-## Option B: deploy from your Mac
-
-Good for a one-off deploy, or if you don't want Cloudflare to watch the repo.
+### Option B: deploy from your Mac
 
 ```bash
 brew install node
@@ -54,10 +87,23 @@ npx wrangler deploy
 
 `wrangler login` opens a browser to approve access once. `wrangler deploy` prints the site's URL at the end.
 
+## 4. Check it works
+
+1. Open `https://devops-from-zero.ai-arunav.workers.dev` in a private window. You should land on the sign-in page.
+2. Sign in with an enrolled Gmail address. You should see the course, with your name and "Sign out" at the top.
+3. Mark Day 1 as passed, then open the site on your phone and sign in: Day 1 shows as passed there too.
+4. Try a Gmail address that is not enrolled: you should see "This Google account is not enrolled".
+
+## Enrolling or removing a learner
+
+1. Edit `ALLOWED_EMAILS` in `wrangler.jsonc`.
+2. If the Google consent screen is in Testing mode, add or remove the same address under its test users.
+3. Commit and push (Option A redeploys), or run `npx wrangler deploy` (Option B).
+
 ## Changing the course later
 
 1. Edit the lessons in `content/pN.json` (or the site in `site/`).
-2. Rebuild the page:
+2. Rebuild the pages:
 
    ```bash
    pip install pygments
@@ -66,14 +112,20 @@ npx wrangler deploy
 
 3. Commit and push. With Option A, Cloudflare redeploys on its own. With Option B, run `npx wrangler deploy` again.
 
-## Optional extras
+## Test the worker on your laptop
 
-- Your own domain: open the Worker, then **Settings** → **Domains & Routes** → **Add** → **Custom domain**.
-- Keep it private: put the site behind Cloudflare Access (Zero Trust) so only your Google account can open it,
-  or reuse the sign-in worker from ai-engineer-from-zero.
+```bash
+npx wrangler dev
+```
+
+Then open http://localhost:8787. You'll be sent to the sign-in page. Google sign-in itself only works on an
+address listed in step 2, so add `http://localhost:8787` there too if you want to sign in locally.
 
 ## If something goes wrong
 
+- "Google sign-in did not load": the site address is missing from the client's authorized JavaScript origins (step 2), or Google hasn't picked it up yet.
+- "This Google account is not enrolled": add the address to `ALLOWED_EMAILS` and redeploy.
+- "Sign-in failed": the `GOOGLE_CLIENT_ID` in `wrangler.jsonc` does not match the client whose origins you edited.
+- Deploy error about the KV namespace: the id in `wrangler.jsonc` must exist in the Cloudflare account you deploy to.
 - "Worker name does not match": make the dashboard name and `"name"` in `wrangler.jsonc` the same.
-- The page shows old content: check that you ran `python3 site/build.py` and committed `public/index.html`.
-- Blank page or 404: check that `public/index.html` exists in the repo and `wrangler.jsonc` says `"directory": "./public"`.
+- The page shows old content: run `python3 site/build.py` and commit `public/index.html`.
