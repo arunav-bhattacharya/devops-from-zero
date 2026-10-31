@@ -19,7 +19,7 @@ Cloudflare's and Google's dashboards change now and then, so button names may di
 "kv_namespaces": [{ "binding": "PROGRESS", "id": "db7a4fe1777f4276b3bf62828c86b331" }],
 "vars": {
   "GOOGLE_CLIENT_ID": "213282967449-...apps.googleusercontent.com",
-  "ALLOWED_EMAILS": "ai.arunav@gmail.com"
+  "ALLOWED_EMAILS": "ai.arunav@gmail.com, mbajoria1@gmail.com"
 }
 ```
 
