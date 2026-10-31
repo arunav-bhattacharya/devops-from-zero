@@ -480,3 +480,5 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 .who .ini { display: grid; place-items: center; background: var(--teal); color: var(--panel); font-weight: 700; font-size: 13px; }
 .who .linkbtn { font-size: 14px; }
 @media (max-width: 640px) { .who .nm { display: none; } }
+.st.locked { color: var(--faint); }
+.free-note { border-top: 4px solid var(--orange); }

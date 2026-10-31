@@ -12,6 +12,10 @@
     // the Google OAuth web client (same one as ai-engineer-from-zero); add this site's URL to its authorized JavaScript origins
     "GOOGLE_CLIENT_ID": "213282967449-rkdia4efp2ptkh0i57ih2vo6fej68qpv.apps.googleusercontent.com",
     // enrolled learners: comma-separated Gmail addresses (keep in step with the Google sign-in test users)
-    "ALLOWED_EMAILS": "ai.arunav@gmail.com"
+    "ALLOWED_EMAILS": "ai.arunav@gmail.com",
+    // sign-up: SHA-256 of the invite code (the code itself is never in the repo). Remove this line to close sign-up.
+    "INVITE_CODE_SHA256": "3c3466f03d07c2056efffbec2063f1f61842113b0afc891d6dea84224739bec2",
+    // test logins as id:salt:PBKDF2-SHA256 hash (100,000 rounds). Passwords are not in the repo. Remove an entry to disable it.
+    "TEST_ACCOUNTS": "test1:uRpkdoi99zi1lSHGcgeojA:6Khc3ufBOSfakCUP8_yZmIzIJ2c14lZvF5kJYm3F2w4;test2:5st26bA3bmTLQtoJ0Q5-7w:iU-Gh3B_N38IqVP4_aV0chlenFhb_Mpmfi39KJo0W9A;test3:h0ioEcah8zQ155akd9Y8rg:HIGRW5lurMCs_wOkOwjJCYpW4Z2xKTdiCtpEOLvCK8Q"
   }
 }

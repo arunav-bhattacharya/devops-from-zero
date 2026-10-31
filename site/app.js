@@ -12,7 +12,9 @@ const daysBetween = (a, b) => Math.round((new Date(b + "T12:00:00") - new Date(a
 const fmt = (s, o = { weekday: "short", month: "short", day: "numeric" }) => new Date(s + "T12:00:00").toLocaleDateString("en-US", o);
 const nowIso = () => new Date().toISOString();
 const L = (id) => C.lessons[id];
-const ready = (id) => L(id) && !L(id).pending;
+const ready = (id) => L(id) && !L(id).pending && !L(id).locked;
+const FREE = Array.isArray(C.free);   // the free edition: only some parts are readable until you sign in
+const signInUrl = () => "/login?next=" + encodeURIComponent("/" + location.hash);
 const partOf = (n) => C.parts.find((p) => p.part === n);
 const main = $("#main");
 
@@ -71,6 +73,7 @@ async function pullServer() {
 // Cloudflare site: who is signed in, then load their saved progress
 (async () => {
   if (window.claude) return;
+  if (FREE) { showSignIn(); return; }
   let r;
   try { r = await fetch("api/me"); } catch { return; }   // opened as a local file: no server
   if (r.status === 401) { toLogin(); return; }
@@ -173,13 +176,20 @@ const GLYPH = {
   passed: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.2" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="var(--panel)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   running: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/><path class="spin" d="M8 1.6a6.4 6.4 0 0 1 6.4 6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="8" r="2.4" fill="currentColor"/></svg>',
   queued: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.6 2.4"/></svg>',
+  locked: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.2" y="7" width="9.6" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.4 7V5.2a2.6 2.6 0 0 1 5.2 0V7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
 };
-const stateOf = (id) => (isDone(id) ? "passed" : id === nextUp() ? "running" : "queued");
-const stLabel = { passed: "passed", running: "up next", queued: "queued" };
+const stateOf = (id) => (isDone(id) ? "passed" : L(id).locked ? "locked" : id === nextUp() ? "running" : "queued");
+const stLabel = { passed: "passed", running: "up next", queued: "queued", locked: "sign in to open" };
 const glyph = (id) => { const s = stateOf(id); return `<span class="st ${s}" title="${stLabel[s]}" aria-label="${stLabel[s]}">${GLYPH[s]}</span>`; };
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const toastEl = $("#toast");
 let toastT = null;
+function showSignIn() {
+  const w = $("#who");
+  if (!w) return;
+  w.innerHTML = `<a class="btn sm" href="${signInUrl()}">Sign in</a>`;
+  w.hidden = false;
+}
 function showWho() {
   const w = $("#who");
   if (!w || !me) return;
@@ -312,6 +322,7 @@ function viewHome() {
   }).join("");
 
   return `<div class="page">
+  ${FREE ? `<section class="card free-note"><span class="label">Free chapters</span><p class="prose" style="margin:0">You can read Start here, the Linux command line and Networking without an account. Sign in to open all ${tot} lessons and save your progress across devices.</p><div class="row"><a class="btn" href="${signInUrl()}">Sign in or sign up ${ICON.arrow}</a><a class="btn ghost" href="#d01">Start Day 01</a></div></section>` : ""}
   <section class="hero">
     <span class="label">${tot} lessons · about 45 minutes each · at your own pace</span>
     <h1>DevOps,<em>from zero</em></h1>
@@ -346,8 +357,8 @@ function lessonHead(l) {
     <h1>${esc(l.title)}</h1>
     ${l.goal ? `<p class="goal">${l.goal}</p>` : ""}
     <div class="lmeta"><span class="chip" title="Status">${glyph(l.id)} ${done ? "Passed" : "Not passed yet"}</span><span class="chip">${l.minutes} min</span>
-      ${l.pending ? "" : `<button class="chip" data-act="timer" id="timerBtn"><span class="timer${timer.id === l.id ? " live" : ""}" id="timerTxt">${timer.id === l.id ? timerText() : "Start a focus timer"}</span></button>`}
-      <button class="chip${done ? " on" : ""}" data-act="done" data-id="${l.id}">${done ? `${ICON.check} Marked passed` : "Mark as passed"}</button></div>
+      ${l.pending || l.locked ? "" : `<button class="chip" data-act="timer" id="timerBtn"><span class="timer${timer.id === l.id ? " live" : ""}" id="timerTxt">${timer.id === l.id ? timerText() : "Start a focus timer"}</span></button>`}
+      ${l.locked ? "" : `<button class="chip${done ? " on" : ""}" data-act="done" data-id="${l.id}">${done ? `${ICON.check} Marked passed` : "Mark as passed"}</button>`}</div>
   </header>`;
 }
 
@@ -355,6 +366,9 @@ function viewLesson(id) {
   const l = L(id);
   const i = C.order.indexOf(id), prev = i > 0 ? L(C.order[i - 1]) : null, next = i < C.order.length - 1 ? L(C.order[i + 1]) : null;
   const pager = `<nav class="pager" aria-label="Lessons">${prev ? `<a href="#${prev.id}"><span class="label">Previous · Day ${pad(prev.day)}</span><b>${esc(prev.title)}</b></a>` : "<span></span>"}${next ? `<a class="nx" href="#${next.id}"><span class="label">Next · Day ${pad(next.day)}</span><b>${esc(next.title)}</b></a>` : ""}</nav>`;
+  if (l.locked) {
+    return `<div class="lesson"><article class="lmain">${lessonHead(l)}<div class="pending"><span class="label">Sign in to open</span><p class="prose">This lesson is part of the full course. Sign in to read it, do the hands-on task and save your progress.</p><div class="row"><a class="btn" href="${signInUrl()}">Sign in ${ICON.arrow}</a><a class="btn ghost" href="#d03">Read the free Linux lessons</a></div></div>${pager}</article></div>`;
+  }
   if (l.pending) {
     return `<div class="lesson"><article class="lmain">${lessonHead(l)}<div class="pending"><span class="label">Being written</span><p class="prose">This lesson is still being written. It will appear at this same link. Here is what it covers:</p><p class="prose muted">${esc(l.scope)}</p></div>${pager}</article></div>`;
   }
@@ -422,6 +436,7 @@ function viewPart(n) {
   const nDone = p.lessons.filter(isDone).length;
   const list = p.lessons.map((id) => `<a class="prow" href="#${id}"><span class="pn">${pad(L(id).day)}</span><span><span class="pt" style="font-size:24px">${esc(L(id).title)}</span><span class="pd">${L(id).pending ? "being written" : `${L(id).minutes} min${P.scores[id] != null ? ` · check ${P.scores[id]}/3` : ""}`}</span></span><span class="pp" style="justify-items:end">${glyph(id)}</span></a>`).join("");
   let h = `<div class="page" style="max-width:960px">${p.art ? `<figure class="part-art">${p.art}</figure>` : ""}<header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
+  if (p.locked) return h + `<section class="card"><span class="label">Sign in to open</span><p class="prose" style="margin:0">This part is in the full course. Sign in to open its lessons, flashcards, quiz and hand-picked links.</p><div><a class="btn" href="${signInUrl()}">Sign in ${ICON.arrow}</a></div></section></div>`;
   if (!p.ready) return h + `<p class="muted">This part is still being written. It will appear here when it's ready.</p></div>`;
   if (p.resources && p.resources.length) h += `<section class="block"><div class="sec-h"><h2>Go deeper</h2><a class="label" href="#library">the full library</a></div><p class="muted" style="margin:0">Hand-picked for this part: official docs, the best free courses and videos, and the books people keep recommending.</p>${resList(p.resources)}</section>`;
   if (p.recap.length) h += `<section class="recap"><span class="label">Part recap</span><ul>${p.recap.map((r) => `<li>${r}</li>`).join("")}</ul></section>`;

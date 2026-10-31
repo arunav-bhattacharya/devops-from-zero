@@ -1,15 +1,21 @@
 # Deploy to Cloudflare
 
-The course is private. A small Cloudflare Worker (`worker/index.js`) sits in front of every page:
+A small Cloudflare Worker (`worker/index.js`) sits in front of the course:
 
-- Anyone who is not signed in is sent to `/login`, a "Sign in with Google" page.
-- Only Gmail addresses on the enrolled list (`ALLOWED_EMAILS` in `wrangler.jsonc`) get in. Anyone else sees
-  "This Google account is not enrolled".
-- Each learner's progress (lessons passed, quiz scores, review cards) is saved in Cloudflare KV under their
-  Google account, so it follows them between laptop and phone.
+- Signed out, anyone can read the free chapters: Start here, the Linux command line and Networking (Days 1 to 10).
+  Every other lesson shows its title with a "Sign in to open" button. The free parts are set by `FREE_PARTS`
+  in `site/build.py`.
+- Signed in, learners get all 55 lessons, and their progress (lessons passed, quiz scores, review cards) is
+  saved in Cloudflare KV, so it follows them between laptop and phone.
 
-This works the same way as ai-engineer-from-zero, with one difference: here nothing is free to browse,
-so the whole course needs sign-in.
+There are three ways to sign in, all on the `/login` page:
+
+1. **Google**, for Gmail addresses on the enrolled list (`ALLOWED_EMAILS`).
+2. **Email and password**, for accounts made with **Sign up**. Sign-up needs the invite code, so only people
+   you give the code to can join. Passwords are stored as salted PBKDF2 hashes in KV.
+3. **Test IDs** (`test1`, `test2`, `test3`), listed in `TEST_ACCOUNTS` as salted hashes. Their passwords are not in the repo.
+
+Progress is saved by email address, so the same person keeps the same progress whether they use Google or a password.
 
 Cloudflare's and Google's dashboards change now and then, so button names may differ a little from these steps.
 
@@ -18,14 +24,19 @@ Cloudflare's and Google's dashboards change now and then, so button names may di
 ```jsonc
 "kv_namespaces": [{ "binding": "PROGRESS", "id": "db7a4fe1777f4276b3bf62828c86b331" }],
 "vars": {
-  "GOOGLE_CLIENT_ID": "213282967449-rkdia4efp2ptkh0i57ih2vo6fej68qpv.apps.googleusercontent.com",
-  "ALLOWED_EMAILS": "ai.arunav@gmail.com"
+  "GOOGLE_CLIENT_ID": "213282967449-...apps.googleusercontent.com",
+  "ALLOWED_EMAILS": "ai.arunav@gmail.com",
+  "INVITE_CODE_SHA256": "<SHA-256 of the invite code>",
+  "TEST_ACCOUNTS": "test1:<salt>:<hash>;test2:<salt>:<hash>;test3:<salt>:<hash>"
 }
 ```
 
 - `ALLOWED_EMAILS`: the enrolled learners. Add more as a comma-separated list, for example
   `"ai.arunav@gmail.com, friend@gmail.com"`. Removing an address signs that person out on their next request.
 - `GOOGLE_CLIENT_ID`: the same Google sign-in client as ai-engineer-from-zero, so you don't need a new one.
+- `INVITE_CODE_SHA256`: turns on sign-up. People type the invite code; the worker compares its SHA-256 with this value.
+  Delete the line to close sign-up.
+- `TEST_ACCOUNTS`: ready-made logins for testing. Delete an entry to disable that login.
 - The KV namespace is also the one ai-engineer-from-zero uses. This course stores its keys under `dfz:`,
   so the two courses never touch each other's data. Deploy both from the same Cloudflare account.
   If you'd rather keep them apart, run `npx wrangler kv namespace create PROGRESS` and paste the new id here.
@@ -89,12 +100,42 @@ npx wrangler deploy
 
 ## 4. Check it works
 
-1. Open `https://devops-from-zero.ai-arunav.workers.dev` in a private window. You should land on the sign-in page.
-2. Sign in with an enrolled Gmail address. You should see the course, with your name and "Sign out" at the top.
+1. Open `https://devops-from-zero.ai-arunav.workers.dev` in a private window. You should see the free chapters, with
+   a "Sign in" button at the top, and a locked lesson such as Day 30 should say "Sign in to open".
+2. Sign in with a test ID (Email or test ID tab), or with an enrolled Gmail address. You should see all 55 lessons,
+   with your name and "Sign out" at the top.
 3. Mark Day 1 as passed, then open the site on your phone and sign in: Day 1 shows as passed there too.
 4. Try a Gmail address that is not enrolled: you should see "This Google account is not enrolled".
 
-## Enrolling or removing a learner
+## Change the invite code
+
+Pick a new code, then put its hash in `INVITE_CODE_SHA256` and redeploy:
+
+```bash
+printf %s 'DFZ-NEW-CODE-HERE' | shasum -a 256
+```
+
+Accounts made with the old code keep working.
+
+## Add or change a test login
+
+This prints an entry for `TEST_ACCOUNTS` (here for `test4`). Keep the password somewhere safe; it is not stored anywhere else.
+
+```bash
+python3 -c "import base64,hashlib,os,sys;pw=sys.argv[1];s=os.urandom(16);b=lambda x:base64.urlsafe_b64encode(x).decode().rstrip('=');print('test4:'+b(s)+':'+b(hashlib.pbkdf2_hmac('sha256',pw.encode(),s,100000,32)))" 'choose-a-long-password'
+```
+
+Add it to `TEST_ACCOUNTS` with a `;` between entries, then redeploy.
+
+## Remove a password account
+
+Accounts live in KV under `dfz:acct:<email>`. Deleting the key signs that person out for good:
+
+```bash
+npx wrangler kv key delete --remote --binding PROGRESS "dfz:acct:someone@example.com"
+```
+
+## Enrolling or removing a Google learner
 
 1. Edit `ALLOWED_EMAILS` in `wrangler.jsonc`.
 2. If the Google consent screen is in Testing mode, add or remove the same address under its test users.
@@ -118,12 +159,12 @@ npx wrangler deploy
 npx wrangler dev
 ```
 
-Then open http://localhost:8787. You'll be sent to the sign-in page. Google sign-in itself only works on an
+Then open http://localhost:8787. You'll see the free chapters; test IDs and sign-up work locally too. Google sign-in itself only works on an
 address listed in step 2, so add `http://localhost:8787` there too if you want to sign in locally.
 
 ## If something goes wrong
 
-- "Google sign-in did not load": the site address is missing from the client's authorized JavaScript origins (step 2), or Google hasn't picked it up yet.
+- Google sign-in fails or the button does not load: the site address is missing from the client's authorized JavaScript origins (step 2), or Google hasn't picked it up yet. The Email or test ID tab works without Google.
 - "This Google account is not enrolled": add the address to `ALLOWED_EMAILS` and redeploy.
 - "Sign-in failed": the `GOOGLE_CLIENT_ID` in `wrangler.jsonc` does not match the client whose origins you edited.
 - Deploy error about the KV namespace: the id in `wrangler.jsonc` must exist in the Cloudflare account you deploy to.

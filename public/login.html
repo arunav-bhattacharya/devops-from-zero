@@ -487,6 +487,8 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 .who .ini { display: grid; place-items: center; background: var(--teal); color: var(--panel); font-weight: 700; font-size: 13px; }
 .who .linkbtn { font-size: 14px; }
 @media (max-width: 640px) { .who .nm { display: none; } }
+.st.locked { color: var(--faint); }
+.free-note { border-top: 4px solid var(--orange); }
 /* Freight Notation plates (design/freight-notation.md): every color is a theme token */
 .cv { display: block; width: 100%; height: auto; }
 .cv path { fill: none; }
@@ -513,39 +515,98 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 .cv .arh { fill: var(--orange); }
 
 .login { min-height: 100vh; display: grid; place-items: center; padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.login-card { width: min(100%, 620px); display: grid; gap: 22px; }
+.login-card { width: min(100%, 620px); display: grid; gap: 20px; }
 .login h1 { font: 800 clamp(48px, 9vw, 76px)/0.88 var(--f-display); text-transform: uppercase; margin: 0; }
 .login h1 em { font-style: normal; color: var(--orange); display: block; }
 .login p { margin: 0; color: var(--mute); font-size: 18px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.pane { display: grid; gap: 12px; max-width: 420px; }
+.pane label { display: grid; gap: 4px; font-size: 14.5px; font-weight: 700; }
+.pane .hint2 { font-size: 14px; color: var(--faint); font-weight: 400; }
 #g { min-height: 44px; }
 .msg { min-height: 1.5em; font-size: 15px; color: var(--mute); }
 .msg.bad { color: var(--red); }
+.free { font-size: 16px; }
 </style></head>
 <body><div class="login" role="main"><div class="login-card">
 <figure class="part-art" style="margin:0"><svg class="cv" viewBox="0 0 1200 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Plate 0: start"><rect class="cv-bg" x="20" y="20" width="1160" height="400" rx="6"/><path class="cv-g" d="M40 40V400M60 40V400M80 40V400M100 40V400M120 40V400M140 40V400M160 40V400M180 40V400M200 40V400M220 40V400M240 40V400M260 40V400M280 40V400M300 40V400M320 40V400M340 40V400M360 40V400M380 40V400M400 40V400M420 40V400M440 40V400M460 40V400M480 40V400M500 40V400M520 40V400M540 40V400M560 40V400M580 40V400M600 40V400M620 40V400M640 40V400M660 40V400M680 40V400M700 40V400M720 40V400M740 40V400M760 40V400M780 40V400M800 40V400M820 40V400M840 40V400M860 40V400M880 40V400M900 40V400M920 40V400M940 40V400M960 40V400M980 40V400M1000 40V400M1020 40V400M1040 40V400M1060 40V400M1080 40V400M1100 40V400M1120 40V400M1140 40V400M1160 40V400M40 40H1160M40 60H1160M40 80H1160M40 100H1160M40 120H1160M40 140H1160M40 160H1160M40 180H1160M40 200H1160M40 220H1160M40 240H1160M40 260H1160M40 280H1160M40 300H1160M40 320H1160M40 340H1160M40 360H1160M40 380H1160M40 400H1160"/><path class="cv-cm" d="M36 40h-12M40 36v-12"/><path class="cv-cm" d="M1164 40h12M1160 36v-12"/><path class="cv-cm" d="M36 400h-12M40 404v12"/><path class="cv-cm" d="M1164 400h12M1160 404v12"/><text class="cv-num" x="60" y="370">00</text><text class="cv-lab" x="62" y="66">PLATE 00</text><text class="cv-lab cv-r" x="1138" y="66">START</text><text class="cv-cap" x="62" y="392">route survey of a learning path</text><text class="cv-cap cv-r" x="1138" y="392">DAYS 01 TO 02</text><path class="cv-sm" d="M380 108L450 108L520 108L590 108L660 108L730 108L800 108L870 108L940 108L1010 108L1080 108L1080 168L1010 168L940 168L870 168L800 168L730 168L660 168L590 168L520 168L450 168L380 168L380 228L450 228L520 228L590 228L660 228L730 228L800 228L870 228L940 228L1010 228L1080 228L1080 288L1010 288L940 288L870 288L800 288L730 288L660 288L590 288L520 288L450 288L380 288L380 348L450 348L520 348L590 348L660 348L730 348L800 348L870 348L940 348L1010 348L1080 348" fill="none"/><circle class="cv-fo" cx="380" cy="108" r="7"/><circle class="cv-fm" cx="450" cy="108" r="2.6"/><circle class="cv-bgf cv-sk" cx="520" cy="108" r="6"/><circle class="cv-fm" cx="590" cy="108" r="2.6"/><circle class="cv-fm" cx="660" cy="108" r="2.6"/><circle class="cv-fm" cx="730" cy="108" r="2.6"/><circle class="cv-fm" cx="800" cy="108" r="2.6"/><circle class="cv-bgf cv-sk" cx="870" cy="108" r="6"/><circle class="cv-fm" cx="940" cy="108" r="2.6"/><circle class="cv-fm" cx="1010" cy="108" r="2.6"/><circle class="cv-bgf cv-sk" cx="1080" cy="108" r="6"/><circle class="cv-fm" cx="1080" cy="168" r="2.6"/><circle class="cv-fm" cx="1010" cy="168" r="2.6"/><circle class="cv-fm" cx="940" cy="168" r="2.6"/><circle class="cv-fm" cx="870" cy="168" r="2.6"/><circle class="cv-fm" cx="800" cy="168" r="2.6"/><circle class="cv-bgf cv-sk" cx="730" cy="168" r="6"/><circle class="cv-fm" cx="660" cy="168" r="2.6"/><circle class="cv-fm" cx="590" cy="168" r="2.6"/><circle class="cv-fm" cx="520" cy="168" r="2.6"/><circle class="cv-fm" cx="450" cy="168" r="2.6"/><circle class="cv-bgf cv-sk" cx="380" cy="168" r="6"/><circle class="cv-fm" cx="380" cy="228" r="2.6"/><circle class="cv-fm" cx="450" cy="228" r="2.6"/><circle class="cv-bgf cv-sk" cx="520" cy="228" r="6"/><circle class="cv-fm" cx="590" cy="228" r="2.6"/><circle class="cv-fm" cx="660" cy="228" r="2.6"/><circle class="cv-fm" cx="730" cy="228" r="2.6"/><circle class="cv-fm" cx="800" cy="228" r="2.6"/><circle class="cv-bgf cv-sk" cx="870" cy="228" r="6"/><circle class="cv-fm" cx="940" cy="228" r="2.6"/><circle class="cv-fm" cx="1010" cy="228" r="2.6"/><circle class="cv-fm" cx="1080" cy="228" r="2.6"/><circle class="cv-fm" cx="1080" cy="288" r="2.6"/><circle class="cv-fm" cx="1010" cy="288" r="2.6"/><circle class="cv-fm" cx="940" cy="288" r="2.6"/><circle class="cv-fm" cx="870" cy="288" r="2.6"/><circle class="cv-fm" cx="800" cy="288" r="2.6"/><circle class="cv-bgf cv-sk" cx="730" cy="288" r="6"/><circle class="cv-fm" cx="660" cy="288" r="2.6"/><circle class="cv-bgf cv-sk" cx="590" cy="288" r="6"/><circle class="cv-fm" cx="520" cy="288" r="2.6"/><circle class="cv-fm" cx="450" cy="288" r="2.6"/><circle class="cv-fm" cx="380" cy="288" r="2.6"/><circle class="cv-bgf cv-sk" cx="380" cy="348" r="6"/><circle class="cv-fm" cx="450" cy="348" r="2.6"/><circle class="cv-bgf cv-sk" cx="520" cy="348" r="6"/><circle class="cv-fm" cx="590" cy="348" r="2.6"/><circle class="cv-fm" cx="660" cy="348" r="2.6"/><circle class="cv-bgf cv-sk" cx="730" cy="348" r="6"/><circle class="cv-fm" cx="800" cy="348" r="2.6"/><circle class="cv-bgf cv-sk" cx="870" cy="348" r="6"/><circle class="cv-fm" cx="940" cy="348" r="2.6"/><circle class="cv-bgf cv-sk" cx="1010" cy="348" r="6"/><circle class="cv-fm" cx="1080" cy="348" r="2.6"/><circle class="cv-st" cx="1080" cy="348" r="11" fill="none"/></svg></figure>
 <h1>DevOps,<em>from zero</em></h1>
-<p>This course is for enrolled learners. Sign in with the Google account you enrolled with.</p>
-<div id="g"></div>
-<div class="msg" id="msg" role="status" aria-live="polite">Loading Google sign-in...</div>
+<p>Sign in to open all 55 lessons and save your progress across devices.</p>
+<div class="tabs" role="tablist">
+  <button class="chip on" role="tab" aria-selected="true" data-tab="google">Google</button>
+  <button class="chip" role="tab" aria-selected="false" data-tab="password">Email or test ID</button>
+  <button class="chip" role="tab" aria-selected="false" data-tab="signup" id="signupTab">Sign up</button>
+</div>
+
+<section class="pane" data-pane="google">
+  <p style="font-size:16px">For Gmail addresses on the enrolled list.</p>
+  <div id="g"></div>
+</section>
+
+<form class="pane" data-pane="password" id="loginForm" hidden>
+  <label for="li-email">Email or test ID<input class="field" id="li-email" name="email" autocomplete="username" required></label>
+  <label for="li-pass">Password<input class="field" id="li-pass" name="password" type="password" autocomplete="current-password" required></label>
+  <div><button class="btn" type="submit">Sign in</button></div>
+</form>
+
+<form class="pane" data-pane="signup" id="signupForm" hidden>
+  <label for="su-name">Your name<input class="field" id="su-name" name="name" autocomplete="name"></label>
+  <label for="su-email">Email<input class="field" id="su-email" name="email" type="email" autocomplete="email" required></label>
+  <label for="su-pass">Password <span class="hint2">at least 10 characters</span><input class="field" id="su-pass" name="password" type="password" autocomplete="new-password" minlength="10" required></label>
+  <label for="su-code">Invite code <span class="hint2">from the course owner</span><input class="field" id="su-code" name="code" autocomplete="off" required></label>
+  <div><button class="btn" type="submit">Create account</button></div>
+</form>
+
+<div class="msg" id="msg" role="status" aria-live="polite"></div>
+<a class="free" href="/">Or keep reading the free chapters: Start here, Linux and Networking</a>
 </div></div>
 <script>
-var msg = document.getElementById("msg");
+var msg = document.getElementById("msg"), cfg = {};
 function say(t, bad) { msg.textContent = t; msg.className = "msg" + (bad ? " bad" : ""); }
 function next() { var n = new URLSearchParams(location.search).get("next") || "/"; return n.charAt(0) === "/" && n.charAt(1) !== "/" ? n : "/"; }
+function tab(name) {
+  document.querySelectorAll("[data-tab]").forEach(function (b) { var on = b.dataset.tab === name; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+  document.querySelectorAll("[data-pane]").forEach(function (p) { p.hidden = p.dataset.pane !== name; });
+  say("");
+}
+document.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { tab(b.dataset.tab); }); });
+
+async function post(path, body) {
+  var r = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  var d = {}; try { d = await r.json(); } catch (e) {}
+  return { ok: r.ok, status: r.status, d: d };
+}
 async function done(r) {
   say("Checking your account...");
-  var x = await fetch("/api/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ credential: r.credential }) });
-  if (x.ok) location.replace(next());
-  else say(x.status === 403 ? "This Google account is not enrolled. Ask the course owner to add it." : "Sign-in failed. Please try again.", true);
+  var x = await post("/api/session", { credential: r.credential });
+  if (x.ok) return location.replace(next());
+  if (x.status === 403) say((x.d.email || "This Google account") + " is not on the enrolled list. Ask the course owner to add it, or use Sign up with an invite code.", true);
+  else say("Google sign-in failed (" + (x.d.detail || "unknown reason") + "). Try the email option instead.", true);
 }
+document.getElementById("loginForm").addEventListener("submit", async function (e) {
+  e.preventDefault(); say("Signing in...");
+  var f = e.target, x = await post("/api/login", { email: f.email.value, password: f.password.value });
+  if (x.ok) return location.replace(next());
+  say(x.status === 429 ? "Too many tries. Wait 15 minutes and try again." : "Wrong email, test ID or password.", true);
+});
+document.getElementById("signupForm").addEventListener("submit", async function (e) {
+  e.preventDefault(); say("Creating your account...");
+  var f = e.target, x = await post("/api/signup", { name: f.name.value, email: f.email.value, password: f.password.value, code: f.code.value });
+  if (x.ok) return location.replace(next());
+  var why = { "wrong invite code": "That invite code is not right.", "exists": "That email already has an account. Use the Email tab to sign in.",
+    "password too short": "Use a password of at least 10 characters.", "email": "That email address does not look right.",
+    "sign-up is closed": "Sign-up is closed right now.", "too many tries": "Too many tries. Wait 15 minutes and try again." }[x.d.error];
+  say(why || "Could not create the account. Try again.", true);
+});
+
 async function start() {
-  var cfg = await (await fetch("/api/config")).json();
+  try { cfg = await (await fetch("/api/config")).json(); } catch (e) {}
+  if (!cfg.signup) document.getElementById("signupTab").hidden = true;
+  if (!window.google || !cfg.clientId) { say("Google sign-in is not available here. Use the email option.", true); return; }
   var dark = document.documentElement.getAttribute("data-theme") === "dark" || (!document.documentElement.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
-  google.accounts.id.initialize({ client_id: cfg.clientId, callback: done, auto_select: true, itp_support: true });
+  google.accounts.id.initialize({ client_id: cfg.clientId, callback: done, itp_support: true });
   google.accounts.id.renderButton(document.getElementById("g"), { theme: dark ? "filled_black" : "outline", size: "large", shape: "rectangular", text: "signin_with", width: 280 });
-  google.accounts.id.prompt();
-  setTimeout(function () { if (document.querySelector("#g iframe, #g div[role=button]")) say(""); else say("Google sign-in did not load. If this site address is new, add it to the Google client's authorized origins, then reload.", true); }, 5000);
 }
 </script>
-<script src="https://accounts.google.com/gsi/client" async defer onload="start()" onerror="say('Could not reach Google. Check your connection and reload.', true)"></script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="start()" onerror="start()"></script>
 </body></html>

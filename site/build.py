@@ -192,6 +192,41 @@ def labs():
     return sorted(out, key=lambda f: (f["day"], PROJECT_ORDER.index(f["proj"]) if f["proj"] in PROJECT_ORDER else 9, f["rank"], f["path"]))
 
 
+FREE_PARTS = {0, 1, 2}   # open to everyone on the Cloudflare site: Start here, Linux, Networking
+ICON = ('<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E'
+        '%3Crect x=%223%22 y=%2214%22 width=%225%22 height=%227%22 fill=%22%230a6a7e%22/%3E%3Crect x=%2210%22 y=%228%22 width=%225%22 height=%2213%22 fill=%22%23c84410%22/%3E'
+        '%3Crect x=%2217%22 y=%222%22 width=%225%22 height=%2219%22 fill=%22%23e8ad00%22/%3E%3C/svg%3E">')
+
+
+def render(course):
+    data = json.dumps(course, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    page = (SITE / "template.html").read_text()
+    page = page.replace("/*CSS*/", (SITE / "app.css").read_text() + (SITE / "art.css").read_text())
+    page = page.replace("/*JS*/", (SITE / "app.js").read_text())
+    return page.replace("{{DATA}}", data)
+
+
+def document(page):
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' + ICON +
+            '</head><body>\n' + page + '\n</body></html>\n')
+
+
+def free_edition(course):
+    """The same course with only the free parts readable; other lessons keep their title and goal."""
+    c = json.loads(json.dumps(course))
+    c["free"] = sorted(FREE_PARTS)
+    for lid, L in c["lessons"].items():
+        if L["part"] not in FREE_PARTS:
+            c["lessons"][lid] = {k: L[k] for k in ("id", "k", "part", "day", "title", "minutes") if k in L}
+            c["lessons"][lid].update(locked=True, goal=L.get("goal", ""))
+    for P in c["parts"]:
+        if P["part"] not in FREE_PARTS:
+            P.update(locked=True, recap=[], flashcards=[], quiz=[], resources=[])
+    c["labs"] = [f for f in c["labs"] if f["day"] <= 10]
+    return c
+
+
 def main():
     index = json.loads((ROOT / "brief/index.json").read_text())
     course = {"parts": [], "order": [], "lessons": {}, "labs": labs(), "built": datetime.date.today().isoformat()}
@@ -221,19 +256,12 @@ def main():
                           for r in d.get("resources", [])],
             "art": (SITE / f"art/p{P['part']}.svg").read_text() if (SITE / f"art/p{P['part']}.svg").exists() else "",
         })
-    data = json.dumps(course, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    page = (SITE / "template.html").read_text()
-    page = page.replace("/*CSS*/", (SITE / "app.css").read_text() + (SITE / "art.css").read_text())
-    page = page.replace("/*JS*/", (SITE / "app.js").read_text())
-    page = page.replace("{{DATA}}", data)
+    page = render(course)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(page)  # fragment: claude.ai wraps it in its own document
-    # full document for Cloudflare (or any static host)
+    OUT.write_text(page)  # fragment for claude.ai (it wraps the page in its own document): the full course
     WEB.mkdir(parents=True, exist_ok=True)
-    (WEB / "index.html").write_text('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
-                                    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-                                    '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect x=%223%22 y=%2214%22 width=%225%22 height=%227%22 fill=%22%230a6a7e%22/%3E%3Crect x=%2210%22 y=%228%22 width=%225%22 height=%2213%22 fill=%22%23c84410%22/%3E%3Crect x=%2217%22 y=%222%22 width=%225%22 height=%2219%22 fill=%22%23e8ad00%22/%3E%3C/svg%3E">'
-                                    '</head><body>\n' + page + '\n</body></html>\n')
+    (WEB / "course.html").write_text(document(page))           # Cloudflare, signed in: the full course
+    (WEB / "index.html").write_text(document(render(free_edition(course))))  # Cloudflare, signed out: free chapters
     # sign-in page for the Cloudflare site (the worker serves it at /login)
     login = (SITE / "login.html").read_text()
     login = login.replace("/*CSS*/", (SITE / "app.css").read_text() + (SITE / "art.css").read_text())
