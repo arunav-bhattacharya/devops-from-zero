@@ -21,22 +21,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Check the Cloudflare secrets are set
+      - name: Check the Cloudflare settings
         env:
-          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN_SECRET: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TOKEN_VAR: ${{ vars.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ACCOUNT_VAR: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
-            echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID under Settings > Secrets and variables > Actions (see DEPLOY.md)."
-            exit 1
+          ok=1
+          report() {  # name, value-as-secret, value-as-variable
+            if [ -n "$2" ]; then echo "$1: found (repository secret)"
+            elif [ -n "$3" ]; then echo "$1: found (repository variable)"
+            else echo "::error::$1 is missing. Add it under Settings > Secrets and variables > Actions > Secrets tab > New repository secret. The name must match exactly."; ok=0
+            fi
+          }
+          report CLOUDFLARE_API_TOKEN "$TOKEN_SECRET" "$TOKEN_VAR"
+          report CLOUDFLARE_ACCOUNT_ID "$ACCOUNT_SECRET" "$ACCOUNT_VAR"
+          if [ -z "$TOKEN_SECRET" ] && [ -n "$TOKEN_VAR" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is a variable, so anyone who can see the repo settings can read it. Move it to the Secrets tab."
           fi
+          [ "$ok" = 1 ]
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Deploy public/ to Cloudflare
         uses: cloudflare/wrangler-action@2ef9f398b9175c68f953e40d679493850d640a85 # v4.1.3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4.156.0"
           command: deploy
