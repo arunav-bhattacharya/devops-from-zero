@@ -1345,7 +1345,7 @@
       "lang": "console"
      },
      {
-      "say": "Break it the same way as on Day 43 and give it 40 seconds. Both SLO alerts are pending: the condition is true, but `for: 2m` has not passed yet.",
+      "say": "Break it the same way as on Day 43 and wait about a minute. Both SLO alerts are pending: the condition is true, but `for: 2m` has not passed yet.",
       "code": "$ docker compose stop redis\n$ q 'ALERTS'\nALERTS{alertname=\"HelloErrorBudgetFastBurn\", alertstate=\"pending\", job=\"hello-devops\", severity=\"page\"} => 1 @[1793338015.042]\nALERTS{alertname=\"HelloErrorBudgetSlowBurn\", alertstate=\"pending\", job=\"hello-devops\", severity=\"ticket\"} => 1 @[1793338015.042]",
       "lang": "console"
      },
@@ -1538,15 +1538,15 @@
      "why": "Silences are made at run time for exactly this case, expire on their own, and leave the rules and config untouched."
     },
     {
-     "q": "A new ServiceMonitor has `release: monitoring`, the right selector and namespace, but `port: 8000`. The Service port is named http with targetPort 8000. What happens?",
+     "q": "A new ServiceMonitor has `release: monitoring` and the right selector, but its endpoint says `port: web`. The Service's only port is named http. What happens?",
      "options": [
-      "Prometheus scrapes port 8000 directly",
-      "No target appears, because port must be a Service port name",
+      "Prometheus scrapes port 80 on each pod",
+      "No target appears, and kubectl reports no error",
       "kubectl rejects the object with a schema error",
-      "Prometheus scrapes port 80 instead"
+      "Prometheus scrapes the Service's first port"
      ],
      "answer": 1,
-     "why": "The port field of a ServiceMonitor endpoint names a Service port, so a number matches nothing and the target silently never appears."
+     "why": "The port field names a Service port. The object is valid, so kubectl accepts it, but web matches no port and the Operator creates no targets."
     }
    ],
    "interview": [

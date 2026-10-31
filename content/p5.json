@@ -1026,8 +1026,13 @@
       "lang": "text"
      },
      {
-      "say": "Run it. With the configuration cache on, Jib fails, because its task reads `project` while it runs (the Day 22 error). Turn the cache off for this one command and it works, with a warning about Gradle 10.",
-      "code": "$ ./gradlew :app:jibDockerBuild\n> Task :app:jibDockerBuild FAILED\n...\n> Invocation of 'Task.project' by task ':app:jibDockerBuild' at execution time is unsupported with the configuration cache.\n$ ./gradlew :app:jibDockerBuild --no-configuration-cache\nContainerizing application to Docker daemon as hello-jvm:jib...\n...\nBuilding dependencies layer...\nBuilding project dependencies layer...\nBuilding classes layer...\nBuilding jvm arg files layer...\n...\nContainer entrypoint set to [java, -XX:MaxRAMPercentage=75.0, -cp, @/app/jib-classpath-file, hello.app.MainKt]\nBuilt image to Docker daemon as hello-jvm:jib\nDeprecated Gradle features were used in this build, making it incompatible with Gradle 10.\nBUILD SUCCESSFUL in 21s",
+      "say": "Run it. With the configuration cache on, Jib fails, because its task reads `project` while it runs (the Day 22 error).",
+      "code": "$ ./gradlew :app:jibDockerBuild\n> Task :app:jibDockerBuild FAILED\n...\n> Invocation of 'Task.project' by task ':app:jibDockerBuild' at execution time is unsupported with the configuration cache.",
+      "lang": "console"
+     },
+     {
+      "say": "Turn the cache off for this one command and it works. Look for the separate layers, the memory flag in the entrypoint, and the warning about Gradle 10.",
+      "code": "$ ./gradlew :app:jibDockerBuild --no-configuration-cache\nContainerizing application to Docker daemon as hello-jvm:jib...\n...\nBuilding dependencies layer...\nBuilding project dependencies layer...\nBuilding classes layer...\nBuilding jvm arg files layer...\n...\nContainer entrypoint set to [java, -XX:MaxRAMPercentage=75.0, -cp, @/app/jib-classpath-file, hello.app.MainKt]\nBuilt image to Docker daemon as hello-jvm:jib\nDeprecated Gradle features were used in this build, making it incompatible with Gradle 10.\nBUILD SUCCESSFUL in 21s",
       "lang": "console"
      }
     ]
