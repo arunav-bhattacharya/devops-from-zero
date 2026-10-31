@@ -12,8 +12,8 @@ PART = {
     "intro": (
         "Part 8 left hello-devops running on kind, deployed by Argo CD. This part teaches you to see how it is doing. "
         "Day 41 builds the ideas every monitoring tool shares: signals, SLOs, error budgets and alerts on what users feel. "
-        "Days 42 to 44 put them to work with Prometheus: a Compose lab on your laptop, PromQL from the first query to a full RED view, "
-        "alerts that reach a receiver, and finally the same setup on Kubernetes."
+        "Days 42 to 44 put them to work with Prometheus. You run a Compose lab on your laptop, learn PromQL from the first query to a full RED view, "
+        "send alerts to a receiver, and finally set up the same on Kubernetes."
     ),
     "recap": [
         "Monitoring watches for known problems; observability lets you ask new questions of metrics, logs, traces and profiles.",
@@ -72,7 +72,7 @@ PART = {
                 "The API is much slower than it looks",
                 "Prometheus adds its own network time",
                 "The scrape interval is too long",
-                "Every request is in the first bucket, so the estimate lands at 95% of its limit",
+                "All requests sit in the first bucket",
             ],
             "answer": 3,
             "why": "histogram_quantile only knows bucket counts. With all requests in the 0 to 0.1 bucket, it interpolates linearly to 0.95 of 0.1.",
@@ -101,7 +101,7 @@ PART = {
         },
         {
             "q": "With kube-prometheus-stack, which object adds your own alerting rules to Prometheus?",
-            "options": ["A ServiceMonitor", "A PrometheusRule with the release label", "A ConfigMap named prometheus-rules", "A PodMonitor"],
+            "options": ["A ServiceMonitor for the app", "A PrometheusRule with the release label", "A ConfigMap named prometheus-rules", "A PodMonitor with the release label"],
             "answer": 1,
             "why": "The Prometheus Operator turns PrometheusRule objects into rule files, but only those its ruleSelector matches, which by default means the release label.",
         },
@@ -121,7 +121,7 @@ PART = {
             "options": [
                 "Node CPU above 85% for 10 minutes",
                 "More than 2 pod restarts in an hour",
-                "Fast burn: 2% of the monthly error budget spent in one hour",
+                "2% of the monthly error budget spent in 1 hour",
                 "Memory above 90% on any container",
             ],
             "answer": 2,
@@ -144,7 +144,7 @@ PART = {
                 "Docker adds web to the Mac's /etc/hosts file",
                 "Prometheus has a built-in list of service names",
                 "web is a reserved name for port 8000",
-                "Compose puts all services on one network, and Docker's DNS resolves service names",
+                "Docker's DNS on the Compose network resolves it",
             ],
             "answer": 3,
             "why": "Compose creates a user-defined network for the project, and Docker's built-in DNS answers each service name with that container's address.",

@@ -299,7 +299,7 @@ LESSON = {
             "With awk (Day 5), count the good responses (status below 500) and print the availability SLI as a percentage. Then compute a latency SLI: the share that took 0.1 seconds or less.",
             "Start Redis again. Run `error_budget.py` for a 99.5% SLO over 30 days with your own guess of daily traffic.",
             "Work out the burn rate your measured error ratio means against that 99.5% SLO, and how many days the budget would last at that rate.",
-            "Sort these eight alerts into page, ticket or dashboard, with one line of why for each: CPU above 80% for 10 minutes; 5% of requests to `/` fail for 10 minutes; p95 latency above 2 seconds for 15 minutes; disk 70% full; a pod restarted once; a TLS certificate expires in 10 days; burn rate 1.5 over 3 days; no successful request at all for 2 minutes.",
+            "Sort these eight alerts into page, ticket or dashboard, with one line of why for each. CPU above 80% for 10 minutes. 5% of requests to `/` fail for 10 minutes. P95 latency above 2 seconds for 15 minutes. Disk 70% full. A pod restarted once. A TLS certificate expires in 10 days. Burn rate 1.5 over 3 days. No successful request at all for 2 minutes.",
         ],
         "hints": [
             "`awk '$1 < 500' sli.txt | wc -l` counts the good lines, and `wc -l < sli.txt` counts all of them.",
@@ -378,7 +378,8 @@ LESSON = {
             "q": "How would you choose an SLO for a new service?",
             "a": (
                 "I would start with a simple SLI, such as successful requests over all requests, and measure what the service achieves today. "
-                "Then I would pick a target a little below that, so the team is not paged from day one, and agree with the product owner what happens when the budget runs out. "
+                "Then I would pick a target a little below that, so the team is not paged from day one. "
+                "I would also agree with the product owner what happens when the budget runs out. "
                 "I would review it every quarter: if users complain while the SLO is met, the SLI or the target is wrong. "
                 "I would never pick 100%, because it leaves no room for deploys and costs far more than users can notice."
             ),

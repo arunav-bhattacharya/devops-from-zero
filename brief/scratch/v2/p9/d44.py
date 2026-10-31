@@ -73,8 +73,9 @@ LESSON = {
                 "If the condition is false for even one evaluation, the alert goes back to inactive and the wait starts again. "
                 "So `for:` filters out blips such as one slow scrape during a deploy. "
                 "Prometheus also writes every active alert as a series named `ALERTS`, so `ALERTS{alertstate=\"pending\"}` is a normal query.\n\n"
-                "The two SLO alerts turn the Day 41 plan into rules. They compare recording rules from Day 43 with the burn-rate lines: "
-                "page at 14.4 times the budget over 1 hour and 5 minutes, or 6 times over 6 hours and 30 minutes; open a ticket at 1 times over 3 days and 6 hours.\n\n"
+                "The two SLO alerts turn the Day 41 plan into rules. They compare the Day 43 recording rules with the burn-rate lines:\n"
+                "- Page: 14.4 times the budget over 1 hour and 5 minutes, or 6 times over 6 hours and 30 minutes.\n"
+                "- Ticket: 1 times the budget over 3 days and 6 hours.\n\n"
                 "Prometheus only decides that an alert fires. It sends firing alerts to the Alertmanager listed under `alerting:` in `prometheus.yml`, and it does not send any message itself."
             ),
             "refs": [ref("alerting_rules"), ref("alerting_tutorial")],
@@ -94,7 +95,7 @@ LESSON = {
                 "- `repeat_interval` (default 4h): resend an alert that is still firing.\n\n"
                 "A receiver is the destination. Alertmanager has built-in support for Slack, PagerDuty, email, Microsoft Teams and more, plus a generic webhook. "
                 "The lab's `webhook.py` is a 30-line Python server that prints what it receives, so you can see exactly what Slack would get. "
-                "`send_resolved: true` also sends a message when the alert stops."
+                "With `send_resolved: true`, Alertmanager also sends a message when the alert stops."
             ),
             "refs": [ref("am_overview"), ref("am_config")],
         },
@@ -106,10 +107,12 @@ LESSON = {
                 "1. The rule files to load.\n"
                 "2. Made-up input series. `0+300x90` means start at 0 and add 300 every interval, 90 times.\n"
                 "3. A time to check, and the exact alerts expected then, with labels and annotations.\n\n"
-                "The lab's `tests/alerts_test.yml` checks three stories: the app is down for two minutes and `HelloDown` fires; errors start at minute 61 and the fast burn pages by minute 75; "
-                "and a slow leak of 0.33% errors opens a ticket but does not page. "
+                "The lab's `tests/alerts_test.yml` checks three stories:\n"
+                "- The app is down for two minutes, and `HelloDown` fires.\n"
+                "- Errors start at minute 61, and the fast burn pages by minute 75.\n"
+                "- A slow leak of 0.33% errors opens a ticket but does not page.\n\n"
                 "When I first wrote the second test I guessed the summary would say 4.115%. "
-                "promtool printed the expected and the actual alert side by side, `4.762%`, and the fix took ten seconds.\n\n"
+                "The promtool output showed the expected and the actual alert side by side, with `4.762%`, and the fix took ten seconds.\n\n"
                 "Test the routing tree too: `amtool config routes test severity=page alertname=HelloDown` prints `pager`.\n\n"
                 "Before you merge a new alert, ask these questions:\n"
                 "- Does it fire on a symptom users feel?\n"
@@ -183,7 +186,7 @@ LESSON = {
             "refs": [ref("operator_gs"), ref("operator_trouble")],
         },
         {
-            "h": "kube-state-metrics, metrics-server and keeping data longer",
+            "h": "State metrics, autoscaling metrics and long-term storage",
             "body": (
                 "Two components sound alike and do different jobs:\n"
                 "- [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) reads the Kubernetes API and exposes the state of objects as metrics: desired and available replicas, pod restarts, job results. Prometheus scrapes it.\n"
@@ -203,8 +206,9 @@ LESSON = {
     "analogy": (
         "Prometheus is a smoke detector and Alertmanager is the building's alarm desk. "
         "A detector only decides that there is smoke, and only after it lasts a few seconds (for:). "
-        "The desk turns ten detectors on one floor into one call (grouping), sends a fire to the fire brigade and a faulty sensor to the caretaker (routing), "
-        "ignores floor alarms while the whole building is already evacuating (inhibition), and stays quiet during a planned fire drill (a silence). "
+        "The desk turns ten detectors on one floor into one call (grouping). "
+        "It sends a fire to the fire brigade and a faulty sensor to the caretaker (routing). "
+        "It ignores floor alarms while the whole building is already evacuating (inhibition), and stays quiet during a planned fire drill (a silence). "
         "Where it breaks: a real alarm desk is staffed by people, while Alertmanager follows its rules exactly, so a wrong route sends the page nowhere."
     ),
     "diagram": DIAGRAM,
@@ -214,8 +218,8 @@ LESSON = {
         "steps": [
             {
                 "say": (
-                    "Test first. promtool runs the three stories in the test file, and amtool shows the routing tree. "
-                    "`am` is a small shell function, like `q`, that runs amtool inside the Alertmanager container."
+                    "Test first. The promtool command runs the three stories in the test file, and amtool shows the routing tree. "
+                    "The `am` function runs amtool inside the Alertmanager container, as `q` does for promtool."
                 ),
                 "code": "$ docker compose exec prometheus promtool test rules /etc/prometheus/tests/alerts_test.yml\n  SUCCESS\n\n"
                 "$ am() { docker compose exec alertmanager amtool --alertmanager.url=http://localhost:9093 \"$@\"; }\n"
@@ -345,7 +349,8 @@ LESSON = {
         "Check Status, Target health and Rule health in the Prometheus UI after every apply, and compare labels before you debug anything else."
     ),
     "real_world": (
-        "At PayFlow, a made-up payments company, every team ships a ServiceMonitor and a PrometheusRule next to its Deployment in the same Helm chart, so monitoring changes go through code review like any other change. "
+        "At PayFlow, a made-up payments company, every team ships a ServiceMonitor and a PrometheusRule next to its Deployment in the same Helm chart. "
+        "So monitoring changes go through code review like any other change. "
         "CI runs promtool test rules on every pull request. "
         "Alertmanager routes severity=page to PagerDuty and everything else to a Slack channel per team, and planned maintenance always starts with a silence that has a comment and an author."
     ),
@@ -442,9 +447,11 @@ LESSON = {
         {
             "q": "What makes an alert good or bad?",
             "a": (
-                "A good alert fires on a symptom users feel, such as a fast error budget burn, has a for: or short window to skip blips, and says clearly what is wrong with a link to a runbook. "
+                "A good alert fires on a symptom users feel, such as a fast error budget burn, and has a for: or short window to skip blips. "
+                "It says clearly what is wrong and links to a runbook. "
                 "It needs a human now, or it should be a ticket. "
-                "A bad alert fires on a cause such as CPU, flaps because it uses irate() or no for:, or fires often with nothing to do, which teaches people to ignore pages. "
+                "A bad alert fires on a cause such as CPU, or flaps because it uses irate() or no for:. "
+                "Worst of all is an alert that fires often with nothing to do, which teaches people to ignore pages. "
                 "I also test alerts with promtool so I know they fire before production proves it."
             ),
         },
@@ -464,8 +471,8 @@ LESSON = {
             "If your SLO says 300 ms, no bucket ends at 0.3, so you cannot count requests under 300 ms exactly. "
             "Pass `buckets=(0.01, 0.05, 0.1, 0.3, 1, 3)` to the Histogram to get fewer series and an exact edge at your threshold. "
             "Then `sum(rate(hello_request_duration_seconds_bucket{le=\"0.3\"}[5m])) / sum(rate(hello_request_duration_seconds_count[5m]))` is a latency SLI, and the Day 41 burn-rate maths works on it unchanged.\n\n"
-            "Native histograms are the long-term answer to choosing buckets. They are stable since Prometheus 3.8, choose bucket limits automatically and store them in one series, "
-            "but they stay off until you set `scrape_native_histograms` and use a client that supports them. "
+            "Native histograms are the long-term answer to choosing buckets. They are stable since Prometheus 3.8, and they choose bucket limits automatically and store them in one series. "
+            "They stay off until you set `scrape_native_histograms` and use a client that supports them. "
             "For this course, classic histograms are what you will meet in most existing systems.\n\n"
             "Finally, the Kubernetes pods still run two gunicorn workers. To get correct counters there, the fix belongs in the Deployment: run one worker with threads, as Compose does, and let the replica count give you capacity."
         ),

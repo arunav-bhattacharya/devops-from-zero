@@ -5,6 +5,9 @@ Each snippet runs in a fresh `docker run -it --rm ... ubuntu:24.04 bash` session
 v2p1-lab:24.04 is ubuntu:24.04 plus the packages start-lab.sh installs), with a fresh copy of
 labs/linux mounted at /work, typed through a pseudo-terminal like a person would.
 
+Build the image first (same packages as labs/linux/start-lab.sh):
+  printf 'FROM ubuntu:24.04\nRUN apt-get update -qq && apt-get install -y -qq less tree jq file curl lsof iproute2 psmisc shellcheck > /dev/null\n' \
+    | docker build --network host -t v2p1-lab:24.04 -
 Usage: python3 capture.py [snippet-prefix ...]     (default: all)
 Writes outputs.json next to this file. build_p1.py reads it.
 """

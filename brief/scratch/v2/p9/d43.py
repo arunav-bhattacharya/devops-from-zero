@@ -57,8 +57,10 @@ LESSON = {
             "h": "Where to type PromQL, and what comes back",
             "body": (
                 "PromQL is the language you use to ask Prometheus questions. You can type it in two places. "
-                "The web UI at `localhost:9090` has a Query page: the Table tab shows the current value of each series, the Graph tab draws them over time, "
-                "and the Explain tab breaks a query into parts. "
+                "The web UI at `localhost:9090` has a Query page with three tabs:\n"
+                "- Table shows the current value of each series.\n"
+                "- Graph draws the series over time.\n"
+                "- Explain breaks a query into its parts.\n\n"
                 "In the terminal, the `q` function from Day 42 runs the same query through `promtool`.\n\n"
                 "The simplest query is a metric name. `hello_responses_total` returned three series in my run, one per label set:\n"
                 "- `{path=\"/\", status=\"200\"} 303`\n"
@@ -133,7 +135,8 @@ LESSON = {
                 "You can divide one query by another. The error ratio is failed responses per second divided by all responses per second: "
                 "`sum(rate(hello_responses_total{status=~\"5..\"}[5m])) / sum(rate(hello_responses_total[5m]))`.\n\n"
                 "Between two vectors, Prometheus pairs series whose labels are exactly the same. "
-                "For a per-path error ratio I wrote `sum by (path, status) (...)` on the left and `sum by (path) (...)` on the right, and got nothing: the left side has a `status` label the right side lacks. "
+                "For a per-path error ratio I wrote `sum by (path, status) (...)` on the left and `sum by (path) (...)` on the right. "
+                "The result was empty, because the left side has a `status` label the right side lacks. "
                 "Adding `/ ignoring(status)` between them, or `/ on(path)`, gave `/` 0.054 and `/readyz` NaN. "
                 "NaN is 0 divided by 0: nobody called `/readyz` in that window.\n\n"
                 "Comparison operators filter:\n"
@@ -185,7 +188,8 @@ LESSON = {
     ],
     "analogy": (
         "Picture a huge spreadsheet: one column per series, one row per scrape. "
-        "A selector picks columns, a range like [5m] picks the last rows, rate() is the slope of each column, and sum by (path) is a pivot table that adds columns together. "
+        "A selector picks columns, and a range like [5m] picks the last rows. "
+        "Then rate() is the slope of each column, and sum by (path) is a pivot table that adds columns together. "
         "Where it breaks: real rows do not line up perfectly, because each target is scraped at a slightly different moment, so Prometheus estimates values at the edges of every window."
     ),
     "diagram": DIAGRAM,
@@ -217,7 +221,8 @@ LESSON = {
             {
                 "say": (
                     "Now break the app's dependency and wait about 90 seconds. "
-                    "Every request to `/` now fails, and the rate falls from 4.5 to 0.24 a second: each failure takes about 4 seconds, and the loop waits for each one before it sends the next."
+                    "Every request to `/` now fails, and the rate falls from 4.5 to 0.24 a second. "
+                    "Each failure takes about 4 seconds, and the loop waits for each one before it sends the next."
                 ),
                 "code": "$ docker compose stop redis\n$ q 'sum by (status) (rate(hello_responses_total{path=\"/\"}[1m]))'\n{status=\"200\"} => 0 @[1793338015.637]\n{status=\"500\"} => 0.2444444444444444 @[1793338015.637]",
                 "lang": "console",
@@ -299,7 +304,8 @@ LESSON = {
         "prompt": "Explain in 3 to 4 sentences how the p95 latency query for hello-devops works, from the inside out. Mention buckets, rate(), the le label and why the answer is an estimate.",
         "answer": (
             "The histogram stores a counter per bucket, such as how many requests took 0.1 seconds or less. "
-            "First rate() turns each bucket counter into a per-second rate over the window, then sum by (le) adds those rates across routes and instances while keeping the bucket limits. "
+            "First rate() turns each bucket counter into a per-second rate over the window. "
+            "Then sum by (le) adds those rates across routes and instances while keeping the bucket limits. "
             "histogram_quantile(0.95, ...) finds the bucket where 95% of requests are reached and interpolates inside it. "
             "Because it only knows bucket counts, the result can be off by up to a bucket's width, so bucket limits should sit near the latencies you care about."
         ),
@@ -327,10 +333,10 @@ LESSON = {
         {
             "q": "A service scraped every 30 seconds shows gaps in a graph of `rate(http_requests_total[45s])`. What is the most likely cause?",
             "options": [
-                "The counter was reset",
+                "The counter was reset at startup",
                 "The service has too many labels",
-                "The range is too short to hold two samples reliably",
-                "rate() cannot be graphed",
+                "The range holds too few samples",
+                "rate() cannot draw a graph line",
             ],
             "answer": 2,
             "why": "At a 30-second scrape, a 45-second window often holds one sample, so the series drops out. Use at least 2m.",
@@ -339,9 +345,9 @@ LESSON = {
             "q": "Three instances each report their own p99 latency through a summary: 0.2 s, 0.3 s and 2.0 s. What is the p99 across all three?",
             "options": [
                 "You cannot tell from these numbers",
-                "0.83 s, the average",
-                "2.0 s, the largest",
-                "0.3 s, the middle one",
+                "0.83 s, the average of the three",
+                "2.0 s, the largest of the three",
+                "0.3 s, the middle value of the three",
             ],
             "answer": 0,
             "why": "Percentiles cannot be averaged or combined; you need the underlying distribution, which a histogram's buckets provide.",
@@ -351,9 +357,10 @@ LESSON = {
         {
             "q": "What is the difference between rate(), irate() and increase()?",
             "a": (
-                "rate() gives the average per-second increase of a counter over the whole range and handles counter resets, so it is the default for graphs and alerts. "
-                "irate() uses only the last two samples in the range, which reacts fast but is noisy, so it suits zoomed-in graphs of busy counters and not alerts. "
-                "increase() is rate() multiplied by the range in seconds, so it reads as a count, but because of extrapolation it can return fractions. "
+                "The rate() function gives the average per-second increase of a counter over the whole range and handles counter resets. "
+                "That makes it the default for graphs and alerts. "
+                "The irate() function uses only the last two samples in the range, which reacts fast but is noisy, so it suits zoomed-in graphs and not alerts. "
+                "The increase() function is rate() multiplied by the range in seconds, so it reads as a count, but it can return fractions. "
                 "All three need at least two samples in the range."
             ),
         },
@@ -382,7 +389,8 @@ LESSON = {
             "Inside a one-minute window at a 15-second scrape there are about four samples, for example 99, 167, 235 and 303. "
             "The first one is a few seconds after the window starts and the last one a few seconds before it ends. "
             "The samples only cover about 45 seconds of the 60. "
-            "So Prometheus takes the growth it can see (204) and extends the line to both edges of the window, as long as each gap is no more than 1.1 times the usual spacing between samples. "
+            "So Prometheus takes the growth it can see (204) and extends the line to both edges of the window. "
+            "It does that as long as each gap is no more than 1.1 times the usual spacing between samples. "
             "The result is 204 scaled up to the full minute, roughly 266. "
             "PromLabs' post [How exactly does PromQL calculate rates?](https://promlabs.com/blog/2021/01/29/how-exactly-does-promql-calculate-rates/) walks through the exact rules.\n\n"
             "This explains two other numbers from this lesson.\n"
@@ -390,7 +398,7 @@ LESSON = {
             "- A two-minute-old series showed a 5-minute rate of 1.55 while the 1-minute rate was 4.44. When the gap to the window's start is larger than that, Prometheus decides the series began inside the window and stretches the line only half a scrape interval. "
             "Then it divides about two minutes of growth by five minutes of time.\n\n"
             "It also explains a trap from the task. A counter series that appears for the first time with the value 6 has no earlier sample. "
-            "`rate()` cannot know whether those 6 happened just now or an hour ago, so it ignores them. "
+            "So `rate()` cannot know whether those 6 happened just now or an hour ago, and it ignores them. "
             "Only increases between two scrapes count. "
             "That is why well-written apps create their error series at 0 when they start, before any error happens. "
             "In Python you call `.labels(...)` once at startup for the label values you expect.\n\n"

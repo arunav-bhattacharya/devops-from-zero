@@ -152,7 +152,7 @@ LESSON = {
                 "A counter only goes up, or drops to zero when the process restarts. `hello_responses_total` and `process_cpu_seconds_total` are counters. "
                 "The raw value is rarely useful; you ask how fast it grows, which is `rate()` on Day 43.\n\n"
                 "A gauge is a value that goes up and down: memory in use, queue length, temperature. "
-                "`process_resident_memory_bytes` for the app read 48,803,840 bytes (about 49 MB) in my run. You read a gauge as it is, and you never take its `rate()`.\n\n"
+                "For example, the app's `process_resident_memory_bytes` read 48,803,840 bytes (about 49 MB) in my run. You read a gauge as it is, and you never take its `rate()`.\n\n"
                 "A histogram counts observations into buckets. Each bucket has an upper limit, the `le` label (less than or equal), and the buckets are cumulative. "
                 "In my run the app's `/` route showed `le=\"0.005\"` 759 and `le=\"0.01\"` 1009: 759 requests took 5 ms or less, and 1009 took 10 ms or less. "
                 "Next to the buckets come `_sum` (all the seconds added up) and `_count` (how many). From these, Prometheus can estimate percentiles and add them up across many servers.\n\n"
@@ -204,7 +204,8 @@ LESSON = {
         "Prometheus is like a meter reader who walks past every house on a fixed round, every 15 seconds. "
         "Each house shows its meters through the window (the /metrics page), and the reader writes down every number with the time and the house address (the labels). "
         "If a house does not answer, the reader notes that too, which is up = 0. "
-        "Where it breaks: a real meter reader cannot be overwhelmed by one house, but an app that invents a new label value per user creates thousands of new meters for Prometheus to read and store."
+        "Where it breaks: one house cannot overwhelm a real meter reader. "
+        "An app that invents a new label value per user can, because it creates thousands of new meters for Prometheus to read and store."
     ),
     "diagram": DIAGRAM,
     "diagram_caption": "Prometheus pulls /metrics from each target, stores the samples, and pushes only firing alerts onward.",
