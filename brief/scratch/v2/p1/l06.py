@@ -62,7 +62,7 @@ LESSON = {
              B("`r` lets you list the names inside.",
                "`w` lets you create, rename and delete entries inside.",
                "`x` lets you enter the directory and reach the files in it."),
-             "So a directory with `x` but no `r` works like an unlisted address. In the container, with `/tmp/vault` set to `drwx--x--x`, the user dev got `Permission denied` from `ls /tmp/vault`. Yet `cat /tmp/vault/key.txt` worked, because dev knew the exact name."),
+             "So a directory with `x` but no `r` works like an unlisted address. You can test it in the container. Make a folder `/tmp/vault` with a file `key.txt` in it and run `chmod 711 /tmp/vault`, which gives `drwx--x--x`. User dev then gets `Permission denied` from `ls /tmp/vault`, yet `cat /tmp/vault/key.txt` works, because dev knows the exact name."),
          "refs": [LC_PERM]},
         {"h": "Changing permissions: chmod, chown and umask",
          "body": P(
@@ -115,7 +115,7 @@ LESSON = {
                "`sudo systemctl enable nginx` makes it start at boot, but does not start it now. `enable --now` does both.",
                "`sudo systemctl daemon-reload` makes systemd read unit files again after you change one."),
              "The journalctl command reads the logs that systemd collects. Add `-u nginx` for one service, `-f` to follow new lines like `tail -f`, `-n 50` for the last 50, and `--since '10 min ago'` to limit by time.",
-             "systemd does not run in a plain container, where PID 1 is your own shell. There, `systemctl status nginx` prints `bash: systemctl: command not found`. Install systemd and you get `System has not been booted with systemd as init system (PID 1). Can't operate.` instead. So for services you use a small Ubuntu virtual machine made with Multipass, which the task sets up."),
+             "In a plain container systemd does not run, because PID 1 is your own shell. There, `systemctl status nginx` prints `bash: systemctl: command not found`. Install systemd and you get `System has not been booted with systemd as init system (PID 1). Can't operate.` instead. So for services you use a small Ubuntu virtual machine made with Multipass, which the task sets up."),
          "refs": [SYSTEMCTL, LLTV_JOURNAL, MULTIPASS]},
         {"h": "Disk, memory, load and ports",
          "body": P(
@@ -128,7 +128,7 @@ LESSON = {
              "A port is a numbered door on a machine that a program listens behind; Day 8 explains them properly. On your Mac, `df`, `du`, `uptime` and `lsof` exist, but `free` and `ss` do not. There, `lsof -iTCP -sTCP:LISTEN -n -P` lists listening ports."),
          "refs": [TLCL]},
     ],
-    "analogy": "Stopping a process is like closing a restaurant. SIGTERM is the manager saying \"we close in ten minutes\": the kitchen finishes the plates on the stove and the staff lock up. SIGKILL is a power cut, and everything stops mid-order. systemd is the manager who opens the place each morning and calls in a new cook when one walks out. Where it breaks: staff cannot ignore the manager, but a program can ignore SIGTERM, and only SIGKILL cannot be ignored.",
+    "analogy": "Stopping a process is like closing a restaurant. SIGTERM is the manager saying \"we close in ten minutes\": the kitchen finishes the plates on the stove and the staff lock up. SIGKILL is a power cut, and everything stops mid-order. In this picture, systemd is the manager who opens the place each morning and calls in a new cook when one walks out. Where it breaks: staff cannot ignore the manager, but a program can ignore SIGTERM, and only SIGKILL cannot be ignored.",
     "diagram": DIAGRAM,
     "diagram_caption": "Each permission triplet adds up to one octal digit: rwx = 7, r-x = 5, --- = 0.",
     "worked": {
@@ -138,7 +138,7 @@ LESSON = {
              "code": "$ apt-get install -y -qq nginx > /dev/null 2>&1\n" + con("d06.w", part=0), "lang": "console"},
             {"say": "Who listens on port 80? `ss -tlnp` names nginx and the master's PID, and `lsof` agrees. A request with curl gets `200 OK`. On your machine you may also see a line for `[::]:80`, the IPv6 version of the same port.",
              "code": con("d06.w", part=1), "lang": "console"},
-            {"say": "Send SIGHUP to the master. nginx treats it as \"reload\": the master keeps its PID, starts new workers with the new settings and lets the old ones finish. The worker PIDs change while the server never stops listening.",
+            {"say": "Send SIGHUP to the master, which nginx treats as \"reload\": the master keeps its PID, starts new workers with the new settings and lets the old ones finish. The worker PIDs change while the server never stops listening.",
              "code": con("d06.w", part=2), "lang": "console"},
             {"say": "Now stop it politely with SIGTERM. `pgrep` finds nothing and exits 1, and curl exits 7, which means it could not connect at all.",
              "code": con("d06.w", part=3), "lang": "console"},
@@ -171,7 +171,7 @@ LESSON = {
         {"cmd": "du -sh * | sort -h", "what": "Show folder sizes, smallest to largest."},
         {"cmd": "ss -tlnp", "what": "Show which process listens on which TCP port (Linux)."},
     ],
-    "mistake": "Reaching for `kill -9` or `sudo` first. SIGKILL gives the program no chance to finish requests or close files. sudo hides the real cause of a permission error and leaves root-owned files behind. Send SIGTERM and wait a few seconds; for \"Permission denied\", read `ls -l` and fix the owner or the one missing bit.",
+    "mistake": "Reaching for `kill -9` or `sudo` first. SIGKILL gives the program no chance to finish requests or close files. Using sudo hides the real cause of a permission error and leaves root-owned files behind. Send SIGTERM and wait a few seconds; for \"Permission denied\", read `ls -l` and fix the owner or the one missing bit.",
     "real_world": "At a made-up payments company, every service runs under systemd or Kubernetes, and both stop programs the same way: SIGTERM, a grace period, then SIGKILL. Code reviews check that services handle SIGTERM by finishing in-flight payments before they exit. When a machine misbehaves, on-call starts with `systemctl status`, `journalctl -u NAME --since`, `df -h` and `ss -tlnp`.",
     "task": {
         "title": "Run the worker as a systemd service in a VM",

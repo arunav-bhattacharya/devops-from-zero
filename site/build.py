@@ -158,7 +158,7 @@ DAYS = [
     ("hello-devops", "argocd/", 39), ("hello-devops", "gitops/", 40),
     ("hello-devops", "observability/grafana", 45), ("hello-devops", "observability/loki", 46), ("hello-devops", "observability/compose.loki", 46),
     ("hello-devops", "observability/", 42), ("hello-devops", "logging/", 47), ("hello-devops", "tracing/", 49), ("hello-devops", "dynatrace/", 51),
-    ("hello-devops", "policy/ai-agent", 54), ("hello-devops", "policy/", 53), ("hello-devops", "security/", 53),
+    ("hello-devops", "policy/ai-agent", 54), ("hello-devops", "policy/", 53), ("hello-devops", "security/capstone", 55), ("hello-devops", "security/agent", 54), ("hello-devops", "security/", 53),
     ("linux", "", 3), ("hello-jvm", "Dockerfile", 24), ("hello-jvm", ".dockerignore", 24), ("hello-jvm", ".github/", 24),
     ("hello-jvm", "gradle/libs", 23), ("hello-jvm", "build-logic", 23), ("hello-jvm", "greeting", 23), ("hello-jvm", "", 22),
     ("terraform-practice", "", 26),

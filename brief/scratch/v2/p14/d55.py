@@ -167,7 +167,7 @@ SECTIONS = [
             "The CKA and CKAD curricula follow Kubernetes v1.37 now. "
             "Third-party guides, not the Linux Foundation pages, describe KCNA as multiple choice and CKA, CKAD and CKS as hands-on tasks in a terminal. "
             "Check formats and prices on the Linux Foundation's exam pages before you book; discounts are frequent.\n\n"
-            "Two other vendors publish their facts openly. HashiCorp's Terraform Associate (004) is multiple choice, one hour, online proctored, "
+            "Two other vendors publish their facts openly. HashiCorp's [Terraform Associate (004)](https://developer.hashicorp.com/certifications/terraform-associate) is multiple choice, one hour, online proctored, "
             "US$70.50 plus local taxes, and valid for two years. "
             "GitHub offers certifications for Foundations, Actions, Advanced Security, Administration and Copilot."
         ),

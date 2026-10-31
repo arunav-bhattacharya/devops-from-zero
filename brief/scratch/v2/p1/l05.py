@@ -11,8 +11,8 @@ DIAGRAM = svg(214, "A pipeline: access.log flows through awk, sort, uniq -c, sor
     arrow(_awk_x, 90, _awk_x, 146, dashed=True),
     cap(_awk_x + 10, 122, "stderr (2)", anchor="start"),
     box(_awk_x - 48, 148, 96, 40, "bx", "screen"),
-    cap(_pos[5][0] + _pos[5][1] / 2, 112, "top 5 lines"),
-    cap(_pos[5][0] + _pos[5][1] / 2, 128, "to stdout"),
+    cap(552, 112, "top 5 lines", anchor="end"),
+    cap(552, 128, "to stdout", anchor="end"),
 ])
 
 LESSON = {

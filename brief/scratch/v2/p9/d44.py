@@ -263,8 +263,16 @@ LESSON = {
                 "lang": "console",
             },
             {
-                "say": "RESOLVED_SAY",
-                "code": "RESOLVED_CODE",
+                "say": (
+                    "Now wait. Four minutes after the fix, the 5-minute ratio was already low, but the 30-minute ratio still held the outage, so the 6-hour tier kept the page firing. "
+                    "About 25 minutes after the fix the page resolved, and in the same second Alertmanager released the ticket it had been muting: the outage really did spend budget."
+                ),
+                "code": "$ q 'job:hello_responses_errors:ratio_rate5m'\n"
+                "job:hello_responses_errors:ratio_rate5m{job=\"hello-devops\"} => 0.004987531172069825 @[1793338404.476]\n"
+                "$ q 'job:hello_responses_errors:ratio_rate30m'\n"
+                "job:hello_responses_errors:ratio_rate30m{job=\"hello-devops\"} => 0.02371434392731684 @[1793338404.684]\n\n"
+                "webhook-1  | [pager] RESOLVED HelloErrorBudgetFastBurn job=hello-devops severity=page: 0.6003% of hello-devops requests fail (fast burn)\n"
+                "webhook-1  | [tickets] FIRING HelloErrorBudgetSlowBurn job=hello-devops severity=ticket: 0.6171% of hello-devops requests fail (slow burn)",
                 "lang": "console",
             },
         ],
