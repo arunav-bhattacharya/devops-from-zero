@@ -1,0 +1,9 @@
+[
+ {"title": "Foundations", "blurb": "The ground every tool stands on: the shell, Git, networks and the cloud, and Python for scripts.", "parts": [0, 1, 2, 3, 4]},
+ {"title": "Build and ship", "blurb": "Package the app as an image, test and publish it on every push, and build JVM code fast.", "parts": [5, 6, 7]},
+ {"title": "Infrastructure as code", "blurb": "Create servers and networks from files, then set them up the same way every time.", "parts": [8, 9]},
+ {"title": "Run on Kubernetes", "blurb": "Run many containers across many machines, and deploy by merging to Git.", "parts": [10, 11]},
+ {"title": "Observability", "blurb": "Metrics, dashboards, logs and traces, so you know how the system behaves.", "parts": [12, 13, 14]},
+ {"title": "Operate at scale", "blurb": "Tools for many services: a mesh for the calls between them, and one platform for every signal.", "parts": [15, 16]},
+ {"title": "Security, AI and the capstone", "blurb": "Guard the supply chain, use AI safely, build a platform, then ship the whole thing.", "parts": [17, 18, 19]}
+]

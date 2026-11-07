@@ -14,6 +14,11 @@ const nowIso = () => new Date().toISOString();
 const L = (id) => C.lessons[id];
 const ready = (id) => L(id) && !L(id).pending;
 const partOf = (n) => C.parts.find((p) => p.part === n);
+/* sections group the parts: Foundations, Build and ship, ... (brief/sections.json) */
+const SECS = C.sections && C.sections.length ? C.sections : [{ title: "The course", blurb: "", parts: C.parts.map((p) => p.part) }];
+const secOf = (n) => SECS.findIndex((s) => s.parts.includes(n));
+const secLessons = (s) => s.parts.flatMap((n) => partOf(n).lessons);
+const secDays = (s) => { const d = secLessons(s).map((id) => L(id).day); return d.length > 1 ? `Days ${d[0]} to ${d[d.length - 1]}` : `Day ${d[0]}`; };
 const main = $("#main");
 
 /* ---------------- storage ---------------- */
@@ -179,6 +184,11 @@ function sideHTML() {
   let s = `<div>${link("home", "Today")}${nx ? `<a class="navlink" href="#${nx}">Up next: Day ${pad(L(nx).day)}</a>` : ""}${link("review", "Review", dc ? ` <span class="due">${dc}</span>` : "")}${link("plan", "Plan and pace")}${link("commands", "Command cheat sheet")}${link("glossary", "Glossary")}${link("library", "Library: links and videos")}${link("labs", "Lab files")}</div>`;
   const curPart = L(r) ? L(r).part : /^p\d+$/.test(r) ? +r.slice(1) : nx ? L(nx).part : 0;
   for (const p of C.parts) {
+    const si = secOf(p.part);
+    if (si >= 0 && SECS[si].parts[0] === p.part) {
+      const ls = secLessons(SECS[si]);
+      s += `<div class="sgrp"><span class="sgrp-n">${pad(si + 1)}</span><span class="sgrp-t">${esc(SECS[si].title)}</span><span class="sgrp-c tnum">${ls.filter(isDone).length}/${ls.length}</span></div>`;
+    }
     const n = p.lessons.filter(isDone).length, open = sideOpen[p.part] ?? p.part === curPart;
     s += `<div class="grp"><div class="grp-h"><button class="grp-tg" data-act="sidetog" data-p="${p.part}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} part ${p.part}">${ICON.chev}</button><a class="grp-a" href="#p${p.part}"><span class="grp-n">${p.part}</span><span class="grp-t">${esc(p.title)}</span></a><span class="grp-c tnum">${n}/${p.lessons.length}</span></div>`;
     if (open) for (const id of p.lessons) s += `<a class="ls${r === id ? " on" : ""}" href="#${id}">${glyph(id)}<span class="d">${pad(L(id).day)}</span><span>${esc(L(id).title)}</span></a>`;
@@ -267,18 +277,22 @@ function viewHome() {
     <div class="pr"><b>$</b> devops today${dn === 0 ? " --first-run" : ""}</div>${rows.join("")}
     <div class="term-actions">${nl ? `<a class="btn" href="#${nl.id}">${dn === 0 ? "Start Day 01" : `Open Day ${pad(nl.day)}`} ${ICON.arrow}</a>` : ""}${nDue ? `<a class="btn ghost" href="#review">Review first</a>` : ""}</div></div></section>`;
 
-  let pipe = "";
-  C.parts.forEach((p, i) => {
+  const job = (p) => {
     const n = p.lessons.filter(isDone).length;
     const s = n === p.lessons.length ? "passed" : p.lessons.includes(nx) ? "running" : "queued";
-    pipe += `<div class="job"><a class="job-h" href="#p${p.part}"><span class="st ${s}">${GLYPH[s]}</span><span class="jt">${esc(p.tool)}</span><span class="jc tnum">${n}/${p.lessons.length}</span></a><ol>${p.lessons.map((id) => `<li><a href="#${id}" class="${id === nx ? "cur" : ""}">${glyph(id)}<span class="tt">${pad(L(id).day)} ${esc(L(id).title)}</span></a></li>`).join("")}</ol></div>`;
-  });
-
-  const partsList = C.parts.map((p) => {
+    return `<div class="job"><a class="job-h" href="#p${p.part}"><span class="st ${s}">${GLYPH[s]}</span><span class="jt">${esc(p.tool)}</span><span class="jc tnum">${n}/${p.lessons.length}</span></a><ol>${p.lessons.map((id) => `<li><a href="#${id}" class="${id === nx ? "cur" : ""}">${glyph(id)}<span class="tt">${pad(L(id).day)} ${esc(L(id).title)}</span></a></li>`).join("")}</ol></div>`;
+  };
+  const prow = (p) => {
     const n = p.lessons.filter(isDone).length;
     const days = p.lessons.map((id) => L(id).day);
     return `<a class="prow prow-art" href="#p${p.part}"><span class="pthumb" aria-hidden="true">${p.art || ""}</span><span class="pn">${p.part}</span><span><span class="pt">${esc(p.title)}</span><span class="pd">${days.length > 1 ? `Days ${days[0]} to ${days[days.length - 1]}` : `Day ${days[0]}`} · ${p.lessons.length} lessons${p.ready ? "" : " · being written"}</span></span><span class="pp"><span class="label tnum">${n}/${p.lessons.length} passed</span><span class="bar"><i style="width:${(100 * n) / p.lessons.length}%"></i></span></span></a>`;
-  }).join("");
+  };
+  const stageHead = (s, i) => {
+    const ls = secLessons(s), n = ls.filter(isDone).length;
+    return `<div class="stage-h"><span class="stage-n">${pad(i + 1)}</span><div><h3>${esc(s.title)}</h3>${s.blurb ? `<p>${esc(s.blurb)}</p>` : ""}</div><span class="label tnum">${secDays(s)} · ${n}/${ls.length}</span></div>`;
+  };
+  const pipe = SECS.map((s, i) => `<div class="stage">${stageHead(s, i)}<div class="pipe">${s.parts.map((n) => job(partOf(n))).join("")}</div></div>`).join("");
+  const partsList = SECS.map((s, i) => `<div class="stage">${stageHead(s, i)}<div class="parts">${s.parts.map((n) => prow(partOf(n))).join("")}</div></div>`).join("");
 
   return `<div class="page">
   <section class="hero">
@@ -294,8 +308,8 @@ function viewHome() {
     <div class="stat"><span class="n tnum">${learned}</span><span class="label">cards remembered</span></div>
     <div class="stat"><span class="n tnum" style="font-size:34px;line-height:46px">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label"><a href="#plan">projected finish</a></span></div>
   </section>
-  <section class="block"><div class="sec-h"><h2>Your run</h2><span class="label">each part is a job, each lesson a step</span></div>
-    <div class="pipe">${pipe}</div></section>
+  <section class="block"><div class="sec-h"><h2>Your run</h2><span class="label">${SECS.length} stages · each part a job · each lesson a step</span></div>
+    ${pipe}</section>
   <section class="block"><div class="sec-h"><h2>How each day works</h2><span class="label">40 to 50 focused minutes</span></div>
     <ol class="day-plan">
       <li><span class="mins">5 min</span><b>Review</b><span>Flip the cards that are due. Spacing reviews over days is what makes things stick.</span></li>
@@ -304,7 +318,7 @@ function viewHome() {
       <li><span class="mins">15 min</span><b>Do</b><span>The hands-on task on your own laptop, on your own hello-devops repo.</span></li>
       <li><span class="mins">3 min</span><b>Check</b><span>Explain it back in your words, then 3 questions. 2 right passes the day.</span></li>
     </ol></section>
-  <section class="block"><div class="sec-h"><h2>The parts</h2><span class="label">a short course for each tool</span></div><div class="parts">${partsList}</div></section>
+  <section class="block"><div class="sec-h"><h2>The parts</h2><span class="label">${C.parts.length} short courses in ${SECS.length} sections</span></div>${partsList}</section>
 </div>`;
 }
 
@@ -391,7 +405,7 @@ function viewPart(n) {
   if (!p) return viewHome();
   const nDone = p.lessons.filter(isDone).length;
   const list = p.lessons.map((id) => `<a class="prow" href="#${id}"><span class="pn">${pad(L(id).day)}</span><span><span class="pt" style="font-size:24px">${esc(L(id).title)}</span><span class="pd">${L(id).pending ? "being written" : `${L(id).minutes} min${P.scores[id] != null ? ` · check ${P.scores[id]}/3` : ""}`}</span></span><span class="pp" style="justify-items:end">${glyph(id)}</span></a>`).join("");
-  let h = `<div class="page" style="max-width:960px">${p.art ? `<figure class="part-art">${p.art}</figure>` : ""}<header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
+  let h = `<div class="page" style="max-width:960px">${p.art ? `<figure class="part-art">${p.art}</figure>` : ""}<header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${secOf(p.part) >= 0 ? `Section ${secOf(p.part) + 1} · ${esc(SECS[secOf(p.part)].title)} · ` : ""}${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
   if (!p.ready) return h + `<p class="muted">This part is still being written. It will appear here when it's ready.</p></div>`;
   if (p.resources && p.resources.length) h += `<section class="block"><div class="sec-h"><h2>Go deeper</h2><a class="label" href="#library">the full library</a></div><p class="muted" style="margin:0">Hand-picked for this part: official docs, the best free courses and videos, and the books people keep recommending.</p>${resList(p.resources)}</section>`;
   if (p.recap.length) h += `<section class="recap"><span class="label">Part recap</span><ul>${p.recap.map((r) => `<li>${r}</li>`).join("")}</ul></section>`;
@@ -531,13 +545,16 @@ function viewLabs() {
 
 function viewPlan() {
   const st = startDate(), pr = projection();
+  const firstOf = {};
+  SECS.forEach((s, i) => { firstOf[partOf(s.parts[0]).lessons[0]] = i; });
   const rows = C.order.map((id, k) => {
     const l = L(id), planned = addDays(st, k), done = isDone(id);
+    const si = firstOf[id], head = si === undefined ? "" : `<tr class="sec-row"><td></td><td class="dt tnum">${pad(si + 1)}</td><td colspan="3"><b>${esc(SECS[si].title)}</b> <span class="dt">${secDays(SECS[si])}</span></td></tr>`;
     const when = done && P.log[id].at ? `passed ${fmt(ymd(new Date(P.log[id].at)), { month: "short", day: "numeric" })}` : planned < today() ? "behind" : "";
-    return `<tr><td>${glyph(id)}</td><td class="dt tnum">D${pad(l.day)}</td><td><a href="#${id}">${esc(l.title)}</a></td><td class="dt">${fmt(planned)}</td><td class="dt">${when}</td></tr>`;
+    return `${head}<tr><td>${glyph(id)}</td><td class="dt tnum">D${pad(l.day)}</td><td><a href="#${id}">${esc(l.title)}</a></td><td class="dt">${fmt(planned)}</td><td class="dt">${when}</td></tr>`;
   }).join("");
   const behind = C.order.filter((id, k) => !isDone(id) && addDays(st, k) < today()).length;
-  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">PLAN</span><span class="pp">one lesson a day</span></div><h1>Plan and pace</h1><p class="goal">One lesson a day takes ${C.order.length} days, about 8 weeks. Long lessons split well over two sittings, and short ones pair well on a weekend. The plan moves with you.</p></header>
+  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">PLAN</span><span class="pp">one lesson a day</span></div><h1>Plan and pace</h1><p class="goal">One lesson a day takes ${C.order.length} days, about ${Math.round(C.order.length / 7)} weeks. Long lessons split well over two sittings, and short ones pair well on a weekend. The plan moves with you.</p></header>
     <section class="stats"><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(st, { month: "short", day: "numeric" })}</span><span class="label">start date</span></div><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(pr.planned, { month: "short", day: "numeric" })}</span><span class="label">planned finish</span></div><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label">projected finish</span></div><div class="stat"><span class="n tnum" style="font-size:34px;${behind ? "color:var(--orange)" : ""}">${behind}</span><span class="label">behind plan</span></div></section>
     <div class="row"><label class="label" for="startIn">Start date</label><input class="field" id="startIn" type="date" value="${st}" style="max-width:200px" data-act="start"><span class="muted" style="font-size:15px">Your start is set the day you pass your first lesson. Change it any time.</span></div>
     <div class="tablewrap"><table class="plan-t"><thead><tr><th></th><th>Day</th><th>Lesson</th><th>Planned</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>

@@ -249,6 +249,10 @@ def main():
                           for r in d.get("resources", [])],
             "art": (SITE / f"art/p{P['part']}.svg").read_text() if (SITE / f"art/p{P['part']}.svg").exists() else "",
         })
+    # sections group the parts on the site; they must cover every part once, in order
+    sections = json.loads((ROOT / "brief/sections.json").read_text())
+    assert [n for s in sections for n in s["parts"]] == [P["part"] for P in index], "brief/sections.json must list every part once, in order"
+    course["sections"] = sections
     page = render(course)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(page)  # fragment for claude.ai (it wraps the page in its own document): the full course

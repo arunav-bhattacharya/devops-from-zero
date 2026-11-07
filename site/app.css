@@ -116,6 +116,11 @@ main:focus { outline: none; }
 .side .navlink:hover { background: var(--panel-2); color: var(--ink); }
 .side .navlink.on { border-left-color: var(--orange); font-weight: 700; background: var(--panel-2); }
 .side .grp { border-top: 1px solid var(--rule); margin-top: 10px; padding-top: 6px; }
+.side .sgrp { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; margin-top: 18px; padding: 10px 18px 2px 12px; border-top: 2px solid var(--ink); }
+.side .sgrp-n { font: 700 12px var(--f-mono); color: var(--orange); }
+.side .sgrp-t { font: 700 12px/1.3 var(--f-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); }
+.side .sgrp-c { font: 600 12px var(--f-mono); color: var(--faint); }
+.side .sgrp + .grp { border-top: 0; margin-top: 0; }
 .side .grp-h { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 8px 18px 4px 10px; }
 .side .grp-a { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px; align-items: baseline; text-decoration: none; color: var(--ink); min-width: 0; }
 .side .grp-a:hover { color: var(--orange); }
@@ -474,3 +479,15 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 .refs li > span, .res .rb { min-width: 0; overflow-wrap: anywhere; }
 .plate .pd { white-space: nowrap; flex: none; }
 
+
+/* sections: the parts grouped into stages on the home page */
+.stage { margin-top: 30px; }
+.stage:first-of-type { margin-top: 10px; }
+.stage-h { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; border-top: 2px solid var(--ink); padding-top: 12px; margin-bottom: 14px; }
+.stage-n { font: 700 30px/1 var(--f-stencil); color: var(--orange); }
+.stage-h h3 { font: 800 26px/1.05 var(--f-display); text-transform: uppercase; letter-spacing: 0.01em; margin: 0; }
+.stage-h p { margin: 4px 0 0; color: var(--mute); font-size: 15.5px; line-height: 1.45; }
+.stage-h .label { white-space: nowrap; }
+@media (max-width: 640px) { .stage-h { grid-template-columns: 38px minmax(0, 1fr); } .stage-h .label { grid-column: 2; white-space: normal; } .stage-n { font-size: 24px; } }
+.plan-t tr.sec-row td { padding-top: 22px; border-bottom: 2px solid var(--ink); font-size: 15px; }
+.plan-t tr.sec-row b { font: 800 18px/1.1 var(--f-display); text-transform: uppercase; margin-right: 8px; }
