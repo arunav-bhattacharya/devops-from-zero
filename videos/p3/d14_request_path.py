@@ -133,7 +133,7 @@ class D14RequestPath(VoiceScene):
                   FadeIn(tout, shift=UP * 0.1), Succession(Wait(2.0), Circumscribe(drop_x, color=RED_M, shape=Circle, buff=0.1)), run_time=3.4)
 
         # ---------- 3. one rule, and the full round trip
-        rule = M("in:   8000 from 203.0.113.7/32", 20, GREEN_M).move_to(sgp[1][1][0], aligned_edge=LEFT)
+        rule = M("in:  8000 from 203.0.113.7/32", 18, GREEN_M).move_to(sgp[1][1][0], aligned_edge=LEFT)
         self.beat("So add one inbound rule. TCP port 8000, from your own address only, as a /32.",
                   FadeOut(tout), FadeOut(drop_x), Transform(dst, M("to 54.214.91.141:8000", 22, YELLOW_M).move_to(dst2, aligned_edge=LEFT)),
                   ReplacementTransform(sgp[1][1][0], rule), sg.animate.set_stroke(GREEN_M), sg_l.animate.set_color(GREEN_M), run_time=2.4)

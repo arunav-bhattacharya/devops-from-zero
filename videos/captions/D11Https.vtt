@@ -169,53 +169,53 @@ The server sends its certificate, plus the intermediates.
 The client follows that chain up, to a root it already trusts.
 
 43
-00:02:39.300 --> 00:02:44.491
+00:02:39.000 --> 00:02:44.191
 If any link is missing, expired, or made out to another name, the connection fails.
 
 44
-00:02:45.800 --> 00:02:49.578
+00:02:45.500 --> 00:02:49.278
 In production, a request rarely goes straight to your app.
 
 45
-00:02:49.578 --> 00:02:55.051
+00:02:49.278 --> 00:02:54.751
 A reverse proxy, such as nginx, or a load balancer, sits in front of the app copies.
 
 46
-00:02:55.267 --> 00:03:00.290
+00:02:54.967 --> 00:02:59.990
 The proxy holds the certificate, and runs the handshake with the client.
 
 47
-00:03:00.290 --> 00:03:01.337
+00:02:59.990 --> 00:03:01.037
 TLS ends there.
 
 48
-00:03:01.337 --> 00:03:03.500
+00:03:01.037 --> 00:03:03.200
 This is called TLS termination.
 
 49
-00:03:03.700 --> 00:03:12.133
+00:03:03.400 --> 00:03:11.833
 Behind it, the proxy talks plain HTTP to the app copies on port 8000, and spreads the requests across them.
 
 50
-00:03:12.367 --> 00:03:16.175
+00:03:12.067 --> 00:03:15.875
 It adds headers, so the app still knows the truth.
 
 51
-00:03:16.175 --> 00:03:22.727
+00:03:15.875 --> 00:03:22.427
 X-Forwarded-Proto says the client used HTTPS, even though the app only saw plain HTTP.
 
 52
-00:03:22.933 --> 00:03:28.700
+00:03:22.633 --> 00:03:28.400
 And if no copy answers, the proxy itself replies: 502, Bad Gateway.
 
 53
-00:03:30.033 --> 00:03:34.123
+00:03:29.733 --> 00:03:33.823
 So: TLS encrypts the traffic, and proves control of the name.
 
 54
-00:03:34.123 --> 00:03:38.078
+00:03:33.823 --> 00:03:37.778
 The certificate chain leads up to a root you already trust.
 
 55
-00:03:38.078 --> 00:03:42.704
+00:03:37.778 --> 00:03:42.404
 And in production, TLS often ends at the proxy in front of your apps.

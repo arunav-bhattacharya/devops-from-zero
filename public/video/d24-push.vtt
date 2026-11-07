@@ -1,0 +1,165 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.580
+CI needs a machine that is nobody's laptop.
+
+2
+00:00:05.580 --> 00:00:11.140
+One that runs the same commands for every push, and posts the result on the commit.
+
+3
+00:00:11.140 --> 00:00:13.685
+GitHub Actions gives you that machine.
+
+4
+00:00:13.900 --> 00:00:16.616
+Here is the chain that one git push sets off.
+
+5
+00:00:16.833 --> 00:00:17.130
+One.
+
+6
+00:00:17.130 --> 00:00:21.881
+GitHub records an event: a push, of this commit, to this branch.
+
+7
+00:00:22.800 --> 00:00:23.067
+Two.
+
+8
+00:00:23.067 --> 00:00:30.877
+GitHub reads the workflows folder in the commit you pushed, and starts a run of every workflow that listens for push.
+
+9
+00:00:31.100 --> 00:00:31.573
+Three.
+
+10
+00:00:31.573 --> 00:00:33.465
+The run starts its jobs.
+
+11
+00:00:33.465 --> 00:00:36.539
+This workflow has one job, called test.
+
+12
+00:00:36.767 --> 00:00:37.116
+Four.
+
+13
+00:00:37.116 --> 00:00:41.943
+For each job, GitHub starts a new virtual machine, called the runner.
+
+14
+00:00:43.767 --> 00:00:48.350
+It comes with Ubuntu and common tools, like git, Docker and Python.
+
+15
+00:00:48.350 --> 00:00:49.924
+But none of your files.
+
+16
+00:00:50.133 --> 00:00:50.474
+Five.
+
+17
+00:00:50.474 --> 00:00:56.058
+A program on that machine, the runner application, runs the job's steps, in order.
+
+18
+00:00:56.058 --> 00:00:59.668
+Each step is a ready-made action, or a shell command.
+
+19
+00:00:59.900 --> 00:01:03.043
+Checkout copies your repository onto the machine.
+
+20
+00:01:03.267 --> 00:01:05.965
+Setup python sets up Python 3.14.
+
+21
+00:01:05.965 --> 00:01:08.827
+Then pip installs the dependencies.
+
+22
+00:01:09.033 --> 00:01:12.187
+A step passes when its command exits with zero.
+
+23
+00:01:12.187 --> 00:01:13.932
+Any other number fails it.
+
+24
+00:01:14.133 --> 00:01:16.748
+pytest exits with 1 when a test fails.
+
+25
+00:01:16.748 --> 00:01:20.120
+The job stops there, and the whole run turns red.
+
+26
+00:01:20.333 --> 00:01:22.171
+Here, every test passes.
+
+27
+00:01:22.171 --> 00:01:25.616
+pytest exits with zero, and the job is green.
+
+28
+00:01:26.433 --> 00:01:28.919
+A workflow can have more than one job.
+
+29
+00:01:28.919 --> 00:01:31.993
+Jobs run in parallel, unless one needs another.
+
+30
+00:01:32.200 --> 00:01:36.729
+Lint and test start at the same moment, each on its own fresh machine.
+
+31
+00:01:36.933 --> 00:01:39.209
+Build says needs, lint and test.
+
+32
+00:01:39.209 --> 00:01:42.621
+So it waits, and starts only after both succeed.
+
+33
+00:01:42.833 --> 00:01:46.979
+And no file moves from one job to the next, unless you save it.
+
+34
+00:01:48.600 --> 00:01:48.890
+Six.
+
+35
+00:01:48.890 --> 00:01:55.269
+The result appears on the commit, and on its pull request: a green tick, or a red cross.
+
+36
+00:01:55.500 --> 00:01:57.768
+Then GitHub deletes the machines.
+
+37
+00:01:57.768 --> 00:01:59.417
+Nothing on them is kept.
+
+38
+00:01:59.633 --> 00:02:01.682
+Your laptop took no part.
+
+39
+00:02:01.682 --> 00:02:02.911
+It only pushed.
+
+40
+00:02:03.733 --> 00:02:09.743
+Push, event, workflow, a fresh runner for each job, steps in order, and the result on the commit.
+
+41
+00:02:09.743 --> 00:02:11.725
+Then the machine is thrown away.
