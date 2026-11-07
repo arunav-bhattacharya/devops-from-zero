@@ -1,0 +1,36 @@
+# A canary release. It has the same name as httproute.yaml, so applying it REPLACES that route.
+#   kubectl apply -f k8s/gateway/httproute-canary.yaml   (start the canary)
+#   kubectl apply -k k8s/gateway                         (go back to 100% hello-devops)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hello-devops
+  namespace: hello
+spec:
+  parentRefs:
+    - name: hello-gateway
+  rules:
+    # Rule 1: requests with the header "x-canary: always" always go to the canary.
+    # A header match is more specific than a path alone, so this rule wins for those requests.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+          headers:
+            - name: x-canary
+              value: always
+      backendRefs:
+        - name: hello-canary
+          port: 80
+    # Rule 2: everyone else. About 9 in 10 requests go to hello-devops, 1 in 10 to the canary.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: hello-devops
+          port: 80
+          weight: 90
+        - name: hello-canary
+          port: 80
+          weight: 10

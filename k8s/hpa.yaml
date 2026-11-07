@@ -1,0 +1,24 @@
+# Adds or removes hello-devops Pods to keep average CPU near 70% of the request.
+# Needs metrics-server in the cluster (Day 35 shows how to install it on kind).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hello-devops
+  namespace: hello
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hello-devops
+  minReplicas: 3 # the same as replicas in deployment.yaml, so the two agree when the app is quiet
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70 # 70% of the CPU request (100m), so about 70m per Pod
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120 # wait for 2 quiet minutes before removing Pods (the default is 300)

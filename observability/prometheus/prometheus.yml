@@ -1,0 +1,45 @@
+# Prometheus settings for the monitoring lab (Days 42 to 44).
+# Check this file:  docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml
+# Reload after an edit:  curl -X POST localhost:9090/-/reload
+
+global:
+  scrape_interval: 15s     # scrape every target every 15 seconds (default 1m)
+  evaluation_interval: 15s # run the rules every 15 seconds (default 1m)
+
+# Recording and alerting rules (Days 43 and 44). Paths are relative to this file.
+rule_files:
+  - rules/*.yml
+
+# Where to send alerts that fire (Day 44).
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+# What to scrape. Each job is a group of targets that do the same work.
+# Prometheus adds two labels to every series it stores:
+#   job="<job_name>" and instance="<host:port of the target>".
+scrape_configs:
+  # Prometheus watches itself.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # hello-devops (the "web" service in compose.yaml).
+  # Metrics: hello_requests_total{path}, from app.py, plus
+  # hello_responses_total{path,status} and hello_request_duration_seconds{path},
+  # from red_metrics.py.
+  - job_name: hello-devops
+    static_configs:
+      - targets: ["web:8000"]
+
+  # Machine metrics (CPU, memory, disk, network) from node_exporter.
+  # On a Mac this is Docker Desktop's Linux VM, not macOS itself.
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Alertmanager has its own /metrics page too.
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]

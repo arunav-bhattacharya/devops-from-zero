@@ -1,0 +1,51 @@
+# Kyverno policy: every workload in namespace hello needs a "team" label on its Pods.
+# Why: cost tools add up CPU and memory per label. Without an owner label,
+# a cost has no owner (the FinOps "Inform" step, Day 54).
+#
+# Type: ValidatingPolicy (policies.kyverno.io/v1).
+# Mode: Audit. Nothing is blocked; read the failures in the PolicyReport,
+# add the labels, then switch to Deny if you want.
+#
+# Apply: kubectl apply -f policy/require-team-label.yaml
+# Read:  kubectl -n hello get policyreports -o wide
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-team-label
+spec:
+  validationActions:
+    - Audit
+  evaluation:
+    background:
+      enabled: true
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: hello
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets, daemonsets]
+      - apiGroups: [batch]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [jobs, cronjobs]
+  variables:
+    # The labels the Pods will carry: from the Pod template of a workload,
+    # or from the Pod itself.
+    - name: podLabels
+      expression: >-
+        object.spec.?jobTemplate.?spec.?template.?metadata.?labels.orValue(
+        object.spec.?template.?metadata.?labels.orValue(
+        object.metadata.?labels.orValue({})))
+  validations:
+    - expression: >-
+        'team' in variables.podLabels && variables.podLabels['team'] != ''
+      message: >-
+        Add a "team" label to the Pod template (spec.template.metadata.labels),
+        for example team: web, so every cost has an owner.

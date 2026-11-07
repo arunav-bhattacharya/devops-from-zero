@@ -1,0 +1,29 @@
+# A strategic merge patch: write only the fields that change. Kustomize merges them
+# into the Deployment named in kustomization.yaml (target), and matches containers by name.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-devops
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          # Prefer to put hello-devops Pods on different nodes, so one node failure
+          # does not take them all. "Preferred" means the scheduler may still
+          # stack them if it has no other choice.
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: hello-devops
+      containers:
+        - name: web
+          resources:
+            requests:
+              cpu: 200m
+              memory: 192Mi
+            limits:
+              memory: 384Mi

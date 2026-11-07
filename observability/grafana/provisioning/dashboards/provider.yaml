@@ -1,0 +1,17 @@
+# Tells Grafana where to find dashboard files (Day 45).
+# compose.yaml mounts ./grafana/dashboards at /var/lib/grafana/dashboards.
+apiVersion: 1
+
+providers:
+  - name: hello-devops
+    folder: hello-devops # the Grafana folder the dashboards go into (created if missing)
+    type: file
+    # The JSON file in git is the truth. The UI can't save over it:
+    # change the file instead (export from the UI, then paste).
+    allowUiUpdates: false
+    # Look for changed files every 30 seconds. Over 10 means Grafana polls the
+    # folder, which works with Docker bind mounts on a Mac (10 or less relies
+    # on file system events, which may never arrive).
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

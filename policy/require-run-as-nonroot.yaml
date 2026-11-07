@@ -1,0 +1,64 @@
+# Kyverno policy: every container must promise to run as a non-root user.
+# This is one rule of the Kubernetes "restricted" Pod Security Standard.
+#
+# Type: ValidatingPolicy (policies.kyverno.io/v1), the CEL-based type.
+# Mode: Audit. Nothing is blocked. Failures show up in a PolicyReport, so you can
+# fix what fails first and switch to Deny later.
+# Scope: only namespace hello.
+#
+# Apply: kubectl apply -f policy/require-run-as-nonroot.yaml
+# Read:  kubectl -n hello get policyreports -o wide
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-run-as-nonroot
+spec:
+  validationActions:
+    - Audit
+  # Also check objects that already exist, not only new requests.
+  evaluation:
+    background:
+      enabled: true
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: hello
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets, daemonsets]
+      - apiGroups: [batch]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [jobs, cronjobs]
+  variables:
+    # The Pod spec: at spec (Pod), spec.template.spec (Deployment and friends)
+    # or spec.jobTemplate.spec.template.spec (CronJob).
+    - name: podSpec
+      expression: >-
+        object.spec.?jobTemplate.?spec.?template.?spec.orValue(
+        object.spec.?template.?spec.orValue(object.spec))
+    - name: containers
+      expression: >-
+        variables.podSpec.containers +
+        variables.podSpec.?initContainers.orValue([])
+    # The Pod-level setting. Containers inherit it unless they set their own.
+    - name: podNonRoot
+      expression: >-
+        variables.podSpec.?securityContext.?runAsNonRoot.orValue(false)
+  validations:
+    # Pass when the Pod does not say false, and every container ends up with
+    # runAsNonRoot: true, either its own setting or the one inherited from the Pod.
+    # A container that sets false fails, even when the Pod says true.
+    - expression: >-
+        variables.podSpec.?securityContext.?runAsNonRoot.orValue(true) == true &&
+        variables.containers.all(c,
+        c.?securityContext.?runAsNonRoot.orValue(variables.podNonRoot) == true)
+      message: >-
+        Set securityContext.runAsNonRoot: true on the Pod (spec.template.spec in a
+        Deployment), or on every container.

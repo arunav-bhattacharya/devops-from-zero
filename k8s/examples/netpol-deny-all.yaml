@@ -1,0 +1,13 @@
+# Day 33: block all incoming traffic to every Pod in namespace hello.
+# Once a policy selects a Pod for Ingress, only traffic that some policy allows gets in.
+#   Apply: kubectl apply -f k8s/examples/netpol-deny-all.yaml
+#   Undo:  kubectl delete -f k8s/examples/netpol-deny-all.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: hello
+spec:
+  podSelector: {} # an empty selector picks every Pod in the namespace, new ones too
+  policyTypes:
+    - Ingress # and there are no ingress rules, so nothing is allowed in

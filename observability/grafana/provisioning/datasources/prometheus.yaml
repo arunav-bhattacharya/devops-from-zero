@@ -1,0 +1,16 @@
+# Grafana data source for the monitoring lab (Day 45).
+# Grafana reads every file in this folder once, when it starts.
+# After an edit: docker compose restart grafana
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus # a fixed ID: dashboards point at this, not at the name
+    access: proxy # the Grafana server sends the queries, not your browser
+    url: http://prometheus:9090 # the Compose service name, inside the Docker network
+    isDefault: true
+    jsonData:
+      # Must match scrape_interval in prometheus/prometheus.yml.
+      # Grafana uses it to work out $__rate_interval (at least 4 scrapes).
+      timeInterval: 15s

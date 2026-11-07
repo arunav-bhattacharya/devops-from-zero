@@ -1,0 +1,46 @@
+# Day 36 storage demo: a claim for a small disk, and a Pod that writes to it.
+# Apply with: kubectl apply -f k8s/storage/pvc-demo.yaml
+# Clean up with: kubectl delete namespace storage-demo
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage-demo
+---
+# The claim: "I need 1Gi that one node can read and write."
+# No storageClassName, so the cluster's default class is used (on kind: "standard").
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notes
+  namespace: storage-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Each time this Pod starts, it adds one line to /data/starts.log and prints the whole file.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: writer
+  namespace: storage-demo
+spec:
+  containers:
+    - name: writer
+      image: busybox:1.37
+      command: ["sh", "-c", "echo \"started at $(date)\" >> /data/starts.log; cat /data/starts.log; sleep 3600"]
+      volumeMounts:
+        - name: notes
+          mountPath: /data # the disk appears here inside the container
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          memory: 32Mi
+  volumes:
+    - name: notes
+      persistentVolumeClaim:
+        claimName: notes # use the claim above

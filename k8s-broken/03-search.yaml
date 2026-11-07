@@ -1,0 +1,52 @@
+# search: finds products. Other services call it at http://search.debug-lab
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search
+  namespace: debug-lab
+  labels:
+    app: search
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: search
+  template:
+    metadata:
+      labels:
+        app: search
+    spec:
+      containers:
+        - name: web
+          image: hello-devops:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: GREETING
+              value: "Search results"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search
+  namespace: debug-lab
+spec:
+  selector:
+    app: search-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -1,0 +1,54 @@
+# The prod environment: the base in k8s/ plus prod settings (Day 37).
+#   Preview: kubectl kustomize overlays/prod
+#   Apply:   kubectl apply -k overlays/prod
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../k8s # the base
+  - pdb.yaml # prod only: a PodDisruptionBudget
+namespace: hello-prod
+labels:
+  - pairs:
+      env: prod
+    includeTemplates: true
+images:
+  - name: hello-devops
+    newTag: "1.0.0" # prod runs the release that already passed dev
+replicas:
+  - name: hello-devops
+    count: 4 # the same as minReplicas below, so kubectl apply and the HPA agree
+patches:
+  # More memory and a spread over nodes (a strategic merge patch in its own file).
+  - path: deployment-patch.yaml
+    target:
+      kind: Deployment
+      name: hello-devops
+  # Say which environment answers.
+  - target:
+      kind: ConfigMap
+      name: hello-config
+    patch: |-
+      - op: replace
+        path: /data/GREETING
+        value: "Hello from prod!"
+  # Prod scales between 4 and 10 Pods.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: hello-devops
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 4
+      - op: replace
+        path: /spec/maxReplicas
+        value: 10
+  # Same reason as in dev: NodePort 30080 is taken by the base app.
+  - target:
+      kind: Service
+      name: hello-devops
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: ClusterIP
+      - op: remove
+        path: /spec/ports/0/nodePort

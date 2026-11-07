@@ -1,0 +1,49 @@
+# The dev environment: the base in k8s/ plus a few changes (Day 37).
+#   Preview: kubectl kustomize overlays/dev
+#   Apply:   kubectl apply -k overlays/dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../k8s # the base: every file listed in k8s/kustomization.yaml
+namespace: hello-dev # move everything into its own namespace (the Namespace object is renamed too)
+labels:
+  - pairs:
+      env: dev
+    includeTemplates: true # also put the label on the Pods
+images:
+  - name: hello-devops
+    newTag: "1.1.0" # dev runs the newest build
+replicas:
+  - name: hello-devops
+    count: 1
+patches:
+  # Say which environment answers.
+  - target:
+      kind: ConfigMap
+      name: hello-config
+    patch: |-
+      - op: replace
+        path: /data/GREETING
+        value: "Hello from dev!"
+  # One or two Pods are enough in dev.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: hello-devops
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  # NodePort 30080 belongs to the base app in namespace hello, and two Services
+  # cannot share one NodePort. Use a ClusterIP Service and port-forward instead.
+  - target:
+      kind: Service
+      name: hello-devops
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: ClusterIP
+      - op: remove
+        path: /spec/ports/0/nodePort

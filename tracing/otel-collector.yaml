@@ -1,0 +1,56 @@
+# OpenTelemetry Collector for the tracing lab (Day 49).
+# hello-devops sends spans here over OTLP. The Collector cleans them up and
+# forwards them to Jaeger. Exporter names follow Collector v0.144 and later:
+# otlp_grpc and otlp_http (older tutorials say otlp and otlphttp).
+
+receivers:
+  # Accept OTLP from apps: gRPC on 4317, HTTP on 4318.
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Refuse new data before the Collector runs out of memory.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 200
+    spike_limit_mib: 50
+
+  # Change spans on their way through, with the OpenTelemetry Transformation
+  # Language (OTTL). One statement per line, run in order.
+  transform/scrub:
+    error_mode: ignore
+    trace_statements:
+      # The caller's IP address is personal data. Keep a hash instead:
+      # the same IP still gives the same value, but nobody can read it.
+      - set(span.attributes["client.address"], SHA256(span.attributes["client.address"])) where span.attributes["client.address"] != nil
+      # Nobody on the team needs the full browser string.
+      - delete_key(span.attributes, "user_agent.original")
+
+exporters:
+  # Forward to Jaeger, which speaks OTLP too.
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true # plain text inside the compose network (lab only)
+    sending_queue:
+      batch: # send spans in batches, not one request per span
+
+  # Print one line per batch in the Collector's own log, for debugging.
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/scrub]
+      exporters: [otlp_grpc/jaeger, debug]

@@ -1,0 +1,87 @@
+# Opens a pull request that changes which image version one environment runs (Day 40).
+# Save it as .github/workflows/bump-image.yml in your repo. (This reference copy
+# sits in gitops/ so that it never runs in the course's own repo.)
+# Once, before the first run: Settings > Actions > General > Workflow permissions,
+# tick "Allow GitHub Actions to create and approve pull requests".
+# Run it from the Actions tab, or with:
+#   gh workflow run bump-image.yml -f environment=dev -f version=1.2.0
+name: bump-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Which environment to change
+        type: choice
+        options: [dev, prod]
+        default: dev
+      version:
+        description: Image tag to deploy, such as 1.2.0 (no "v" in front)
+        type: string
+        required: true
+
+# Only what this job needs: push a branch and open a pull request.
+permissions:
+  contents: write
+  pull-requests: write
+
+# One bump per environment at a time.
+concurrency:
+  group: bump-image-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Inputs go through env variables, never straight into a script.
+      ENVIRONMENT: ${{ inputs.environment }}
+      VERSION: ${{ inputs.version }}
+      FILE: overlays/${{ inputs.environment }}/kustomization.yaml
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the inputs
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must look like 1.2.0, got '$VERSION'"
+            exit 1
+          fi
+          if [ -z "$(yq '.images[] | select(.name == "hello-devops") | .name' "$FILE")" ]; then
+            echo "::error::$FILE has no images entry named hello-devops"
+            exit 1
+          fi
+
+      # yq (already installed on GitHub's ubuntu runners) changes only these two
+      # fields and keeps every comment. `kustomize edit set image` does the same
+      # job, but it rewrites the whole file and drops comments at line ends.
+      - name: Write the new image into the overlay
+        run: |
+          # The same lower case image name that release.yml pushes to.
+          export IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          yq -i '(.images[] | select(.name == "hello-devops")) |=
+            (.newName = strenv(IMAGE) | .newTag = strenv(VERSION))' "$FILE"
+          git diff
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "The $ENVIRONMENT overlay already uses $VERSION. Nothing to do."
+            exit 0
+          fi
+          BRANCH="bump/${ENVIRONMENT}-${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git commit -am "Deploy hello-devops ${VERSION} to ${ENVIRONMENT}"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "Deploy hello-devops ${VERSION} to ${ENVIRONMENT}" \
+            --body "Sets the hello-devops image in ${FILE}. Argo CD deploys it after you merge."
+          {
+            echo "### Pull request opened"
+            echo "Branch \`$BRANCH\` sets $ENVIRONMENT to $VERSION."
+          } >> "$GITHUB_STEP_SUMMARY"

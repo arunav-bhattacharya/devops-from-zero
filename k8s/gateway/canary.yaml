@@ -1,0 +1,60 @@
+# A second version of the app for the canary exercise on Day 36.
+# Same image, but a different version label and greeting, so you can tell the answers apart.
+# Apply with: kubectl apply -f k8s/gateway/canary.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-canary
+  namespace: hello
+  labels:
+    app: hello-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-canary
+  template:
+    metadata:
+      labels:
+        app: hello-canary
+    spec:
+      containers:
+        - name: web
+          image: hello-devops:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APP_VERSION
+              value: "1.1.0-canary"
+            - name: GREETING
+              value: "Hello from the canary!"
+            - name: REDIS_HOST
+              value: "redis" # share the visit counter with the main app
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-canary
+  namespace: hello
+  labels:
+    app: hello-canary
+spec:
+  selector:
+    app: hello-canary
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

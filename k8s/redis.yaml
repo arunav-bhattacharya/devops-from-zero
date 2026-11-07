@@ -1,0 +1,51 @@
+# Redis keeps the visit counter, shared by all app pods (Day 34).
+# No disk here: the count resets if the Redis pod restarts (Day 36 covers storage).
+# Day 35 explains the readiness probe and the resources below.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: hello
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:8-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+# A ClusterIP Service: reachable only inside the cluster, as "redis" from namespace hello.
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: hello
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379

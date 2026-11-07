@@ -1,0 +1,13 @@
+# Grafana data source for Loki (Day 46).
+# Loki runs only when you start the stack with compose.loki.yaml too.
+# Without it, this data source exists but its queries fail.
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100 # the Compose service name
+    jsonData:
+      maxLines: 1000 # the most log lines one query may return to the browser

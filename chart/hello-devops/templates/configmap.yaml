@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    {{- include "hello-devops.labels" . | nindent 4 }}
+data:
+  GREETING: {{ .Values.greeting | quote }}
+  REDIS_HOST: {{ .Values.redisHost | quote }}

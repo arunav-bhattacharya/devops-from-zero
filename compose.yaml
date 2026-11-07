@@ -1,0 +1,24 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_HOST: redis
+      APP_VERSION: "1.0.0"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:8-alpine
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis-data:

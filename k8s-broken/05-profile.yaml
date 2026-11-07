@@ -1,0 +1,45 @@
+# profile: shows the customer's account page.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profile
+  namespace: debug-lab
+  labels:
+    app: profile
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: profile
+  template:
+    metadata:
+      labels:
+        app: profile
+    spec:
+      containers:
+        - name: web
+          image: hello-devops:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: GREETING
+              value: "Your profile"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi

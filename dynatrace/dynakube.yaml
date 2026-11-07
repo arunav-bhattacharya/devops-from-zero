@@ -1,0 +1,60 @@
+# Dynatrace on the course's kind cluster (Day 51). OPTIONAL and best effort:
+# Dynatrace does not list kind or Apple Silicon Macs as supported, so this may fail.
+#
+# What it asks for:
+#   - applicationMonitoring: the Operator's webhook adds OneAgent to new pods in the
+#     namespaces you label. No agent runs on the kind nodes themselves (they are
+#     Docker containers, which suits app-only monitoring best).
+#   - one small ActiveGate pod: it reads the Kubernetes API (nodes, workloads, events)
+#     and relays OneAgent traffic to your Dynatrace environment.
+#
+# Before you apply it (all steps are in README.md):
+#   1. Install the Dynatrace Operator into the "dynatrace" namespace.
+#   2. Create the secret "dynakube" with your token(s).
+#   3. Label the namespace to monitor: kubectl label namespace hello monitoring=dynatrace
+# ENVIRONMENTID below is a placeholder. README.md swaps in your ID with sed, so this
+# file stays the same for everyone and can live in git.
+#
+# Check first:  sed "s/ENVIRONMENTID/$DT_ENV_ID/" dynatrace/dynakube.yaml | kubectl apply --dry-run=server -f -
+# Then apply:   sed "s/ENVIRONMENTID/$DT_ENV_ID/" dynatrace/dynakube.yaml | kubectl apply -f -
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: dynakube # the Operator reads its tokens from the secret with this same name
+  namespace: dynatrace
+  annotations:
+    # The name your cluster gets in Dynatrace (otherwise it would be "dynakube").
+    feature.dynatrace.com/automatic-kubernetes-api-monitoring-cluster-name: kind-devops
+spec:
+  # Your environment's API address: ".live." (not ".apps.") and "/api" at the end.
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Add Kubernetes names (namespace, workload, pod) to the data from labelled namespaces.
+  metadataEnrichment:
+    enabled: true
+    namespaceSelector:
+      matchLabels:
+        monitoring: dynatrace
+
+  oneAgent:
+    # App-only mode: inject OneAgent into pods, never into the nodes.
+    applicationMonitoring:
+      namespaceSelector:
+        matchLabels:
+          monitoring: dynatrace # only namespaces with this label get OneAgent
+
+  activeGate:
+    capabilities:
+      - routing # OneAgent traffic goes to Dynatrace through the ActiveGate
+      - kubernetes-monitoring # read the Kubernetes API: nodes, workloads, events
+    replicas: 1
+    # The official sample asks for 6Gi of memory, which a laptop cluster cannot give.
+    # These smaller numbers come from Dynatrace's own setup examples. If the pod stays
+    # Pending, give Docker Desktop more memory or lower the request.
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1536Mi
