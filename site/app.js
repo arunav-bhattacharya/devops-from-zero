@@ -322,6 +322,13 @@ function viewHome() {
 </div>`;
 }
 
+/* narrated videos: files sit next to the page in video/, so the same relative path works on Cloudflare and claude.ai */
+const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, "0")}`;
+function videoHTML(v) {
+  return `<figure class="vid"><video controls preload="none" playsinline poster="video/${v.slug}.jpg"><source src="video/${v.slug}.mp4" type="video/mp4">${v.vtt ? `<track kind="captions" srclang="en" label="English" src="video/${v.slug}.vtt">` : ""}</video>
+    <figcaption><span class="vid-k">${ICON.play || ""}Video${v.dur ? ` · ${mmss(v.dur)}` : ""}</span>${v.title}</figcaption></figure>`;
+}
+
 function lessonHead(l) {
   const p = partOf(l.part), done = isDone(l.id);
   return `<header class="lhead">
@@ -354,6 +361,7 @@ function viewLesson(id) {
     let b = `<section class="lsec" id="${sid}"><h2><span class="n">${pad(si + 1)}</span><span>${esc(s.h)}</span></h2><div class="prose">${s.html}</div>`;
     if (si === 0 && l.diagram) b += `<figure class="fig"><div class="fig-box">${l.diagram}</div><figcaption><b>FIG ${pad(l.day)}</b>${l.caption}</figcaption></figure>`;
     if (s.fig) b += `<figure class="fig"><div class="fig-box">${s.fig.svg}</div><figcaption><b>FIG ${pad(l.day)}b</b>${s.fig.caption}</figcaption></figure>`;
+    for (const v of (l.videos || []).filter((x) => x.after === si)) b += videoHTML(v);
     if (si === 0 && l.analogy) b += `<aside class="callout analogy"><div class="ch">${ICON.bulb}Analogy</div><div class="prose">${l.analogy}</div></aside>`;
     if (si === Math.min(1, l.sections.length - 1) && l.realWorld) b += `<aside class="callout world"><div class="ch">${ICON.team}In real teams</div><div class="prose">${l.realWorld}</div></aside>`;
     if (si === l.sections.length - 1 && l.mistake) b += `<aside class="callout mistake"><div class="ch">${ICON.warn}Common mistake</div><div class="prose">${l.mistake}</div></aside>`;

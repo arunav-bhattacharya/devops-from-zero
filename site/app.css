@@ -494,3 +494,10 @@ pre.cx { background: var(--term-bg); color: var(--term-fg); border-radius: 8px; 
 @media (max-width: 640px) { .stage-h { grid-template-columns: 38px minmax(0, 1fr); } .stage-h .label { grid-column: 2; white-space: normal; } .stage-n { font-size: 24px; } }
 .plan-t tr.sec-row td { padding-top: 22px; border-bottom: 2px solid var(--ink); font-size: 15px; }
 .plan-t tr.sec-row b { font: 600 16px/1.2 var(--f-display); margin-right: 8px; }
+
+/* narrated videos */
+.vid { margin: 22px 0 6px; display: grid; gap: 8px; }
+.vid video { width: 100%; aspect-ratio: 16 / 9; height: auto; max-width: 100%; display: block; background: #000; border-radius: var(--r); border: 1px solid var(--rule); }
+.vid figcaption { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; color: var(--mute); font-size: 15px; }
+.vid .vid-k { font: 600 12px/1.2 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); display: inline-flex; gap: 6px; align-items: center; }
+.vid .vid-k svg { width: 12px; height: 12px; }

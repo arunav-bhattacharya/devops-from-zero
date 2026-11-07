@@ -1,0 +1,117 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.675
+With docker run, you give an order, and Docker carries it out once.
+
+2
+00:00:06.900 --> 00:00:11.333
+If that container crashes at three in the morning, nothing starts it again.
+
+3
+00:00:11.333 --> 00:00:12.929
+The order was already done.
+
+4
+00:00:13.733 --> 00:00:16.086
+Kubernetes works the other way round.
+
+5
+00:00:16.086 --> 00:00:18.376
+You describe the end state you want.
+
+6
+00:00:18.600 --> 00:00:23.699
+Kubernetes stores that description as an object, a record in its database.
+
+7
+00:00:23.699 --> 00:00:25.973
+Run three copies of hello-devops.
+
+8
+00:00:26.200 --> 00:00:31.497
+On the other side is the actual state: what is really running, as the nodes report it.
+
+9
+00:00:31.700 --> 00:00:35.097
+Between them sits a small program called a controller.
+
+10
+00:00:35.097 --> 00:00:37.047
+It runs the same loop, forever.
+
+11
+00:00:37.267 --> 00:00:39.023
+Read the desired state.
+
+12
+00:00:39.233 --> 00:00:41.075
+Observe the actual state.
+
+13
+00:00:41.300 --> 00:00:44.214
+If the two differ, act to make them match.
+
+14
+00:00:44.214 --> 00:00:45.047
+Then repeat.
+
+15
+00:00:46.867 --> 00:00:49.647
+Say someone deletes one copy by mistake.
+
+16
+00:00:49.867 --> 00:00:54.033
+On its next pass, the loop reads three wanted, and counts two running.
+
+17
+00:00:54.267 --> 00:00:55.664
+So it starts one more.
+
+18
+00:00:55.664 --> 00:00:57.949
+Nobody wrote a script for that case.
+
+19
+00:00:58.567 --> 00:01:00.330
+Now you change your wish.
+
+20
+00:01:00.330 --> 00:01:02.164
+Three copies becomes five.
+
+21
+00:01:02.367 --> 00:01:06.107
+The loop sees five wanted and three running, and acts again.
+
+22
+00:01:06.333 --> 00:01:07.952
+Two more copies start.
+
+23
+00:01:07.952 --> 00:01:09.350
+You never said how.
+
+24
+00:01:09.350 --> 00:01:10.748
+You only said what.
+
+25
+00:01:11.367 --> 00:01:14.115
+The Kubernetes docs compare it to a thermostat.
+
+26
+00:01:14.115 --> 00:01:17.507
+You set twenty-one degrees, and it keeps reading the room.
+
+27
+00:01:17.507 --> 00:01:19.963
+You never tell it to heat for ten minutes.
+
+28
+00:01:20.167 --> 00:01:25.316
+In every object you write, spec is your wish, and status is Kubernetes' report.
+
+29
+00:01:25.316 --> 00:01:29.097
+Controllers work, all the time, to make status match spec.

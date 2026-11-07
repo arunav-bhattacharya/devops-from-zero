@@ -223,6 +223,23 @@ def main():
     course = {"parts": [], "order": [], "lessons": {}, "labs": labs(), "built": datetime.date.today().isoformat()}
     renum = ROOT / "brief/renumber-v3.json"  # old id -> new id, so the site can move progress saved before the third edition
     course["renum"] = json.loads(renum.read_text()) if renum.exists() else {}
+    # narrated videos (videos/manifest/*.json): {lesson id: [{slug, title, after, ...}]}; files live in public/video/
+    vids = {}
+    for mf in sorted((ROOT / "videos/manifest").glob("*.json")):
+        for lid, vs in json.loads(mf.read_text()).items():
+            for v in vs:
+                mp4 = WEB / "video" / f"{v['slug']}.mp4"
+                if not mp4.exists():
+                    continue  # not rendered yet
+                dur = None
+                try:
+                    import subprocess
+                    dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(mp4)],
+                                               capture_output=True, text=True, check=True).stdout.strip())
+                except Exception:
+                    pass
+                vids.setdefault(lid, []).append({"slug": v["slug"], "title": inline(v["title"]), "after": int(v["after"]), "dur": dur,
+                                                 "vtt": (WEB / "video" / f"{v['slug']}.vtt").exists()})
     k = 0
     for P in index:
         path = ROOT / f"content/p{P['part']}.json"
@@ -234,6 +251,7 @@ def main():
             course["order"].append(R["id"])
             if R["id"] in byid:
                 course["lessons"][R["id"]] = lesson(byid[R["id"]], R, P["part"], k)
+                course["lessons"][R["id"]]["videos"] = vids.get(R["id"], [])
             else:
                 course["lessons"][R["id"]] = {"id": R["id"], "k": k, "part": P["part"], "day": int(R["id"][1:]), "title": R["title"],
                                               "minutes": 35, "pending": True, "scope": R["scope"]}
