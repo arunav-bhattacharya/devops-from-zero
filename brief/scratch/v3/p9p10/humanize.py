@@ -75,8 +75,8 @@ P9 = [
      "A train company promises that 99% of its trains arrive within five minutes of the timetable each month. "
      "That promise is the SLO, and the 1% of trains allowed to be late is the error budget. "
      "If little of it is used by mid-month, the company can close a track for repairs; if a storm has used it all, the repairs wait. "
-     "The comparison stops at timing: trains run on a fixed timetable, while software fails in sudden bursts. "
-     "That is why you watch the burn rate as well as the monthly total."),
+     "The comparison stops at timing. "
+     "Trains run on a fixed timetable, but software fails in sudden bursts, so you also watch how fast the budget burns."),
     (("d41", "worked", "steps", 2, "say"),
      "spends almost half the month. That tells you something concrete: a rollback must take minutes, not an hour.",
      "spends almost half the month, so a rollback has to take minutes, not an hour."),
@@ -117,7 +117,22 @@ P9 = [
      "Its code review checklist asks one question about every new label: how many values can it have? "
      "A `merchant_id` label would mean one series per merchant per route per bucket, so merchant-level detail goes into logs instead."),
 
+    (("d42", "check", 1, "why"), None,
+     "Queue length goes up and down, which is what a gauge measures."),
+    (("d42", "sections", 5, "body"),
+     "Now imagine someone adds",
+     "Suppose someone adds"),
+
     # d43
+    (("d43", "sections", 2, "body"),
+     "Two relatives:",
+     "`rate()` has two relatives:"),
+    (("d43", "sections", 5, "body"),
+     "Two real examples:",
+     "Both of these happened in the lab:"),
+    (("d43", "worked", "steps", 3, "say"),
+     "Now break the app's dependency and wait about 90 seconds.",
+     "Break the app's dependency next, and wait about 90 seconds."),
     (("d43", "sections", 1, "body"),
      "An empty result is not zero. It means no series matched, and this trips most people up.",
      "An empty result is not zero, and the two are easy to confuse. Empty means no series matched."),
@@ -209,7 +224,8 @@ P10 = [
      "Make the change in the UI, export the JSON, paste it into the file in git, and let provisioning load it."),
     (("d45", "real_world"), None,
      "Dashboard uids end up in runbooks. "
-     "In a payments company with many services, each team might own one RED dashboard in its repo, built from a shared template, with CI checking the JSON on every pull request. "
+     "In a payments company with many services, each team might own one RED dashboard in its repo, built from a shared template. "
+     "CI checks the JSON on every pull request. "
      "The on-call runbook links straight to `/d/<uid>` URLs, which is why nobody changes a uid. "
      "Dashboards made by hand in the UI are fine for exploring, and they get cleaned up after 30 days."),
     (("d45", "deeper", "body"),
@@ -222,7 +238,14 @@ P10 = [
      "Finally, watch the cost. Every panel is at least one query, every refresh runs them all, and every viewer multiplies that.",
      "Watch the cost too. Each panel is at least one query, and every refresh runs all of them again for every viewer."),
 
+    (("d45", "worked", "steps", 3, "say"),
+     "Now the error ratio. Nothing has failed yet,",
+     "The error ratio needs one extra step. Nothing has failed yet,"),
+
     # d46
+    (("d46", "sections", 5, "body"),
+     "The signals are worth most when you can jump between them. If the app",
+     "If the app"),
     (("d46", "sections", 1, "body"),
      "Think of a log count from Loki",
      "A rule can put a log count from Loki"),
@@ -234,7 +257,7 @@ P10 = [
      "To find a quote, you walk to the right shelf and flip through the few books there. "
      "The catalog stays tiny, and flipping is fast when the shelf is small. "
      "That only holds while the shelves stay few. "
-     "Make a shelf for every reader's name and the catalog grows larger than the books, which is exactly what a user ID label does to Loki."),
+     "Make a shelf for every reader's name and the catalog grows larger than the books, which is what a user ID label does to Loki."),
     (("d46", "worked", "steps", 4, "say"),
      "The same thing works for any data source, which is the point of the next sections: the query could just as well count error lines in Loki.",
      "Nothing in this rule is specific to Prometheus: the query could just as well count error lines in Loki, which you do in the task."),

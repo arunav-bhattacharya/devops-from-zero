@@ -87,9 +87,11 @@ full("d11", ["sections", 1, "body"], "A virtual machine (VM) pretends",
      "You pay for that speed by sharing: every container on a host uses the same kernel, so a kernel bug can affect all of them. "
      "A container can also only run programs built for that kernel and that CPU.")
 sub("d11", ["sections", 3, "body"], "The image stays exactly as it was.", "The image itself never changes.")
-sub("d11", ["sections", 6, "body"], "ends with exactly that code after 10 seconds", "ends with that code after 10 seconds")
+sub("d11", ["sections", 6, "body"],
+    "`sleep` runs as PID 1, ignores SIGTERM and ends with exactly that code after 10 seconds. Day 13 explains why.",
+    "`sleep` runs as PID 1 and ignores SIGTERM, for reasons Day 13 explains, so it ends with that code after 10 seconds.")
 full("d11", ["analogy"], "A container is like an apartment",
-     "A container is like an apartment in a big building. Its own front door and mailbox keep the people inside from seeing their neighbours; those are the namespaces. "
+     "A container is like an apartment in a big building. Its walls and its own front door keep the people inside from seeing their neighbours; those are the namespaces. "
      "Its water and power meters have a limit; those are the cgroups. "
      "Every apartment stands on one foundation and shares the building's pipes, and that shared plumbing is the kernel. "
      "A real apartment takes a long time to build, though. "
@@ -104,7 +106,7 @@ full("d11", ["real_world"], "At PayFlow",
      "New engineers also start Postgres and Redis on their first day with `docker run`, instead of installing them by hand.")
 sub("d11", ["deeper", "body"],
     "Three small experiments let you watch namespaces, cgroups and CPU types at work.\n\nStart with the process namespace. Run `docker run --rm alpine ps`. The output lists exactly one process:",
-    "The process namespace is the easiest one to see. Run `docker run --rm alpine ps`. The output lists one process:")
+    "You can see the process namespace with one command: `docker run --rm alpine ps`. The output lists one process:")
 sub("d11", ["deeper", "body"],
     "That is the exact error a server shows when someone ships an arm64-only image to it.",
     "A server shows the same error when someone ships it an arm64-only image.")
@@ -129,7 +131,7 @@ sub("d12", ["sections", 2, "body"],
     "Copying a big file up is slow, and the layer dies with the container, so databases keep their files in volumes instead (Day 14).")
 sub("d12", ["sections", 3, "body"],
     "Here is the trap that follows from layers. One `RUN` step creates a 50 MB file, and the next `RUN` step deletes it.",
-    "Say one `RUN` step creates a 50 MB file, and the next `RUN` step deletes it.")
+    "Suppose one `RUN` step creates a 50 MB file, and the next `RUN` step deletes it.")
 sub("d12", ["sections", 3, "body"], "Size is worth watching for three reasons:", "Image size costs you in three places:")
 sub("d12", ["sections", 4, "body"],
     "and the worked example does exactly that.", "and the worked example does just that.")
@@ -178,8 +180,8 @@ full("d13", ["mistake"], "The classic mistake",
      "Every code change, even a comment, then invalidates the cache and reinstalls every package, and any junk in the folder lands in the image. "
      "Copy only `requirements.txt` first, install, and copy the code last.")
 full("d13", ["real_world"], "PayFlow keeps",
-     "One misplaced COPY makes every build reinstall all dependencies, so reviewers read Dockerfile changes as closely as code. "
-     "Each service keeps its Dockerfile in its own repo, and changes to it go through the same code review. "
+     "One misplaced COPY makes every build reinstall all dependencies, so reviewers check the order of Dockerfile lines closely. "
+     "Each service keeps its Dockerfile in its own repo, next to the code, and changes to it go through code review. "
      "CI builds the image once per commit, and that same image moves from testing to production with only the environment variables changing.")
 sub("d13", ["deeper", "body"],
     "That is also why `touch` alone never triggers a rebuild.",
@@ -207,7 +209,8 @@ full("d14", ["analogy"], "Think of an office building",
      "The default bridge is an open-plan floor with no phone directory: you can call a colleague only if you know their extension, and extensions change when people move desks. "
      "A user-defined network is a floor with a receptionist who knows everyone on that floor by name. "
      "Volumes are the storage room in the basement, where the boxes stay while people come and go. "
-     "Nobody can reach that room from another building, though: a volume stays on the one Docker host where you made it, and it does not follow your container to another machine.")
+     "Nobody in another building can use that room, though. "
+     "A volume stays on the one Docker host where you made it and does not follow your container to another machine.")
 full("d14", ["mistake"], "The most common mistake",
      "Setting `REDIS_HOST=localhost` in a web container points the app at itself. "
      "Inside a container, `localhost` is that container, and nothing there listens on Redis's port. "
@@ -272,8 +275,8 @@ sub("d16", ["sections", 2, "body"],
 sub("d16", ["sections", 3, "body"], "Who acts on the status matters:", "What happens next depends on who reads the status:")
 sub("d16", ["sections", 4, "body"], "Two scanners are worth knowing:", "Two scanners come up in this course:")
 sub("d16", ["sections", 4, "body"],
-    "That is why CI scans on every build, which Day 52 sets up.",
-    "So CI scans on every build; Day 52 sets that up.")
+    "New CVEs are published every day, so your numbers will differ from ours. That is why CI scans on every build, which Day 52 sets up.",
+    "New CVEs are published every day, so your numbers will differ from ours, and CI scans again on every build. Day 52 sets that up.")
 full("d16", ["analogy"], "A multi-stage build is like",
      "A multi-stage build is like making a table in a workshop and delivering only the table. "
      "The saws, the glue and the sawdust stay in the workshop, and the customer gets a clean piece of furniture with nothing sharp attached. "
@@ -295,6 +298,7 @@ full("d16", ["worked", "steps", 6, "say"], "Now the secret demo",
 sub("d16", ["deeper", "body"],
     "That is the cost of a user with no home folder, and why the flag is in the lab's `CMD`.",
     "A user with no home folder costs you this error, which is why the lab's `CMD` has the flag.")
+sub("d16", ["deeper", "body"], "Remove it with `docker rm -f nosock`.", "Remove the container with `docker rm -f nosock`.")
 
 DST.write_text(json.dumps(d, ensure_ascii=False, indent=1) + "\n")
 print("wrote", DST)
