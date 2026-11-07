@@ -122,7 +122,9 @@ def lesson(L, R, part, k):
         "guess": mcq(L["guess"]) if L.get("guess") else None,
         "terms": [{"term": t["term"], "plain": inline(t["plain"]), "id": f"t:{lid}:{slug(t['term'])}"} for t in L.get("terms", [])],
         "sections": [{"h": s["h"], "html": md(s["body"]),
-                      "refs": [{"title": inline(r["title"]), "url": r["url"], "kind": r.get("kind", "read")} for r in s.get("refs", [])]}
+                      "refs": [{"title": inline(r["title"]), "url": r["url"], "kind": r.get("kind", "read")} for r in s.get("refs", [])],
+                      # an optional second diagram that belongs to this section: {"svg": ..., "caption": ...}
+                      "fig": {"svg": s["figure"]["svg"], "caption": inline(s["figure"]["caption"])} if s.get("figure") else None}
                      for s in L["sections"]],
         "analogy": md(L.get("analogy", "")), "diagram": L.get("diagram", ""), "caption": inline(L.get("diagram_caption", "")),
         "worked": {"title": inline(L["worked"].get("title", "")),

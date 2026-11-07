@@ -285,7 +285,7 @@ function viewHome() {
     <span class="label">${tot} lessons · about 45 minutes each · at your own pace</span>
     <h1>DevOps,<em>from zero</em></h1>
     <p class="sub">Linux, Git, networking, hands-on AWS, Python scripts, Docker, GitHub Actions, Gradle, Terraform, Ansible and Kubernetes, then how teams run things today: GitOps with Argo CD, Prometheus, Grafana, ELK and EFK, OpenTelemetry, service mesh, Dynatrace, supply-chain security and AI in DevOps. You ship a real app, <span style="white-space:nowrap">hello-devops</span>, from your laptop to a cluster.</p>
-    <div class="meta"><span>${C.parts.length} parts</span><span>${tot} lessons</span><span>2 lab projects</span><span>Free tools, runs on your laptop</span></div>
+    <div class="meta"><span>${C.parts.length} parts</span><span>${tot} lessons</span><span>${new Set(C.labs.map((f) => f.proj)).size} lab projects</span><span>Free tools, runs on your laptop</span></div>
   </section>
   ${term}
   <section class="stats" aria-label="Your progress">
@@ -339,6 +339,7 @@ function viewLesson(id) {
     const sid = `s${si + 1}`; toc.push([sid, s.h]);
     let b = `<section class="lsec" id="${sid}"><h2><span class="n">${pad(si + 1)}</span><span>${esc(s.h)}</span></h2><div class="prose">${s.html}</div>`;
     if (si === 0 && l.diagram) b += `<figure class="fig"><div class="fig-box">${l.diagram}</div><figcaption><b>FIG ${pad(l.day)}</b>${l.caption}</figcaption></figure>`;
+    if (s.fig) b += `<figure class="fig"><div class="fig-box">${s.fig.svg}</div><figcaption><b>FIG ${pad(l.day)}b</b>${s.fig.caption}</figcaption></figure>`;
     if (si === 0 && l.analogy) b += `<aside class="callout analogy"><div class="ch">${ICON.bulb}Analogy</div><div class="prose">${l.analogy}</div></aside>`;
     if (si === Math.min(1, l.sections.length - 1) && l.realWorld) b += `<aside class="callout world"><div class="ch">${ICON.team}In real teams</div><div class="prose">${l.realWorld}</div></aside>`;
     if (si === l.sections.length - 1 && l.mistake) b += `<aside class="callout mistake"><div class="ch">${ICON.warn}Common mistake</div><div class="prose">${l.mistake}</div></aside>`;

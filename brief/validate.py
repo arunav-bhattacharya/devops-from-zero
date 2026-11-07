@@ -87,6 +87,9 @@ def mcq(where, q, need_from=False):
             warn(where, "right option is much longer than the others")
 
 
+LONG_LESSONS = {"d39"}  # lessons allowed an 8th section (split from an overlong one)
+
+
 def svg_checks(where, svg):
     if not svg:
         return err(where, "diagram missing")
@@ -153,8 +156,12 @@ def lesson(L, ref, part):
             err(w, "term needs term and plain")
         text_checks(w + ".term", t.get("plain", ""))
     secs = L.get("sections", [])
-    if not 5 <= len(secs) <= 7:
-        (warn if lid in ("d01", "d02") and 4 <= len(secs) <= 8 else err)(w, "sections must be 5..7")
+    hi_secs = 8 if lid in LONG_LESSONS else 7
+    if not 5 <= len(secs) <= hi_secs:
+        (warn if lid in ("d01", "d02") and 4 <= len(secs) <= 8 else err)(w, f"sections must be 5..{hi_secs}")
+    figs = [s for s in secs if s.get("figure")]
+    if len(figs) > 1:
+        err(w, "at most one section figure per lesson")
     total = 0
     for i, s in enumerate(secs):
         sw = f"{w}.sec{i + 1}"
@@ -164,6 +171,11 @@ def lesson(L, ref, part):
             warn(sw, "heading should start with a capital")
         text_checks(sw, s.get("body", ""))
         refs_checks(sw + ".refs", s.get("refs"))
+        if s.get("figure"):
+            svg_checks(sw + ".figure", s["figure"].get("svg", ""))
+            if not s["figure"].get("caption"):
+                err(sw, "section figure needs a caption")
+            text_checks(sw + ".figure.caption", s["figure"].get("caption", ""))
         total += words(s.get("body", ""))
     lo, hi = 1400, 2200
     if lid == "d02":

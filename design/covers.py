@@ -582,7 +582,7 @@ def main():
         svgs.append(svg)
     css = (ROOT / "site/art.css").read_text()
     fonts = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@700&family=Atkinson+Hyperlegible+Mono:wght@400&display=swap">'
-    page = (f'<!doctype html><meta charset="utf-8">{fonts}<style>:root{{--bg:#edf0f3;--panel:#ffffff;--panel-2:#e2e7ec;--ink:#132130;--mute:#485766;--faint:#6f7d8b;--rule:#cdd5dd;--orange:#c84410;--teal:#0a6a7e;--yellow:#e8ad00;'
+    page = (f'<!doctype html><meta charset="utf-8">{fonts}<style>:root{{--bg:#f5f7f9;--panel:#ffffff;--panel-2:#e2e7ec;--ink:#132130;--mute:#485766;--faint:#6f7d8b;--rule:#cdd5dd;--orange:#c84410;--teal:#0a6a7e;--yellow:#e8ad00;'
             '--f-stencil:"Big Shoulders Stencil Display",sans-serif;--f-mono:"Atkinson Hyperlegible Mono",monospace}'
             '.dark{--bg:#0c131a;--panel:#131d27;--panel-2:#1a2633;--ink:#e1e8ee;--mute:#a5b2be;--faint:#75838f;--rule:#253341;--orange:#ff7d3f;--teal:#4fbad1;--yellow:#f3c341}'
             f'body{{margin:0;background:var(--bg)}}.sheet{{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:40px;width:2400px;background:var(--bg)}}{css}</style>'

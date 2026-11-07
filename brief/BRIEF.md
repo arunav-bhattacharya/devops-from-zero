@@ -128,6 +128,7 @@ Each lesson gets one simple diagram that shows the mechanism (flow, boxes, arrow
   - Text: `t` (main label, font-size="13"), `ts` (small caption, font-size="11"), `tk` (label inside a colored box, font-size="13"). Text in a `bx` box uses `t`. Always set `font-size` and `text-anchor="middle"` for centered labels.
 - Labels are short (1 to 3 words). Box width >= 8 x (characters in longest label) + 24. Keep 12px between elements and 8px from the edge. Nothing overlaps or leaves the viewBox.
 - Prefer left-to-right or top-to-bottom flows with 3 to 7 boxes. Simple beats clever.
+- A lesson may add ONE more figure inside the section it explains: `"figure": {"svg": "<svg ...>", "caption": "One short line."}` on that section. Same SVG rules. It shows on the page as FIG NNb, right after the section text. Use it only when a mechanism needs a second picture.
 
 ## JSON schema (exact)
 
