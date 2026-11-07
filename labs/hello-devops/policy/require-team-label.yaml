@@ -1,6 +1,6 @@
 # Kyverno policy: every workload in namespace hello needs a "team" label on its Pods.
 # Why: cost tools add up CPU and memory per label. Without an owner label,
-# a cost has no owner (the FinOps "Inform" step, Day 54).
+# a cost has no owner (the FinOps "Inform" step, Day 67).
 #
 # Type: ValidatingPolicy (policies.kyverno.io/v1).
 # Mode: Audit. Nothing is blocked; read the failures in the PolicyReport,

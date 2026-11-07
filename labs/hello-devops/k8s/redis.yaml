@@ -1,6 +1,6 @@
-# Redis keeps the visit counter, shared by all app pods (Day 34).
-# No disk here: the count resets if the Redis pod restarts (Day 36 covers storage).
-# Day 35 explains the readiness probe and the resources below.
+# Redis keeps the visit counter, shared by all app pods (Day 42).
+# No disk here: the count resets if the Redis pod restarts (Day 44 covers storage).
+# Day 43 explains the readiness probe and the resources below.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

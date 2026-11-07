@@ -1,4 +1,4 @@
-# Settings for the kube-prometheus-stack Helm chart on a laptop kind cluster (Day 44).
+# Settings for the kube-prometheus-stack Helm chart on a laptop kind cluster (Day 52).
 # It installs the Prometheus Operator, Prometheus, Alertmanager, Grafana,
 # kube-state-metrics and node_exporter, plus ready-made rules and dashboards.
 # Tested with chart version 92.16.0 (operator v0.94.2, Prometheus v3.15.1).

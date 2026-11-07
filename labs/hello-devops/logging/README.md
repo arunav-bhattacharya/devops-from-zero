@@ -1,4 +1,4 @@
-# Logging lab: Elasticsearch, Kibana and Fluent Bit (Days 47 and 48)
+# Logging lab: Elasticsearch, Kibana and Fluent Bit (Days 55 and 56)
 
 A local EFK stack for learning. hello-devops prints its logs, Docker hands every line
 to Fluent Bit, Fluent Bit turns them into JSON documents and sends them to
@@ -85,7 +85,7 @@ Elasticsearch and Kibana must always have the same version.
 - If your disk is almost full, Elasticsearch blocks writes to protect itself (it logs
   "flood stage disk watermark [95%] exceeded"). Free some disk space.
 
-## Kubernetes (Day 48)
+## Kubernetes (Day 56)
 
 `fluent-bit-values.yaml` installs Fluent Bit on your kind cluster with the official Helm
 chart. Elasticsearch and Kibana keep running from this compose file on your laptop, and

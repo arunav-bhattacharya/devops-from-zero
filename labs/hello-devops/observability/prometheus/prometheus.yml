@@ -1,4 +1,4 @@
-# Prometheus settings for the monitoring lab (Days 42 to 44).
+# Prometheus settings for the monitoring lab (Days 50 to 52).
 # Check this file:  docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml
 # Reload after an edit:  curl -X POST localhost:9090/-/reload
 
@@ -6,11 +6,11 @@ global:
   scrape_interval: 15s     # scrape every target every 15 seconds (default 1m)
   evaluation_interval: 15s # run the rules every 15 seconds (default 1m)
 
-# Recording and alerting rules (Days 43 and 44). Paths are relative to this file.
+# Recording and alerting rules (Days 51 and 52). Paths are relative to this file.
 rule_files:
   - rules/*.yml
 
-# Where to send alerts that fire (Day 44).
+# Where to send alerts that fire (Day 52).
 alerting:
   alertmanagers:
     - static_configs:

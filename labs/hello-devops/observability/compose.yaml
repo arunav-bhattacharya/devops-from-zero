@@ -1,4 +1,4 @@
-# The monitoring lab for Parts 9 and 10: hello-devops plus everything that watches it.
+# The monitoring lab for Parts 12 and 13: hello-devops plus everything that watches it.
 #
 # Start it from this folder:  docker compose up -d --build
 # Then open:
@@ -8,18 +8,18 @@
 #   http://localhost:3000  Grafana (user admin, password admin)
 # Stop it:                    docker compose down     (add -v to delete the stored data too)
 #
-# Port 8000 is also used by the Day 15 stack in the repo root. Stop that one first.
+# Port 8000 is also used by the Day 21 stack in the repo root. Stop that one first.
 
 services:
   # The app, built from the Dockerfile in the repo root.
   web:
     build: ..
     # One gunicorn worker process: each process keeps its own counters, and with
-    # two, every scrape would see a different number (Day 42 explains).
+    # two, every scrape would see a different number (Day 50 explains).
     # Four threads in that process, so one slow request cannot block the
     # /metrics page that Prometheus scrapes.
     # "red_metrics:app" loads red_metrics.py, which adds status and latency
-    # metrics to the unchanged app.py (Day 44 explains).
+    # metrics to the unchanged app.py (Day 52 explains).
     command:
       - gunicorn
       - --bind=0.0.0.0:8000
@@ -87,7 +87,7 @@ services:
     volumes:
       - ./webhook.py:/webhook.py:ro
 
-  # Dashboards (Part 10). The provisioning and dashboards folders come from Day 45.
+  # Dashboards (Part 13). The provisioning and dashboards folders come from Day 53.
   grafana:
     image: grafana/grafana:13.3.0
     environment:

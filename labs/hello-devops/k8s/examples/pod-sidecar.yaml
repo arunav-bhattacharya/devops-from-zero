@@ -1,4 +1,4 @@
-# Day 31: one Pod with an init container, a sidecar and the main container.
+# Day 39: one Pod with an init container, a sidecar and the main container.
 # Try it in a scratch namespace:
 #   kubectl create namespace scratch
 #   kubectl apply -n scratch -f k8s/examples/pod-sidecar.yaml

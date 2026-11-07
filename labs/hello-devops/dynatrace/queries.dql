@@ -1,4 +1,4 @@
-// DQL queries from Days 50 and 51 of "DevOps, from zero".
+// DQL queries from Days 61 and 62 of "DevOps, from zero".
 // Run ONE query at a time: open the Notebooks app, add a DQL section, paste, run.
 // The Playground (free, sample data) is enough for everything except Part D.
 // Each query says what it returns. If a query returns zero rows, the field or
@@ -6,7 +6,7 @@
 
 
 // ======================================================================
-// Day 50, part A: look around
+// Day 61, part A: look around
 // ======================================================================
 
 // A1. What data does this environment hold? One row per data object
@@ -41,7 +41,7 @@ fetch dt.davis.problems, from: now() - 2h
 
 
 // ======================================================================
-// Day 51, part B: warm-up on made-up data (same result everywhere)
+// Day 62, part B: warm-up on made-up data (same result everywhere)
 // ======================================================================
 
 // B1. "data" makes a tiny table by hand. It reads nothing from Grail.
@@ -64,7 +64,7 @@ data record(path = "/", status = 200, ms = 12),
 
 
 // ======================================================================
-// Day 51, part C: the ladder on real data
+// Day 62, part C: the ladder on real data
 // ======================================================================
 
 // C1. fetch + limit: 10 raw log records from the last hour (a cheap first look).
@@ -96,7 +96,7 @@ fetch logs, from: -2h
 | makeTimeseries {total = count(), errors = countIf(loglevel == "ERROR")}, interval: 5m
 | fieldsAdd error_pct = errors[] * 100.0 / total[]
 
-// C6. Spans: requests, failures and p95 duration per service (RED from Day 41).
+// C6. Spans: requests, failures and p95 duration per service (RED from Day 49).
 fetch spans, from: -1h
 | filter request.is_root_span == true
 | summarize requests = count(),
@@ -124,7 +124,7 @@ fetch spans, from: now() - 1h
 
 
 // ======================================================================
-// Day 51, part D: your own environment (trial only)
+// Day 62, part D: your own environment (trial only)
 // ======================================================================
 
 // D1. Your kind cluster, if the DynaKube worked. Expect a row named kind-devops.

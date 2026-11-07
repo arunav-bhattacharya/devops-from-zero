@@ -149,25 +149,26 @@ FIRST = ["app.py", "test_app.py", "requirements.txt", "requirements-dev.txt", ".
 # (project, path prefix, day the file is built or finished), first match wins
 DAYS = [
     ("hello-devops", "app.py", 2), ("hello-devops", "test_app.py", 2), ("hello-devops", "requirements", 2), ("hello-devops", ".gitignore", 2),
-    ("hello-devops", "Dockerfile", 16), ("hello-devops", ".dockerignore", 13), ("hello-devops", "docker/", 13), ("hello-devops", "compose.yaml", 15),
-    ("hello-devops", ".github/pull_request_template", 17), ("hello-devops", ".github/workflows/ci", 19), ("hello-devops", ".github/actions", 20),
-    ("hello-devops", ".github/dependabot", 21), ("hello-devops", ".github/workflows/release", 21), ("hello-devops", ".github/workflows/terraform", 29),
-    ("hello-devops", "infra/aws", 29), ("hello-devops", "infra/modules", 28), ("hello-devops", "infra/", 27),
-    ("hello-devops", "kind-config", 30), ("hello-devops", "k8s/examples", 31), ("hello-devops", "k8s/hpa", 35), ("hello-devops", "k8s/gateway", 36),
-    ("hello-devops", "k8s/", 30), ("hello-devops", "chart/", 37), ("hello-devops", "overlays/", 37), ("hello-devops", "k8s-broken/", 38),
-    ("hello-devops", "argocd/", 39), ("hello-devops", "gitops/", 40),
-    ("hello-devops", "observability/grafana", 45), ("hello-devops", "observability/loki", 46), ("hello-devops", "observability/compose.loki", 46),
-    ("hello-devops", "observability/", 42), ("hello-devops", "logging/", 47), ("hello-devops", "tracing/", 49), ("hello-devops", "dynatrace/", 51),
-    ("hello-devops", "policy/ai-agent", 54), ("hello-devops", "policy/", 53), ("hello-devops", "security/capstone", 55), ("hello-devops", "security/agent", 54), ("hello-devops", "security/", 53),
-    ("linux", "", 3), ("hello-jvm", "Dockerfile", 24), ("hello-jvm", ".dockerignore", 24), ("hello-jvm", ".github/", 24),
-    ("hello-jvm", "gradle/libs", 23), ("hello-jvm", "build-logic", 23), ("hello-jvm", "greeting", 23), ("hello-jvm", "", 22),
-    ("terraform-practice", "", 26),
+    ("hello-devops", "Dockerfile", 22), ("hello-devops", ".dockerignore", 19), ("hello-devops", "docker/", 19), ("hello-devops", "compose.yaml", 21),
+    ("hello-devops", ".github/pull_request_template", 23), ("hello-devops", ".github/workflows/ci", 25), ("hello-devops", ".github/actions", 26),
+    ("hello-devops", ".github/dependabot", 27), ("hello-devops", ".github/workflows/release", 27), ("hello-devops", ".github/workflows/terraform", 35),
+    ("hello-devops", "infra/aws", 35), ("hello-devops", "infra/modules", 34), ("hello-devops", "infra/", 33),
+    ("hello-devops", "kind-config", 38), ("hello-devops", "k8s/examples", 39), ("hello-devops", "k8s/hpa", 43), ("hello-devops", "k8s/gateway", 44),
+    ("hello-devops", "k8s/", 38), ("hello-devops", "chart/", 45), ("hello-devops", "overlays/", 45), ("hello-devops", "k8s-broken/", 46),
+    ("hello-devops", "argocd/", 47), ("hello-devops", "gitops/", 48),
+    ("hello-devops", "observability/grafana", 53), ("hello-devops", "observability/loki", 54), ("hello-devops", "observability/compose.loki", 54),
+    ("hello-devops", "observability/", 50), ("hello-devops", "logging/", 55), ("hello-devops", "tracing/", 57), ("hello-devops", "dynatrace/", 62), ("hello-devops", "mesh/linkerd", 60), ("hello-devops", "mesh/istio", 59), ("hello-devops", "mesh/", 58), ("hello-devops", "ai/agents", 66), ("hello-devops", "ai/", 65),
+    ("hello-devops", "policy/ai-agent", 67), ("hello-devops", "policy/", 64), ("hello-devops", "security/capstone", 68), ("hello-devops", "security/agent", 67), ("hello-devops", "security/", 64),
+    ("linux", "", 3), ("hello-jvm", "Dockerfile", 30), ("hello-jvm", ".dockerignore", 30), ("hello-jvm", ".github/", 30),
+    ("hello-jvm", "gradle/libs", 29), ("hello-jvm", "build-logic", 29), ("hello-jvm", "greeting", 29), ("hello-jvm", "", 28),
+    ("terraform-practice", "", 32),
+    ("git", "", 8), ("aws", "", 13), ("python-ops", "", 15), ("ansible", "", 36),
 ]
 LANGS = {".py": "python", ".yaml": "yaml", ".yml": "yaml", ".tf": "hcl", ".tpl": "text", ".txt": "text", ".json": "json", ".md": "text",
          ".kts": "kotlin", ".kt": "kotlin", ".toml": "ini", ".properties": "ini", ".sh": "bash", ".conf": "ini", ".alloy": "text",
-         ".dql": "text", ".log": "text", ".jsonl": "json"}
+         ".dql": "text", ".log": "text", ".jsonl": "json", ".j2": "text", ".cfg": "ini", ".ini": "ini"}
 SKIP_DIRS = {".terraform", "__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "charts", ".gradle", "build", ".kotlin", "node_modules"}
-PROJECT_ORDER = ["hello-devops", "linux", "hello-jvm", "terraform-practice"]
+PROJECT_ORDER = ["hello-devops", "linux", "git", "aws", "python-ops", "hello-jvm", "terraform-practice", "ansible"]
 
 
 def labs():
@@ -185,7 +186,7 @@ def labs():
                 raw = x.read_text()
             except UnicodeDecodeError:
                 continue
-            day = next((d for pr, pre, d in DAYS if pr == proj.name and rel.startswith(pre)), 55)
+            day = next((d for pr, pre, d in DAYS if pr == proj.name and rel.startswith(pre)), 68)
             lang = "dockerfile" if x.name.startswith("Dockerfile") else ("bash" if x.name == "gradlew" else LANGS.get(x.suffix, "text"))
             out.append({"path": f"{proj.name}/{rel}", "lang": lang, "day": day, "html": hl(lang, raw), "lines": raw.count("\n") + 1,
                         "proj": proj.name, "rank": FIRST.index(rel) if rel in FIRST else 99})
@@ -214,6 +215,8 @@ def document(page):
 def main():
     index = json.loads((ROOT / "brief/index.json").read_text())
     course = {"parts": [], "order": [], "lessons": {}, "labs": labs(), "built": datetime.date.today().isoformat()}
+    renum = ROOT / "brief/renumber-v3.json"  # old id -> new id, so the site can move progress saved before the third edition
+    course["renum"] = json.loads(renum.read_text()) if renum.exists() else {}
     k = 0
     for P in index:
         path = ROOT / f"content/p{P['part']}.json"

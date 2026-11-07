@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Capstone acceptance checks (Day 55).
+# Capstone acceptance checks (Day 68).
 # Each check runs one command and prints PASS, FAIL or SKIP.
 # SKIP means "the tool or endpoint is not there", for example Dynatrace or a stopped stack.
 # The script exits with 1 when any check fails, so it also works in CI.
@@ -24,7 +24,7 @@ ok()   { echo "PASS  $1"; pass=$((pass + 1)); }
 bad()  { echo "FAIL  $1"; fail=$((fail + 1)); }
 miss() { echo "SKIP  $1"; skip=$((skip + 1)); }
 
-# 1. Kubernetes (Part 7): the Deployment is fully rolled out.
+# 1. Kubernetes (Part 10): the Deployment is fully rolled out.
 if kubectl -n hello rollout status deploy/hello-devops --timeout=60s > /dev/null 2>&1; then
   ok "Deployment hello-devops is rolled out"
 else
@@ -36,7 +36,7 @@ got=$(curl -fs --max-time 5 "$APP_URL" | jq -r .version 2>/dev/null)
 if [[ "$got" == "$VERSION" ]]; then ok "App at $APP_URL reports version $VERSION"
 else bad "App at $APP_URL reports version '${got:-no answer}', expected $VERSION"; fi
 
-# 3. Parts 4 and 13: every app Pod runs the released GHCR image, never :latest.
+# 3. Parts 6 and 17: every app Pod runs the released GHCR image, never :latest.
 images=$(kubectl -n hello get pods -l app=hello-devops -o jsonpath='{.items[*].spec.containers[*].image}' 2>/dev/null)
 want="ghcr.io/${owner}/hello-devops"
 if [[ -n "$images" ]] && ! tr ' ' '\n' <<< "$images" | grep -v -q "^${want}[:@]" \
@@ -46,20 +46,20 @@ else
   bad "Pods run '${images:-nothing}', expected ${want}:<version> or @sha256:..."
 fi
 
-# 4. Part 8: Argo CD reports the app Synced and Healthy.
+# 4. Part 11: Argo CD reports the app Synced and Healthy.
 st=$(kubectl -n argocd get application hello-devops -o jsonpath='{.status.sync.status}/{.status.health.status}' 2>/dev/null)
 if [[ "$st" == "Synced/Healthy" ]]; then ok "Argo CD: Synced/Healthy"
 elif [[ -z "$st" ]]; then bad "Argo CD Application hello-devops not found in namespace argocd"
 else bad "Argo CD: $st"; fi
 
-# 5. Part 13: the cluster refuses a :latest image (Kyverno disallow-latest-tag).
+# 5. Part 17: the cluster refuses a :latest image (Kyverno disallow-latest-tag).
 # --dry-run=server sends the request through admission, but stores nothing.
 out=$(kubectl -n hello run capstone-latest --image=nginx:latest --restart=Never --dry-run=server 2>&1)
 if grep -q 'created' <<< "$out"; then bad "A :latest Pod was accepted. Is Kyverno installed and policy/ applied?"
 elif grep -qi 'latest' <<< "$out"; then ok "Kyverno rejects :latest"
 else bad "Could not ask the cluster: $(tail -n 1 <<< "$out")"; fi
 
-# 6. Part 13: the image is signed by your release workflow (needs cosign).
+# 6. Part 17: the image is signed by your release workflow (needs cosign).
 if command -v cosign > /dev/null; then
   if cosign verify "${want}:${VERSION}" \
     --certificate-identity "https://github.com/${GITHUB_USER}/hello-devops/.github/workflows/release.yml@refs/tags/v${VERSION}" \
@@ -68,7 +68,7 @@ if command -v cosign > /dev/null; then
   else bad "cosign could not verify ${want}:${VERSION}"; fi
 else miss "cosign not installed (brew install cosign)"; fi
 
-# 7. Part 5: the last hello-jvm CI run succeeded (needs gh).
+# 7. Part 7: the last hello-jvm CI run succeeded (needs gh).
 if command -v gh > /dev/null; then
   c=$(gh run list --repo "$JVM_REPO" --limit 1 --json conclusion -q '.[0].conclusion' 2>/dev/null)
   if [[ "$c" == "success" ]]; then ok "hello-jvm: last CI run succeeded"
@@ -76,23 +76,23 @@ if command -v gh > /dev/null; then
   else bad "hello-jvm: last CI run is '$c'"; fi
 else miss "gh not installed"; fi
 
-# 8. Part 9: Prometheus has the app's request counter.
+# 8. Part 12: Prometheus has the app's request counter.
 n=$(curl -fsG --max-time 5 "${PROM_URL}/api/v1/query" --data-urlencode 'query=sum(hello_requests_total)' \
   | jq -r '.data.result[0].value[1] // empty' 2>/dev/null)
 if [[ -n "$n" ]]; then ok "Prometheus: sum(hello_requests_total) = $n"
 else bad "Prometheus at $PROM_URL has no hello_requests_total (is the port-forward running?)"; fi
 
-# 9. Part 10: Grafana is up and its database is fine.
+# 9. Part 13: Grafana is up and its database is fine.
 g=$(curl -fs --max-time 5 "${GRAFANA_URL}/api/health" | jq -r .database 2>/dev/null)
 if [[ "$g" == "ok" ]]; then ok "Grafana is healthy"
 else bad "Grafana at $GRAFANA_URL did not answer /api/health"; fi
 
-# 10. Part 11: Elasticsearch holds log documents.
+# 10. Part 14: Elasticsearch holds log documents.
 docs=$(curl -fs --max-time 5 "${ES_URL}/_count" | jq -r '.count // 0' 2>/dev/null)
 if [[ "${docs:-0}" -gt 0 ]]; then ok "Elasticsearch holds $docs documents"
 else bad "Elasticsearch at $ES_URL has no documents (is Fluent Bit shipping?)"; fi
 
-# 11. Part 11: Jaeger has received traces from at least one service (Jaeger's v3 HTTP API).
+# 11. Part 14: Jaeger has received traces from at least one service (Jaeger's v3 HTTP API).
 svc=$(curl -fs --max-time 5 "${JAEGER_URL}/api/v3/services" | jq -r '.services // [] | join(", ")' 2>/dev/null)
 if [[ -n "$svc" ]]; then ok "Jaeger has traces from: $svc"
 else bad "Jaeger at $JAEGER_URL has no services yet (send some requests first)"; fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Day 14: containers find each other by name only on a user-defined network.
+# Day 20: containers find each other by name only on a user-defined network.
 # Run it from anywhere: bash docker/network-demo.sh
 # It removes everything it creates, even if a step fails.
 set -euo pipefail

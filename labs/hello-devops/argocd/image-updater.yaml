@@ -1,4 +1,4 @@
-# OPTIONAL (Day 40): let Argo CD Image Updater move dev to each new release.
+# OPTIONAL (Day 48): let Argo CD Image Updater move dev to each new release.
 # You only need this file if you install Argo CD Image Updater (see its docs).
 # It watches your image in GHCR and, when a higher 1.x version appears,
 # commits the new image into overlays/dev/kustomization.yaml on main.

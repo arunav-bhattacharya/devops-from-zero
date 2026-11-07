@@ -1,4 +1,4 @@
-// Grafana Alloy for the laptop lab (Day 46): read the logs of this Compose
+// Grafana Alloy for the laptop lab (Day 54): read the logs of this Compose
 // project's containers from Docker and send them to Loki.
 // Each block is a component. Data flows from one to the next:
 //   discovery.docker -> discovery.relabel -> loki.source.docker -> loki.write

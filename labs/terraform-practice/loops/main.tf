@@ -1,4 +1,4 @@
-# Day 26: count vs for_each. No Docker needed: these resources are plain files.
+# Day 32: count vs for_each. No Docker needed: these resources are plain files.
 terraform {
   required_providers {
     local = {

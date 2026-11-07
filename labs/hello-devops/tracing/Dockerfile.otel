@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# hello-devops with OpenTelemetry zero-code instrumentation (Day 49).
+# hello-devops with OpenTelemetry zero-code instrumentation (Day 57).
 # Same app.py as the main Dockerfile, no code changes. opentelemetry-instrument
 # starts gunicorn and patches Flask and the Redis client so they create spans.
 #

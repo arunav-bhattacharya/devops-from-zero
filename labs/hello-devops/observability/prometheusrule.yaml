@@ -1,4 +1,4 @@
-# Alerting rules for hello-devops on Kubernetes (Day 44).
+# Alerting rules for hello-devops on Kubernetes (Day 52).
 # Needs kube-prometheus-stack (see values.yaml). The Prometheus Operator
 # turns this object into a rule file and loads it into Prometheus.
 # Apply: kubectl apply -f observability/prometheusrule.yaml

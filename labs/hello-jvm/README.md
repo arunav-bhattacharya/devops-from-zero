@@ -1,6 +1,6 @@
 # hello-jvm
 
-A small Kotlin web service built with Gradle, for Part 5 of "DevOps, from zero" (Days 22 to 24).
+A small Kotlin web service built with Gradle, for Part 7 of "DevOps, from zero" (Days 28 to 30).
 It mirrors hello-devops: `/` returns JSON `{message, version, host, visits}` and `/healthz` returns
 `{"status":"ok"}`. It uses the JDK's built-in web server (`com.sun.net.httpserver`), so there is no
 web framework to download.
@@ -10,14 +10,14 @@ your work, not to copy.
 
 | Path | Built on |
 |---|---|
-| `settings.gradle.kts`, `gradle.properties`, `.gitignore`, `.gitattributes` | Day 22 (flags extended on Day 24) |
-| `gradlew`, `gradlew.bat`, `gradle/wrapper/*` (the Gradle Wrapper, commit all four) | Day 22 |
-| `app/` (the web service, `application` plugin) | Day 22 (split on Day 23) |
-| `greeting/` (a library: builds and escapes the JSON) | Day 23 |
-| `gradle/libs.versions.toml` (version catalog) | Day 23 (Jib entry added on Day 24) |
-| `build-logic/` (included build with the `hello.kotlin-jvm` convention plugin) | Day 23 |
-| `Dockerfile`, `.dockerignore` | Day 24 |
-| `.github/workflows/jvm-ci.yml` | Day 24 |
+| `settings.gradle.kts`, `gradle.properties`, `.gitignore`, `.gitattributes` | Day 28 (flags extended on Day 30) |
+| `gradlew`, `gradlew.bat`, `gradle/wrapper/*` (the Gradle Wrapper, commit all four) | Day 28 |
+| `app/` (the web service, `application` plugin) | Day 28 (split on Day 29) |
+| `greeting/` (a library: builds and escapes the JSON) | Day 29 |
+| `gradle/libs.versions.toml` (version catalog) | Day 29 (Jib entry added on Day 30) |
+| `build-logic/` (included build with the `hello.kotlin-jvm` convention plugin) | Day 29 |
+| `Dockerfile`, `.dockerignore` | Day 30 |
+| `.github/workflows/jvm-ci.yml` | Day 30 |
 
 ## Run it locally
 
@@ -45,7 +45,7 @@ docker run --rm -p 8080:8080 -m 512m hello-jvm:1.0.0
 Base images: `eclipse-temurin:21-jdk` for the build stage and `eclipse-temurin:21-jre` for the
 run stage. Both are official Docker Hub images with `linux/amd64` and `linux/arm64` variants, so
 they run natively on an Apple Silicon Mac. On a Mac, `docker build` makes an arm64 image; add
-`--platform linux/amd64` (Day 16) when the image must run on amd64 servers. If Docker Hub limits
+`--platform linux/amd64` (Day 22) when the image must run on amd64 servers. If Docker Hub limits
 your pulls, run `docker login` first.
 
 The first build downloads Gradle and every dependency (a few minutes). Later builds reuse the
@@ -54,7 +54,7 @@ about half a minute.
 
 ## Optional: Jib
 
-Day 24 shows Jib, which builds the image from Gradle without a Dockerfile. The catalog already has
+Day 30 shows Jib, which builds the image from Gradle without a Dockerfile. The catalog already has
 the `jib` plugin entry; the lesson shows the lines to add to `app/build.gradle.kts`. Jib 3.5.4 is
 not compatible with Gradle's configuration cache, so run it with
 `./gradlew :app:jibDockerBuild --no-configuration-cache`.

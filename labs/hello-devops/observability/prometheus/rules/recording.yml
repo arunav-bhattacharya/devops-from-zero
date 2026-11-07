@@ -1,4 +1,4 @@
-# Recording rules (Day 43): Prometheus runs each expr every 15 seconds and
+# Recording rules (Day 51): Prometheus runs each expr every 15 seconds and
 # stores the result as a new series named after "record".
 # Names follow level:metric:operations, for example job:hello_responses:rate5m.
 groups:

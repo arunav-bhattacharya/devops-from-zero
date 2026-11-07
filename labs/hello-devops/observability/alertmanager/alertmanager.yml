@@ -1,4 +1,4 @@
-# Alertmanager settings for the monitoring lab (Day 44).
+# Alertmanager settings for the monitoring lab (Day 52).
 # Check this file:  docker compose exec alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
 
 # The routing tree: every alert enters at the top "route" and walks down.

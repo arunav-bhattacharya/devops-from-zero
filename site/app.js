@@ -22,10 +22,21 @@ const ls = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage blocked */ } },
 };
 const KEY = "dfz-progress-v1";
+/* Saved progress is keyed by lesson and part ids. The third edition renumbered them (new lessons went in
+   the middle), so progress saved before that (no scheme) moves to the new ids once, here. */
+const SCHEME = 3, RN = C.renum || {};
+const rk = (k) => RN[k] || k;
+const rc = (k) => { const a = k.split(":"); if (a.length > 2 && (a[0] === "t" || a[0] === "f")) a[1] = rk(a[1]); return a.join(":"); };
+const remap = (o, f) => Object.fromEntries(Object.entries(o).map(([k, v]) => [f(k), v]));
 function norm(r) {
   r = r || {};
-  return { log: { ...(r.log || {}) }, scores: { ...(r.scores || {}) }, quiz: { ...(r.quiz || {}) }, tasks: { ...(r.tasks || {}) },
-    cards: { ...(r.cards || {}) }, days: { ...(r.days || {}) }, start: r.start || null, startU: r.startU || "" };
+  const o = { log: { ...(r.log || {}) }, scores: { ...(r.scores || {}) }, quiz: { ...(r.quiz || {}) }, tasks: { ...(r.tasks || {}) },
+    cards: { ...(r.cards || {}) }, days: { ...(r.days || {}) }, start: r.start || null, startU: r.startU || "", scheme: SCHEME };
+  if ((r.scheme || 0) < SCHEME) {
+    for (const f of ["log", "scores", "quiz", "tasks"]) o[f] = remap(o[f], rk);
+    o.cards = remap(o.cards, rc);
+  }
+  return o;
 }
 function merge(a, raw) {
   const b = norm(raw), o = norm(a);

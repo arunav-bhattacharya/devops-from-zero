@@ -1,4 +1,4 @@
-# Day 28 worked example: a tiny module that runs one nginx site.
+# Day 34 worked example: a tiny module that runs one nginx site.
 terraform {
   required_providers {
     docker = {

@@ -1,4 +1,4 @@
-# Unit tests for the alerting rules (Day 44). Run:
+# Unit tests for the alerting rules (Day 52). Run:
 #   docker compose exec prometheus promtool test rules /etc/prometheus/tests/alerts_test.yml
 # promtool feeds in made-up series, runs the rules, and compares the alerts.
 rule_files:

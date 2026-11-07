@@ -1,4 +1,4 @@
-# Tracing lab (Day 49): hello-devops -> OpenTelemetry Collector -> Jaeger.
+# Tracing lab (Day 57): hello-devops -> OpenTelemetry Collector -> Jaeger.
 #
 # Start (from this tracing/ folder):  docker compose up -d --build
 # Jaeger UI:                          http://localhost:16686

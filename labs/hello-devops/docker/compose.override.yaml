@@ -1,4 +1,4 @@
-# Local development extras for compose.yaml (Day 15).
+# Local development extras for compose.yaml (Day 21).
 # Copy this file next to compose.yaml. Compose then merges it in by itself
 # on every "docker compose" command. CI runs "docker compose -f compose.yaml"
 # to leave it out.
@@ -22,7 +22,7 @@ services:
   redis:
     restart: unless-stopped
 
-  # nginx in front of web, like the reverse proxy from Day 9.
+  # nginx in front of web, like the reverse proxy from Day 11.
   # It only starts when you ask for it: docker compose --profile proxy up -d
   proxy:
     image: nginx:1.31-alpine

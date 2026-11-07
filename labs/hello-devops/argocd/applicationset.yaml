@@ -1,5 +1,5 @@
 # An ApplicationSet: one template that makes one Argo CD Application per
-# environment (Day 40). Here it makes hello-devops-dev and hello-devops-prod.
+# environment (Day 48). Here it makes hello-devops-dev and hello-devops-prod.
 # Each one deploys a Kustomize overlay from your repo into its own namespace.
 # Apply it after project.yaml:
 #   kubectl apply -n argocd -f argocd/applicationset.yaml
@@ -32,7 +32,7 @@ spec:
       source:
         repoURL: https://github.com/<your-github-user>/hello-devops
         targetRevision: main
-        path: "overlays/{{.env}}" # the Kustomize overlay for this environment (Day 37)
+        path: "overlays/{{.env}}" # the Kustomize overlay for this environment (Day 45)
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{.namespace}}"

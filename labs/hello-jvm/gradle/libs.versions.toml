@@ -12,5 +12,5 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 
 [plugins]
-# Jib builds container images without a Dockerfile (optional, Day 24).
+# Jib builds container images without a Dockerfile (optional, Day 30).
 jib = { id = "com.google.cloud.tools.jib", version = "3.5.4" }

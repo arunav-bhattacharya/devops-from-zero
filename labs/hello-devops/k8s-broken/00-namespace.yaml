@@ -1,4 +1,4 @@
-# Day 38 break-and-fix lab. Everything lives in its own namespace, so cleanup is one command:
+# Day 46 break-and-fix lab. Everything lives in its own namespace, so cleanup is one command:
 #   kubectl delete namespace debug-lab
 apiVersion: v1
 kind: Namespace

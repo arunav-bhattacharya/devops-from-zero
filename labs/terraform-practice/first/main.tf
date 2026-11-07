@@ -1,4 +1,4 @@
-# Day 25: your first Terraform. One nginx container on your laptop.
+# Day 31: your first Terraform. One nginx container on your laptop.
 terraform {
   required_providers {
     docker = {

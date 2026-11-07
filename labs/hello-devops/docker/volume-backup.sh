@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Day 14: back up a named volume to a .tgz file in this folder, or restore one.
+# Day 20: back up a named volume to a .tgz file in this folder, or restore one.
 #   bash docker/volume-backup.sh backup  <volume>
 #   bash docker/volume-backup.sh restore <volume> <file.tgz>
 # A short-lived alpine container mounts the volume and runs tar.

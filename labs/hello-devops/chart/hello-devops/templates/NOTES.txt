@@ -5,6 +5,6 @@ Try it:
   curl localhost:8090
 {{- if .Values.httpRoute.enabled }}
 
-Through the Gateway (keep the Envoy port-forward from Day 36 running on 8888):
+Through the Gateway (keep the Envoy port-forward from Day 44 running on 8888):
   curl {{ with .Values.httpRoute.hostname }}-H "Host: {{ . }}" {{ end }}localhost:8888
 {{- end }}

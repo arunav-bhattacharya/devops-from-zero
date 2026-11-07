@@ -1,5 +1,5 @@
 # Runs 3 copies (pods) of hello-devops and replaces any that die.
-# Day 32 writes the first version, Day 34 adds envFrom, Day 35 adds the probes and resources.
+# Day 40 writes the first version, Day 42 adds envFrom, Day 43 adds the probes and resources.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

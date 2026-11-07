@@ -1,4 +1,4 @@
-# Day 13 version: one stage, runs as root. Day 16 replaces it with the
+# Day 19 version: one stage, runs as root. Day 22 replaces it with the
 # multi-stage, non-root Dockerfile at the root of the repo.
 # Build from the repo root: docker build -f docker/Dockerfile.simple -t hello-devops:simple .
 FROM python:3.14-slim

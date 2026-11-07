@@ -1,5 +1,5 @@
 # A "developer" identity that may run Pods in namespace hello, but may NOT read Secrets.
-# Day 53 uses it to show a trap: anyone who can create a Pod in a namespace can
+# Day 64 uses it to show a trap: anyone who can create a Pod in a namespace can
 # mount any Secret of that namespace into it, and so read the Secret anyway.
 #
 # Apply: kubectl apply -f security/rbac-pod-creator.yaml

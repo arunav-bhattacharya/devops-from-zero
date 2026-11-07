@@ -1,4 +1,4 @@
-# Grafana data source for Loki (Day 46).
+# Grafana data source for Loki (Day 54).
 # Loki runs only when you start the stack with compose.loki.yaml too.
 # Without it, this data source exists but its queries fail.
 apiVersion: 1

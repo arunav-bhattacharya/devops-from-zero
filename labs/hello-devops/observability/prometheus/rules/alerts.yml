@@ -1,7 +1,7 @@
-# Alerting rules (Day 44). Test them:
+# Alerting rules (Day 52). Test them:
 #   docker compose exec prometheus promtool test rules /etc/prometheus/tests/alerts_test.yml
 #
-# The SLO from Day 41: 99.9% of hello-devops responses are not 5xx, over 30 days.
+# The SLO from Day 49: 99.9% of hello-devops responses are not 5xx, over 30 days.
 # Error budget = 0.1% (0.001). The burn rates follow Google's SRE Workbook:
 #   page:   14.4 over 1 hour (2% of the budget) or 6 over 6 hours (5%)
 #   ticket: 1 over 3 days (10%)

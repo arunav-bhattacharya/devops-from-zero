@@ -1,4 +1,4 @@
-# Day 33: a headless Service for the same Pods as k8s/service.yaml.
+# Day 41: a headless Service for the same Pods as k8s/service.yaml.
 # It has no virtual IP. Its DNS name returns the IP of every ready Pod instead.
 #   kubectl apply -f k8s/examples/headless-service.yaml
 apiVersion: v1

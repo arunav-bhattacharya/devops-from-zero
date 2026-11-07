@@ -1,4 +1,4 @@
-# Fluent Bit pipeline for the logging lab (Days 47 and 48).
+# Fluent Bit pipeline for the logging lab (Days 55 and 56).
 # Docker's fluentd logging driver sends each line the web container prints.
 # Each record arrives with four fields: log (the line), source (stdout or stderr),
 # container_id and container_name. The tag is hello.<container name>.

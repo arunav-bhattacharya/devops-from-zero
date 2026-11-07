@@ -1,16 +1,16 @@
-# Dynatrace (Days 50 and 51)
+# Dynatrace (Days 61 and 62)
 
 Files in this folder:
 
 | File | Used on | What it is |
 |---|---|---|
-| `queries.dql` | Days 50 and 51 | Every DQL query from the lessons. Paste one query at a time into a Notebook. |
-| `dynakube.yaml` | Day 51 (optional) | The DynaKube for the course's kind cluster: app-only monitoring and one small ActiveGate. |
-| `README.md` | Day 51 (optional) | This file: install, check and uninstall steps. |
+| `queries.dql` | Days 61 and 62 | Every DQL query from the lessons. Paste one query at a time into a Notebook. |
+| `dynakube.yaml` | Day 62 (optional) | The DynaKube for the course's kind cluster: app-only monitoring and one small ActiveGate. |
+| `README.md` | Day 62 (optional) | This file: install, check and uninstall steps. |
 
 ## Cost first
 
-- The **Playground** is free and needs no install. It has sample data. Do Day 50 and the DQL part of Day 51 there.
+- The **Playground** is free and needs no install. It has sample data. Do Day 61 and the DQL part of Day 62 there.
 - The **free trial** of Dynatrace SaaS lasts 15 days, and the sign-up page says no credit card is needed. The 15 days start when you sign up, so start it only when you have time to do the kind install below.
 - After the trial, Dynatrace is paid (the Dynatrace Platform Subscription). Ingesting data, keeping it and querying it are all metered.
 - Check the current terms on the [try-free page](https://www.dynatrace.com/try-free) before you sign up.
@@ -21,7 +21,7 @@ Files in this folder:
 
 You need:
 
-- the kind cluster from Day 30 (`kind create cluster --name devops --config kind-config.yaml`) with hello-devops running in the `hello` namespace (`kubectl apply -k k8s`)
+- the kind cluster from Day 38 (`kind create cluster --name devops --config kind-config.yaml`) with hello-devops running in the `hello` namespace (`kubectl apply -k k8s`)
 - Helm 4 and kubectl (Day 2)
 - a Dynatrace trial environment. Its address looks like `https://abc12345.apps.dynatrace.com`; `abc12345` is your environment ID.
 
@@ -112,11 +112,11 @@ kubectl -n hello get pods -l app=hello-devops -o jsonpath='{.items[0].spec.initC
 # prints dynatrace-operator: the webhook added its init container to the pod
 ```
 
-Send some traffic (`curl localhost:8081` a few times, the kind NodePort from Day 33), wait a few minutes, then look in Dynatrace:
+Send some traffic (`curl localhost:8081` a few times, the kind NodePort from Day 41), wait a few minutes, then look in Dynatrace:
 
 - the Kubernetes app: a cluster called `kind-devops` with its nodes, namespaces and workloads
 - the Services app: a hello-devops service, if OneAgent could instrument the Python app (recent OneAgent versions support Python and Flask; check the technology support page if it does not show up)
-- a Notebook: run the Day 51 queries from `queries.dql`
+- a Notebook: run the Day 62 queries from `queries.dql`
 
 If something fails:
 

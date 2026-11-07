@@ -1,4 +1,4 @@
-# Tracing lab: OpenTelemetry Collector and Jaeger (Day 49)
+# Tracing lab: OpenTelemetry Collector and Jaeger (Day 57)
 
 hello-devops runs under `opentelemetry-instrument`, with no change to `app.py`. Its spans
 go to an OpenTelemetry Collector, which hashes the caller's IP address and forwards them

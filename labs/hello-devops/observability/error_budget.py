@@ -1,4 +1,4 @@
-"""Turn an SLO into an error budget and burn rates (Day 41).
+"""Turn an SLO into an error budget and burn rates (Day 49).
 
 Usage:   python3 error_budget.py SLO_PERCENT [DAYS] [REQUESTS_PER_DAY]
 Example: python3 error_budget.py 99.9 30 200000
@@ -21,7 +21,7 @@ if per_day:
     print(f"Failed requests allowed: {budget * total:,.0f} of {total:,.0f}")
 
 # Burn rate = how fast you spend the budget. 1 means "used up exactly at the end".
-# The three rows are the starting points from Google's SRE Workbook (Day 44):
+# The three rows are the starting points from Google's SRE Workbook (Day 52):
 # page at 14.4 over 1 hour or 6 over 6 hours, open a ticket at 1 over 3 days.
 for burn, window_h, action in [(14.4, 1, "page"), (6, 6, "page"), (1, 72, "ticket")]:
     used = burn * window_h / (days * 24)

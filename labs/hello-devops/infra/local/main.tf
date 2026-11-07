@@ -5,7 +5,7 @@ resource "docker_image" "redis" {
 }
 
 # Your everyday stack. Its names (hello-web, hello-redis, hello-net)
-# are the same as before Day 28, so moved.tf can keep its containers.
+# are the same as before Day 34, so moved.tf can keep its containers.
 module "dev" {
   source = "../modules/hello-stack"
 

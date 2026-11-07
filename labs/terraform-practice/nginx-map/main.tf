@@ -1,4 +1,4 @@
-# Day 26 hands-on: one nginx container per entry in a map, with for_each.
+# Day 32 hands-on: one nginx container per entry in a map, with for_each.
 terraform {
   required_providers {
     docker = {

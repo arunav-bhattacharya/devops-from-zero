@@ -1,4 +1,4 @@
-# Values for the official Fluent Bit Helm chart (Day 48).
+# Values for the official Fluent Bit Helm chart (Day 56).
 # Fluent Bit runs as a DaemonSet: one pod on every node of your kind cluster.
 # Each pod reads the container log files on its node, adds Kubernetes
 # metadata (namespace, pod, labels) and sends the records to the

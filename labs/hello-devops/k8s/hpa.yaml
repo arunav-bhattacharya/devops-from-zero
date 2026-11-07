@@ -1,5 +1,5 @@
 # Adds or removes hello-devops Pods to keep average CPU near 70% of the request.
-# Needs metrics-server in the cluster (Day 35 shows how to install it on kind).
+# Needs metrics-server in the cluster (Day 43 shows how to install it on kind).
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

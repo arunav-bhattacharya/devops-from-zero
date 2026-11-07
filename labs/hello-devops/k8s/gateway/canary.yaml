@@ -1,4 +1,4 @@
-# A second version of the app for the canary exercise on Day 36.
+# A second version of the app for the canary exercise on Day 44.
 # Same image, but a different version label and greeting, so you can tell the answers apart.
 # Apply with: kubectl apply -f k8s/gateway/canary.yaml
 apiVersion: apps/v1

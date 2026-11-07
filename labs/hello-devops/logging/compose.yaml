@@ -1,4 +1,4 @@
-# Centralized logging lab (Day 47): hello-devops -> Fluent Bit -> Elasticsearch -> Kibana.
+# Centralized logging lab (Day 55): hello-devops -> Fluent Bit -> Elasticsearch -> Kibana.
 #
 # LOCAL LEARNING ONLY. Security is switched off, so anything that can reach
 # port 9200 can read and delete every log. Never run this on a server.

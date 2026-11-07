@@ -1,4 +1,4 @@
-# Loki for the laptop lab (Day 46): one process, logs kept on a local disk.
+# Loki for the laptop lab (Day 54): one process, logs kept on a local disk.
 # compose.loki.yaml mounts this file at /etc/loki/loki.yaml.
 # Check that Loki is up:  curl localhost:3100/ready
 

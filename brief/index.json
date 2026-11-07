@@ -1,87 +1,655 @@
 [
- {"part": 0, "slug": "start", "title": "Start here", "tool": "Start", "lessons": [
-  {"id": "d01", "title": "The DevOps map", "from": ["d01"], "scope": "Keep and deepen the first-edition Day 1. What DevOps is (culture, practices, tools; dev and ops sharing ownership). The path of one code change from laptop to users. Where every part of this course sits on that path: Linux and networking underneath, Docker packages, GitHub Actions automates, Gradle builds JVM apps, Terraform creates infrastructure, Kubernetes runs, Argo CD deploys from git, Prometheus/Grafana/EFK/OpenTelemetry/Dynatrace observe, DevSecOps protects. DORA metrics. Roles (DevOps engineer, SRE, platform engineer). How the course works. No installs."},
-  {"id": "d02", "title": "Set up your laptop", "from": ["d02"], "scope": "Keep the first-edition Day 2 (tested starter files, Homebrew, git, gh, VS Code, Docker Desktop with the default socket setting, kubectl, kind, helm, terraform via the HashiCorp tap) and add: jq, tree, watch, htop; a JDK 21 for the Gradle part (brew install openjdk@21 or SDKMAN, verify with java -version); an ubuntu container as a Linux practice box (docker run -it --rm ubuntu:24.04 bash) used in Part 1. Same hello-devops repo creation."}
- ]},
- {"part": 1, "slug": "linux", "title": "The Linux command line", "tool": "Linux", "lessons": [
-  {"id": "d03", "title": "The shell and the file system", "from": ["d03"], "scope": "Start from zero: terminal vs shell vs command; zsh on Mac vs bash on Linux; how to practise real Linux in the ubuntu container. Command anatomy (command, options, arguments; short vs long flags). Getting help: man (how to read a man page: synopsis, options, searching with /), --help, tldr. The prompt. The file system tree (/, /home, /etc, /var/log, /tmp, /usr/bin), absolute vs relative paths, ~, ., .., pwd, ls (-l, -a, -h, -t), cd and cd -, tab completion, history and Ctrl+R. Creating and moving things: mkdir -p, touch, cp -r, mv, rm and rm -r (and why rm has no undo), rmdir. Wildcards (globbing: *, ?, [abc]) and how the shell expands them before the command runs. Hidden files. tree. Practise inside labs/linux sample files."},
-  {"id": "d04", "title": "Reading and searching text: cat, less, grep and find", "from": [], "scope": "Viewing files: cat, less (navigation keys, /search, n, q), head and tail (-n), tail -f to follow a growing log. grep from zero, step by step with small examples on labs/linux/app.log: a literal search, -i, -n, -v, -c, -w, -l and -r across a folder, -A/-B/-C for context, -o. Then regular expressions as a tiny pattern language: literal characters, ., *, +, ?, ^ and $, [...] classes, \\d is not portable, -E for extended regex, alternation with |, quoting patterns so the shell does not touch them. Globs vs regex (different languages). find: -name, -iname, -type f/d, -size, -mtime, -maxdepth, -exec and -delete with care. A worked example: find every ERROR for one request ID across several log files. Mac (BSD) vs Linux (GNU) differences that matter here."},
-  {"id": "d05", "title": "Pipes, redirection and text tools", "from": [], "scope": "The three standard streams (stdin, stdout, stderr) and file descriptors 0, 1, 2. Redirection: >, >>, <, 2>, 2>&1, &> and /dev/null, with the classic mistake of > erasing a file. Pipes: building a pipeline one step at a time. The text tools: sort (-n, -r, -k, -t), uniq (and why it needs sorted input; -c), wc -l, cut (-d, -f), tr, head as a limiter, tee. awk for columns ('{print $1}', -F, a simple condition, summing a column). sed for substitution (s/old/new/g; -i differences on Mac vs Linux). xargs to turn lines into arguments. jq for JSON (., .field, .[], select, -r). Worked example: the top 5 client IPs and the top error paths from labs/linux/access.log. Command substitution $(...)."},
-  {"id": "d06", "title": "Users, permissions, processes and services", "from": ["d03"], "scope": "Users and groups, whoami, id, root and sudo (and why not to run everything with sudo). Reading ls -l column by column. Permissions rwx for user/group/others, on files vs directories, octal (755, 644, 600), chmod (symbolic and octal), chown, umask briefly, the execute bit and ./script.sh, why containers should not run as root. Processes: what a process and a PID are, ps aux, pgrep, top/htop, parent and child processes, foreground/background (&, jobs, fg, Ctrl+Z), nohup. Signals: SIGTERM vs SIGKILL vs SIGINT vs SIGHUP, kill and kill -9 and why docker stop and Kubernetes send SIGTERM first. Services with systemd: units, systemctl status/start/stop/restart/enable, journalctl -u -f --since. Resources: df -h, du -sh, free -h, uptime and load average, lsof and ss to see what listens on a port. Practise in the ubuntu container (note: systemd does not run in a plain container; show systemctl on a real VM or explain with output)."},
-  {"id": "d07", "title": "Environment, packages, SSH and shell scripts", "from": ["d03"], "scope": "Environment variables: env, printenv, echo $VAR, export, scope (a child process inherits, a parent does not), PATH and how a command is found (which, type), shell startup files (~/.zshrc, ~/.bashrc, ~/.profile). Package managers: apt (update, install, search), dnf, apk in Alpine images, brew on Mac. SSH: what it is, key pairs (ssh-keygen -t ed25519), ~/.ssh/authorized_keys, ~/.ssh/config hosts, ssh-agent, known_hosts, scp and rsync. Bash scripting from zero: shebang, chmod +x, variables and quoting (single vs double quotes, \"$var\"), arguments $1 $@ $#, exit codes and $?, if with [[ ]] and test, for and while loops, functions, reading a file line by line, set -euo pipefail and what each part prevents, trap for cleanup, shellcheck. Worked example: a health-check script that curls hello-devops and exits non-zero on failure, ready for CI."}
- ]},
- {"part": 2, "slug": "networking", "title": "Networking and the cloud", "tool": "Networking", "lessons": [
-  {"id": "d08", "title": "How computers find each other: IP, ports and DNS", "from": ["d04"], "scope": "IP addresses (IPv4, IPv6 in one paragraph), public vs private ranges, NAT and your home router, CIDR notation and subnet math with small examples (/24, /16, /32), the loopback address, what binding to 0.0.0.0 vs 127.0.0.1 means and why containers must bind 0.0.0.0. Ports and sockets, well-known ports, TCP vs UDP (handshake, reliability), what 'connection refused' vs 'timeout' tells you. DNS: names to addresses, the resolution chain (stub resolver, recursive resolver, root, TLD, authoritative), record types A, AAAA, CNAME, MX, TXT, NS, TTL and caching, /etc/hosts. Tools with real output: ping, dig (+short, +trace), nslookup, traceroute, ip addr / ifconfig, ss -tlnp / lsof -i, nc -zv. Worked example: debug why a service name does not resolve."},
-  {"id": "d09", "title": "HTTP, TLS, proxies and load balancers", "from": ["d04"], "scope": "HTTP from the wire up: request line, headers, body; methods and idempotency; status code families and the common ones (200, 201, 301/302, 304, 400, 401 vs 403, 404, 429, 500, 502, 503, 504) and what each tells an operator; headers that matter (Host, Content-Type, Authorization, Cache-Control, X-Forwarded-For); HTTP/1.1 vs HTTP/2 vs HTTP/3 in one paragraph. curl in depth (-v, -i, -I, -L, -X, -H, -d, -o, -w timing, --resolve). HTTPS and TLS: what it protects, the handshake in plain steps, certificates, certificate authorities and chains, expiry, Let's Encrypt and ACME, inspecting a certificate with openssl s_client and curl -v. Reverse proxies (nginx, Envoy) vs forward proxies, load balancers at layer 4 vs layer 7, health checks, sticky sessions, TLS termination, CDNs and caching, firewalls and rate limiting. Hands-on: nginx as a reverse proxy in front of two hello-devops containers with Docker."},
-  {"id": "d10", "title": "The cloud: regions, core services, IAM and cost", "from": ["d04"], "scope": "What the cloud is (renting computers, storage and services by the second). Regions and availability zones and why you spread across AZs. IaaS, PaaS, SaaS, serverless with examples. The core service map across AWS, Azure and Google Cloud (compute, containers, managed Kubernetes, object storage, databases, DNS, load balancers, IAM, monitoring). Networking in the cloud: VPC, subnets (public vs private), route tables, internet and NAT gateways, security groups (stateful) vs network ACLs (stateless). IAM: users, groups, roles, policies, the principle of least privilege, why roles beat long-lived keys. Shared responsibility. Pricing: on-demand vs reserved vs spot, data transfer costs, the free tiers in 2026 (from research), budgets and alerts, tagging, and the cleanup habit. No cloud account needed; the optional AWS steps come on Day 29."}
- ]},
- {"part": 3, "slug": "docker", "title": "Docker", "tool": "Docker", "lessons": [
-  {"id": "d11", "title": "Containers: your first docker run", "from": ["d05"], "scope": "Keep and deepen first-edition Day 5: the works-on-my-machine problem, VM vs container (namespaces and cgroups explained with intuition), image vs container, Docker Engine, CLI and Desktop's Linux VM, docker run flags (-d, -p, --name, -e, --rm, -it), ps, logs, exec, stop, start, rm, the container lifecycle and states, port mapping, arm64 vs amd64."},
-  {"id": "d12", "title": "Images, layers and registries", "from": ["d06", "d08"], "scope": "What an image really is: a stack of read-only layers plus a config and a manifest; the union filesystem and the thin writable container layer (copy-on-write); content-addressed layers and why identical layers are shared; docker history, docker image inspect, and the dive tool. Registries: Docker Hub, GHCR, cloud registries; repository, tag, digest; why tags move and digests do not; pull by digest; multi-platform images and manifest lists (docker buildx imagetools inspect); official images and Docker Hardened Images (from research); docker login/tag/push basics; image size and why it matters."},
-  {"id": "d13", "title": "Dockerfiles: package your own app", "from": ["d06"], "scope": "Keep and deepen first-edition Day 6: every common instruction, build context and .dockerignore, the build cache and instruction order, CMD vs ENTRYPOINT (exec vs shell form and PID 1 signals), ARG vs ENV, tags and versions, docker init, twelve-factor config. Build and run hello-devops single-stage."},
-  {"id": "d14", "title": "Volumes and networks", "from": ["d07"], "scope": "Containers are disposable: where data lives. Volumes vs bind mounts vs tmpfs, named vs anonymous volumes, inspecting and backing up a volume, file ownership problems with bind mounts. Container networking: the default bridge vs user-defined bridge networks, built-in DNS by container name, host and none modes, publishing vs exposing ports, connecting a container to two networks, docker network inspect. Hands-on: Redis with a volume and hello-devops on a user-defined network without Compose."},
-  {"id": "d15", "title": "Docker Compose", "from": ["d07"], "scope": "Compose as a declarative description of a multi-container app. compose.yaml anatomy: services, build vs image, ports, environment and env_file, volumes, networks, depends_on with healthcheck conditions, restart policies, profiles. Commands: up -d, ps, logs -f, exec, run, down, down -v, config, watch for local development. Variable interpolation and .env. Override files for local vs CI. The lab's compose.yaml as the target, plus an nginx in front from Day 9."},
-  {"id": "d16", "title": "Production-ready images", "from": ["d08"], "scope": "Keep and deepen first-edition Day 8: multi-stage builds, base image trade-offs, non-root USER, HEALTHCHECK, pinning base images by digest, scanning (docker scout, trivy), secrets at build time (BuildKit --secret), multi-arch builds with buildx, pushing to GHCR, the lab's final Dockerfile (including --no-control-socket and the pip removal)."}
- ]},
- {"part": 4, "slug": "github-actions", "title": "CI/CD with GitHub Actions", "tool": "GitHub Actions", "lessons": [
-  {"id": "d17", "title": "Git, pull requests and CI/CD ideas", "from": ["d09"], "scope": "Keep and deepen first-edition Day 9: git for teams (branches, commits, merge vs rebase in brief, pull requests, review, conflicts), trunk-based vs GitFlow, CI, continuous delivery vs deployment, pipeline stages, build once deploy many, deployment strategies, semantic versioning and tags."},
-  {"id": "d18", "title": "GitHub Actions: your first workflow", "from": ["d10"], "scope": "Keep and deepen first-edition Day 10: workflow anatomy, events and filters, jobs, steps, runners (GitHub-hosted including arm64, self-hosted), uses vs run, the Actions tab and logs, debug logging, env, billing and limits from research."},
-  {"id": "d19", "title": "A real CI pipeline: test, lint, cache, matrix", "from": ["d11"], "scope": "Keep and deepen first-edition Day 11: the lab's ci.yml step by step, setup-python caching and how cache keys work, matrix, needs, artifacts (v4+ behaviour), test reports, rulesets with required checks, concurrency, paths filters, timeouts, act for local runs."},
-  {"id": "d20", "title": "Workflow logic: expressions, outputs and reusable workflows", "from": ["d12"], "scope": "Contexts (github, env, vars, secrets, matrix, needs, steps, runner) and expressions; if conditions and status functions (success, failure, always, cancelled); step outputs via GITHUB_OUTPUT and job outputs; passing data between jobs; GITHUB_ENV and GITHUB_STEP_SUMMARY; workflow_dispatch inputs; reusable workflows (workflow_call, inputs, secrets: inherit, limits) vs composite actions; when to use each; environments as a concept preview."},
-  {"id": "d21", "title": "Ship it: build and push images safely", "from": ["d12"], "scope": "Keep and deepen first-edition Day 12: secrets and variables, GITHUB_TOKEN permissions and least privilege, the lab's release.yml (GHCR push on tags, multi-arch, digest in summary), environments with required reviewers, OIDC to the cloud, pinning actions to SHAs, Dependabot for actions, pull_request_target risks."}
- ]},
- {"part": 5, "slug": "gradle", "title": "Builds with Gradle", "tool": "Gradle", "lessons": [
-  {"id": "d22", "title": "What a build tool does, and how Gradle thinks", "from": [], "scope": "Why build tools exist (compile, test, package, dependencies, repeatability). Gradle's model: projects, tasks, plugins, the task graph with inputs and outputs, the three phases (initialization, configuration, execution), settings.gradle.kts vs build.gradle.kts, the Kotlin DSL, the Gradle Wrapper (gradlew, gradle-wrapper.properties, why you never use a global gradle), running tasks (build, test, run, clean, tasks, help --task), up-to-date checks, reading build output, Gradle vs Maven in brief. Hands-on with the new labs/hello-jvm Kotlin project."},
-  {"id": "d23", "title": "Dependencies and multi-project builds", "from": [], "scope": "Repositories (mavenCentral, gradlePluginPortal), coordinates (group:artifact:version), dependency configurations (implementation, api, compileOnly, runtimeOnly, testImplementation) and why implementation is the default, transitive dependencies, conflict resolution (highest version wins) and how to see it (dependencies, dependencyInsight), version catalogs (gradle/libs.versions.toml), platforms and BOMs, multi-project builds (settings include, project dependencies), convention plugins in build-logic (included build) to share configuration, publishing in one paragraph. Hands-on: split hello-jvm into app and lib modules with a catalog."},
-  {"id": "d24", "title": "Fast builds, CI and containers for JVM apps", "from": [], "scope": "Incremental builds and task inputs/outputs, the build cache (local and remote), the configuration cache, the daemon, parallel execution, Java toolchains, Build Scans and Develocity, dependency verification and locking. Gradle in GitHub Actions with gradle/actions/setup-gradle (caching, wrapper validation, build scan publishing). Containerizing a JVM app: a multi-stage Dockerfile that builds with Gradle and runs on a JRE image, layer order for dependency caching, Jib as a Dockerfile-free alternative, JVM memory flags in containers (MaxRAMPercentage). Writes the lab's hello-jvm Dockerfile and .github/workflows/jvm-ci.yml."}
- ]},
- {"part": 6, "slug": "terraform", "title": "Infrastructure as Code with Terraform", "tool": "Terraform", "lessons": [
-  {"id": "d25", "title": "Infrastructure as Code and your first Terraform", "from": ["d13"], "scope": "Keep and deepen first-edition Day 13: why IaC, declarative vs imperative, Terraform vs OpenTofu and other tools, providers and resources, init/plan/apply/destroy, reading a plan, the nginx example with the docker provider, the lock file."},
-  {"id": "d26", "title": "The Terraform language: variables, types and loops", "from": ["d14"], "scope": "HCL in depth: blocks, arguments, expressions, references; types (string, number, bool, list, set, map, object, tuple); input variables with types, defaults, validation and sensitive; tfvars files and precedence; locals; outputs; string templates and heredocs; conditionals; for expressions; count vs for_each and the index-shifting trap; dynamic blocks; built-in functions; terraform console to experiment. Hands-on: run three nginx containers from a map with for_each using the docker provider."},
-  {"id": "d27", "title": "State: Terraform's memory", "from": ["d14"], "scope": "What state holds and why; terraform state list/show/mv/rm; moved blocks for refactoring; import blocks; drift and plan -refresh-only (and what apply -refresh-only really does); sensitive values in state; remote backends and locking (S3 with use_lockfile; HCP Terraform status from research); ephemeral values and write-only arguments if current; never commit state. Hands-on: the lab's infra/local, then rename a resource with a moved block and import a container created by hand."},
-  {"id": "d28", "title": "Modules and environments", "from": ["d14"], "scope": "Modules: root vs child, inputs and outputs, local modules vs registry modules, version pinning, composition and small focused modules; environments: workspaces vs separate directories vs tfvars per environment, and which teams prefer; terraform test basics; formatting, validation and tflint. Hands-on: turn infra/local into a reusable module used twice (dev and test stacks on different ports)."},
-  {"id": "d29", "title": "Terraform on a real cloud, and in CI", "from": ["d15"], "scope": "Keep and deepen first-edition Day 15: AWS account safety, provider auth, the lab's infra/aws (private versioned S3 bucket, OIDC role), S3 backend, destroy, costs, terraform.yml (plan on PR, apply on main behind an environment), scanners (tflint, trivy config, checkov)."}
- ]},
- {"part": 7, "slug": "kubernetes", "title": "Kubernetes", "tool": "Kubernetes", "lessons": [
-  {"id": "d30", "title": "Why Kubernetes, and how a cluster works", "from": ["d16"], "scope": "Keep and deepen first-edition Day 16: the problems at scale, desired state and control loops, the control plane (API server, etcd, scheduler, controller manager) and nodes (kubelet, kube-proxy, containerd), what happens step by step when you run kubectl apply, managed Kubernetes, when not to use Kubernetes, creating the kind cluster from the lab's kind-config.yaml."},
-  {"id": "d31", "title": "Pods, kubectl and YAML", "from": ["d16"], "scope": "Manifest anatomy (apiVersion, kind, metadata, spec, status), kubectl explain, -o yaml and --dry-run=client to generate YAML. Pods: phases and container states, restart policies, multi-container pods, init containers and sidecars (GA), why you rarely create bare Pods. Labels vs annotations, selectors, namespaces, kubeconfig and contexts. kubectl essentials: get (-o wide, -w, -l, -A), describe, logs (-f, -c, --previous), exec -it, port-forward, apply vs create, delete. kind load docker-image."},
-  {"id": "d32", "title": "Deployments and rollouts", "from": ["d17"], "scope": "Keep and deepen the Deployment half of first-edition Day 17: ReplicaSets, Deployments, self-healing, scaling, rolling updates with maxSurge/maxUnavailable, rollout status/history/undo, set image vs editing YAML, revision history, recreate strategy, how readiness gates a rollout (preview of Day 35)."},
-  {"id": "d33", "title": "Services and cluster networking", "from": ["d17"], "scope": "Keep and deepen the Service half of first-edition Day 17 and add networking: the pod network (every Pod gets an IP, CNI plugins), Services as stable names and IPs, ClusterIP, NodePort, LoadBalancer, headless, EndpointSlices, kube-proxy, CoreDNS and service DNS names, port vs targetPort vs nodePort, NetworkPolicies (default allow, a simple deny-all plus allow), and the lab's NodePort 30080 mapping to localhost:8081."},
-  {"id": "d34", "title": "ConfigMaps and Secrets", "from": ["d18"], "scope": "Keep and deepen the config half of first-edition Day 18: ConfigMaps as env, envFrom and mounted files, what happens on change (env needs a restart, files update), Secrets and why base64 is not encryption, types of Secrets, encryption at rest, external secret managers (External Secrets Operator, Sealed Secrets, SOPS) in brief, immutable ConfigMaps, rolling a Deployment after config changes."},
-  {"id": "d35", "title": "Health checks, resources and scaling", "from": ["d18"], "scope": "Keep and deepen the health and scaling half of first-edition Day 18 and add scheduling: liveness, readiness and startup probes with the app's /healthz and /readyz, requests vs limits, QoS classes, OOMKilled and CPU throttling, LimitRanges and ResourceQuotas briefly, HPA with metrics-server on kind, VPA and in-place resize in brief, scheduling basics (nodeSelector, affinity, taints and tolerations), PodDisruptionBudgets."},
-  {"id": "d36", "title": "Traffic and storage: Gateway API, Ingress and volumes", "from": ["d19"], "scope": "Keep and deepen the traffic and storage half of first-edition Day 19: Ingress vs Gateway API (ingress-nginx retirement), Envoy Gateway on kind with the lab's k8s/gateway files, HTTPRoute matching and traffic splitting, TLS at the gateway; storage: volumes, PersistentVolumes, PersistentVolumeClaims, StorageClasses and dynamic provisioning, access modes, StatefulSets for databases and why managed databases are often better."},
-  {"id": "d37", "title": "Packaging with Helm and Kustomize", "from": ["d19"], "scope": "Keep and deepen the Helm half of first-edition Day 19: why package manifests, Helm charts, values, templates and helpers, releases and revisions, install/upgrade/rollback/uninstall/template/lint, OCI registries for charts, Helm 4 changes from research, the lab's chart/hello-devops; Kustomize bases and overlays for dev and prod, patches and images transformers, Helm vs Kustomize and using both."},
-  {"id": "d38", "title": "Troubleshooting Kubernetes", "from": [], "scope": "A systematic debugging flow (is it the Pod, the Service, the network, the config, or the node?). Common failure states and their usual causes: Pending, ContainerCreating, ImagePullBackOff/ErrImagePull, CrashLoopBackOff, OOMKilled, CreateContainerConfigError, Running but not Ready, Service with no endpoints. Tools: kubectl describe and events (--sort-by), logs --previous, exec, port-forward, kubectl debug with ephemeral containers, a netshoot or busybox pod for DNS and network checks, kubectl top, k9s. RBAC basics (Role, RoleBinding, ServiceAccount, kubectl auth can-i) because 'forbidden' errors are common. Hands-on: a break-and-fix lab with five deliberately broken manifests in labs/hello-devops/k8s-broken/."}
- ]},
- {"part": 8, "slug": "gitops", "title": "GitOps with Argo CD", "tool": "Argo CD", "lessons": [
-  {"id": "d39", "title": "GitOps with Argo CD", "from": ["d20"], "scope": "Keep and deepen first-edition Day 20: OpenGitOps principles, push vs pull deploys, Argo CD architecture, install on kind, the UI and CLI, the lab's argocd/application.yaml, sync, automated sync, self-heal, prune, health status, drift demo, rollback with git revert."},
-  {"id": "d40", "title": "GitOps in practice: environments, promotion and image updates", "from": ["d20"], "scope": "Repo structure (app repo vs config repo, monorepo), environments with Kustomize overlays, promotion between environments by pull request, how CI updates the image tag in git (kustomize edit set image in a workflow, or Argo CD Image Updater), ApplicationSets and app-of-apps, sync waves and hooks, secrets in GitOps (Sealed Secrets, External Secrets, SOPS), Argo CD RBAC and projects in brief, Flux compared with Argo CD."}
- ]},
- {"part": 9, "slug": "prometheus", "title": "Monitoring with Prometheus", "tool": "Prometheus", "lessons": [
-  {"id": "d41", "title": "Observability foundations: signals, SLOs and alerts", "from": ["d21"], "scope": "Monitoring vs observability, the signals (metrics, logs, traces, profiles) and what each is good for, golden signals, RED and USE methods, SLIs, SLOs and error budgets with a worked calculation, alerting on symptoms not causes, alert fatigue, on-call and blameless postmortems. The map for Parts 9 to 12 (Prometheus, Grafana, EFK, OpenTelemetry, Dynatrace)."},
-  {"id": "d42", "title": "Prometheus: architecture and the data model", "from": ["d21"], "scope": "Pull vs push, the Prometheus server, targets and scrape configs, service discovery, exporters (node_exporter, blackbox_exporter), the TSDB and retention, the exposition format (read the app's /metrics), metric names and labels, a time series as name plus label set, the four metric types (counter, gauge, histogram, summary) and when to use each, cardinality and why user IDs never go in labels, Prometheus 3 changes from research. Hands-on: the lab's observability/compose.yaml running Prometheus, node_exporter and hello-devops; explore the targets page."},
-  {"id": "d43", "title": "PromQL from zero", "from": [], "scope": "Instant vs range vectors, selectors and label matchers (=, !=, =~, !~), rate vs irate vs increase and choosing the range, aggregation (sum, avg, max, count, topk) with by and without, arithmetic and comparison operators, vector matching basics (on, ignoring), histogram_quantile with rate and le, offset, absent and up, recording rules for expensive queries. Build the RED queries for hello-devops step by step with expected results in the Prometheus UI."},
-  {"id": "d44", "title": "Alerting and Prometheus on Kubernetes", "from": ["d21"], "scope": "Alerting rules (expr, for, labels, annotations), Alertmanager (routing tree, grouping, inhibition, silences, receivers such as a webhook or Slack), testing rules with promtool, good alerts vs noisy ones. On Kubernetes: kube-prometheus-stack, the Prometheus Operator, ServiceMonitor and PodMonitor, PrometheusRule, the lab's observability/servicemonitor.yaml, kube-state-metrics vs metrics-server. Instrumenting an app with a client library (the app's hello_requests_total, adding a histogram for latency). Long-term storage and scale in brief (remote write, Thanos, Mimir)."}
- ]},
- {"part": 10, "slug": "grafana", "title": "Dashboards with Grafana", "tool": "Grafana", "lessons": [
-  {"id": "d45", "title": "Grafana dashboards", "from": [], "scope": "What Grafana is (a front end for many data sources). Data sources, panels and visualizations (time series, stat, gauge, bar, table, heatmap), the query editor with PromQL, units and thresholds, transformations, variables and templating (a $service dropdown), annotations, rows and layout, dashboard design for operators (RED dashboard at the top, details below), dashboard JSON and provisioning as code (datasources and dashboards folders). Hands-on: provision a hello-devops RED dashboard into the lab's Compose stack."},
-  {"id": "d46", "title": "Grafana beyond dashboards: alerting, Loki and the LGTM stack", "from": [], "scope": "Grafana alerting (alert rules, contact points, notification policies) and when to use it vs Alertmanager; Loki and LogQL basics (labels vs content, line filters, parsers, metrics from logs); Tempo for traces and trace-to-logs links; Pyroscope in one paragraph; Grafana Alloy as the collector; the LGTM stack; Grafana Cloud free tier from research; dashboards as code (Terraform provider, the newer as-code tooling); what changed in Grafana 12 and 13. Hands-on: add Loki to the Compose stack and query hello-devops logs."}
- ]},
- {"part": 11, "slug": "logs-traces", "title": "Logs and traces: ELK, EFK and OpenTelemetry", "tool": "Logs and traces", "lessons": [
-  {"id": "d47", "title": "Centralized logging and the Elastic stack", "from": [], "scope": "Why centralize logs, structured JSON logs and log levels, what not to log (secrets, personal data). The Elastic stack: Elasticsearch concepts (documents, indices, mappings, the inverted index, shards, replicas, nodes and clusters), ingest options (Logstash, Beats, Elastic Agent, Fluent Bit or Fluentd) and the ELK vs EFK naming, Kibana Discover, KQL and ES|QL basics, OpenSearch as the fork and the licence history. Hands-on: the lab's logging/compose.yaml with Elasticsearch, Kibana and Fluent Bit collecting hello-devops container logs; search them in Kibana."},
-  {"id": "d48", "title": "Running EFK on Kubernetes", "from": [], "scope": "Fluent Bit as a DaemonSet reading /var/log/containers, the Kubernetes filter for pod metadata, parsers and multiline logs, outputs to Elasticsearch; index templates, data streams and index lifecycle management for retention; Kibana dashboards and alerting; the cost of logs (volume, retention, sampling); Loki vs Elasticsearch trade-offs and when to choose each. Hands-on: install Fluent Bit with Helm on kind using the lab's logging/fluent-bit-values.yaml, pointing at a single-node Elasticsearch."},
-  {"id": "d49", "title": "Distributed tracing with OpenTelemetry", "from": ["d21"], "scope": "Why traces (one request across many services), spans, trace IDs, parent/child, attributes and events, context propagation with W3C traceparent, sampling (head vs tail), OpenTelemetry (API, SDK, auto-instrumentation, the Collector with receivers, processors and exporters, OTLP), Jaeger and Tempo as backends, linking traces to logs and metrics. Hands-on: run hello-devops with opentelemetry-instrument (no code changes) and the lab's tracing/compose.yaml with an OpenTelemetry Collector and Jaeger; find the slow span."}
- ]},
- {"part": 12, "slug": "dynatrace", "title": "Dynatrace", "tool": "Dynatrace", "lessons": [
-  {"id": "d50", "title": "Dynatrace: one platform for every signal", "from": [], "scope": "What problem an all-in-one commercial platform solves and what it costs you (money, lock-in). OneAgent and automatic instrumentation, ActiveGate, entities and the Smartscape topology, PurePath distributed traces, services/processes/hosts views, Davis AI and problems with root cause, dashboards and Notebooks, the current platform naming from research. Dynatrace vs the open-source stack from Parts 9 to 11 and vs other vendors (Datadog, New Relic, Elastic). How to get a free trial."},
-  {"id": "d51", "title": "Dynatrace in practice: Kubernetes, Grail and DQL", "from": [], "scope": "The Dynatrace Operator and DynaKube (deployment modes from research) with the lab's dynatrace/dynakube.yaml for a kind cluster, what you see after install, Grail and DQL from zero (fetch, filter, fields, summarize, sort, timeseries, makeTimeseries) with examples on logs, spans and metrics, SLOs in Dynatrace, workflows and automation, OpenTelemetry ingest into Dynatrace, release validation in CI/CD, cost awareness and the trial's limits, Dynatrace University and certification."}
- ]},
- {"part": 13, "slug": "devsecops", "title": "DevSecOps", "tool": "DevSecOps", "lessons": [
-  {"id": "d52", "title": "The software supply chain", "from": ["d22"], "scope": "Keep and deepen first-edition Day 22: shift left, real incidents with sources, SBOMs, vulnerability scanning, signing with cosign keyless, SLSA and provenance, GitHub artifact attestations, the lab's hardened release.yml."},
-  {"id": "d53", "title": "Secrets, access and policy as code", "from": ["d22"], "scope": "Secrets management (Vault/OpenBao, cloud secret managers, External Secrets Operator, Sealed Secrets, SOPS) and where each fits; secret scanning (gitleaks, GitHub push protection); Kubernetes RBAC and service accounts with least privilege; Pod Security Standards; policy as code with Kyverno (the lab's policy/ files) and OPA Gatekeeper; admission control explained; a security checklist for hello-devops."}
- ]},
- {"part": 14, "slug": "next", "title": "Platform engineering, AI and your capstone", "tool": "Capstone", "lessons": [
-  {"id": "d54", "title": "Platform engineering, FinOps and AI in DevOps", "from": ["d23"], "scope": "Keep and deepen the first half of first-edition Day 23: platform engineering and internal developer platforms, golden paths, Backstage, the CNCF maturity model, developer experience, FinOps, AI in DevOps with guardrails (the lab's policy/ai-agent-readonly.yaml), other trends (eBPF, OpenTofu, WebAssembly, serverless containers)."},
-  {"id": "d55", "title": "Your capstone, and what to learn next", "from": ["d23"], "scope": "Keep and deepen the capstone half of first-edition Day 23: an end-to-end capstone that touches every part (hello-devops and hello-jvm built by Gradle and Actions, scanned and signed, deployed by Argo CD to kind, monitored with Prometheus and Grafana, logs in EFK, traces in Jaeger, optionally Dynatrace), as a checklist with acceptance criteria; how to present it; certifications with current formats from research; a 3-month learning path after the course."}
- ]}
+ {
+  "part": 0,
+  "slug": "start",
+  "title": "Start here",
+  "tool": "Start",
+  "lessons": [
+   {
+    "id": "d01",
+    "title": "The DevOps map",
+    "from": [
+     "d01"
+    ],
+    "scope": "Keep and deepen the first-edition Day 1. What DevOps is (culture, practices, tools; dev and ops sharing ownership). The path of one code change from laptop to users. Where every part of this course sits on that path: Linux and networking underneath, Docker packages, GitHub Actions automates, Gradle builds JVM apps, Terraform creates infrastructure, Kubernetes runs, Argo CD deploys from git, Prometheus/Grafana/EFK/OpenTelemetry/Dynatrace observe, DevSecOps protects. DORA metrics. Roles (DevOps engineer, SRE, platform engineer). How the course works. No installs."
+   },
+   {
+    "id": "d02",
+    "title": "Set up your laptop",
+    "from": [
+     "d02"
+    ],
+    "scope": "Keep the first-edition Day 2 (tested starter files, Homebrew, git, gh, VS Code, Docker Desktop with the default socket setting, kubectl, kind, helm, terraform via the HashiCorp tap) and add: jq, tree, watch, htop; a JDK 21 for the Gradle part (brew install openjdk@21 or SDKMAN, verify with java -version); an ubuntu container as a Linux practice box (docker run -it --rm ubuntu:24.04 bash) used in Part 1. Same hello-devops repo creation."
+   }
+  ]
+ },
+ {
+  "part": 1,
+  "slug": "linux",
+  "title": "The Linux command line",
+  "tool": "Linux",
+  "lessons": [
+   {
+    "id": "d03",
+    "title": "The shell and the file system",
+    "from": [
+     "d03"
+    ],
+    "scope": "Start from zero: terminal vs shell vs command; zsh on Mac vs bash on Linux; how to practise real Linux in the ubuntu container. Command anatomy (command, options, arguments; short vs long flags). Getting help: man (how to read a man page: synopsis, options, searching with /), --help, tldr. The prompt. The file system tree (/, /home, /etc, /var/log, /tmp, /usr/bin), absolute vs relative paths, ~, ., .., pwd, ls (-l, -a, -h, -t), cd and cd -, tab completion, history and Ctrl+R. Creating and moving things: mkdir -p, touch, cp -r, mv, rm and rm -r (and why rm has no undo), rmdir. Wildcards (globbing: *, ?, [abc]) and how the shell expands them before the command runs. Hidden files. tree. Practise inside labs/linux sample files."
+   },
+   {
+    "id": "d04",
+    "title": "Reading and searching text: cat, less, grep and find",
+    "from": [],
+    "scope": "Viewing files: cat, less (navigation keys, /search, n, q), head and tail (-n), tail -f to follow a growing log. grep from zero, step by step with small examples on labs/linux/app.log: a literal search, -i, -n, -v, -c, -w, -l and -r across a folder, -A/-B/-C for context, -o. Then regular expressions as a tiny pattern language: literal characters, ., *, +, ?, ^ and $, [...] classes, \\d is not portable, -E for extended regex, alternation with |, quoting patterns so the shell does not touch them. Globs vs regex (different languages). find: -name, -iname, -type f/d, -size, -mtime, -maxdepth, -exec and -delete with care. A worked example: find every ERROR for one request ID across several log files. Mac (BSD) vs Linux (GNU) differences that matter here."
+   },
+   {
+    "id": "d05",
+    "title": "Pipes, redirection and text tools",
+    "from": [],
+    "scope": "The three standard streams (stdin, stdout, stderr) and file descriptors 0, 1, 2. Redirection: >, >>, <, 2>, 2>&1, &> and /dev/null, with the classic mistake of > erasing a file. Pipes: building a pipeline one step at a time. The text tools: sort (-n, -r, -k, -t), uniq (and why it needs sorted input; -c), wc -l, cut (-d, -f), tr, head as a limiter, tee. awk for columns ('{print $1}', -F, a simple condition, summing a column). sed for substitution (s/old/new/g; -i differences on Mac vs Linux). xargs to turn lines into arguments. jq for JSON (., .field, .[], select, -r). Worked example: the top 5 client IPs and the top error paths from labs/linux/access.log. Command substitution $(...)."
+   },
+   {
+    "id": "d06",
+    "title": "Users, permissions, processes and services",
+    "from": [
+     "d03"
+    ],
+    "scope": "Users and groups, whoami, id, root and sudo (and why not to run everything with sudo). Reading ls -l column by column. Permissions rwx for user/group/others, on files vs directories, octal (755, 644, 600), chmod (symbolic and octal), chown, umask briefly, the execute bit and ./script.sh, why containers should not run as root. Processes: what a process and a PID are, ps aux, pgrep, top/htop, parent and child processes, foreground/background (&, jobs, fg, Ctrl+Z), nohup. Signals: SIGTERM vs SIGKILL vs SIGINT vs SIGHUP, kill and kill -9 and why docker stop and Kubernetes send SIGTERM first. Services with systemd: units, systemctl status/start/stop/restart/enable, journalctl -u -f --since. Resources: df -h, du -sh, free -h, uptime and load average, lsof and ss to see what listens on a port. Practise in the ubuntu container (note: systemd does not run in a plain container; show systemctl on a real VM or explain with output)."
+   },
+   {
+    "id": "d07",
+    "title": "Environment, packages, SSH and shell scripts",
+    "from": [
+     "d03"
+    ],
+    "scope": "Environment variables: env, printenv, echo $VAR, export, scope (a child process inherits, a parent does not), PATH and how a command is found (which, type), shell startup files (~/.zshrc, ~/.bashrc, ~/.profile). Package managers: apt (update, install, search), dnf, apk in Alpine images, brew on Mac. SSH: what it is, key pairs (ssh-keygen -t ed25519), ~/.ssh/authorized_keys, ~/.ssh/config hosts, ssh-agent, known_hosts, scp and rsync. Bash scripting from zero: shebang, chmod +x, variables and quoting (single vs double quotes, \"$var\"), arguments $1 $@ $#, exit codes and $?, if with [[ ]] and test, for and while loops, functions, reading a file line by line, set -euo pipefail and what each part prevents, trap for cleanup, shellcheck. Worked example: a health-check script that curls hello-devops and exits non-zero on failure, ready for CI."
+   }
+  ]
+ },
+ {
+  "part": 2,
+  "slug": "git",
+  "title": "Version control with Git",
+  "tool": "Git",
+  "lessons": [
+   {
+    "id": "d08",
+    "title": "How Git works: snapshots, commits and undo",
+    "from": [],
+    "scope": "Git's model from the inside, for someone who has only used add/commit/push: repository, working tree, staging area (the index), commits as full snapshots (not diffs), SHA hashes, the object store (blob, tree, commit) shown with `git cat-file -p`, HEAD and branches as movable pointers. Setup: git config (user.name, user.email, init.defaultBranch main, core.editor, a few aliases). The everyday loop with real output: status, add (and add -p for hunks), commit, log (--oneline --graph --all), diff (working tree vs staged vs a commit), show, blame. .gitignore patterns and `git check-ignore -v`. Writing a good commit message. The undo toolbox and when each is safe: restore (and --staged), commit --amend, revert (safe on shared history), reset --soft/--mixed/--hard (local only), stash (push, list, pop), reflog to recover 'lost' commits, clean -n then -f. Worked example: recover a commit after a bad reset --hard with reflog. Hands-on uses a throwaway practice repo made by a script in labs/git/."
+   },
+   {
+    "id": "d09",
+    "title": "Branches, merging, rebasing and remotes",
+    "from": [],
+    "scope": "Branches as pointers; switch and switch -c. Fast-forward vs three-way merge, with diagrams; merge commits. Merge conflicts: what the markers mean, resolving, `git merge --abort`, and rerere in one line. Rebase: replaying commits, rewritten SHAs, the rule never to rebase commits others already have. Interactive rebase (squash, fixup, reword, drop) to clean a branch before a pull request. cherry-pick. Tags (lightweight vs annotated). Remotes: origin, clone, fetch vs pull (pull is fetch plus merge or rebase; pull.rebase), push, upstream tracking, --force-with-lease vs --force, forks vs branches. Authenticating to GitHub with SSH keys (link back to Day 7) or `gh auth login`. Signing commits with an SSH key and the Verified badge in a short section. git bisect in Go deeper. Worked example: a real conflict between two branches, resolved step by step. Hands-on: a scripted scenario with two 'teammate' clones and a local bare repo as the remote, a conflict, a rebase and a safe force push. Day 23 then covers pull requests and code review on GitHub."
+   }
+  ]
+ },
+ {
+  "part": 3,
+  "slug": "networking",
+  "title": "Networking and the cloud",
+  "tool": "Networking",
+  "lessons": [
+   {
+    "id": "d10",
+    "title": "How computers find each other: IP, ports and DNS",
+    "from": [
+     "d04"
+    ],
+    "scope": "IP addresses (IPv4, IPv6 in one paragraph), public vs private ranges, NAT and your home router, CIDR notation and subnet math with small examples (/24, /16, /32), the loopback address, what binding to 0.0.0.0 vs 127.0.0.1 means and why containers must bind 0.0.0.0. Ports and sockets, well-known ports, TCP vs UDP (handshake, reliability), what 'connection refused' vs 'timeout' tells you. DNS: names to addresses, the resolution chain (stub resolver, recursive resolver, root, TLD, authoritative), record types A, AAAA, CNAME, MX, TXT, NS, TTL and caching, /etc/hosts. Tools with real output: ping, dig (+short, +trace), nslookup, traceroute, ip addr / ifconfig, ss -tlnp / lsof -i, nc -zv. Worked example: debug why a service name does not resolve."
+   },
+   {
+    "id": "d11",
+    "title": "HTTP, TLS, proxies and load balancers",
+    "from": [
+     "d04"
+    ],
+    "scope": "HTTP from the wire up: request line, headers, body; methods and idempotency; status code families and the common ones (200, 201, 301/302, 304, 400, 401 vs 403, 404, 429, 500, 502, 503, 504) and what each tells an operator; headers that matter (Host, Content-Type, Authorization, Cache-Control, X-Forwarded-For); HTTP/1.1 vs HTTP/2 vs HTTP/3 in one paragraph. curl in depth (-v, -i, -I, -L, -X, -H, -d, -o, -w timing, --resolve). HTTPS and TLS: what it protects, the handshake in plain steps, certificates, certificate authorities and chains, expiry, Let's Encrypt and ACME, inspecting a certificate with openssl s_client and curl -v. Reverse proxies (nginx, Envoy) vs forward proxies, load balancers at layer 4 vs layer 7, health checks, sticky sessions, TLS termination, CDNs and caching, firewalls and rate limiting. Hands-on: nginx as a reverse proxy in front of two hello-devops containers with Docker."
+   },
+   {
+    "id": "d12",
+    "title": "The cloud: regions, core services, IAM and cost",
+    "from": [
+     "d04"
+    ],
+    "scope": "What the cloud is (renting computers, storage and services by the second). Regions and availability zones and why you spread across AZs. IaaS, PaaS, SaaS, serverless with examples. The core service map across AWS, Azure and Google Cloud (compute, containers, managed Kubernetes, object storage, databases, DNS, load balancers, IAM, monitoring). Networking in the cloud: VPC, subnets (public vs private), route tables, internet and NAT gateways, security groups (stateful) vs network ACLs (stateless). IAM: users, groups, roles, policies, the principle of least privilege, why roles beat long-lived keys. Shared responsibility. Pricing: on-demand vs reserved vs spot, data transfer costs, the free tiers in 2026 (from research), budgets and alerts, tagging, and the cleanup habit. No cloud account needed; the optional AWS steps come on Day 35."
+   },
+   {
+    "id": "d13",
+    "title": "Hands-on AWS 1: your account, IAM and the AWS CLI",
+    "from": [],
+    "scope": "Opening an AWS account safely today (check the current free plan and credits rules), locking down the root user (MFA, no access keys), a budget and billing alerts before anything else (a zero-spend budget). People vs workloads: IAM Identity Center for humans with short-lived credentials (aws configure sso, profiles), IAM roles for workloads; why long-lived access keys are a last resort. `aws sts get-caller-identity`. IAM policy anatomy (Effect, Action, Resource, Condition), ARNs, roles and trust policies, least privilege, IAM Access Analyzer and the policy simulator in a sentence each. CLI habits: regions, profiles, --output, --query (JMESPath) vs jq, --dry-run where it exists. S3 hands-on: create a bucket, Block Public Access, upload, list, a presigned URL, versioning, a lifecycle rule, then delete everything. AWS CloudShell. A no-account path: practise the same CLI commands against a local AWS emulator (moto server, or LocalStack if its current license allows free local use; check) with --endpoint-url, and say clearly what an emulator cannot teach. A cleanup checklist and what each step costs (check current prices). Lab in labs/aws/."
+   },
+   {
+    "id": "d14",
+    "title": "Hands-on AWS 2: a server of your own with EC2, VPC and CloudWatch",
+    "from": [],
+    "scope": "Default VPC vs your own, public and private subnets, internet gateway, route tables (recap of Day 12), security groups as stateful firewalls. Getting a shell without opening port 22: SSM Session Manager (recommended), EC2 Instance Connect, and key pairs as the old way. AMIs (Amazon Linux 2023 or Ubuntu), instance types (small burstable, Graviton is ARM like your Mac), user data and cloud-init to install hello-devops and run it as a systemd service (Days 6 and 7). An instance role (instance profile) instead of keys on the server. Public IPv4 vs Elastic IP and what public IPv4 costs today (check). CloudWatch: built-in metrics, an alarm on CPU, and logs (CloudWatch agent or a simpler option; check). Stop vs terminate. Doing it all with the AWS CLI, plus a short console tour. Cleanup script and a cost note. Pointers: Day 35 builds this with Terraform, Days 36 and 37 configure servers with Ansible, Part 10 mentions EKS. Lab in labs/aws/."
+   }
+  ]
+ },
+ {
+  "part": 4,
+  "slug": "python",
+  "title": "Python scripts for automation",
+  "tool": "Python",
+  "lessons": [
+   {
+    "id": "d15",
+    "title": "Python for ops scripts: files, JSON, arguments and exit codes",
+    "from": [],
+    "scope": "The learner knows some Python; this teaches Python as an ops tool. When to switch from Bash to Python (length, data structures, JSON, error handling, tests). uv for Python versions, virtual environments and running scripts (uv run, inline script metadata from PEP 723), compared with pip and venv in one section. A script skeleton: shebang, main(), `if __name__ == \"__main__\"`. argparse with --help and subcommands. pathlib, reading and writing files, json and csv, collections.Counter, datetime with time zones, re for log lines. Parsing the Part 1 sample logs (labs/linux) in Python and comparing with the grep and awk versions. Exit codes and sys.exit, stdout vs stderr, the logging module. subprocess.run done safely (a list of arguments, check=True, capture_output, timeout, never shell=True with outside input). Environment variables. Errors with try/except and clear messages. Worked example: a log summarizer that prints the top paths and the error rate, and exits 1 above a threshold so CI can use it. Hands-on: a URL health checker for a list of endpoints with a timeout and a non-zero exit when one fails. Lab in labs/python-ops/."
+   },
+   {
+    "id": "d16",
+    "title": "Python and APIs: HTTP, AWS with boto3, and testing your scripts",
+    "from": [],
+    "scope": "Calling HTTP APIs from Python (requests or httpx: check which is the better default today and say why): JSON, status codes, timeouts, retries with backoff, auth headers from environment variables, pagination. A GitHub REST API example (recent workflow runs or open pull requests) with a token from `gh auth token`. boto3: sessions and profiles (Day 13), clients, paginators, waiters, botocore ClientError; a script that reports S3 buckets without versioning and EC2 instances without an owner tag. Testing scripts with pytest (tmp_path, monkeypatch, capsys); mocking AWS with moto (mock_aws) and HTTP with a mocking library; making a small installable tool with pyproject.toml and a console script, `uv tool install`; ruff for lint and format; a short preview of running the script in CI (Day 25). The Kubernetes Python client in Go deeper. Lab in labs/python-ops/ with tests that pass offline."
+   }
+  ]
+ },
+ {
+  "part": 5,
+  "slug": "docker",
+  "title": "Docker",
+  "tool": "Docker",
+  "lessons": [
+   {
+    "id": "d17",
+    "title": "Containers: your first docker run",
+    "from": [
+     "d05"
+    ],
+    "scope": "Keep and deepen first-edition Day 5: the works-on-my-machine problem, VM vs container (namespaces and cgroups explained with intuition), image vs container, Docker Engine, CLI and Desktop's Linux VM, docker run flags (-d, -p, --name, -e, --rm, -it), ps, logs, exec, stop, start, rm, the container lifecycle and states, port mapping, arm64 vs amd64."
+   },
+   {
+    "id": "d18",
+    "title": "Images, layers and registries",
+    "from": [
+     "d06",
+     "d08"
+    ],
+    "scope": "What an image really is: a stack of read-only layers plus a config and a manifest; the union filesystem and the thin writable container layer (copy-on-write); content-addressed layers and why identical layers are shared; docker history, docker image inspect, and the dive tool. Registries: Docker Hub, GHCR, cloud registries; repository, tag, digest; why tags move and digests do not; pull by digest; multi-platform images and manifest lists (docker buildx imagetools inspect); official images and Docker Hardened Images (from research); docker login/tag/push basics; image size and why it matters."
+   },
+   {
+    "id": "d19",
+    "title": "Dockerfiles: package your own app",
+    "from": [
+     "d06"
+    ],
+    "scope": "Keep and deepen first-edition Day 6: every common instruction, build context and .dockerignore, the build cache and instruction order, CMD vs ENTRYPOINT (exec vs shell form and PID 1 signals), ARG vs ENV, tags and versions, docker init, twelve-factor config. Build and run hello-devops single-stage."
+   },
+   {
+    "id": "d20",
+    "title": "Volumes and networks",
+    "from": [
+     "d07"
+    ],
+    "scope": "Containers are disposable: where data lives. Volumes vs bind mounts vs tmpfs, named vs anonymous volumes, inspecting and backing up a volume, file ownership problems with bind mounts. Container networking: the default bridge vs user-defined bridge networks, built-in DNS by container name, host and none modes, publishing vs exposing ports, connecting a container to two networks, docker network inspect. Hands-on: Redis with a volume and hello-devops on a user-defined network without Compose."
+   },
+   {
+    "id": "d21",
+    "title": "Docker Compose",
+    "from": [
+     "d07"
+    ],
+    "scope": "Compose as a declarative description of a multi-container app. compose.yaml anatomy: services, build vs image, ports, environment and env_file, volumes, networks, depends_on with healthcheck conditions, restart policies, profiles. Commands: up -d, ps, logs -f, exec, run, down, down -v, config, watch for local development. Variable interpolation and .env. Override files for local vs CI. The lab's compose.yaml as the target, plus an nginx in front from Day 11."
+   },
+   {
+    "id": "d22",
+    "title": "Production-ready images",
+    "from": [
+     "d08"
+    ],
+    "scope": "Keep and deepen first-edition Day 10: multi-stage builds, base image trade-offs, non-root USER, HEALTHCHECK, pinning base images by digest, scanning (docker scout, trivy), secrets at build time (BuildKit --secret), multi-arch builds with buildx, pushing to GHCR, the lab's final Dockerfile (including --no-control-socket and the pip removal)."
+   }
+  ]
+ },
+ {
+  "part": 6,
+  "slug": "github-actions",
+  "title": "CI/CD with GitHub Actions",
+  "tool": "GitHub Actions",
+  "lessons": [
+   {
+    "id": "d23",
+    "title": "Pull requests, code review and CI/CD ideas",
+    "from": [
+     "d09"
+    ],
+    "scope": "Git itself moved to Days 8 and 9; this lesson starts where they stop. Keep and deepen first-edition Day 11: git for teams (branches, commits, merge vs rebase in brief, pull requests, review, conflicts), trunk-based vs GitFlow, CI, continuous delivery vs deployment, pipeline stages, build once deploy many, deployment strategies, semantic versioning and tags."
+   },
+   {
+    "id": "d24",
+    "title": "GitHub Actions: your first workflow",
+    "from": [
+     "d10"
+    ],
+    "scope": "Keep and deepen first-edition Day 12: workflow anatomy, events and filters, jobs, steps, runners (GitHub-hosted including arm64, self-hosted), uses vs run, the Actions tab and logs, debug logging, env, billing and limits from research."
+   },
+   {
+    "id": "d25",
+    "title": "A real CI pipeline: test, lint, cache, matrix",
+    "from": [
+     "d11"
+    ],
+    "scope": "Keep and deepen first-edition Day 17: the lab's ci.yml step by step, setup-python caching and how cache keys work, matrix, needs, artifacts (v4+ behaviour), test reports, rulesets with required checks, concurrency, paths filters, timeouts, act for local runs."
+   },
+   {
+    "id": "d26",
+    "title": "Workflow logic: expressions, outputs and reusable workflows",
+    "from": [
+     "d12"
+    ],
+    "scope": "Contexts (github, env, vars, secrets, matrix, needs, steps, runner) and expressions; if conditions and status functions (success, failure, always, cancelled); step outputs via GITHUB_OUTPUT and job outputs; passing data between jobs; GITHUB_ENV and GITHUB_STEP_SUMMARY; workflow_dispatch inputs; reusable workflows (workflow_call, inputs, secrets: inherit, limits) vs composite actions; when to use each; environments as a concept preview."
+   },
+   {
+    "id": "d27",
+    "title": "Ship it: build and push images safely",
+    "from": [
+     "d12"
+    ],
+    "scope": "Keep and deepen first-edition Day 18: secrets and variables, GITHUB_TOKEN permissions and least privilege, the lab's release.yml (GHCR push on tags, multi-arch, digest in summary), environments with required reviewers, OIDC to the cloud, pinning actions to SHAs, Dependabot for actions, pull_request_target risks."
+   }
+  ]
+ },
+ {
+  "part": 7,
+  "slug": "gradle",
+  "title": "Builds with Gradle",
+  "tool": "Gradle",
+  "lessons": [
+   {
+    "id": "d28",
+    "title": "What a build tool does, and how Gradle thinks",
+    "from": [],
+    "scope": "Why build tools exist (compile, test, package, dependencies, repeatability). Gradle's model: projects, tasks, plugins, the task graph with inputs and outputs, the three phases (initialization, configuration, execution), settings.gradle.kts vs build.gradle.kts, the Kotlin DSL, the Gradle Wrapper (gradlew, gradle-wrapper.properties, why you never use a global gradle), running tasks (build, test, run, clean, tasks, help --task), up-to-date checks, reading build output, Gradle vs Maven in brief. Hands-on with the new labs/hello-jvm Kotlin project."
+   },
+   {
+    "id": "d29",
+    "title": "Dependencies and multi-project builds",
+    "from": [],
+    "scope": "Repositories (mavenCentral, gradlePluginPortal), coordinates (group:artifact:version), dependency configurations (implementation, api, compileOnly, runtimeOnly, testImplementation) and why implementation is the default, transitive dependencies, conflict resolution (highest version wins) and how to see it (dependencies, dependencyInsight), version catalogs (gradle/libs.versions.toml), platforms and BOMs, multi-project builds (settings include, project dependencies), convention plugins in build-logic (included build) to share configuration, publishing in one paragraph. Hands-on: split hello-jvm into app and lib modules with a catalog."
+   },
+   {
+    "id": "d30",
+    "title": "Fast builds, CI and containers for JVM apps",
+    "from": [],
+    "scope": "Incremental builds and task inputs/outputs, the build cache (local and remote), the configuration cache, the daemon, parallel execution, Java toolchains, Build Scans and Develocity, dependency verification and locking. Gradle in GitHub Actions with gradle/actions/setup-gradle (caching, wrapper validation, build scan publishing). Containerizing a JVM app: a multi-stage Dockerfile that builds with Gradle and runs on a JRE image, layer order for dependency caching, Jib as a Dockerfile-free alternative, JVM memory flags in containers (MaxRAMPercentage). Writes the lab's hello-jvm Dockerfile and .github/workflows/jvm-ci.yml."
+   }
+  ]
+ },
+ {
+  "part": 8,
+  "slug": "terraform",
+  "title": "Infrastructure as Code with Terraform",
+  "tool": "Terraform",
+  "lessons": [
+   {
+    "id": "d31",
+    "title": "Infrastructure as Code and your first Terraform",
+    "from": [
+     "d13"
+    ],
+    "scope": "Keep and deepen first-edition Day 19: why IaC, declarative vs imperative, Terraform vs OpenTofu and other tools, providers and resources, init/plan/apply/destroy, reading a plan, the nginx example with the docker provider, the lock file."
+   },
+   {
+    "id": "d32",
+    "title": "The Terraform language: variables, types and loops",
+    "from": [
+     "d14"
+    ],
+    "scope": "HCL in depth: blocks, arguments, expressions, references; types (string, number, bool, list, set, map, object, tuple); input variables with types, defaults, validation and sensitive; tfvars files and precedence; locals; outputs; string templates and heredocs; conditionals; for expressions; count vs for_each and the index-shifting trap; dynamic blocks; built-in functions; terraform console to experiment. Hands-on: run three nginx containers from a map with for_each using the docker provider."
+   },
+   {
+    "id": "d33",
+    "title": "State: Terraform's memory",
+    "from": [
+     "d14"
+    ],
+    "scope": "What state holds and why; terraform state list/show/mv/rm; moved blocks for refactoring; import blocks; drift and plan -refresh-only (and what apply -refresh-only really does); sensitive values in state; remote backends and locking (S3 with use_lockfile; HCP Terraform status from research); ephemeral values and write-only arguments if current; never commit state. Hands-on: the lab's infra/local, then rename a resource with a moved block and import a container created by hand."
+   },
+   {
+    "id": "d34",
+    "title": "Modules and environments",
+    "from": [
+     "d14"
+    ],
+    "scope": "Modules: root vs child, inputs and outputs, local modules vs registry modules, version pinning, composition and small focused modules; environments: workspaces vs separate directories vs tfvars per environment, and which teams prefer; terraform test basics; formatting, validation and tflint. Hands-on: turn infra/local into a reusable module used twice (dev and test stacks on different ports)."
+   },
+   {
+    "id": "d35",
+    "title": "Terraform on a real cloud, and in CI",
+    "from": [
+     "d15"
+    ],
+    "scope": "Keep and deepen first-edition Day 21: AWS account safety, provider auth, the lab's infra/aws (private versioned S3 bucket, OIDC role), S3 backend, destroy, costs, terraform.yml (plan on PR, apply on main behind an environment), scanners (tflint, trivy config, checkov)."
+   }
+  ]
+ },
+ {
+  "part": 9,
+  "slug": "ansible",
+  "title": "Configuration management with Ansible",
+  "tool": "Ansible",
+  "lessons": [
+   {
+    "id": "d36",
+    "title": "Ansible from zero: inventory, modules and your first playbook",
+    "from": [],
+    "scope": "Configuration management and why it exists: Terraform creates servers, Ansible configures what runs on them; mutable vs immutable infrastructure, and where Ansible still fits today (VMs, bootstrapping, network devices, day-to-day changes on fleets). Agentless over SSH: control node, managed nodes, Python on the targets. Installing it on a Mac (pipx or uv tool, or brew; ansible vs ansible-core). Inventory (INI and YAML, groups, host variables) and ansible.cfg. Ad-hoc commands (ping, command vs shell, package, service, copy). Modules and idempotence: ok vs changed, --check and --diff. A first playbook: plays, tasks, become, handlers, PLAY RECAP. Practice targets: two or three Linux containers with sshd started by labs/ansible/compose.yaml, so everything runs on a laptop. Worked example: run a playbook twice and read why the second run changes nothing. Hands-on: install and start hello-devops as a systemd service on the practice servers (links to Day 6)."
+   },
+   {
+    "id": "d37",
+    "title": "Ansible in practice: variables, templates, roles and Vault",
+    "from": [],
+    "scope": "Variables and a simplified precedence (role defaults, group_vars, host_vars, play vars, -e extra vars), facts and gather_facts, Jinja2 templates (template module) for a systemd unit and an nginx config, loops and conditionals (loop, when), handlers that run on change, tags. Roles: directory layout, `ansible-galaxy role init`, defaults vs vars. Collections and fully qualified module names (ansible.builtin.copy), requirements.yml. Ansible Vault: encrypt a file and a single string, vault password files, never commit the password. Quality: ansible-lint, --syntax-check, Molecule in one paragraph. Ansible in CI (GitHub Actions) and with Terraform: the amazon.aws.aws_ec2 dynamic inventory reading Day 35's instances by tag. AWX and Ansible Automation Platform in one paragraph. When to choose Ansible, cloud-init, baked images (Packer) or Kubernetes. Lab in labs/ansible/ tested against the practice containers."
+   }
+  ]
+ },
+ {
+  "part": 10,
+  "slug": "kubernetes",
+  "title": "Kubernetes",
+  "tool": "Kubernetes",
+  "lessons": [
+   {
+    "id": "d38",
+    "title": "Why Kubernetes, and how a cluster works",
+    "from": [
+     "d16"
+    ],
+    "scope": "Keep and deepen first-edition Day 22: the problems at scale, desired state and control loops, the control plane (API server, etcd, scheduler, controller manager) and nodes (kubelet, kube-proxy, containerd), what happens step by step when you run kubectl apply, managed Kubernetes, when not to use Kubernetes, creating the kind cluster from the lab's kind-config.yaml."
+   },
+   {
+    "id": "d39",
+    "title": "Pods, kubectl and YAML",
+    "from": [
+     "d16"
+    ],
+    "scope": "Manifest anatomy (apiVersion, kind, metadata, spec, status), kubectl explain, -o yaml and --dry-run=client to generate YAML. Pods: phases and container states, restart policies, multi-container pods, init containers and sidecars (GA), why you rarely create bare Pods. Labels vs annotations, selectors, namespaces, kubeconfig and contexts. kubectl essentials: get (-o wide, -w, -l, -A), describe, logs (-f, -c, --previous), exec -it, port-forward, apply vs create, delete. kind load docker-image."
+   },
+   {
+    "id": "d40",
+    "title": "Deployments and rollouts",
+    "from": [
+     "d17"
+    ],
+    "scope": "Keep and deepen the Deployment half of first-edition Day 23: ReplicaSets, Deployments, self-healing, scaling, rolling updates with maxSurge/maxUnavailable, rollout status/history/undo, set image vs editing YAML, revision history, recreate strategy, how readiness gates a rollout (preview of Day 43)."
+   },
+   {
+    "id": "d41",
+    "title": "Services and cluster networking",
+    "from": [
+     "d17"
+    ],
+    "scope": "Keep and deepen the Service half of first-edition Day 23 and add networking: the pod network (every Pod gets an IP, CNI plugins), Services as stable names and IPs, ClusterIP, NodePort, LoadBalancer, headless, EndpointSlices, kube-proxy, CoreDNS and service DNS names, port vs targetPort vs nodePort, NetworkPolicies (default allow, a simple deny-all plus allow), and the lab's NodePort 30080 mapping to localhost:8081."
+   },
+   {
+    "id": "d42",
+    "title": "ConfigMaps and Secrets",
+    "from": [
+     "d18"
+    ],
+    "scope": "Keep and deepen the config half of first-edition Day 24: ConfigMaps as env, envFrom and mounted files, what happens on change (env needs a restart, files update), Secrets and why base64 is not encryption, types of Secrets, encryption at rest, external secret managers (External Secrets Operator, Sealed Secrets, SOPS) in brief, immutable ConfigMaps, rolling a Deployment after config changes."
+   },
+   {
+    "id": "d43",
+    "title": "Health checks, resources and scaling",
+    "from": [
+     "d18"
+    ],
+    "scope": "Keep and deepen the health and scaling half of first-edition Day 24 and add scheduling: liveness, readiness and startup probes with the app's /healthz and /readyz, requests vs limits, QoS classes, OOMKilled and CPU throttling, LimitRanges and ResourceQuotas briefly, HPA with metrics-server on kind, VPA and in-place resize in brief, scheduling basics (nodeSelector, affinity, taints and tolerations), PodDisruptionBudgets."
+   },
+   {
+    "id": "d44",
+    "title": "Traffic and storage: Gateway API, Ingress and volumes",
+    "from": [
+     "d19"
+    ],
+    "scope": "Keep and deepen the traffic and storage half of first-edition Day 25: Ingress vs Gateway API (ingress-nginx retirement), Envoy Gateway on kind with the lab's k8s/gateway files, HTTPRoute matching and traffic splitting, TLS at the gateway; storage: volumes, PersistentVolumes, PersistentVolumeClaims, StorageClasses and dynamic provisioning, access modes, StatefulSets for databases and why managed databases are often better."
+   },
+   {
+    "id": "d45",
+    "title": "Packaging with Helm and Kustomize",
+    "from": [
+     "d19"
+    ],
+    "scope": "Keep and deepen the Helm half of first-edition Day 25: why package manifests, Helm charts, values, templates and helpers, releases and revisions, install/upgrade/rollback/uninstall/template/lint, OCI registries for charts, Helm 4 changes from research, the lab's chart/hello-devops; Kustomize bases and overlays for dev and prod, patches and images transformers, Helm vs Kustomize and using both."
+   },
+   {
+    "id": "d46",
+    "title": "Troubleshooting Kubernetes",
+    "from": [],
+    "scope": "A systematic debugging flow (is it the Pod, the Service, the network, the config, or the node?). Common failure states and their usual causes: Pending, ContainerCreating, ImagePullBackOff/ErrImagePull, CrashLoopBackOff, OOMKilled, CreateContainerConfigError, Running but not Ready, Service with no endpoints. Tools: kubectl describe and events (--sort-by), logs --previous, exec, port-forward, kubectl debug with ephemeral containers, a netshoot or busybox pod for DNS and network checks, kubectl top, k9s. RBAC basics (Role, RoleBinding, ServiceAccount, kubectl auth can-i) because 'forbidden' errors are common. Hands-on: a break-and-fix lab with five deliberately broken manifests in labs/hello-devops/k8s-broken/."
+   }
+  ]
+ },
+ {
+  "part": 11,
+  "slug": "gitops",
+  "title": "GitOps with Argo CD",
+  "tool": "Argo CD",
+  "lessons": [
+   {
+    "id": "d47",
+    "title": "GitOps with Argo CD",
+    "from": [
+     "d20"
+    ],
+    "scope": "Keep and deepen first-edition Day 26: OpenGitOps principles, push vs pull deploys, Argo CD architecture, install on kind, the UI and CLI, the lab's argocd/application.yaml, sync, automated sync, self-heal, prune, health status, drift demo, rollback with git revert."
+   },
+   {
+    "id": "d48",
+    "title": "GitOps in practice: environments, promotion and image updates",
+    "from": [
+     "d20"
+    ],
+    "scope": "Repo structure (app repo vs config repo, monorepo), environments with Kustomize overlays, promotion between environments by pull request, how CI updates the image tag in git (kustomize edit set image in a workflow, or Argo CD Image Updater), ApplicationSets and app-of-apps, sync waves and hooks, secrets in GitOps (Sealed Secrets, External Secrets, SOPS), Argo CD RBAC and projects in brief, Flux compared with Argo CD."
+   }
+  ]
+ },
+ {
+  "part": 12,
+  "slug": "prometheus",
+  "title": "Monitoring with Prometheus",
+  "tool": "Prometheus",
+  "lessons": [
+   {
+    "id": "d49",
+    "title": "Observability foundations: signals, SLOs and alerts",
+    "from": [
+     "d21"
+    ],
+    "scope": "Monitoring vs observability, the signals (metrics, logs, traces, profiles) and what each is good for, golden signals, RED and USE methods, SLIs, SLOs and error budgets with a worked calculation, alerting on symptoms not causes, alert fatigue, on-call and blameless postmortems. The map for Parts 12 to 16 (Prometheus, Grafana, EFK, OpenTelemetry, Dynatrace)."
+   },
+   {
+    "id": "d50",
+    "title": "Prometheus: architecture and the data model",
+    "from": [
+     "d21"
+    ],
+    "scope": "Pull vs push, the Prometheus server, targets and scrape configs, service discovery, exporters (node_exporter, blackbox_exporter), the TSDB and retention, the exposition format (read the app's /metrics), metric names and labels, a time series as name plus label set, the four metric types (counter, gauge, histogram, summary) and when to use each, cardinality and why user IDs never go in labels, Prometheus 3 changes from research. Hands-on: the lab's observability/compose.yaml running Prometheus, node_exporter and hello-devops; explore the targets page."
+   },
+   {
+    "id": "d51",
+    "title": "PromQL from zero",
+    "from": [],
+    "scope": "Instant vs range vectors, selectors and label matchers (=, !=, =~, !~), rate vs irate vs increase and choosing the range, aggregation (sum, avg, max, count, topk) with by and without, arithmetic and comparison operators, vector matching basics (on, ignoring), histogram_quantile with rate and le, offset, absent and up, recording rules for expensive queries. Build the RED queries for hello-devops step by step with expected results in the Prometheus UI."
+   },
+   {
+    "id": "d52",
+    "title": "Alerting and Prometheus on Kubernetes",
+    "from": [
+     "d21"
+    ],
+    "scope": "Alerting rules (expr, for, labels, annotations), Alertmanager (routing tree, grouping, inhibition, silences, receivers such as a webhook or Slack), testing rules with promtool, good alerts vs noisy ones. On Kubernetes: kube-prometheus-stack, the Prometheus Operator, ServiceMonitor and PodMonitor, PrometheusRule, the lab's observability/servicemonitor.yaml, kube-state-metrics vs metrics-server. Instrumenting an app with a client library (the app's hello_requests_total, adding a histogram for latency). Long-term storage and scale in brief (remote write, Thanos, Mimir)."
+   }
+  ]
+ },
+ {
+  "part": 13,
+  "slug": "grafana",
+  "title": "Dashboards with Grafana",
+  "tool": "Grafana",
+  "lessons": [
+   {
+    "id": "d53",
+    "title": "Grafana dashboards",
+    "from": [],
+    "scope": "What Grafana is (a front end for many data sources). Data sources, panels and visualizations (time series, stat, gauge, bar, table, heatmap), the query editor with PromQL, units and thresholds, transformations, variables and templating (a $service dropdown), annotations, rows and layout, dashboard design for operators (RED dashboard at the top, details below), dashboard JSON and provisioning as code (datasources and dashboards folders). Hands-on: provision a hello-devops RED dashboard into the lab's Compose stack."
+   },
+   {
+    "id": "d54",
+    "title": "Grafana beyond dashboards: alerting, Loki and the LGTM stack",
+    "from": [],
+    "scope": "Grafana alerting (alert rules, contact points, notification policies) and when to use it vs Alertmanager; Loki and LogQL basics (labels vs content, line filters, parsers, metrics from logs); Tempo for traces and trace-to-logs links; Pyroscope in one paragraph; Grafana Alloy as the collector; the LGTM stack; Grafana Cloud free tier from research; dashboards as code (Terraform provider, the newer as-code tooling); what changed in Grafana 12 and 13. Hands-on: add Loki to the Compose stack and query hello-devops logs."
+   }
+  ]
+ },
+ {
+  "part": 14,
+  "slug": "logs-traces",
+  "title": "Logs and traces: ELK, EFK and OpenTelemetry",
+  "tool": "Logs and traces",
+  "lessons": [
+   {
+    "id": "d55",
+    "title": "Centralized logging and the Elastic stack",
+    "from": [],
+    "scope": "Why centralize logs, structured JSON logs and log levels, what not to log (secrets, personal data). The Elastic stack: Elasticsearch concepts (documents, indices, mappings, the inverted index, shards, replicas, nodes and clusters), ingest options (Logstash, Beats, Elastic Agent, Fluent Bit or Fluentd) and the ELK vs EFK naming, Kibana Discover, KQL and ES|QL basics, OpenSearch as the fork and the licence history. Hands-on: the lab's logging/compose.yaml with Elasticsearch, Kibana and Fluent Bit collecting hello-devops container logs; search them in Kibana."
+   },
+   {
+    "id": "d56",
+    "title": "Running EFK on Kubernetes",
+    "from": [],
+    "scope": "Fluent Bit as a DaemonSet reading /var/log/containers, the Kubernetes filter for pod metadata, parsers and multiline logs, outputs to Elasticsearch; index templates, data streams and index lifecycle management for retention; Kibana dashboards and alerting; the cost of logs (volume, retention, sampling); Loki vs Elasticsearch trade-offs and when to choose each. Hands-on: install Fluent Bit with Helm on kind using the lab's logging/fluent-bit-values.yaml, pointing at a single-node Elasticsearch."
+   },
+   {
+    "id": "d57",
+    "title": "Distributed tracing with OpenTelemetry",
+    "from": [
+     "d21"
+    ],
+    "scope": "Why traces (one request across many services), spans, trace IDs, parent/child, attributes and events, context propagation with W3C traceparent, sampling (head vs tail), OpenTelemetry (API, SDK, auto-instrumentation, the Collector with receivers, processors and exporters, OTLP), Jaeger and Tempo as backends, linking traces to logs and metrics. Hands-on: run hello-devops with opentelemetry-instrument (no code changes) and the lab's tracing/compose.yaml with an OpenTelemetry Collector and Jaeger; find the slow span."
+   }
+  ]
+ },
+ {
+  "part": 15,
+  "slug": "service-mesh",
+  "title": "Service mesh: Envoy, Istio, Linkerd and Cilium",
+  "tool": "Service mesh",
+  "lessons": [
+   {
+    "id": "d58",
+    "title": "Why a service mesh: proxies, sidecars and Envoy",
+    "from": [],
+    "scope": "The problems between services (retries, timeouts, encryption and identity, traffic splitting, per-call metrics) and the two ways to solve them: libraries in every app, or a proxy next to every app. L4 vs L7 (link Day 11). What a proxy does. Envoy in depth: listeners, filter chains, the HTTP connection manager, routes, clusters, endpoints, health checks, outlier detection (circuit breaking), retries and timeouts, the admin interface and its stats. Static config vs dynamic config over xDS (LDS, RDS, CDS, EDS, SDS) from a control plane; data plane vs control plane. How traffic reaches a sidecar (iptables redirection, Kubernetes native sidecar containers) vs per-node proxies vs ambient designs. Where Envoy shows up (Envoy Gateway from Day 44, Istio, Consul; check the status of AWS App Mesh). Lab in labs/hello-devops/mesh/envoy/: a Compose file with Envoy in front of two hello-devops versions doing a 90/10 split, retries, a timeout and outlier detection, inspected through the admin port. Tested here."
+   },
+   {
+    "id": "d59",
+    "title": "Istio: traffic management, mTLS and ambient mode",
+    "from": [],
+    "scope": "Istio's architecture: istiod as the control plane; sidecar mode vs ambient mode (ztunnel for L4 on every node, waypoint proxies for L7; check the current status and defaults). Installing on kind with istioctl and a profile; joining a namespace (istio-injection=enabled vs istio.io/dataplane-mode=ambient). Traffic management with the Kubernetes Gateway API (Gateway, HTTPRoute; Istio's recommended API) and the Istio APIs you will still meet (VirtualService, DestinationRule, Istio Gateway): weighted canary, header routing, retries and timeouts, fault injection (delay and abort) to test resilience, circuit breaking with DestinationRule. Security: workload identity from service accounts (SPIFFE IDs), mutual TLS, PeerAuthentication (PERMISSIVE then STRICT), AuthorizationPolicy (allow and deny by identity, namespace, path). Debugging: istioctl analyze, proxy-status, proxy-config. Observability: Envoy metrics in Prometheus (Day 50), the Kiali graph, and why traces still need header propagation in the app (Day 57). Lab in labs/hello-devops/mesh/istio/: manifests validated offline (istioctl analyze with no cluster, kubeconform) plus the steps to run them on kind on a Mac."
+   },
+   {
+    "id": "d60",
+    "title": "Linkerd, Cilium and choosing a mesh (or none)",
+    "from": [],
+    "scope": "Linkerd: the Rust micro-proxy, simplicity, automatic mTLS, linkerd viz, and its release model (check what is open source today). Cilium service mesh: eBPF, no sidecars, Envoy per node for L7, Hubble for flows, Cilium as the CNI (link Day 41). Consul service mesh in one paragraph. GAMMA: the Gateway API for mesh traffic (HTTPRoute with a Service as parentRef) as the common API across meshes. Costs: added latency, CPU and memory, upgrades, debugging, the people needed. When you do not need a mesh (a few services, NetworkPolicy plus app retries plus an ingress or gateway). How to adopt one step by step: observability first, then mTLS in permissive mode, then strict, then traffic policies; multi-cluster in one paragraph. Lab: Linkerd install steps on kind, a GAMMA HTTPRoute canary validated offline, and a decision checklist file."
+   }
+  ]
+ },
+ {
+  "part": 16,
+  "slug": "dynatrace",
+  "title": "Dynatrace",
+  "tool": "Dynatrace",
+  "lessons": [
+   {
+    "id": "d61",
+    "title": "Dynatrace: one platform for every signal",
+    "from": [],
+    "scope": "What problem an all-in-one commercial platform solves and what it costs you (money, lock-in). OneAgent and automatic instrumentation, ActiveGate, entities and the Smartscape topology, PurePath distributed traces, services/processes/hosts views, Davis AI and problems with root cause, dashboards and Notebooks, the current platform naming from research. Dynatrace vs the open-source stack from Parts 12 to 14 and vs other vendors (Datadog, New Relic, Elastic). How to get a free trial."
+   },
+   {
+    "id": "d62",
+    "title": "Dynatrace in practice: Kubernetes, Grail and DQL",
+    "from": [],
+    "scope": "The Dynatrace Operator and DynaKube (deployment modes from research) with the lab's dynatrace/dynakube.yaml for a kind cluster, what you see after install, Grail and DQL from zero (fetch, filter, fields, summarize, sort, timeseries, makeTimeseries) with examples on logs, spans and metrics, SLOs in Dynatrace, workflows and automation, OpenTelemetry ingest into Dynatrace, release validation in CI/CD, cost awareness and the trial's limits, Dynatrace University and certification."
+   }
+  ]
+ },
+ {
+  "part": 17,
+  "slug": "devsecops",
+  "title": "DevSecOps",
+  "tool": "DevSecOps",
+  "lessons": [
+   {
+    "id": "d63",
+    "title": "The software supply chain",
+    "from": [
+     "d22"
+    ],
+    "scope": "Keep and deepen first-edition Day 28: shift left, real incidents with sources, SBOMs, vulnerability scanning, signing with cosign keyless, SLSA and provenance, GitHub artifact attestations, the lab's hardened release.yml."
+   },
+   {
+    "id": "d64",
+    "title": "Secrets, access and policy as code",
+    "from": [
+     "d22"
+    ],
+    "scope": "Secrets management (Vault/OpenBao, cloud secret managers, External Secrets Operator, Sealed Secrets, SOPS) and where each fits; secret scanning (gitleaks, GitHub push protection); Kubernetes RBAC and service accounts with least privilege; Pod Security Standards; policy as code with Kyverno (the lab's policy/ files) and OPA Gatekeeper; admission control explained; a security checklist for hello-devops."
+   }
+  ]
+ },
+ {
+  "part": 18,
+  "slug": "ai",
+  "title": "AI in DevOps",
+  "tool": "AI",
+  "lessons": [
+   {
+    "id": "d65",
+    "title": "AI assistants for DevOps work: write, review, verify",
+    "from": [],
+    "scope": "What language models are good and bad at in ops work: good at boilerplate (YAML, HCL, Dockerfiles, scripts), explaining errors and logs, summarizing; bad at exact versions and flags, invented fields and options, stale APIs, sounding sure when wrong. The verify loop: never apply AI output without a check you trust (terraform validate and plan, kubeconform, actionlint, shellcheck, ansible-lint, tests, --dry-run). Giving good context: exact errors, versions, files; repository context files (AGENTS.md, CLAUDE.md, copilot-instructions) with build and test commands and rules. Coding agents in the terminal and the IDE (describe the category with a few current examples, no ranking). Reviewing an AI diff like a teammate's pull request; asking for a plan first; small steps. Data safety: never paste secrets or customer data, follow company policy. Supply chain: invented package names that attackers register (check the current term and examples), pin and verify. Worked example: an AI-written Kubernetes Deployment with real mistakes caught by kubeconform and review. Hands-on: write an AGENTS.md for hello-devops, then use any assistant to add a small feature with tests, verifying each step. Lab in labs/hello-devops/ai/."
+   },
+   {
+    "id": "d66",
+    "title": "AI agents that run tools: MCP, CI and guardrails",
+    "from": [],
+    "scope": "From chat to agents: a model in a loop that calls tools. The Model Context Protocol (hosts, clients, servers; tools, resources, prompts; local stdio vs remote HTTP servers) with real servers that exist today for GitHub, Kubernetes, Grafana and AWS (verify names and status). Agents in CI: AI pull request review and AI-driven fixes in GitHub Actions (verify current options), with minimal permissions and triggers people control. Guardrails: least-privilege tokens, a read-only Kubernetes context and RBAC role for agents (Day 64), separate credentials, human approval before writes, sandboxes and network allowlists, audit logs. Prompt injection: untrusted text in issues, logs or web pages can steer an agent; keep agents that read untrusted input away from write access. AI for incidents (summaries, runbook suggestions; a person decides). Cost and value: tokens, latency, when not to use it. One section on running AI workloads as ops work: GPU nodes, device plugins, serving and autoscaling inference, cost. Lab in labs/hello-devops/ai/: an MCP config with a read-only Kubernetes server, a read-only RBAC role for an agent, a GitHub workflow for AI review with minimal permissions (actionlint clean), and a guardrails checklist. Reuse or point to the existing policy/ai-agent and security/agent files."
+   }
+  ]
+ },
+ {
+  "part": 19,
+  "slug": "next",
+  "title": "Platform engineering and your capstone",
+  "tool": "Platform",
+  "lessons": [
+   {
+    "id": "d67",
+    "title": "Platform engineering and FinOps",
+    "from": [
+     "d23"
+    ],
+    "scope": "Keep and deepen the first half of first-edition Day 29: platform engineering and internal developer platforms, golden paths, Backstage, the CNCF maturity model, developer experience, FinOps, AI in DevOps with guardrails (the lab's policy/ai-agent-readonly.yaml), other trends (eBPF, OpenTofu, WebAssembly, serverless containers). AI in DevOps now has its own part (Days 65 and 66): keep at most a short pointer here."
+   },
+   {
+    "id": "d68",
+    "title": "Your capstone, and what to learn next",
+    "from": [
+     "d23"
+    ],
+    "scope": "Keep and deepen the capstone half of first-edition Day 29: an end-to-end capstone that touches every part (hello-devops and hello-jvm built by Gradle and Actions, scanned and signed, deployed by Argo CD to kind, monitored with Prometheus and Grafana, logs in EFK, traces in Jaeger, optionally Dynatrace), as a checklist with acceptance criteria; how to present it; certifications with current formats from research; a 3-month learning path after the course."
+   }
+  ]
+ }
 ]

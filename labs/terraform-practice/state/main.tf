@@ -1,4 +1,4 @@
-# Day 27 worked example: look inside state, rename with moved, adopt with import.
+# Day 33 worked example: look inside state, rename with moved, adopt with import.
 terraform {
   required_providers {
     docker = {

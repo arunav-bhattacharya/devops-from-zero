@@ -1,4 +1,4 @@
-# Tells Prometheus to scrape hello-devops every 15 seconds (Day 44).
+# Tells Prometheus to scrape hello-devops every 15 seconds (Day 52).
 # Needs kube-prometheus-stack (see values.yaml). It finds the Service in
 # k8s/service.yaml by its label app: hello-devops and its port named http.
 # Apply: kubectl apply -f observability/servicemonitor.yaml

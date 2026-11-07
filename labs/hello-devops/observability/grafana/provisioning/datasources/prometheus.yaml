@@ -1,4 +1,4 @@
-# Grafana data source for the monitoring lab (Day 45).
+# Grafana data source for the monitoring lab (Day 53).
 # Grafana reads every file in this folder once, when it starts.
 # After an edit: docker compose restart grafana
 apiVersion: 1

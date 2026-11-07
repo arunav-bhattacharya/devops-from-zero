@@ -1,4 +1,4 @@
-# Adds logs to the monitoring lab (Day 46). Use it on top of compose.yaml:
+# Adds logs to the monitoring lab (Day 54). Use it on top of compose.yaml:
 #
 #   docker compose -f compose.yaml -f compose.loki.yaml up -d
 #
@@ -40,7 +40,7 @@ services:
       - loki
 
   # Turn on gunicorn's access log: one JSON line per request, same format as
-  # the logging lab (Day 47). %(m)s method, %(U)s path, %(s)s status code,
+  # the logging lab (Day 55). %(m)s method, %(U)s path, %(s)s status code,
   # %(M)s duration in milliseconds. Gunicorn reads extra flags from this variable.
   web:
     environment:

@@ -1,4 +1,4 @@
-# Day 34: watch one ConfigMap value reach a container twice: as an env var and as a file.
+# Day 42: watch one ConfigMap value reach a container twice: as an env var and as a file.
 #   kubectl apply -n scratch -f k8s/examples/config-demo.yaml
 #   kubectl logs -n scratch config-demo -f
 #   kubectl patch configmap demo-config -n scratch --type merge -p '{"data":{"COLOR":"green"}}'

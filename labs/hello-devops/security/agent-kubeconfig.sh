@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Make a separate kubeconfig file for the ai-agent ServiceAccount (Day 54).
+# Make a separate kubeconfig file for the ai-agent ServiceAccount (Day 67).
 # The file holds one short-lived token and nothing else. A tool that uses it can
 # only do what policy/ai-agent-readonly.yaml allows, and only until the token expires.
 #

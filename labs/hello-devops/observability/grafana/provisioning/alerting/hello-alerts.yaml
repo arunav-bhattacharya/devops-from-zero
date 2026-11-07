@@ -1,11 +1,11 @@
-# Grafana-managed alerting for the monitoring lab (Day 46): one alert rule,
+# Grafana-managed alerting for the monitoring lab (Day 54): one alert rule,
 # one contact point and the notification policy tree, all from this file.
 # Grafana loads it at start. After an edit, reload without a restart:
 #   curl -X POST -u admin:admin localhost:3000/api/admin/provisioning/alerting/reload
 # You can't edit these in the UI: the file is the source of truth.
 apiVersion: 1
 
-# Where notifications go: the same webhook service Alertmanager uses (Day 44).
+# Where notifications go: the same webhook service Alertmanager uses (Day 52).
 # Read them with: docker compose logs -f webhook
 contactPoints:
   - orgId: 1

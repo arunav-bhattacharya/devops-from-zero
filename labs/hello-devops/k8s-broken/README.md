@@ -1,4 +1,4 @@
-# Break-and-fix lab (Day 38)
+# Break-and-fix lab (Day 46)
 
 A small online shop runs five services. Each one is broken in a different way.
 Your job: find out why with `kubectl`, fix the YAML file, apply it again, and check the fix.
@@ -8,9 +8,9 @@ search, not the answer.
 
 ## Before you start
 
-- Your kind cluster from Day 30 is running (`kubectl get nodes` shows three Ready nodes).
+- Your kind cluster from Day 38 is running (`kubectl get nodes` shows three Ready nodes).
 - The image is loaded into the cluster: `kind load docker-image hello-devops:1.0.0 --name devops`.
-- Optional: metrics-server from Day 35, so `kubectl top` works.
+- Optional: metrics-server from Day 43, so `kubectl top` works.
 
 ## Start the lab
 

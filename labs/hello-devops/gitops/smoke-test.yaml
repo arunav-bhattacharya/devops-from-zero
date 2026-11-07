@@ -1,4 +1,4 @@
-# A PostSync hook (Day 40): after every sync, once all resources are Healthy,
+# A PostSync hook (Day 48): after every sync, once all resources are Healthy,
 # Argo CD runs this Job. If curl fails, Argo CD marks the sync as failed.
 # To try it, copy this file into overlays/dev/ and add
 # "- smoke-test.yaml" to the resources list in that kustomization.yaml.

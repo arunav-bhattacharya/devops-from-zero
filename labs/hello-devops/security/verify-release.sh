@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify a hello-devops release before you run it (Day 52).
+# Verify a hello-devops release before you run it (Day 63).
 #
 # It looks up the digest behind a version tag once, then checks that digest three ways:
 #   1. cosign: the image was signed by YOUR release workflow, for this exact tag.

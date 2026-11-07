@@ -1,4 +1,4 @@
-# OpenTelemetry Collector for the tracing lab (Day 49).
+# OpenTelemetry Collector for the tracing lab (Day 57).
 # hello-devops sends spans here over OTLP. The Collector cleans them up and
 # forwards them to Jaeger. Exporter names follow Collector v0.144 and later:
 # otlp_grpc and otlp_http (older tutorials say otlp and otlphttp).

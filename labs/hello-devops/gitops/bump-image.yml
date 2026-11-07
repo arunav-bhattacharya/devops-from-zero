@@ -1,4 +1,4 @@
-# Opens a pull request that changes which image version one environment runs (Day 40).
+# Opens a pull request that changes which image version one environment runs (Day 48).
 # Save it as .github/workflows/bump-image.yml in your repo. (This reference copy
 # sits in gitops/ so that it never runs in the course's own repo.)
 # Once, before the first run: Settings > Actions > General > Workflow permissions,

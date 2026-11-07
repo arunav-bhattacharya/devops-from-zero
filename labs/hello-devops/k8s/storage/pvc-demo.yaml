@@ -1,4 +1,4 @@
-# Day 36 storage demo: a claim for a small disk, and a Pod that writes to it.
+# Day 44 storage demo: a claim for a small disk, and a Pod that writes to it.
 # Apply with: kubectl apply -f k8s/storage/pvc-demo.yaml
 # Clean up with: kubectl delete namespace storage-demo
 apiVersion: v1

@@ -44,14 +44,14 @@ readinessProbe:
   timeoutSeconds: 2
   failureThreshold: 2
 
-# Optional HorizontalPodAutoscaler. Needs metrics-server (Day 35).
+# Optional HorizontalPodAutoscaler. Needs metrics-server (Day 43).
 autoscaling:
   enabled: false
   minReplicas: 2
   maxReplicas: 5
   targetCPUUtilizationPercentage: 70
 
-# Optional Gateway API route. Needs a Gateway (k8s/gateway/ in the lab repo, Day 36).
+# Optional Gateway API route. Needs a Gateway (k8s/gateway/ in the lab repo, Day 44).
 httpRoute:
   enabled: false
   gateway:
