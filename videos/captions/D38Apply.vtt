@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.632
+Say you write a Deployment that asks for two copies of nginx.
+
+2
+00:00:06.833 --> 00:00:10.611
+You run kubectl apply, against a cluster like this one.
+
+3
+00:00:10.611 --> 00:00:13.564
+Interviewers love to ask what happens next.
+
+4
+00:00:13.564 --> 00:00:15.899
+So let us follow it, step by step.
+
+5
+00:00:16.100 --> 00:00:16.746
+Step one.
+
+6
+00:00:16.746 --> 00:00:23.345
+kubectl reads the config file in your home folder, to find the cluster and your credentials.
+
+7
+00:00:23.567 --> 00:00:27.968
+Then it sends the YAML to the API server, over HTTPS.
+
+8
+00:00:28.200 --> 00:00:28.828
+Step two.
+
+9
+00:00:28.828 --> 00:00:33.227
+The API server checks who you are, and whether you may do this.
+
+10
+00:00:33.433 --> 00:00:38.411
+It validates the object, and stores it in etcd, the cluster's database.
+
+11
+00:00:39.633 --> 00:00:43.032
+Then it answers created, and kubectl exits.
+
+12
+00:00:43.233 --> 00:00:44.944
+That took under a second.
+
+13
+00:00:44.944 --> 00:00:46.449
+But look at the nodes.
+
+14
+00:00:46.449 --> 00:00:48.022
+Nothing runs there yet.
+
+15
+00:00:48.022 --> 00:00:49.937
+Your request is only stored.
+
+16
+00:00:51.367 --> 00:00:52.162
+Step three.
+
+17
+00:00:52.162 --> 00:00:55.704
+The Deployment controller watches the API server.
+
+18
+00:00:55.704 --> 00:00:57.728
+A watch is one long request.
+
+19
+00:00:57.728 --> 00:01:00.908
+The API server streams every change down it.
+
+20
+00:01:02.533 --> 00:01:05.922
+It sees the new Deployment, and creates a ReplicaSet.
+
+21
+00:01:05.922 --> 00:01:10.141
+That is a helper object that keeps a set number of identical Pods.
+
+22
+00:01:11.767 --> 00:01:12.468
+Step four.
+
+23
+00:01:12.468 --> 00:01:17.732
+The ReplicaSet controller sees the ReplicaSet, and creates two Pod objects.
+
+24
+00:01:20.333 --> 00:01:21.983
+They have no node yet.
+
+25
+00:01:22.200 --> 00:01:22.939
+Step five.
+
+26
+00:01:22.939 --> 00:01:26.117
+The scheduler sees two Pods without a node.
+
+27
+00:01:27.233 --> 00:01:29.971
+It filters out nodes that cannot take them.
+
+28
+00:01:30.200 --> 00:01:31.679
+It scores the rest.
+
+29
+00:01:31.900 --> 00:01:34.253
+And it writes a node name into each Pod.
+
+30
+00:01:34.967 --> 00:01:35.633
+Step six.
+
+31
+00:01:35.633 --> 00:01:39.929
+The kubelet on each chosen node sees a Pod assigned to it.
+
+32
+00:01:41.533 --> 00:01:45.551
+It asks containerd to pull the image, and start the container.
+
+33
+00:01:46.967 --> 00:01:47.764
+Step seven.
+
+34
+00:01:47.764 --> 00:01:49.575
+The kubelet reports back.
+
+35
+00:01:49.575 --> 00:01:52.981
+The Pod is running, and here is its IP address.
+
+36
+00:01:53.200 --> 00:01:56.257
+The API server stores that in the Pod's status.
+
+37
+00:01:56.467 --> 00:01:58.485
+Now look at who talked to whom.
+
+38
+00:01:58.485 --> 00:02:01.024
+Every step went through the API server.
+
+39
+00:02:01.233 --> 00:02:03.166
+No part sent orders to another.
+
+40
+00:02:03.166 --> 00:02:05.535
+Each one acted on what it found there.
+
+41
+00:02:06.967 --> 00:02:10.440
+Each step also leaves a short record, called an event.
+
+42
+00:02:10.440 --> 00:02:13.721
+kubectl get events shows the whole chain, in order.
+
+43
+00:02:13.933 --> 00:02:17.100
+If a step cannot happen, the chain stops there.
+
+44
+00:02:17.100 --> 00:02:21.143
+A Pod that fits on no node stays Pending, with no node name.
+
+45
+00:02:21.143 --> 00:02:22.423
+Its events say why.
+
+46
+00:02:22.633 --> 00:02:25.196
+So kubectl apply only stores your wish.
+
+47
+00:02:25.196 --> 00:02:30.519
+The controllers, the scheduler and the kubelet make it real, a few seconds later.

@@ -1,0 +1,205 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:04.548
+Start with a push deploy.
+
+2
+00:00:04.548 --> 00:00:08.396
+Your CI pipeline tests the code and builds the image.
+
+3
+00:00:08.396 --> 00:00:10.647
+Its last step is kubectl apply.
+
+4
+00:00:10.800 --> 00:00:13.879
+Something outside the cluster sends the change in.
+
+5
+00:00:15.067 --> 00:00:18.332
+So CI must hold a key that can write to the cluster.
+
+6
+00:00:18.332 --> 00:00:22.163
+Any workflow that can read that secret can change production.
+
+7
+00:00:22.333 --> 00:00:25.588
+And the deploy only happens while the pipeline runs.
+
+8
+00:00:25.588 --> 00:00:29.344
+If someone edits the cluster an hour later, nothing notices.
+
+9
+00:00:29.533 --> 00:00:32.308
+GitOps closes that gap from the other side.
+
+10
+00:00:32.308 --> 00:00:35.406
+Git becomes the only place where changes happen.
+
+11
+00:00:35.406 --> 00:00:37.148
+It holds the desired state.
+
+12
+00:00:37.333 --> 00:00:42.519
+A program inside the cluster keeps the cluster equal to git, all the time.
+
+13
+00:00:42.519 --> 00:00:44.621
+Here, that program is Argo CD.
+
+14
+00:00:44.800 --> 00:00:45.910
+Argo CD pulls.
+
+15
+00:00:45.910 --> 00:00:49.080
+It reads git, and applies what it finds.
+
+16
+00:00:49.267 --> 00:00:55.417
+It also watches the live objects it manages, so it sees any change in the cluster within seconds.
+
+17
+00:00:55.600 --> 00:00:58.670
+CI still tests the code and builds the image.
+
+18
+00:00:58.670 --> 00:01:02.422
+Then it changes a file in git, and that is all CI does.
+
+19
+00:01:02.422 --> 00:01:04.537
+It needs no cluster key at all.
+
+20
+00:01:04.733 --> 00:01:07.033
+And git log becomes your deploy log.
+
+21
+00:01:07.033 --> 00:01:09.333
+It shows who changed what, and when.
+
+22
+00:01:09.533 --> 00:01:16.111
+Argo CD keeps comparing two things: the desired state from git, and the live state in the cluster.
+
+23
+00:01:16.267 --> 00:01:20.071
+When every object it manages matches git, the app is Synced.
+
+24
+00:01:20.267 --> 00:01:24.771
+A second status, health, answers a different question: does it work?
+
+25
+00:01:24.771 --> 00:01:25.699
+Here, Healthy.
+
+26
+00:01:25.867 --> 00:01:28.285
+Now a teammate fixes something by hand.
+
+27
+00:01:28.285 --> 00:01:32.067
+They change the greeting in the live ConfigMap, and skip git.
+
+28
+00:01:32.267 --> 00:01:33.948
+Argo CD sees it at once.
+
+29
+00:01:33.948 --> 00:01:37.592
+Live no longer matches git, so the app is OutOfSync.
+
+30
+00:01:37.733 --> 00:01:41.061
+But it is still Healthy, because the app still runs fine.
+
+31
+00:01:41.061 --> 00:01:43.571
+Sync and health are two separate questions.
+
+32
+00:01:43.733 --> 00:01:46.637
+By default, Argo CD only reports this drift.
+
+33
+00:01:46.637 --> 00:01:51.917
+Undoing it is a setting called self-heal, and it stays off until you turn it on.
+
+34
+00:01:52.067 --> 00:01:57.174
+With self-heal on, Argo CD syncs git's version back after a short pause.
+
+35
+00:01:57.174 --> 00:01:58.309
+You did nothing.
+
+36
+00:01:58.467 --> 00:02:01.364
+To change the greeting for good, change git.
+
+37
+00:02:01.364 --> 00:02:03.472
+Edit the file, commit, and push.
+
+38
+00:02:03.667 --> 00:02:08.393
+Argo CD pulls the new commit, and finds that the cluster differs.
+
+39
+00:02:08.393 --> 00:02:09.120
+OutOfSync.
+
+40
+00:02:09.267 --> 00:02:11.033
+So it applies the difference.
+
+41
+00:02:11.033 --> 00:02:13.227
+Synced again, with the new greeting.
+
+42
+00:02:13.400 --> 00:02:15.747
+Now say that commit was a mistake.
+
+43
+00:02:15.747 --> 00:02:18.508
+With GitOps, a rollback is a commit too.
+
+44
+00:02:18.508 --> 00:02:19.820
+You run git revert.
+
+45
+00:02:20.000 --> 00:02:23.100
+It makes a new commit that undoes the bad one.
+
+46
+00:02:23.100 --> 00:02:24.515
+History stays intact.
+
+47
+00:02:24.667 --> 00:02:28.129
+Push it, and Argo CD deploys the state from before.
+
+48
+00:02:28.333 --> 00:02:30.219
+Why not kubectl rollout undo?
+
+49
+00:02:30.219 --> 00:02:36.005
+It changes the cluster but not git, so self-heal would put the bad version straight back.
+
+50
+00:02:37.000 --> 00:02:38.686
+Git holds what you want.
+
+51
+00:02:38.686 --> 00:02:44.587
+Argo CD, inside the cluster, pulls it, compares, and keeps the cluster equal to git.

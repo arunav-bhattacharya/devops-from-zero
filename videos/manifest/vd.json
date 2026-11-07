@@ -1,0 +1,5 @@
+{
+ "d38": [{"slug": "d38-apply", "title": "What happens when you run kubectl apply, step by step", "after": 4, "file": "p10/d38_apply.py", "scene": "D38Apply", "poster_at": 120.0}],
+ "d40": [{"slug": "d40-rollout", "title": "How a rolling update swaps old Pods for new ones", "after": 3, "file": "p10/d40_rollout.py", "scene": "D40Rollout", "poster_at": 112.0}],
+ "d41": [{"slug": "d41-service", "title": "How a Service finds its Pods", "after": 1, "file": "p10/d41_service.py", "scene": "D41Service", "poster_at": 150.0}]
+}

@@ -1,0 +1,253 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.554
+Your app wants to connect to example.com.
+
+2
+00:00:05.554 --> 00:00:08.687
+But machines connect to addresses, not names.
+
+3
+00:00:08.900 --> 00:00:11.249
+DNS turns the name into an address.
+
+4
+00:00:11.249 --> 00:00:16.081
+No single server knows every name, so the question travels down a chain.
+
+5
+00:00:16.300 --> 00:00:18.217
+First stop, the stub resolver.
+
+6
+00:00:18.217 --> 00:00:21.028
+It is a small part of your operating system.
+
+7
+00:00:21.233 --> 00:00:25.342
+It checks the file /etc/hosts, and its own cache.
+
+8
+00:00:25.342 --> 00:00:26.516
+Nothing there.
+
+9
+00:00:26.733 --> 00:00:29.326
+So it asks a recursive resolver.
+
+10
+00:00:29.326 --> 00:00:34.917
+Your router, your internet provider, or a public one such as 1.1.1.1.
+
+11
+00:00:35.133 --> 00:00:36.693
+Its cache is empty too.
+
+12
+00:00:36.693 --> 00:00:39.947
+So it starts at the top, and asks a root server.
+
+13
+00:00:40.167 --> 00:00:42.445
+The root does not know the answer.
+
+14
+00:00:42.445 --> 00:00:45.796
+Each level only knows who runs the level below it.
+
+15
+00:00:45.796 --> 00:00:48.677
+So the root says: ask the servers for .com.
+
+16
+00:00:48.900 --> 00:00:53.920
+Next, a .com server, called a TLD server, for top-level domain.
+
+17
+00:00:53.920 --> 00:00:57.425
+It says: ask example.com's own name servers.
+
+18
+00:00:57.633 --> 00:01:03.571
+Last, the authoritative server for example.com gives the real answer: the address.
+
+19
+00:01:03.800 --> 00:01:07.924
+The answer flows back to your app, and each layer on the way caches it.
+
+20
+00:01:08.133 --> 00:01:10.491
+Every record has a TTL, in seconds.
+
+21
+00:01:10.491 --> 00:01:12.984
+It says how long anyone may cache it.
+
+22
+00:01:12.984 --> 00:01:16.217
+This one says an hour, and the clock is running.
+
+23
+00:01:16.433 --> 00:01:20.757
+Ask again within that hour, and the stub answers straight from its cache.
+
+24
+00:01:20.757 --> 00:01:22.356
+No trip to the root at all.
+
+25
+00:01:23.167 --> 00:01:25.616
+Now say the site moves to a new address.
+
+26
+00:01:25.616 --> 00:01:28.983
+The authoritative server changes its answer right away.
+
+27
+00:01:29.200 --> 00:01:32.613
+People say a DNS change takes time to propagate.
+
+28
+00:01:32.613 --> 00:01:38.301
+What really happens is that old answers sit in caches, until their TTL runs out.
+
+29
+00:01:38.533 --> 00:01:42.135
+So teams lower the TTL a day before a planned move.
+
+30
+00:01:42.135 --> 00:01:46.867
+One hour becomes 60 seconds, so old answers expire within a minute.
+
+31
+00:01:48.200 --> 00:01:50.918
+Now the app has an address.
+
+32
+00:01:50.918 --> 00:01:56.555
+The URL names no port, so curl uses 443, the HTTPS port.
+
+33
+00:01:56.767 --> 00:02:01.851
+Before any data moves, TCP opens a connection with a three-step handshake.
+
+34
+00:02:02.067 --> 00:02:02.442
+One.
+
+35
+00:02:02.442 --> 00:02:04.412
+The client sends SYN.
+
+36
+00:02:04.412 --> 00:02:05.820
+I want to talk.
+
+37
+00:02:06.033 --> 00:02:06.399
+Two.
+
+38
+00:02:06.399 --> 00:02:08.871
+The server answers SYN-ACK.
+
+39
+00:02:08.871 --> 00:02:10.427
+Fine, I hear you.
+
+40
+00:02:10.633 --> 00:02:11.086
+Three.
+
+41
+00:02:11.086 --> 00:02:14.779
+The client sends ACK, and the connection is open.
+
+42
+00:02:14.779 --> 00:02:17.267
+Now the bytes can flow, in order.
+
+43
+00:02:18.300 --> 00:02:22.228
+But connections fail, and the error tells you which step broke.
+
+44
+00:02:22.228 --> 00:02:25.033
+Say you try port 8000, where nothing listens.
+
+45
+00:02:25.767 --> 00:02:29.569
+The machine is there, so it answers your SYN, with a reset.
+
+46
+00:02:29.569 --> 00:02:30.793
+Connection refused.
+
+47
+00:02:31.000 --> 00:02:33.773
+A refusal comes back in about a millisecond.
+
+48
+00:02:33.773 --> 00:02:37.051
+The host is there, but nothing listens on that port.
+
+49
+00:02:37.967 --> 00:02:39.488
+A timeout is different.
+
+50
+00:02:39.488 --> 00:02:41.010
+Nothing answers at all.
+
+51
+00:02:41.010 --> 00:02:45.773
+A firewall dropped the packets, or the address is wrong, or unreachable.
+
+52
+00:02:46.000 --> 00:02:49.420
+Your machine hears nothing back, so it sends the SYN again.
+
+53
+00:02:49.633 --> 00:02:53.907
+It resends a few times, waiting longer each time, before it gives up.
+
+54
+00:02:54.133 --> 00:02:54.926
+Timed out.
+
+55
+00:02:54.926 --> 00:02:57.304
+So even the waiting is a clue.
+
+56
+00:02:58.333 --> 00:02:59.950
+So read the error first.
+
+57
+00:02:59.950 --> 00:03:05.408
+Could not resolve host means DNS failed, and no packet went to the server at all.
+
+58
+00:03:05.633 --> 00:03:07.767
+Connection refused means a reset.
+
+59
+00:03:07.767 --> 00:03:11.129
+The host answered, but nothing listens on that port.
+
+60
+00:03:11.333 --> 00:03:13.194
+And a timeout means no answer.
+
+61
+00:03:13.194 --> 00:03:16.296
+The packets were dropped, or the address is wrong.
+
+62
+00:03:16.500 --> 00:03:19.470
+First DNS turns the name into an address.
+
+63
+00:03:19.470 --> 00:03:23.020
+Then TCP shakes hands with that address and port.

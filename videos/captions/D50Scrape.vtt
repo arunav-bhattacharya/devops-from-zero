@@ -1,0 +1,169 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:05.914
+hello-devops already counts the requests it serves.
+
+2
+00:00:05.914 --> 00:00:11.216
+It keeps the numbers in memory, and shows them on a plain web page, its metrics page.
+
+3
+00:00:11.400 --> 00:00:16.399
+Each line is a metric name, then labels in braces, then the value right now.
+
+4
+00:00:16.533 --> 00:00:18.933
+As requests come in, the number grows.
+
+5
+00:00:18.933 --> 00:00:21.712
+But the page only shows the value right now.
+
+6
+00:00:21.712 --> 00:00:24.617
+Nothing remembers what it was ten minutes ago.
+
+7
+00:00:24.800 --> 00:00:31.164
+Prometheus is a server that collects these numbers every few seconds, and stores them with a timestamp.
+
+8
+00:00:31.333 --> 00:00:32.809
+It collects by pulling.
+
+9
+00:00:32.809 --> 00:00:34.862
+On a timer, it fetches the page.
+
+10
+00:00:34.862 --> 00:00:39.161
+One fetch is called a scrape, and the thing it scrapes is a target.
+
+11
+00:00:39.333 --> 00:00:41.837
+The lab scrapes every fifteen seconds.
+
+12
+00:00:41.837 --> 00:00:43.549
+The default is one minute.
+
+13
+00:00:43.733 --> 00:00:46.282
+Look at the metric hello_responses_total.
+
+14
+00:00:46.282 --> 00:00:49.080
+One name, but three different sets of labels.
+
+15
+00:00:49.267 --> 00:00:51.900
+Each label set is its own time series.
+
+16
+00:00:51.900 --> 00:00:56.683
+A time series is the metric name, plus one exact set of label values.
+
+17
+00:00:56.867 --> 00:01:00.339
+Change any label value, and you have a different series.
+
+18
+00:01:00.339 --> 00:01:01.765
+Here, that makes three.
+
+19
+00:01:01.933 --> 00:01:09.279
+Prometheus adds two labels of its own: job, the job name from its config, and instance, the target's address.
+
+20
+00:01:09.467 --> 00:01:10.832
+Now watch a scrape.
+
+21
+00:01:10.832 --> 00:01:15.645
+Each one adds one sample to every series: a timestamp, and a value.
+
+22
+00:01:15.800 --> 00:01:18.713
+Fifteen seconds later, the counter has grown.
+
+23
+00:01:18.713 --> 00:01:20.720
+Another scrape, another sample.
+
+24
+00:01:20.867 --> 00:01:25.353
+And again, every fifteen seconds, for as long as Prometheus runs.
+
+25
+00:01:25.600 --> 00:01:29.214
+Prometheus keeps only what the counter read at each scrape.
+
+26
+00:01:29.214 --> 00:01:31.480
+Never the single requests in between.
+
+27
+00:01:32.667 --> 00:01:37.431
+A graph of one series is just these samples, as points, joined by a line.
+
+28
+00:01:38.800 --> 00:01:40.662
+This metric is a counter.
+
+29
+00:01:40.662 --> 00:01:42.376
+A counter only goes up.
+
+30
+00:01:42.533 --> 00:01:45.524
+Or it drops to zero, when the process restarts.
+
+31
+00:01:45.524 --> 00:01:47.624
+Then it starts counting up again.
+
+32
+00:01:47.800 --> 00:01:53.223
+So the raw value, like 303, only says how many since the process started.
+
+33
+00:01:53.223 --> 00:01:55.600
+On its own, it tells you little.
+
+34
+00:01:55.733 --> 00:01:59.015
+The useful number is how fast it grows.
+
+35
+00:01:59.015 --> 00:02:01.876
+Here it grew by 204 in 45 seconds.
+
+36
+00:02:01.876 --> 00:02:04.905
+That is about 4.5 requests a second.
+
+37
+00:02:05.067 --> 00:02:06.228
+That is a rate.
+
+38
+00:02:06.228 --> 00:02:12.346
+The PromQL function rate() works it out for every series, even across restarts.
+
+39
+00:02:12.346 --> 00:02:13.663
+Day 51 shows how.
+
+40
+00:02:14.667 --> 00:02:16.367
+The app shows its numbers.
+
+41
+00:02:16.367 --> 00:02:21.796
+Prometheus pulls them on a timer, and stores one sample per series at every scrape.
+
+42
+00:02:21.796 --> 00:02:24.543
+For a counter, you read how fast it grows.

@@ -1,0 +1,233 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.901
+Picture a checkout request on a payments site.
+
+2
+00:00:05.901 --> 00:00:07.641
+It enters an API service.
+
+3
+00:00:08.567 --> 00:00:12.584
+The API calls a fraud check, which calls a card partner.
+
+4
+00:00:12.584 --> 00:00:15.023
+The API also writes to a database.
+
+5
+00:00:16.433 --> 00:00:18.725
+The customer waited three seconds.
+
+6
+00:00:18.725 --> 00:00:20.073
+Which hop took them?
+
+7
+00:00:21.100 --> 00:00:23.614
+Metrics give you averages per service.
+
+8
+00:00:23.614 --> 00:00:26.724
+The 95th percentile of the fraud check went up.
+
+9
+00:00:26.933 --> 00:00:30.800
+Logs give you lines per service, each with its own timestamp.
+
+10
+00:00:30.800 --> 00:00:34.413
+You have to guess which lines belong to this one request.
+
+11
+00:00:34.633 --> 00:00:38.331
+Neither one tells you where this request spent its three seconds.
+
+12
+00:00:39.233 --> 00:00:40.216
+A trace does.
+
+13
+00:00:40.216 --> 00:00:44.900
+It is the story of one request, told as a tree of timed steps.
+
+14
+00:00:45.133 --> 00:00:46.449
+Each step is a span.
+
+15
+00:00:46.449 --> 00:00:52.699
+It has a name, a start time and an end time, so a duration, and some facts about what happened.
+
+16
+00:00:53.500 --> 00:00:56.835
+Every span in the trace carries the same trace ID.
+
+17
+00:00:57.067 --> 00:01:01.649
+Each one also has its own span ID, and the span ID of its parent.
+
+18
+00:01:01.649 --> 00:01:03.693
+The parent IDs make the tree.
+
+19
+00:01:03.900 --> 00:01:05.851
+The first span has no parent.
+
+20
+00:01:05.851 --> 00:01:07.668
+It is called the root span.
+
+21
+00:01:07.900 --> 00:01:10.668
+But these spans are made in different services.
+
+22
+00:01:10.668 --> 00:01:14.143
+Each service has to tell the next one which trace it is in.
+
+23
+00:01:14.367 --> 00:01:17.152
+That hand-over is context propagation.
+
+24
+00:01:17.152 --> 00:01:22.721
+The caller injects the context into the outgoing request, as an HTTP header.
+
+25
+00:01:22.933 --> 00:01:27.983
+For HTTP, OpenTelemetry uses the W3C traceparent header.
+
+26
+00:01:27.983 --> 00:01:31.139
+It has four parts, split by dashes.
+
+27
+00:01:31.367 --> 00:01:34.317
+00 is the version of the format.
+
+28
+00:01:34.533 --> 00:01:40.961
+Next comes the trace ID: 32 hex characters, the same for every span of this request.
+
+29
+00:01:41.167 --> 00:01:46.059
+Then the parent span ID: 16 hex characters, the caller's current span.
+
+30
+00:01:46.267 --> 00:01:47.521
+Last, the flags.
+
+31
+00:01:47.521 --> 00:01:51.677
+01 means sampled: the caller is recording this trace.
+
+32
+00:01:51.900 --> 00:01:57.347
+The receiver extracts the header, and starts its own span as a child of the caller's span.
+
+33
+00:01:57.567 --> 00:02:02.136
+Then it injects the same trace ID into its own outgoing call.
+
+34
+00:02:02.136 --> 00:02:04.833
+Only the parent changes, hop by hop.
+
+35
+00:02:05.033 --> 00:02:10.416
+Trouble starts at a hop that does not pass it on, like a proxy that strips unknown headers.
+
+36
+00:02:10.633 --> 00:02:15.706
+The card partner then starts a new trace, and you get two traces that look unrelated.
+
+37
+00:02:15.706 --> 00:02:18.689
+When a trace stops early, look for that hop first.
+
+38
+00:02:20.200 --> 00:02:25.406
+Each service exports its spans over OTLP, the OpenTelemetry Protocol.
+
+39
+00:02:25.406 --> 00:02:29.707
+Most teams send them to an OpenTelemetry Collector first.
+
+40
+00:02:31.933 --> 00:02:34.835
+Receivers take data in.
+
+41
+00:02:34.835 --> 00:02:44.171
+In the lab, the otlp receiver listens on 4317 for gRPC, and 4318 for HTTP.
+
+42
+00:02:44.400 --> 00:02:45.880
+Processors change it.
+
+43
+00:02:45.880 --> 00:02:50.813
+One hashes the client address, because an IP address is personal data.
+
+44
+00:02:51.033 --> 00:02:52.518
+Exporters send it out.
+
+45
+00:02:52.518 --> 00:02:57.105
+Here, to Jaeger, which stores the traces and shows them in a web UI.
+
+46
+00:02:59.133 --> 00:03:03.224
+Jaeger draws the spans of one trace on a timeline, one row each.
+
+47
+00:03:03.224 --> 00:03:05.461
+That picture is called a waterfall.
+
+48
+00:03:05.667 --> 00:03:08.146
+The API span covers all three seconds.
+
+49
+00:03:08.146 --> 00:03:09.973
+The database write is short.
+
+50
+00:03:09.973 --> 00:03:13.431
+The fraud check is long, but it has a child under it.
+
+51
+00:03:13.633 --> 00:03:17.895
+The slow step is the longest bar with nothing underneath it.
+
+52
+00:03:17.895 --> 00:03:21.092
+Here, the card partner: 2.6 of the 3 seconds.
+
+53
+00:03:22.000 --> 00:03:24.036
+It works for hello-devops too.
+
+54
+00:03:24.036 --> 00:03:29.736
+In the lab, Redis writes were paused for 800 milliseconds, and one request was sent.
+
+55
+00:03:29.967 --> 00:03:37.077
+GET / took 835 milliseconds, and its child span INCRBY took 832 of them.
+
+56
+00:03:37.300 --> 00:03:40.720
+So Redis is the slow step, and you know where to look next.
+
+57
+00:03:40.933 --> 00:03:47.099
+One trace ID, carried in traceparent, joins the spans of every service into one waterfall.
+
+58
+00:03:47.099 --> 00:03:50.867
+The longest bar with nothing under it is the slow step.

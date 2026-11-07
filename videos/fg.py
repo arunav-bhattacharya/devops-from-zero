@@ -29,6 +29,9 @@ SAY = [  # how the voice should say course words (applied to the spoken text onl
     (r"\bPID\b", "P I D"), (r"\bUID\b", "U I D"), (r"\bURL\b", "U R L"), (r"\bSHA\b", "shah"), (r"\bJVM\b", "J V M"),
     (r"\bGitOps\b", "Git ops"), (r"\bDevOps\b", "Dev ops"), (r"\bDevSecOps\b", "Dev sec ops"), (r"\bHCL\b", "H C L"),
     (r"\bPod\b", "pod"), (r"\bPods\b", "pods"), (r"\be\.g\.", "for example"), (r"\bi\.e\.", "that is"), (r"\bvs\.?\b", "versus"),
+    (r"\bcontainerd\b", "container D"), (r"\brunc\b", "run C"), (r"\bpytest\b", "pie test"), (r"\bidempotent\b", "eye-dem-potent"),
+    (r"\bSYN-ACK\b", "sin ack"), (r"\bSYN\b", "sin"), (r"\bCAs\b", "C A's"), (r"\bCA\b", "C A"),
+    (r"\bkubelets?\b", lambda m: "cube-let" + ("s" if m.group(0).endswith("s") else "")),
 ]
 
 

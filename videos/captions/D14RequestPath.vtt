@@ -1,0 +1,205 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:10.142
+Your server lives inside a VPC, your own private network in AWS.
+
+2
+00:00:10.142 --> 00:00:15.120
+The default VPC is the block 172.31.0.0/16.
+
+3
+00:00:15.267 --> 00:00:19.319
+Each availability zone gets one /20 subnet.
+
+4
+00:00:19.319 --> 00:00:24.219
+That is 4,096 addresses, minus the 5 that AWS keeps.
+
+5
+00:00:24.400 --> 00:00:27.881
+Your server lands in one of them.
+
+6
+00:00:27.881 --> 00:00:32.733
+It only knows its private address, 172.31.0.5.
+
+7
+00:00:32.933 --> 00:00:40.266
+On it, gunicorn listens on 0.0.0.0, port 8000, so outside traffic can reach it.
+
+8
+00:00:40.266 --> 00:00:43.144
+Something else decides who may.
+
+9
+00:00:43.333 --> 00:00:46.618
+An internet gateway is attached to the VPC.
+
+10
+00:00:46.618 --> 00:00:48.680
+It is the VPC's front door.
+
+11
+00:00:48.867 --> 00:00:51.747
+The subnet's route table has two rules.
+
+12
+00:00:51.747 --> 00:00:54.405
+Addresses inside the VPC stay local.
+
+13
+00:00:54.600 --> 00:01:00.923
+And 0.0.0.0/0, which means every address, goes to the internet gateway.
+
+14
+00:01:00.923 --> 00:01:05.109
+That one route is what makes the subnet public.
+
+15
+00:01:05.267 --> 00:01:08.990
+The server also gets a public address, but it never sees it.
+
+16
+00:01:08.990 --> 00:01:13.024
+The internet gateway holds the pair, and swaps one for the other.
+
+17
+00:01:13.200 --> 00:01:14.452
+Last, the firewall.
+
+18
+00:01:14.452 --> 00:01:16.692
+A security group wraps the server.
+
+19
+00:01:16.692 --> 00:01:21.369
+The lab's group, hello-devops-web, starts with no inbound rules at all.
+
+20
+00:01:21.800 --> 00:01:26.948
+Now send one request from your Mac, to the public address, on port 8000.
+
+21
+00:01:27.133 --> 00:01:31.876
+At the internet gateway, the public destination is swapped for the private one.
+
+22
+00:01:32.067 --> 00:01:34.863
+Inside, it reaches the security group.
+
+23
+00:01:34.863 --> 00:01:38.102
+No rule allows it, so the packet is dropped.
+
+24
+00:01:38.102 --> 00:01:38.764
+Silently.
+
+25
+00:01:38.933 --> 00:01:42.022
+Your curl hears nothing back, and times out.
+
+26
+00:01:42.022 --> 00:01:44.480
+Day 10 said a timeout means a drop.
+
+27
+00:01:44.480 --> 00:01:45.673
+Here is the drop.
+
+28
+00:01:45.867 --> 00:01:48.121
+So add one inbound rule.
+
+29
+00:01:48.121 --> 00:01:53.005
+TCP port 8000, from your own address only, as a /32.
+
+30
+00:01:53.200 --> 00:01:54.122
+Send it again.
+
+31
+00:01:54.122 --> 00:01:56.099
+The gateway swaps the address.
+
+32
+00:01:56.099 --> 00:01:59.855
+The security group finds a matching rule, and lets it in.
+
+33
+00:01:60.000 --> 00:02:01.121
+gunicorn answers.
+
+34
+00:02:01.121 --> 00:02:03.428
+The reply needs no rule of its own.
+
+35
+00:02:03.428 --> 00:02:05.471
+The security group is stateful.
+
+36
+00:02:05.471 --> 00:02:08.965
+It remembers the connection, and lets the answer out.
+
+37
+00:02:09.133 --> 00:02:19.700
+Your Mac's address is outside the VPC, so the only route that matches is 0.0.0.0/0, to the internet gateway.
+
+38
+00:02:19.867 --> 00:02:23.257
+The gateway swaps the private source back to the public one.
+
+39
+00:02:23.257 --> 00:02:26.365
+So your Mac gets its answer from the address it called.
+
+40
+00:02:27.333 --> 00:02:31.415
+Port 8000 is open to you alone, and port 22 stays closed.
+
+41
+00:02:31.415 --> 00:02:34.280
+So how do you get a shell on the server?
+
+42
+00:02:34.467 --> 00:02:36.154
+With Session Manager.
+
+43
+00:02:36.154 --> 00:02:44.592
+A small program on the server, the SSM Agent, keeps an outbound HTTPS connection open to Systems Manager.
+
+44
+00:02:44.733 --> 00:02:46.698
+Outbound is allowed by default.
+
+45
+00:02:46.698 --> 00:02:52.213
+And because the security group is stateful, traffic on that connection flows both ways.
+
+46
+00:02:52.400 --> 00:02:54.759
+On your Mac, you run start-session.
+
+47
+00:02:54.759 --> 00:02:59.880
+AWS checks your IAM permissions, and joins your terminal to that connection.
+
+48
+00:03:00.067 --> 00:03:01.860
+You arrive as ssm-user.
+
+49
+00:03:01.860 --> 00:03:04.667
+No port to open, and no key to lose.
+
+50
+00:03:04.800 --> 00:03:13.149
+So one request: the route table points to the gateway, the gateway swaps the address, and the security group opens one port.
+
+51
+00:03:13.149 --> 00:03:16.717
+And Session Manager dials out, so port 22 stays shut.

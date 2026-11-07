@@ -1,0 +1,213 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:05.300
+Git keeps your project in three places.
+
+2
+00:00:05.467 --> 00:00:10.593
+The working tree is the files in your project folder, the ones your editor changes.
+
+3
+00:00:10.733 --> 00:00:16.244
+The staging area, also called the index, holds the exact contents of your next commit.
+
+4
+00:00:16.400 --> 00:00:20.716
+The repository is the hidden .git folder, where every commit lives.
+
+5
+00:00:20.867 --> 00:00:23.627
+Say you change the price file in your editor.
+
+6
+00:00:23.627 --> 00:00:25.467
+Only the working tree changes.
+
+7
+00:00:26.400 --> 00:00:29.543
+git add copies that change into the staging area.
+
+8
+00:00:29.733 --> 00:00:34.903
+git commit turns the whole staging area into a new commit in the repository.
+
+9
+00:00:35.867 --> 00:00:39.829
+Most people picture a commit as a diff: the lines you changed.
+
+10
+00:00:39.829 --> 00:00:41.811
+Git does not store it that way.
+
+11
+00:00:43.267 --> 00:00:47.112
+Each commit records the whole project, as it was at that moment.
+
+12
+00:00:47.112 --> 00:00:49.936
+Git works out a diff only when you ask for one.
+
+13
+00:00:50.133 --> 00:00:52.426
+Git keeps three kinds of objects.
+
+14
+00:00:52.426 --> 00:00:55.066
+A blob holds the contents of one file.
+
+15
+00:00:55.066 --> 00:00:57.705
+Only the bytes: no file name, no date.
+
+16
+00:00:57.867 --> 00:00:59.285
+A tree is one folder.
+
+17
+00:00:59.285 --> 00:01:03.811
+It lists names, and each name points to a blob, or to another tree.
+
+18
+00:01:04.000 --> 00:01:07.733
+A commit points to one tree, the top folder of the project.
+
+19
+00:01:07.733 --> 00:01:12.163
+It also holds its parent commit, the author, the time and the message.
+
+20
+00:01:12.333 --> 00:01:15.319
+Every object is named by a hash of its content.
+
+21
+00:01:15.319 --> 00:01:19.259
+A hash turns any bytes into a short, fixed-length fingerprint.
+
+22
+00:01:19.400 --> 00:01:25.785
+Git uses SHA-1, which gives forty hex characters, and it usually shows only the first seven.
+
+23
+00:01:25.933 --> 00:01:29.404
+The same content gets the same name on every computer.
+
+24
+00:01:29.404 --> 00:01:34.096
+Hash the word hello on your machine or on mine, and you get exactly this.
+
+25
+00:01:34.867 --> 00:01:38.815
+So a file that did not change is the same blob in every commit.
+
+26
+00:01:38.815 --> 00:01:41.323
+Here is the commit just before this one.
+
+27
+00:01:41.467 --> 00:01:44.362
+Both trees point to the same README blob.
+
+28
+00:01:44.362 --> 00:01:45.704
+Git stores it once.
+
+29
+00:01:45.867 --> 00:01:50.332
+The price file did change, so each commit points to its own blob for it.
+
+30
+00:01:50.467 --> 00:01:55.050
+A commit's hash covers its tree, its parent, its author line and its message.
+
+31
+00:01:55.050 --> 00:02:00.229
+Change even one letter of the message, and you get a different commit, with a new hash.
+
+32
+00:02:00.400 --> 00:02:02.036
+Remember that for Day 9.
+
+33
+00:02:02.036 --> 00:02:05.171
+It is why a rebase gives your commits new IDs.
+
+34
+00:02:06.067 --> 00:02:09.657
+Commits point back to their parents, so history is a chain.
+
+35
+00:02:09.657 --> 00:02:12.395
+You can follow it back, one parent at a time.
+
+36
+00:02:14.533 --> 00:02:17.785
+A branch is a small file that holds one commit hash.
+
+37
+00:02:17.785 --> 00:02:20.349
+main points to the newest commit on main.
+
+38
+00:02:20.533 --> 00:02:25.383
+And currency-first is another branch, pointing at the commit on its side branch.
+
+39
+00:02:25.533 --> 00:02:27.933
+HEAD answers the question: where am I?
+
+40
+00:02:27.933 --> 00:02:30.901
+Usually it points to a branch, not to a commit.
+
+41
+00:02:31.067 --> 00:02:32.254
+Now make a commit.
+
+42
+00:02:32.254 --> 00:02:37.267
+Git writes a new commit object, and its parent is the commit main points to.
+
+43
+00:02:37.467 --> 00:02:40.249
+Then it moves main forward to the new commit.
+
+44
+00:02:40.249 --> 00:02:42.970
+HEAD comes along, because it points at main.
+
+45
+00:02:42.970 --> 00:02:44.207
+No files get copied.
+
+46
+00:02:44.400 --> 00:02:48.491
+So git commit moves one pointer: the branch that HEAD points to.
+
+47
+00:02:48.491 --> 00:02:50.728
+currency-first did not move at all.
+
+48
+00:02:50.867 --> 00:02:53.317
+Most undo commands work the same way.
+
+49
+00:02:53.317 --> 00:02:57.621
+A hard reset two commits back just moves main to an older commit.
+
+50
+00:02:57.800 --> 00:02:59.819
+The newer commits are not deleted.
+
+51
+00:02:59.819 --> 00:03:03.680
+They are still in .git, and the reflog can lead you back to them.
+
+52
+00:03:03.867 --> 00:03:07.639
+A commit is a full snapshot, named by a hash of its content.
+
+53
+00:03:07.639 --> 00:03:12.605
+Branches and HEAD are pointers, and git commit moves the branch HEAD points to.

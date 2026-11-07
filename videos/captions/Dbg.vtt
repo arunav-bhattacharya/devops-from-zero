@@ -1,0 +1,245 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.614
+Every Linux program starts with three streams already open.
+
+2
+00:00:06.614 --> 00:00:08.784
+A stream is just a flow of bytes.
+
+3
+00:00:08.933 --> 00:00:10.415
+Stream zero is stdin.
+
+4
+00:00:10.415 --> 00:00:13.167
+The program reads its input from there.
+
+5
+00:00:13.167 --> 00:00:15.567
+By default, that is your keyboard.
+
+6
+00:00:15.733 --> 00:00:17.188
+Stream one is stdout.
+
+7
+00:00:17.188 --> 00:00:19.751
+The program writes its results there.
+
+8
+00:00:19.751 --> 00:00:22.175
+By default, they go to your screen.
+
+9
+00:00:22.333 --> 00:00:25.209
+Stream two is stderr, for error messages.
+
+10
+00:00:25.209 --> 00:00:28.085
+By default, that goes to your screen too.
+
+11
+00:00:28.267 --> 00:00:31.279
+Zero, one and two are called file descriptors.
+
+12
+00:00:31.279 --> 00:00:35.405
+They are the small numbers a program uses for its open streams.
+
+13
+00:00:35.600 --> 00:00:38.218
+The program does not open these three itself.
+
+14
+00:00:38.218 --> 00:00:41.011
+It inherits them from the shell that started it.
+
+15
+00:00:41.200 --> 00:00:43.614
+The program just writes to stream one.
+
+16
+00:00:43.614 --> 00:00:48.061
+It does not know if one leads to a screen, a file, or another program.
+
+17
+00:00:48.200 --> 00:00:54.498
+So the shell can point a stream somewhere else before the program starts, and the program needs no change.
+
+18
+00:00:54.498 --> 00:00:56.875
+Redirection and pipes both rely on this.
+
+19
+00:00:57.400 --> 00:00:58.401
+Let's try it.
+
+20
+00:00:58.401 --> 00:01:00.096
+Run ls app.log nosuch.
+
+21
+00:01:00.096 --> 00:01:03.948
+One of those files exists, and the other does not.
+
+22
+00:01:04.133 --> 00:01:06.844
+You get one result line and one error line.
+
+23
+00:01:06.844 --> 00:01:10.248
+On screen they look alike, but they travel separately.
+
+24
+00:01:10.400 --> 00:01:14.160
+Put a greater-than sign and a file name after the command.
+
+25
+00:01:14.160 --> 00:01:18.051
+Before ls even starts, the shell points stdout at that file.
+
+26
+00:01:18.200 --> 00:01:20.039
+The result goes into the file.
+
+27
+00:01:20.039 --> 00:01:24.208
+The error still lands on your screen, because only stream one moved.
+
+28
+00:01:24.400 --> 00:01:27.636
+One greater-than sign replaces what was in the file.
+
+29
+00:01:27.636 --> 00:01:31.432
+Two of them add to the end, so a second run leaves two lines.
+
+30
+00:01:31.600 --> 00:01:36.298
+To move stream two instead, put a two right before the greater-than sign.
+
+31
+00:01:36.298 --> 00:01:41.704
+Here it goes to /dev/null, a special file that throws away everything written to it.
+
+32
+00:01:41.867 --> 00:01:42.649
+Run it now.
+
+33
+00:01:42.649 --> 00:01:47.057
+The result replaces the file, and the error simply disappears.
+
+34
+00:01:47.057 --> 00:01:48.692
+The screen stays empty.
+
+35
+00:01:48.867 --> 00:01:51.695
+Or write two, greater-than, ampersand, one.
+
+36
+00:01:51.695 --> 00:01:54.917
+Read it as: send two wherever one goes right now.
+
+37
+00:01:55.067 --> 00:01:59.980
+Now both lines land in out.txt, and nothing reaches the screen.
+
+38
+00:02:00.933 --> 00:02:01.729
+Now, pipes.
+
+39
+00:02:01.729 --> 00:02:08.456
+A pipe, written as a vertical bar, connects one program's stdout to the next program's stdin.
+
+40
+00:02:08.600 --> 00:02:11.713
+Take grep ERROR app.log, piped into wc -l.
+
+41
+00:02:11.713 --> 00:02:18.533
+First, the shell creates the pipe, a small buffer that the operating system keeps in memory.
+
+42
+00:02:18.733 --> 00:02:23.081
+It points grep's stdout at one end, and wc's stdin at the other.
+
+43
+00:02:23.081 --> 00:02:26.341
+Then it starts both programs at the same moment.
+
+44
+00:02:26.533 --> 00:02:27.757
+Here is app.log.
+
+45
+00:02:27.757 --> 00:02:30.664
+It has thirty-seven lines, like these.
+
+46
+00:02:30.800 --> 00:02:36.412
+grep reads the lines one at a time, and passes on only the lines that contain ERROR.
+
+47
+00:02:36.412 --> 00:02:38.216
+The other lines stop there.
+
+48
+00:02:38.467 --> 00:02:40.860
+wc counts each line as it arrives.
+
+49
+00:02:40.860 --> 00:02:43.957
+Lines keep flowing while both programs work.
+
+50
+00:02:43.957 --> 00:02:46.209
+Nobody waits for the whole file.
+
+51
+00:02:46.467 --> 00:02:52.085
+When the input ends, wc prints its count to its own stdout, your screen.
+
+52
+00:02:52.085 --> 00:02:52.475
+Four.
+
+53
+00:02:52.667 --> 00:02:55.409
+Neither program knows the other exists.
+
+54
+00:02:55.409 --> 00:03:00.893
+grep writes to stream one, wc reads stream zero, and the shell joined the two.
+
+55
+00:03:01.067 --> 00:03:03.077
+Only stdout goes into a pipe.
+
+56
+00:03:03.077 --> 00:03:08.483
+Error messages leave on stderr, skip the pipe, and go straight to your screen.
+
+57
+00:03:08.667 --> 00:03:10.281
+Think of an assembly line.
+
+58
+00:03:10.281 --> 00:03:14.752
+Parts move along the belt one at a time, and every worker works at once.
+
+59
+00:03:14.752 --> 00:03:19.161
+Broken parts leave by a side door, and the next worker never sees them.
+
+60
+00:03:19.333 --> 00:03:23.544
+Every program gets stdin, stdout and stderr from the shell.
+
+61
+00:03:23.544 --> 00:03:30.611
+A greater-than sign points a stream at a file, and a pipe joins stdout to the next program's stdin.

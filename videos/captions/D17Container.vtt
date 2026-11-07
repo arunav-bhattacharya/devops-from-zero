@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:05.793
+A virtual machine pretends to be a whole computer.
+
+2
+00:00:05.793 --> 00:00:10.811
+It has virtual hardware, and it boots a full operating system with its own kernel.
+
+3
+00:00:11.000 --> 00:00:13.976
+The kernel is the core of an operating system.
+
+4
+00:00:13.976 --> 00:00:18.181
+It starts processes, hands out memory, and talks to the hardware.
+
+5
+00:00:18.333 --> 00:00:20.912
+Booting all of that takes many seconds.
+
+6
+00:00:20.912 --> 00:00:24.085
+And each VM holds on to its own share of memory.
+
+7
+00:00:24.867 --> 00:00:26.916
+A container has none of that.
+
+8
+00:00:26.916 --> 00:00:32.005
+It is a normal Linux process, the same kind you listed with ps on Day 6.
+
+9
+00:00:32.200 --> 00:00:34.468
+The kernel gives it two extra things.
+
+10
+00:00:34.667 --> 00:00:42.097
+Namespaces give the process a private view of the system: its own process list, network, hostname and files.
+
+11
+00:00:42.267 --> 00:00:46.903
+They work like the blinkers on a horse, the flaps that stop it seeing to the side.
+
+12
+00:00:47.067 --> 00:00:52.748
+cgroups, short for control groups, give it a budget: a cap on CPU and memory.
+
+13
+00:00:52.933 --> 00:00:55.585
+Past the memory cap, the kernel kills it.
+
+14
+00:00:56.733 --> 00:01:01.432
+You can watch namespaces work with Alpine, a tiny Linux image.
+
+15
+00:01:01.432 --> 00:01:02.720
+Run ps inside it.
+
+16
+00:01:02.867 --> 00:01:10.489
+It lists a single process: ps itself, running as PID 1, the number a system gives its first process.
+
+17
+00:01:10.667 --> 00:01:15.132
+The machine runs hundreds of processes, and the container sees none of them.
+
+18
+00:01:15.267 --> 00:01:19.519
+In the same way, listing the root folder shows Alpine's own folders.
+
+19
+00:01:19.667 --> 00:01:21.700
+Those files come from the image.
+
+20
+00:01:21.700 --> 00:01:23.797
+None of the host's files show up.
+
+21
+00:01:24.667 --> 00:01:28.897
+Put together, docker run nginx does five things, in this order.
+
+22
+00:01:29.067 --> 00:01:29.362
+One.
+
+23
+00:01:29.362 --> 00:01:35.779
+The docker command on your Mac sends the request to Docker Engine, inside the Linux VM.
+
+24
+00:01:36.733 --> 00:01:37.002
+Two.
+
+25
+00:01:37.002 --> 00:01:43.040
+The engine checks whether it already has the image, and pulls it from the registry if not.
+
+26
+00:01:43.200 --> 00:01:43.601
+Three.
+
+27
+00:01:43.601 --> 00:01:47.548
+It puts a fresh writable layer on top of the image's files.
+
+28
+00:01:47.548 --> 00:01:51.561
+That merged folder tree becomes the container's root folder.
+
+29
+00:01:51.733 --> 00:01:52.126
+Four.
+
+30
+00:01:52.126 --> 00:01:56.205
+It asks the kernel for new namespaces, and a cgroup.
+
+31
+00:01:56.400 --> 00:01:56.820
+Five.
+
+32
+00:01:56.820 --> 00:02:01.863
+It starts the image's default command inside them, as PID 1.
+
+33
+00:02:01.863 --> 00:02:04.889
+For nginx, that is the nginx server.
+
+34
+00:02:05.067 --> 00:02:10.620
+The engine hands steps three to five to two helper programs, containerd and runc.
+
+35
+00:02:11.800 --> 00:02:14.619
+Now compare the start of a virtual machine.
+
+36
+00:02:14.619 --> 00:02:20.060
+Virtual hardware, its own kernel, a whole operating system, and only then your app.
+
+37
+00:02:20.060 --> 00:02:21.633
+That takes many seconds.
+
+38
+00:02:21.800 --> 00:02:23.829
+A container skips all of that.
+
+39
+00:02:23.829 --> 00:02:25.791
+No second kernel has to boot.
+
+40
+00:02:25.791 --> 00:02:30.119
+Docker builds nothing new: it only puts fences around a process.
+
+41
+00:02:30.119 --> 00:02:32.216
+So it starts in about a second.
+
+42
+00:02:33.000 --> 00:02:35.200
+You pay for that speed by sharing.
+
+43
+00:02:35.200 --> 00:02:38.240
+Every container on a host uses the same kernel.
+
+44
+00:02:38.400 --> 00:02:40.796
+So a kernel bug can affect all of them.
+
+45
+00:02:40.933 --> 00:02:45.825
+And a container can only run programs built for that kernel, and that CPU.
+
+46
+00:02:46.600 --> 00:02:51.348
+So a container is an ordinary Linux process, started from an image's files.
+
+47
+00:02:51.348 --> 00:02:55.147
+Namespaces give it its own view, and cgroups give it limits.
