@@ -109,8 +109,8 @@ sub("d25", ("sections", 5, "body"),
 put("d25", ("analogy",),
     "Terraform works like a thermostat. You set the temperature you want, and it turns the heating on or off until the room matches. "
     "You never tell it \"heat for ten minutes\", and setting the same temperature twice does nothing. "
-    "A thermostat checks the room all the time, though. Terraform only looks when you run plan or apply, "
-    "so a change made by hand stays until your next run.")
+    "A thermostat checks the room all the time, while Terraform only looks when you run plan or apply. "
+    "A change made by hand stays in place until your next run.")
 
 sub("d25", ("worked", "steps", 1, "say"),
     "The real plan lists about 40 attributes for the container; these are the ones worth reading.",
@@ -161,8 +161,8 @@ sub("d26", ("sections", 5, "body"),
 put("d26", ("analogy",),
     "A Terraform configuration is like a spreadsheet. Variables are input cells, locals and outputs are formula cells, "
     "and a formula can refer to any other cell. Change one input and everything that depends on it is worked out again, "
-    "and you never say in which order. A spreadsheet only redraws numbers, though. Some of Terraform's \"cells\" are real containers, "
-    "and a changed formula can replace one.")
+    "and you never say in which order. In a spreadsheet, a changed formula only redraws a number. "
+    "In Terraform some \"cells\" are real containers, and a changed formula can replace one.")
 
 put("d26", ("mistake",),
     "`count` over a list of names, such as servers or sites, works until someone removes an item from the middle. "
@@ -228,7 +228,8 @@ sub("d27", ("sections", 6, "body"),
 put("d27", ("analogy",),
     "State is like the ticket book in a theatre cloakroom. When you hand in a coat, the attendant writes your ticket number next to a hook. "
     "Lose the book and you have a room full of coats, with no way to tell which ones are yours. "
-    "The book is thin, though: it notes a hook and nothing more. Terraform's state copies every detail of each object, secrets included.")
+    "A cloakroom book only notes a hook. Terraform's state copies every detail of each object, secrets included, "
+    "so you guard it far more closely.")
 
 put("d27", ("mistake",),
     "You rename a resource, or move it into a module, and leave out the `moved` block. In git it looks like a harmless rename. "
@@ -283,8 +284,8 @@ sub("d28", ("sections", 4, "body"),
 
 put("d28", ("analogy",),
     "A module is like an architect's house plan. The same plan builds many houses on different plots, and each owner picks a few options, "
-    "such as the paint colour and the size of the garage. Once a house is built, though, later changes to the plan do not touch it. "
-    "Change a module, and every stack that uses it changes on its next apply.")
+    "such as the paint colour and the size of the garage. Once a house is built, later changes to the plan leave it alone. "
+    "A module is different: change it, and every stack that uses it changes on its next apply.")
 
 put("d28", ("diagram_caption",),
     "infra/local calls the hello-stack module twice, with different names and ports, so you get two separate stacks.")

@@ -1,7 +1,7 @@
 {
  "part": 6,
  "title": "Infrastructure as Code with Terraform",
- "intro": "Up to now you made containers by typing commands. From here on you describe infrastructure in files, and Terraform makes the real world match them. Four days run on Docker on your laptop and take the language, state and modules slowly, with real plans to read. The fifth day takes the same skills to AWS and GitHub Actions, and that part is optional.",
+ "intro": "Up to now you made containers by typing commands. In this part you describe infrastructure in files, and Terraform makes the real world match them. The first four days run on Docker on your laptop and cost nothing. They go slowly through the language, state and modules, with real plans to read. Day 29 takes the same skills to AWS and GitHub Actions, and you can skip it.",
  "lessons": [
   {
    "id": "d25",
@@ -52,7 +52,7 @@
    "sections": [
     {
      "h": "Why clicking in a console does not scale",
-     "body": "Every cloud has a web console. You can click a server, a database and a network into existence in ten minutes, and it works. Six months later you need the same setup again for a test environment. Which boxes did you tick? Nobody remembers, and nobody wrote it down.\n\nDoing infrastructure by hand goes wrong in three ways:\n- You cannot repeat it. There is no exact copy for testing, for another region, or for recovery after a disaster.\n- Nobody reviews it. A change happens without a second pair of eyes, and nothing records who did what.\n- It drifts. Someone changes a setting by hand during an incident, and reality slowly moves away from what the team believes.\n\n**Infrastructure as Code** (IaC) means you describe your infrastructure in text files, and a tool makes the real world match them. The files live in git next to your app, so infrastructure gets the same treatment as your Kotlin code:\n- `git log` shows every change, who made it and why.\n- A pull request lets a teammate review a change before it reaches anything real.\n- Reverting a commit and applying again rolls a change back.\n- The same files build a second, identical environment.\n\nThe short version: your infrastructure gets a pull request. This part of the course uses Terraform, the most widely used IaC tool. You practise on Docker on your laptop for four days, so nothing costs money. Day 29 is the optional trip to a real cloud.",
+     "body": "Every cloud has a web console. You can click a server, a database and a network into existence in ten minutes, and it works. Six months later you need the same setup again for a test environment. Which boxes did you tick? Nobody remembers, and nobody wrote it down.\n\nDoing infrastructure by hand goes wrong in three ways:\n- You cannot repeat it. There is no exact copy for testing, for another region, or for recovery after a disaster.\n- Nobody reviews it. A change happens without a second pair of eyes, and nothing records who did what.\n- It drifts. Someone changes a setting by hand during an incident, and reality slowly moves away from what the team believes.\n\n**Infrastructure as Code** (IaC) means you describe your infrastructure in text files, and a tool makes the real world match them. The files live in git next to your app, so a change to infrastructure goes through the same pull request flow as your Kotlin code:\n- `git log` shows every change, who made it and why.\n- A pull request lets a teammate review a change before it reaches anything real.\n- Reverting a commit and applying again rolls a change back.\n- The same files build a second, identical environment.\n\nThis part of the course uses Terraform, the most widely used IaC tool. For four days you practise on Docker on your laptop, so nothing costs money. Day 29 goes to a real cloud, and you can skip it.",
      "refs": [
       {
        "title": "What is Terraform? (Terraform docs)",
@@ -68,7 +68,7 @@
     },
     {
      "h": "Declarative: describe the result, not the steps",
-     "body": "You can tell a computer what you want in two ways:\n- Imperative: you list the steps. \"Pull nginx, then start a container, then publish port 8090.\" A shell script works this way.\n- Declarative: you describe the result. \"There is one nginx container called tf-web on port 8090.\" The tool works out the steps.\n\nTerraform is declarative, and you feel the difference the second time you run it. Run a `docker run` script twice and the second run fails, because the name is taken. Run Terraform twice and the second run prints `No changes`. The file only says what should exist, and it already does. A command that gives the same result however many times you run it is called idempotent.\n\nAs a backend engineer you already know this idea from SQL. You write `SELECT ... WHERE status = 'PAID'`, and the database decides whether to use an index or scan the table. Terraform is similar. You write the end state, and Terraform makes a plan of API calls to get there. Under the hood it still runs steps in order. You just do not write them.\n\nYou met the same idea on Day 15. `compose.yaml` describes services, and `docker compose up` makes them exist. Compose only knows Docker on one machine. Terraform talks to almost anything that has an API: Docker, AWS, Google Cloud, Azure, GitHub, Cloudflare and thousands more.",
+     "body": "You can tell a computer what you want in two ways:\n- Imperative: you list the steps. \"Pull nginx, then start a container, then publish port 8090.\" A shell script works this way.\n- Declarative: you describe the result. \"There is one nginx container called tf-web on port 8090.\" The tool works out the steps.\n\nTerraform is declarative, and you feel the difference the second time you run it. Run a `docker run` script twice and the second run fails, because the name is taken. Run Terraform twice and the second run prints `No changes`. The file only says what should exist, and it already does. A command that gives the same result however many times you run it is called idempotent.\n\nAs a backend engineer you already know this idea from SQL. You write `SELECT ... WHERE status = 'PAID'`, and the database decides whether to use an index or scan the table. Terraform works the same way. You write the end state, and Terraform makes a plan of API calls to get there. It still runs steps in order. You just never write them down.\n\nYou met the same idea on Day 15. `compose.yaml` describes services, and `docker compose up` makes them exist. Compose only knows Docker on one machine. Terraform talks to almost anything that has an API: Docker, AWS, Google Cloud, Azure, GitHub, Cloudflare and thousands more.",
      "refs": [
       {
        "title": "Get started with Terraform and Docker (HashiCorp tutorial)",
@@ -84,7 +84,7 @@
     },
     {
      "h": "Terraform, OpenTofu and the other tools",
-     "body": "HashiCorp makes Terraform, and IBM bought HashiCorp in February 2025. Terraform was open source under the MPL licence until August 2023. Then [HashiCorp moved it to the Business Source License](https://www.hashicorp.com/en/blog/hashicorp-adopts-business-source-license) (BSL). You may still use Terraform for free at work. What you may not do is sell a product that competes with HashiCorp's own.\n\nPart of the community disliked the change and forked the last open source version. The fork is called OpenTofu. It lives at the Linux Foundation and joined the CNCF in 2025. You type `tofu` instead of `terraform`, and `tofu plan` behaves like `terraform plan`. The language is the same, and everything in this part works with both. A few newer features exist in only one of them. If your team already uses one, stay with it.\n\nYou will hear about these tools too:\n- CloudFormation: AWS's own IaC service, with YAML or JSON templates. It works only for AWS.\n- Pulumi: IaC written in normal languages such as TypeScript, Python, Go, C# or Java.\n- Ansible: connects to servers that already exist and sets them up (packages, files, services).\n\nTeams often combine them. Terraform creates the network, the machines and the Kubernetes cluster. A container image or Ansible decides what runs inside. Terraform can configure servers too, but that is not where it shines.",
+     "body": "HashiCorp makes Terraform, and IBM bought HashiCorp in February 2025. Terraform was open source under the MPL licence until August 2023. Then [HashiCorp moved it to the Business Source License](https://www.hashicorp.com/en/blog/hashicorp-adopts-business-source-license) (BSL). You may still use Terraform for free at work. What you may not do is sell a product that competes with HashiCorp's own.\n\nPart of the community disliked the change and forked the last open source version. The fork is called OpenTofu. It lives at the Linux Foundation and joined the CNCF in 2025. You type `tofu` instead of `terraform`, and `tofu plan` behaves like `terraform plan`. The language is the same, and everything in this part works with both. A few newer features exist in only one of them. If your team already uses one, stay with it.\n\nYou will hear about these tools too:\n- CloudFormation: AWS's own IaC service, with YAML or JSON templates. It works only for AWS.\n- Pulumi: IaC written in normal languages such as TypeScript, Python, Go, C# or Java.\n- Ansible: connects to servers that already exist and sets them up (packages, files, services).\n\nTeams often combine them. Terraform creates the network, the machines and the Kubernetes cluster. A container image or Ansible decides what runs inside. Terraform can set up software on servers too, but that is not its strength.",
      "refs": [
       {
        "title": "HashiCorp adopts Business Source License",
@@ -121,7 +121,7 @@
     },
     {
      "h": "The workflow: init, plan, apply, destroy",
-     "body": "You use the same few commands every day, in this order:\n1. `terraform init` downloads the providers into a hidden `.terraform` folder and writes `.terraform.lock.hcl`. Run it once per folder, and again after you add a provider or module.\n2. `terraform fmt` tidies the layout of your files, and `terraform validate` checks for typos and broken references. Neither touches anything real.\n3. `terraform plan` compares your files, the state and the real world. It prints what it would do and changes nothing.\n4. `terraform apply` makes a fresh plan, shows it, waits for you to type `yes`, makes the changes and updates the state.\n5. `terraform destroy` removes everything this folder manages, after the same `yes`.\n\nPlan is safe to run any time, so run it often. People sometimes worry that plan changes things. It does not. Apply is the only step that does.\n\nThere is one gap to know about. Apply makes a new plan, and the world may have changed since your last plan. For a laptop that does not matter. In a pipeline it does, so you save the plan with `terraform plan -out=tfplan` and later run `terraform apply tfplan`. Terraform then does exactly what you reviewed, or stops if the state moved on. Day 29 uses this.\n\n`terraform destroy` deletes everything in this folder's state, not only what you added today. It never touches things the folder does not manage, such as a container you started by hand.",
+     "body": "You use the same few commands every day, in this order:\n1. `terraform init` downloads the providers into a hidden `.terraform` folder and writes `.terraform.lock.hcl`. Run it once per folder, and again after you add a provider or module.\n2. `terraform fmt` tidies the layout of your files, and `terraform validate` checks for typos and broken references. Neither touches anything real.\n3. `terraform plan` compares your files, the state and the real world. It prints what it would do and changes nothing.\n4. `terraform apply` makes a fresh plan, shows it, waits for you to type `yes`, makes the changes and updates the state.\n5. `terraform destroy` removes everything this folder manages, after the same `yes`.\n\nPlan is safe to run any time, so run it often. People sometimes worry that plan changes things, but only apply does.\n\nApply makes its own new plan, and the world may have changed since you last ran plan. On a laptop that gap does not matter. In a pipeline it does, so you save the plan with `terraform plan -out=tfplan` and later run `terraform apply tfplan`. Terraform then does exactly what you reviewed, or stops if the state moved on. Day 29 uses this.\n\n`terraform destroy` deletes everything in this folder's state, whenever it was added. It never touches things the folder does not manage, such as a container you started by hand.",
      "refs": [
       {
        "title": "terraform plan command reference",
@@ -142,7 +142,7 @@
     },
     {
      "h": "Reading a plan",
-     "body": "A plan lists every resource it would touch, each with a symbol in front:\n- `+` create a new resource.\n- `~` update in place: the same object stays, and a setting changes.\n- `-/+` replace: destroy the old object, then create a new one.\n- `-` destroy.\n\nThree more things show up all the time. `(known after apply)` means the provider will only know the value once the object exists, like a container's ID. That is normal, not an error. `# (50 unchanged attributes hidden)` means Terraform left out the lines that do not change. The last line is the summary, such as `Plan: 1 to add, 0 to change, 1 to destroy.`\n\nReplacement is where people get hurt. Some settings cannot change on a running object. Docker cannot move a running container to a new host port, or give it new environment variables. A one-character edit to one of those becomes `-/+`, and the line that caused it ends with `# forces replacement`.\n\nFor an nginx container, replacement means a second of downtime. For a database it can mean an empty database. So build one habit now. Before you type `yes`, read the summary line and search the plan for `forces replacement`. If the numbers surprise you, stop and find out why.",
+     "body": "A plan lists every resource it would touch, each with a symbol in front:\n- `+` create a new resource.\n- `~` update in place: the same object stays, and a setting changes.\n- `-/+` replace: destroy the old object, then create a new one.\n- `-` destroy.\n\nYou will also see these in almost every plan:\n- `(known after apply)`: the provider learns the value once the object exists, like a container's ID. That is normal.\n- `# (50 unchanged attributes hidden)`: Terraform left out the lines that do not change.\n- The summary on the last line, such as `Plan: 1 to add, 0 to change, 1 to destroy.`\n\nReplacement is where people get hurt. Some settings cannot change on a running object. Docker cannot move a running container to a new host port, or give it new environment variables. A one-character edit to one of those becomes `-/+`, and the line that caused it ends with `# forces replacement`.\n\nFor an nginx container, replacement means a second of downtime. For a database it can mean an empty database. Build the habit now, while the containers are toys: before you type `yes`, read the summary line and search the plan for `forces replacement`. If the numbers surprise you, stop and find out why.",
      "refs": [
       {
        "title": "Build infrastructure (Terraform and Docker tutorial)",
@@ -173,7 +173,7 @@
      ]
     }
    ],
-   "analogy": "Terraform works like a thermostat. You set the temperature you want, and it turns the heating on or off until the room matches. You never tell it \"heat for ten minutes\", and setting the same temperature twice does nothing. The comparison breaks in one place: a thermostat checks the room all the time, while Terraform only looks when you run plan or apply.",
+   "analogy": "Terraform works like a thermostat. You set the temperature you want, and it turns the heating on or off until the room matches. You never tell it \"heat for ten minutes\", and setting the same temperature twice does nothing. A thermostat checks the room all the time, while Terraform only looks when you run plan or apply. A change made by hand stays in place until your next run.",
    "diagram": "<svg viewBox=\"0 0 560 234\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Terraform reads main.tf, plans against the state file, and applies through a provider to Docker\"><rect x=\"8\" y=\"40\" width=\"92\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"54\" y=\"67\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">main.tf</text><rect x=\"120\" y=\"40\" width=\"92\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"166\" y=\"67\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">plan</text><rect x=\"232\" y=\"40\" width=\"92\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"278\" y=\"67\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">apply</text><rect x=\"344\" y=\"40\" width=\"92\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"390\" y=\"67\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">provider</text><rect x=\"456\" y=\"40\" width=\"96\" height=\"44\" rx=\"10\" class=\"bxg\"/><text x=\"504\" y=\"67\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">Docker</text><line x1=\"102\" y1=\"62\" x2=\"118\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"214\" y1=\"62\" x2=\"230\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"326\" y1=\"62\" x2=\"342\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"438\" y1=\"62\" x2=\"454\" y2=\"62\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"504\" y=\"104\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">real world</text><rect x=\"168\" y=\"150\" width=\"116\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"226\" y=\"177\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">state file</text><line x1=\"196\" y1=\"148\" x2=\"172\" y2=\"90\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"150\" y=\"124\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">reads</text><line x1=\"280\" y1=\"88\" x2=\"262\" y2=\"146\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"306\" y=\"124\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">writes</text><text x=\"280\" y=\"222\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">plan compares code, state and reality; apply makes them match</text></svg>",
    "diagram_caption": "Plan compares your code with the state and the real world. Apply makes the changes through a provider and updates the state.",
    "worked": {
@@ -185,7 +185,7 @@
       "lang": "console"
      },
      {
-      "say": "Preview. Nothing exists yet, so both resources get a `+`. The real plan lists about 40 attributes for the container; these are the ones worth reading. The ID and image are `(known after apply)` because Docker only knows them later.",
+      "say": "Preview. Nothing exists yet, so both resources get a `+`. The real plan lists about 40 attributes for the container, and these are the ones to read. The ID and image are `(known after apply)` because Docker only knows them later.",
       "code": "$ terraform plan\n  # docker_container.web will be created\n  + resource \"docker_container\" \"web\" {\n      + id                                          = (known after apply)\n      + image                                       = (known after apply)\n      + name                                        = \"tf-web\"\n      + restart                                     = \"no\"\n      + ports {\n          + external = 8090\n          + internal = 80\n        }\n    }\n  # docker_image.nginx will be created\nPlan: 2 to add, 0 to change, 0 to destroy.",
       "lang": "console"
      },
@@ -195,7 +195,7 @@
       "lang": "console"
      },
      {
-      "say": "Run plan again without touching the file. Terraform refreshes what it knows from Docker, compares, and finds nothing to do. This is idempotence in action: a second `docker run` would have failed.",
+      "say": "Run plan again without touching the file. Terraform refreshes what it knows from Docker, compares, and finds nothing to do. That is idempotence. A second `docker run` would have failed, because the name was taken.",
       "code": "$ terraform plan\ndocker_image.nginx: Refreshing state... [id=sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949nginx:1.30-alpine]\ndocker_container.web: Refreshing state... [id=9aa5b0956097591dff522825bbefa5f8a32a44b85eb400f41daed1e8e2fae1c3]\n\nNo changes. Your infrastructure matches the configuration.",
       "lang": "console"
      },
@@ -286,8 +286,8 @@
      "what": "Remove everything this folder manages."
     }
    ],
-   "mistake": "Typing `yes` without reading the plan. A one-word edit can turn into `-/+`, and replacing a database means losing its data. Read the summary line and search for `forces replacement` every time, even when you are sure the change is small.",
-   "real_world": "Take PayLoop, a payments company made up for this course. Nobody there creates production infrastructure by clicking. Every change is a pull request with the Terraform plan attached, and a second engineer reads the plan before anyone applies it. People open the cloud console to look around, or during an incident, and the next plan shows whatever they changed by hand.",
+   "mistake": "You type `yes` without reading the plan, because the edit was one word. That one word can turn into `-/+`, and replacing a database means losing its data. Read the summary line and search for `forces replacement` every time, most of all when you are sure the change is small.",
+   "real_world": "Changes made by clicking leave no review and no record, so on a payments team nobody creates production infrastructure that way. Every change is a pull request with the Terraform plan attached, and a second engineer reads the plan before anyone applies it. People still open the console to look around, or during an incident. Whatever they change by hand shows up in the next plan.",
    "task": {
     "title": "Run Redis for hello-devops with Terraform",
     "steps": [
@@ -352,7 +352,7 @@
       "Nothing, because this folder's state does not track it"
      ],
      "answer": 3,
-     "why": "Destroy only removes what this folder's state tracks; Terraform never learned about `db`."
+     "why": "Destroy only removes what this folder's state tracks, and Terraform never learned about `db`."
     }
    ],
    "interview": [
@@ -371,7 +371,7 @@
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Version constraints and the lock file decide which provider code runs on your machine. They deserve ten minutes, because a surprise upgrade can break a plan that worked yesterday.\n\nThe `version` argument in `required_providers` is a constraint, and three forms cover most needs:\n- `= 4.6.0` allows exactly one version.\n- `~> 4.6` allows 4.6 and newer, but stays below 5.0. This is the usual choice.\n- `~> 4.6.0` allows 4.6.x patch releases only.\n\n`~>` is called the pessimistic constraint: only the rightmost number you wrote may grow. Major versions can remove or rename things, so you move to a new major version on purpose, after reading the provider's upgrade guide. The [version constraints page](https://developer.hashicorp.com/terraform/language/expressions/version-constraints) has the full syntax.\n\n`terraform init` picks the newest version that fits and records it in `.terraform.lock.hcl`, together with checksums of the provider files. From then on, init installs that exact version, even when a newer one exists. To move forward, run `terraform init -upgrade`, read the plan, and commit the new lock file. Gradle users can think of it as a dependency lock that is on by default.\n\nMac users run into one edge case. Checksums are per platform: your Mac is `darwin_arm64`, while GitHub's runners are `linux_amd64`. A normal install from the public registry records checksums for every platform. When providers come from a local mirror or cache instead, init may record only your own platform, and init in CI then fails on the checksum. Terraform prints a warning when this happens. Fix it once with `terraform providers lock -platform=darwin_arm64 -platform=linux_amd64`, which records both, and commit the result.\n\nThe `terraform` block can also hold `required_version`, which sets the Terraform CLI versions allowed to run the code. The lab's `infra/local` asks for `>= 1.10`, and `infra/aws` asks for `>= 1.11` because the S3 lock file you meet on Day 29 needs it.\n\nOpenTofu reads the same blocks but downloads providers from its own registry. Read the OpenTofu migration guide before you switch one state between `terraform` and `tofu`, and keep a backup of the state while you try it."
+    "body": "Version constraints and the lock file decide which provider code runs on your machine. They deserve ten minutes, because a surprise upgrade can break a plan that worked yesterday.\n\nThe `version` argument in `required_providers` is a constraint, and three forms cover most needs:\n- `= 4.6.0` allows exactly one version.\n- `~> 4.6` allows 4.6 and newer, but stays below 5.0. This is the usual choice.\n- `~> 4.6.0` allows 4.6.x patch releases only.\n\n`~>` is called the pessimistic constraint: only the rightmost number you wrote may grow. Major versions can remove or rename things, so you move to a new major version on purpose, after reading the provider's upgrade guide. The [version constraints page](https://developer.hashicorp.com/terraform/language/expressions/version-constraints) has the full syntax.\n\n`terraform init` picks the newest version that fits and records it in `.terraform.lock.hcl`, together with checksums of the provider files. From then on, init installs that exact version, even when a newer one exists. To move forward, run `terraform init -upgrade`, read the plan, and commit the new lock file. If you know Gradle's dependency locking, this is the same idea, switched on by default.\n\nMac users run into one edge case. Checksums are per platform: your Mac is `darwin_arm64`, while GitHub's runners are `linux_amd64`. A normal install from the public registry records checksums for every platform. When providers come from a local mirror or cache instead, init may record only your own platform, and init in CI then fails on the checksum. Terraform prints a warning when this happens. Fix it once with `terraform providers lock -platform=darwin_arm64 -platform=linux_amd64`, which records both, and commit the result.\n\nThe `terraform` block can also hold `required_version`, which sets the Terraform CLI versions allowed to run the code. The lab's `infra/local` asks for `>= 1.10`, and `infra/aws` asks for `>= 1.11` because the S3 lock file you meet on Day 29 needs it.\n\nOpenTofu reads the same blocks but downloads providers from its own registry. Read the OpenTofu migration guide before you switch one state between `terraform` and `tofu`, and keep a backup of the state while you try it."
    },
    "sources": [
     {
@@ -457,7 +457,7 @@
     },
     {
      "h": "Types: from strings to objects",
-     "body": "Every value has a type, and Terraform checks types before it touches anything. There are three families:\n- Primitive types hold one value: `string`, `number` and `bool`.\n- Collection types hold many values of one type. `list(string)` is ordered, `set(string)` has no order and no duplicates, and `map(number)` has string keys.\n- Structural types mix types. `object({ name = string, port = number })` has named fields, and `tuple([string, number])` is a fixed row of positions.\n\n`null` means \"no value\". Setting an argument to `null` is the same as leaving it out.\n\nTwo things surprise newcomers. First, a literal in square brackets is a tuple, not a list, and a literal in braces is an object, not a map. Ask the console for `type([\"b\", \"a\"])` and it says `tuple([string, string])`. Terraform converts it to a list or a map when a variable's type asks for one, so you rarely notice.\n\nSecond, Terraform converts between primitives for you. `\"8080\" + 1` gives `8081`. Put the number 8080 into a `map(string)` and it becomes the string `\"8080\"`. When a conversion is impossible, such as `\"abc\"` where a number belongs, you get an error at plan time, before anything changes.\n\nSets matter later in this lesson. `toset([\"b\", \"a\", \"b\"])` gives `[\"a\", \"b\"]`: the duplicate is gone, and Terraform chose the order.",
+     "body": "Every value has a type, and Terraform checks types before it touches anything. There are three families:\n- Primitive types hold one value: `string`, `number` and `bool`.\n- Collection types hold many values of one type. `list(string)` is ordered, `set(string)` has no order and no duplicates, and `map(number)` has string keys.\n- Structural types mix types. `object({ name = string, port = number })` has named fields, and `tuple([string, number])` is a fixed row of positions.\n\n`null` means \"no value\". Setting an argument to `null` is the same as leaving it out.\n\nTwo things surprise newcomers. First, a literal in square brackets is a tuple, not a list, and a literal in braces is an object, not a map. Ask the console for `type([\"b\", \"a\"])` and it says `tuple([string, string])`. Terraform converts it to a list or a map when a variable's type asks for one, so you rarely notice.\n\nSecond, Terraform converts between primitives for you. `\"8080\" + 1` gives `8081`. Put the number 8080 into a `map(string)` and it becomes the string `\"8080\"`. When a conversion is impossible, such as `\"abc\"` where a number belongs, you get an error at plan time, before anything changes.\n\nYou will need sets for `for_each` later in this lesson. `toset([\"b\", \"a\", \"b\"])` gives `[\"a\", \"b\"]`: the duplicate is gone, and Terraform picked the order.",
      "refs": [
       {
        "title": "Types and values (Terraform docs)",
@@ -489,7 +489,7 @@
     },
     {
      "h": "Locals and outputs",
-     "body": "Locals are named expressions inside one folder. You write them in a `locals` block and read them as `local.NAME`. Think of a `val` inside a Kotlin function: computed once, named, and read many times. The lab's `main.tf` now uses one called `app_env` to build the app's settings in one place.\n\nUse locals to remove repetition or to give a hard expression a name. HashiCorp's style guide says to use them sparingly, because a reader has to jump around to find each one. If a value should change between runs, make it a variable instead.\n\nOutputs are the folder's return values. Apply prints them at the end, and later you read them again:\n- `terraform output` prints all of them.\n- `terraform output -raw url` prints one string without quotes, handy in `curl $(terraform output -raw url)`.\n- `terraform output -json` prints them for tools like `jq`.\n\nOutputs matter even more on Day 28. A module, a folder that another folder calls, can hand values back only through outputs. An output can be `sensitive` too, and then the CLI prints `<sensitive>` instead of the value.",
+     "body": "Locals are named expressions inside one folder. You write them in a `locals` block and read them as `local.NAME`. A local works like a `val` inside a Kotlin function: you compute it once and read it by name as often as you like. The lab's `main.tf` now uses one called `app_env` to build the app's settings in one place.\n\nUse locals to remove repetition or to give a hard expression a name. HashiCorp's style guide says to use them sparingly, because a reader has to jump around to find each one. If a value should change between runs, make it a variable instead.\n\nOutputs are the folder's return values. Apply prints them at the end, and later you read them again:\n- `terraform output` prints all of them.\n- `terraform output -raw url` prints one string without quotes, handy in `curl $(terraform output -raw url)`.\n- `terraform output -json` prints them for tools like `jq`.\n\nDay 28 needs outputs even more, because a module (a folder that another folder calls) can hand values back only through outputs. An output can be `sensitive` too, and then the CLI prints `<sensitive>` instead of the value.",
      "refs": [
       {
        "title": "Local values (Terraform docs)",
@@ -505,7 +505,7 @@
     },
     {
      "h": "Strings, conditionals and for expressions",
-     "body": "Most expressions you write are one of four kinds.\n\nString templates put values into text: `\"http://localhost:${var.host_port}\"`. Inside a string, `%{ if }` and `%{ for }` directives add logic, so `\"%{ for n in [\"a\", \"b\"] }<li>${n}</li>%{ endfor }\"` gives `<li>a</li><li>b</li>`. For text over several lines, a heredoc starts with `<<-EOT` and ends with `EOT`.\n\nA conditional picks one of two values: `var.greeting == \"\" ? \"app default\" : var.greeting`. Both results must have the same type. The lab uses one to add `GREETING` only when you set it.\n\nA for expression builds a new collection from an old one. If you know Kotlin's `map`, `filter` and `associateWith`, you already know it:\n- `[for n in var.names : upper(n)]` is like `names.map { it.uppercase() }`.\n- `[for n in var.names : n if n != \"bravo\"]` is like `names.filter { it != \"bravo\" }`.\n- `{for n in var.names : n => length(n)}` is like `names.associateWith { it.length }`.\n\nSquare brackets build a list and braces build a map. A splat is a shortcut for one common case: `local_file.by_count[*].filename` is the list of every copy's `filename`.\n\nBuilt-in functions finish the toolbox: `merge`, `lookup`, `join`, `format`, `cidrsubnet`, `try` and many more. You cannot write your own functions. That keeps configurations predictable, and it is also why some expressions grow long.",
+     "body": "Most expressions you write are one of four kinds.\n\nString templates put values into text: `\"http://localhost:${var.host_port}\"`. Inside a string, `%{ if }` and `%{ for }` directives add logic, so `\"%{ for n in [\"a\", \"b\"] }<li>${n}</li>%{ endfor }\"` gives `<li>a</li><li>b</li>`. For text over several lines, a heredoc starts with `<<-EOT` and ends with `EOT`.\n\nA conditional picks one of two values: `var.greeting == \"\" ? \"app default\" : var.greeting`. Both results must have the same type. The lab uses one to add `GREETING` only when you set it.\n\nA for expression builds a new collection from an old one. If you know Kotlin's `map`, `filter` and `associateWith`, you already know it:\n- `[for n in var.names : upper(n)]` is like `names.map { it.uppercase() }`.\n- `[for n in var.names : n if n != \"bravo\"]` is like `names.filter { it != \"bravo\" }`.\n- `{for n in var.names : n => length(n)}` is like `names.associateWith { it.length }`.\n\nSquare brackets build a list and braces build a map. A splat is a shortcut for one common case: `local_file.by_count[*].filename` is the list of every copy's `filename`.\n\nThe fourth kind is the built-in functions: `merge`, `lookup`, `join`, `format`, `cidrsubnet`, `try` and many more. You cannot write your own functions. That keeps configurations predictable, and it is also why some expressions grow long.",
      "refs": [
       {
        "title": "for expressions (Terraform docs)",
@@ -526,7 +526,7 @@
     },
     {
      "h": "Copies with count and for_each, and the trap between them",
-     "body": "Expressions transform values. To make several copies of a resource you need a meta-argument, an argument that Terraform itself reads on any resource.\n\n`count` takes a number. `count = 3` makes three copies with the addresses `local_file.by_count[0]`, `[1]` and `[2]`, and `count.index` tells each copy its number.\n\n`for_each` takes a map or a set of strings, and each key becomes one copy, with an address like `docker_container.site[\"blue\"]`. Inside the block, `each.key` is the key and `each.value` is the value. A plain list is rejected with `Invalid for_each argument`, so wrap it in `toset()`.\n\nThis trips most people up: the address is the copy's identity. With `count`, the identity is a position. Remove the first name from a list of three, and every later name moves up one place. Copy `[0]` now holds what `[1]` held, so its content changes and it is replaced. The same happens to `[1]`, and `[2]` is destroyed. With `for_each`, the identity is the name, so only the removed copy goes. The worked example shows the real plan.\n\nThe docs give a rule of thumb. Use `count` for nearly identical copies, or as an on-off switch such as `count = var.enabled ? 1 : 0`. Use `for_each` when each copy has its own name or settings. The style guide adds: use both sparingly.\n\nOne more limit applies to both. Terraform must know the count or the keys at plan time, so they cannot come from an attribute that only exists after apply.",
+     "body": "Expressions transform values. To make several copies of a resource you need a meta-argument, an argument that Terraform itself reads on any resource.\n\n`count` takes a number. `count = 3` makes three copies with the addresses `local_file.by_count[0]`, `[1]` and `[2]`, and `count.index` tells each copy its number.\n\n`for_each` takes a map or a set of strings, and each key becomes one copy, with an address like `docker_container.site[\"blue\"]`. Inside the block, `each.key` is the key and `each.value` is the value. A plain list is rejected with `Invalid for_each argument`, so wrap it in `toset()`.\n\nSlow down for this part. A copy's address is its identity, and the two meta-arguments build addresses in different ways. With `count`, the identity is a position. Remove the first name from a list of three, and every later name moves up one place. Copy `[0]` now holds what `[1]` held, so its content changes and it is replaced. The same happens to `[1]`, and `[2]` is destroyed. With `for_each`, the identity is the name, so only the removed copy goes. The worked example shows the real plan.\n\nThe docs give simple advice. Use `count` for nearly identical copies, or as an on-off switch such as `count = var.enabled ? 1 : 0`. Use `for_each` when each copy has its own name or settings. The style guide adds: use both sparingly.\n\nOne more limit applies to both. Terraform must know the count or the keys at plan time, so they cannot come from an attribute that only exists after apply.",
      "refs": [
       {
        "title": "The count meta-argument (Terraform docs)",
@@ -557,7 +557,7 @@
      ]
     }
    ],
-   "analogy": "A Terraform configuration is like a spreadsheet. Variables are input cells, locals and outputs are formula cells, and a formula can refer to any other cell. Change one input and everything that depends on it is worked out again, and you never say in which order. The comparison breaks because some of Terraform's \"cells\" are real containers: a changed formula can replace one.",
+   "analogy": "A Terraform configuration is like a spreadsheet. Variables are input cells, locals and outputs are formula cells, and a formula can refer to any other cell. Change one input and everything that depends on it is worked out again, and you never say in which order. In a spreadsheet, a changed formula only redraws a number. In Terraform some \"cells\" are real containers, and a changed formula can replace one.",
    "diagram": "<svg viewBox=\"0 0 560 214\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Removing alpha from a list: count replaces and destroys numbered copies, for_each destroys only alpha\"><text x=\"50\" y=\"55\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">count</text><rect x=\"100\" y=\"28\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"168\" y=\"55\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">[0] replaced</text><rect x=\"250\" y=\"28\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"318\" y=\"55\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">[1] replaced</text><rect x=\"400\" y=\"28\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"468\" y=\"55\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">[2] destroyed</text><text x=\"318\" y=\"90\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">numbered copies shift down by one</text><text x=\"50\" y=\"135\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">for_each</text><rect x=\"100\" y=\"108\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"168\" y=\"135\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">alpha gone</text><rect x=\"250\" y=\"108\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"318\" y=\"135\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">bravo kept</text><rect x=\"400\" y=\"108\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"468\" y=\"135\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">charlie kept</text><text x=\"318\" y=\"170\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">named copies stay where they are</text><text x=\"280\" y=\"200\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">the plan after removing alpha from the list</text></svg>",
    "diagram_caption": "Remove one name from the list: count copies shift and get replaced, for_each copies keep their names.",
    "worked": {
@@ -677,8 +677,8 @@
      "what": "Check types, references and syntax without touching anything."
     }
    ],
-   "mistake": "Using `count` over a list of names, such as servers or sites. It works until someone removes an item from the middle, and then every later copy is replaced. Use `for_each` over a set or map with stable keys from the start. If `count` code already exists, the Go deeper section shows how to switch without destroying anything.",
-   "real_world": "At PayLoop (still made up), the list of payment regions lives in one map variable, with a key per region. Adding a region adds one key, and the plan shows only that region's resources. Reviewers send back any pull request that uses `count` over a list of names, because the next removal would replace everything after it.",
+   "mistake": "`count` over a list of names, such as servers or sites, works until someone removes an item from the middle. Then every later copy is replaced. Use `for_each` over a set or map with stable keys from the start. If `count` code already exists, the Go deeper section shows how to switch without destroying anything.",
+   "real_world": "A payments product that runs in several regions keeps the list of regions in one map variable, with a key per region. Adding a region adds one key, and the plan shows only that region's resources. Reviewers send back any pull request that uses `count` over a list of names, because the next removal would replace everything after it.",
    "task": {
     "title": "Three nginx sites from one map with for_each",
     "steps": [
@@ -705,11 +705,11 @@
     "answer": "Terraform tracks every copy by its address. With `count`, the address is a position such as `[0]`, so removing the first item shifts every later item down one position. Terraform then sees copies whose settings changed, replaces them, and destroys the last one. With `for_each`, the address is a key such as `[\"bravo\"]`, so removing one key only destroys that one copy."
    },
    "recap": [
-    "Expressions compute values; references like `var.x` and `docker_container.redis.name` also set the order.",
+    "Expressions compute values, and references like `var.x` and `docker_container.redis.name` also set the order.",
     "Types catch mistakes at plan time: primitives, collections (list, set, map) and structural types (object, tuple).",
     "Variables take values from defaults, `TF_VAR_`, tfvars files and `-var`; later sources win, and `-var` is not remembered.",
     "Locals name expressions, and outputs are a folder's return values.",
-    "for expressions transform collections; `count` and `for_each` create copies.",
+    "for expressions transform collections, while `count` and `for_each` make copies of a resource.",
     "Prefer `for_each` with stable keys, because `count` copies are known by position and shift."
    ],
    "check": [
@@ -733,7 +733,7 @@
       "Terraform converts it to the number 8081"
      ],
      "answer": 3,
-     "why": "Terraform converts between primitive types when the string really is a number; only something like \"abc\" would fail."
+     "why": "The string \"8081\" really is a number, so Terraform converts it. Only something like \"abc\" would fail."
     },
     {
      "q": "You write `for_each = var.names`, where `names` is a `list(string)`. Plan fails with \"Invalid for_each argument\". What is the usual fix?",
@@ -754,7 +754,7 @@
     },
     {
      "q": "How do you give one Terraform configuration different values per environment?",
-     "a": "I declare typed input variables with validation, and keep the per-environment values in files such as `dev.tfvars` and `prod.tfvars`, passed with `-var-file`. Secrets do not go in those files; they come from a secret store or CI at run time. Each environment also needs its own state, so I usually give each one its own root folder that calls shared modules. I avoid `-var` for anything permanent, because Terraform does not remember it."
+     "a": "I declare typed input variables with validation, and keep the per-environment values in files such as `dev.tfvars` and `prod.tfvars`, passed with `-var-file`. Secrets stay out of those files and come from a secret store or CI at run time. Each environment also needs its own state, so I usually give each one its own root folder that calls shared modules. I avoid `-var` for anything permanent, because Terraform does not remember it."
     },
     {
      "q": "What is the difference between a variable, a local and an output?",
@@ -763,7 +763,7 @@
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Say you already have resources built with `count`, and you want to move to `for_each` before the index trap bites. Simply editing the block is not enough. Terraform sees `[0]`, `[1]` and `[2]` vanish and `[\"alpha\"]`, `[\"bravo\"]` and `[\"charlie\"]` appear, so it plans to destroy three and create three. The real plan says `local_file.greeting[0] will be destroyed (because resource does not use count)` and ends with `Plan: 3 to add, 0 to change, 3 to destroy.`\n\nThe fix is a `moved` block per copy. It tells Terraform that an object changed address and nothing else:\n\n`moved { from = local_file.greeting[0]  to = local_file.greeting[\"alpha\"] }`\n\nAdd one for `[1]` to `\"bravo\"` and one for `[2]` to `\"charlie\"`. The plan now shows `local_file.greeting[0] has moved to local_file.greeting[\"alpha\"]`, three times, and `Plan: 0 to add, 0 to change, 0 to destroy.` Apply, and the state uses the new addresses. Day 27 covers `moved` properly. You will use it for renames and for moving code into modules.\n\nTwo details make this safe:\n- You must write one block per copy. A `moved` block cannot loop, because Terraform has to know every move before it plans.\n- The old index and the new key must point at the same real object. Check the plan: each line should say \"has moved to\", and nothing should say \"must be replaced\".\n\nThe \"known at plan time\" rule from the count section also explains a common error. Imagine you want one container per network, and the network IDs only exist after apply. If you write `for_each = toset(docker_network.all[*].id)`, plan fails, because Terraform cannot know the keys yet. Build keys from values in your own code instead, such as the network names in a variable, and look up the IDs inside the block. Keys from your own code are known at plan time. IDs are not.\n\nFinally, `for_each` also works on whole modules. `module \"site\" { for_each = var.sites ... }` makes one copy of a module per key, with addresses like `module.site[\"blue\"]`. Day 28 builds a module and calls it more than once."
+    "body": "Say you already have resources built with `count`, and you want to move to `for_each` before the index trap bites. Editing the block alone is not enough. Terraform sees `[0]`, `[1]` and `[2]` vanish and `[\"alpha\"]`, `[\"bravo\"]` and `[\"charlie\"]` appear, so it plans to destroy three and create three. The real plan says `local_file.greeting[0] will be destroyed (because resource does not use count)` and ends with `Plan: 3 to add, 0 to change, 3 to destroy.`\n\nThe fix is a `moved` block per copy. It tells Terraform that an object changed address and nothing else:\n\n`moved { from = local_file.greeting[0]  to = local_file.greeting[\"alpha\"] }`\n\nAdd one for `[1]` to `\"bravo\"` and one for `[2]` to `\"charlie\"`. The plan now shows `local_file.greeting[0] has moved to local_file.greeting[\"alpha\"]`, three times, and `Plan: 0 to add, 0 to change, 0 to destroy.` Apply, and the state uses the new addresses. Day 27 covers `moved` properly. You will use it for renames and for moving code into modules.\n\nTwo details make this safe:\n- You must write one block per copy. A `moved` block cannot loop, because Terraform has to know every move before it plans.\n- The old index and the new key must point at the same real object. Check the plan: each line should say \"has moved to\", and nothing should say \"must be replaced\".\n\nThe \"known at plan time\" rule from the count section also explains a common error. Imagine you want one container per network, and the network IDs only exist after apply. If you write `for_each = toset(docker_network.all[*].id)`, plan fails, because Terraform cannot know the keys yet. Build keys from values in your own code instead, such as the network names in a variable, and look up the IDs inside the block. Keys from your own code are known at plan time. IDs are not.\n\n`for_each` works on whole modules too. `module \"site\" { for_each = var.sites ... }` makes one copy of a module per key, with addresses like `module.site[\"blue\"]`. Day 28 builds a module and calls it more than once."
    },
    "sources": [
     {
@@ -798,7 +798,7 @@
      "Destroy the running containers first"
     ],
     "answer": 1,
-    "why": "Terraform only knows what it owns through the state. Without it every resource looks new, so apply tries to create them all; with Docker that fails on taken names, and in a cloud you can end up with duplicates."
+    "why": "Terraform knows what it owns only through the state, so without it every resource looks new and apply tries to create them all. With Docker that fails on taken names, and in a cloud you can end up with duplicates."
    },
    "terms": [
     {
@@ -837,7 +837,7 @@
    "sections": [
     {
      "h": "Three pictures of the world",
-     "body": "Terraform never looks at your cloud console or at `docker ps`. Every plan compares three pictures:\n- Your code: the `.tf` files, which describe the desired state.\n- The state: Terraform's memory of what it created, in `terraform.tfstate`.\n- The real world: what the provider reports when Terraform asks the API.\n\nPlan starts with a refresh. Terraform asks the provider about every object in the state and updates its memory. Then it compares that memory with your code and lists the differences. Apply makes the changes and writes the new memory.\n\nThe state's main job is a mapping from addresses to real objects: `docker_container.web` is the container with ID `d8eb279c...`. Why not just ask Docker which containers exist? Because Docker cannot tell which ones this folder owns. A container called `state-web` might be yours, a teammate's, or one from another Terraform folder. State is the list of what this folder owns, with the ID of each.\n\nOnce you see the three pictures, the rest of this lesson falls into place, because each tool fixes one link between them:\n- `moved` changes an address in the state when you rename code.\n- `import` adds a real object that the state does not know yet.\n- Refresh-only mode copies reality into the state after someone changed things by hand.",
+     "body": "Terraform never looks at your cloud console or at `docker ps`. Every plan compares three pictures:\n- Your code: the `.tf` files, which describe the desired state.\n- The state: Terraform's memory of what it created, in `terraform.tfstate`.\n- The real world: what the provider reports when Terraform asks the API.\n\nPlan starts with a refresh. Terraform asks the provider about every object in the state and updates its memory. Then it compares that memory with your code and lists the differences. Apply makes the changes and writes the new memory.\n\nThe state's main job is a mapping from addresses to real objects: `docker_container.web` is the container with ID `d8eb279c...`. Why not just ask Docker which containers exist? Because Docker cannot tell which ones this folder owns. A container called `state-web` might be yours, a teammate's, or one from another Terraform folder. State is the list of what this folder owns, with the ID of each.\n\nEach tool in the rest of this lesson fixes one link between the three pictures:\n- `moved` changes an address in the state when you rename code.\n- `import` adds a real object that the state does not know yet.\n- Refresh-only mode copies reality into the state after someone changed things by hand.",
      "refs": [
       {
        "title": "State (Terraform docs)",
@@ -853,7 +853,7 @@
     },
     {
      "h": "What is inside terraform.tfstate",
-     "body": "State is a JSON file. Open it with `jq` and you find a few top-level keys:\n- `version` is the file format, 4 today.\n- `terraform_version` is the Terraform version that last wrote it.\n- `serial` counts how many times this state has been written.\n- `lineage` is an ID given when the state was first created, so two unrelated states never get mixed up.\n- `resources` holds every resource, with its type, name, provider and every attribute the provider reported.\n\nEvery attribute means every attribute, secrets included. In a test, a variable marked `sensitive` went into a resource as `REDIS_PASSWORD=s3cret-123`. Plan and apply printed `(sensitive value)`, and `terraform output` printed `<sensitive>`. The state file held `\"REDIS_PASSWORD=s3cret-123\"` in plain text. Anyone who can read your state can read your secrets.\n\nSo never edit state by hand, never commit it, and treat it like a password file. Read it through commands instead:\n- `terraform state list` prints every address.\n- `terraform state show ADDRESS` prints one resource's attributes.\n- `terraform show` prints everything in a readable form.",
+     "body": "State is a JSON file. Open it with `jq` and you find a few top-level keys:\n- `version` is the file format, 4 today.\n- `terraform_version` is the Terraform version that last wrote it.\n- `serial` counts how many times this state has been written.\n- `lineage` is an ID given when the state was first created, so two unrelated states never get mixed up.\n- `resources` holds every resource, with its type, name, provider and every attribute the provider reported.\n\nThose attributes include secrets. In a test, a variable marked `sensitive` went into a resource as `REDIS_PASSWORD=s3cret-123`. Plan and apply printed `(sensitive value)`, and `terraform output` printed `<sensitive>`. The state file held `\"REDIS_PASSWORD=s3cret-123\"` in plain text. Anyone who can read your state can read your secrets.\n\nTreat the file like a password file: never commit it, and never edit it by hand. Read it through commands instead:\n- `terraform state list` prints every address.\n- `terraform state show ADDRESS` prints one resource's attributes.\n- `terraform show` prints everything in a readable form.",
      "refs": [
       {
        "title": "terraform state list command reference",
@@ -901,7 +901,7 @@
     },
     {
      "h": "Adopting what already exists with import blocks",
-     "body": "Sometimes the real object comes first: a bucket made in the console last year, or a container someone started by hand. An `import` block adopts it, and it takes two arguments:\n- `to` is the address it should get, such as `docker_container.legacy`.\n- `id` is the provider's ID for it. For a Docker container that is the full ID from `docker inspect -f '{{.Id}}' NAME`. A name does not work: the plan fails with `Cannot import non-existent remote object`.\n\nYou also write the matching `resource` block yourself. Then you plan, and here is the part that bites people. Import does not make your code match reality. If your block differs from the real object, the plan imports it and then replaces it, with `# Warning: this will destroy the imported resource`.\n\nThat warning is common with Docker, because the provider cannot read every setting back from a running container. In the worked example, three differences forced a replacement: `env`, the image written as an ID instead of a name, and `ports`. You adjust the code until the plan imports and destroys nothing. Either copy what Docker reports, or tell Terraform to ignore what it cannot read with `lifecycle { ignore_changes = [env, ports] }`.\n\n`terraform plan -generate-config-out=generated.tf` can write a first draft of the resource block. Treat it as a draft: it lists every attribute, including defaults you do not need. Once the import is applied, the `import` block has nothing left to do, so delete it.",
+     "body": "Sometimes the real object comes first: a bucket made in the console last year, or a container someone started by hand. An `import` block adopts it, and it takes two arguments:\n- `to` is the address it should get, such as `docker_container.legacy`.\n- `id` is the provider's ID for it. For a Docker container that is the full ID from `docker inspect -f '{{.Id}}' NAME`. A name does not work: the plan fails with `Cannot import non-existent remote object`.\n\nYou also write the matching `resource` block yourself, then plan. Read that plan with care, because import does not make your code match reality. If your block differs from the real object, the plan imports it and then replaces it, with `# Warning: this will destroy the imported resource`.\n\nThat warning is common with Docker, because the provider cannot read every setting back from a running container. In the worked example, three differences forced a replacement: `env`, the image written as an ID instead of a name, and `ports`. You adjust the code until the plan imports and destroys nothing. Either copy what Docker reports, or tell Terraform to ignore what it cannot read with `lifecycle { ignore_changes = [env, ports] }`.\n\n`terraform plan -generate-config-out=generated.tf` can write a first draft of the resource block. Treat it as a draft: it lists every attribute, including defaults you do not need. Once the import is applied, the `import` block has nothing left to do, so delete it.",
      "refs": [
       {
        "title": "Import resources overview (Terraform docs)",
@@ -922,7 +922,7 @@
     },
     {
      "h": "Drift, and what refresh-only really does",
-     "body": "Drift is any difference between the real world and Terraform's state, usually from a change made by hand. Every plan begins with a refresh, so a normal plan notices drift and proposes to undo it. In the middle of an incident that can be a surprise.\n\nRefresh-only mode separates the two jobs:\n- `terraform plan -refresh-only` shows only the changes made outside Terraform, under `Note: Objects have changed outside of Terraform`. It proposes no actions.\n- `terraform apply -refresh-only` writes those changes into the state. It changes no real object.\n\nThe second one is widely misunderstood: it does not make the manual change permanent. In a test, `docker update --restart=always` changed a container by hand. After `apply -refresh-only` the state said `always`, but the code still said `no`. The very next normal plan proposed `~ restart = \"always\" -> \"no\"`. The code wins in the end.\n\nSo after drift, decide which side is right:\n- The code is right: run a normal apply, and Terraform undoes the manual change.\n- Reality is right: change the code to match, then apply.\n\nUse `apply -refresh-only` when you only need the state to stop being stale, for example after someone deleted an object that the code will recreate anyway.",
+     "body": "Drift is any difference between the real world and Terraform's state, usually from a change made by hand. Every plan begins with a refresh, so a normal plan notices drift and proposes to undo it. In the middle of an incident that can be a surprise.\n\nRefresh-only mode separates the two jobs:\n- `terraform plan -refresh-only` shows only the changes made outside Terraform, under `Note: Objects have changed outside of Terraform`. It proposes no actions.\n- `terraform apply -refresh-only` writes those changes into the state. It changes no real object.\n\nPeople often expect the second one to make the manual change permanent. It does not. In a test, `docker update --restart=always` changed a container by hand. After `apply -refresh-only` the state said `always`, but the code still said `no`. The very next normal plan proposed `~ restart = \"always\" -> \"no\"`, because the code still wins.\n\nAfter drift, you decide which side is right:\n- The code is right: run a normal apply, and Terraform undoes the manual change.\n- Reality is right: change the code to match, then apply.\n\nUse `apply -refresh-only` when you only need the state to stop being stale, for example after someone deleted an object that the code will recreate anyway.",
      "refs": [
       {
        "title": "terraform plan: refresh-only mode",
@@ -938,7 +938,7 @@
     },
     {
      "h": "Where state lives in a team",
-     "body": "By default, state is a local file. That breaks as soon as a second person or a pipeline runs Terraform. Two copies drift apart, nobody has the full truth, and nothing stops two applies at once.\n\nA **backend** decides where state is stored. A remote backend keeps one copy that everyone uses, and most of them also lock it, so only one run at a time can change the state. Start an apply in one terminal and a plan in another, and the second stops with `Error: Error acquiring the state lock`, naming the operation that holds it.\n\nThese are the common choices:\n- S3 on AWS, with `use_lockfile = true`. While a run holds the lock, Terraform keeps a small `.tflock` file next to the state. Older guides lock with a DynamoDB table, which is now deprecated. The docs also strongly recommend bucket versioning, so you can roll back a bad write. Day 29 sets this up.\n- HCP Terraform, HashiCorp's hosted service. Its docs say the Free plan is limited to 500 managed resources.\n- Similar backends for Google Cloud Storage, Azure Storage, PostgreSQL and more.\n\nTerraform also has better ways to keep secrets out of state. Since Terraform 1.10 a variable can be `ephemeral`: usable during a run, but never written to plan or state files. Since 1.11, some resources accept write-only arguments, such as a database password, for the same reason. OpenTofu can encrypt the whole state file. The Go deeper section shows all three.",
+     "body": "By default, state is a local file. That breaks as soon as a second person or a pipeline runs Terraform. Two copies drift apart, and nothing stops two applies from running at once.\n\nA **backend** decides where state is stored. A remote backend keeps one copy that everyone uses, and most of them also lock it, so only one run at a time can change the state. Start an apply in one terminal and a plan in another, and the second stops with `Error: Error acquiring the state lock`, naming the operation that holds it.\n\nThese are the common choices:\n- S3 on AWS, with `use_lockfile = true`. While a run holds the lock, Terraform keeps a small `.tflock` file next to the state. Older guides lock with a DynamoDB table, which is now deprecated. The docs also strongly recommend bucket versioning, so you can roll back a bad write. Day 29 sets this up.\n- HCP Terraform, HashiCorp's hosted service. Its docs say the Free plan is limited to 500 managed resources.\n- Similar backends for Google Cloud Storage, Azure Storage, PostgreSQL and more.\n\nTerraform also has better ways to keep secrets out of state. Since Terraform 1.10 a variable can be `ephemeral`: usable during a run, but never written to plan or state files. Since 1.11, some resources accept write-only arguments, such as a database password, for the same reason. OpenTofu can encrypt the whole state file. The Go deeper section shows all three.",
      "refs": [
       {
        "title": "Backend type: s3 (Terraform docs)",
@@ -953,7 +953,7 @@
      ]
     }
    ],
-   "analogy": "State is like the ticket book in a theatre cloakroom. When you hand in a coat, the attendant writes your ticket number next to a hook. Without the book there is a room full of coats and no way to know which ones are yours, and a new attendant would hang a second copy of everything. The comparison has a limit: the book only notes the hook, while Terraform's state copies every detail of each object, secrets included.",
+   "analogy": "State is like the ticket book in a theatre cloakroom. When you hand in a coat, the attendant writes your ticket number next to a hook. Lose the book and you have a room full of coats, with no way to tell which ones are yours. A cloakroom book only notes a hook. Terraform's state copies every detail of each object, secrets included, so you guard it far more closely.",
    "diagram": "<svg viewBox=\"0 0 560 280\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Plan compares your code, the state file and the real world\"><rect x=\"8\" y=\"30\" width=\"150\" height=\"48\" rx=\"10\" class=\"bx\"/><text x=\"83\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">your .tf code</text><rect x=\"215\" y=\"30\" width=\"130\" height=\"48\" rx=\"10\" class=\"bxo\"/><text x=\"280\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">plan</text><rect x=\"402\" y=\"30\" width=\"150\" height=\"48\" rx=\"10\" class=\"bxg\"/><text x=\"477\" y=\"59\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">state file</text><line x1=\"160\" y1=\"54\" x2=\"211\" y2=\"54\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"400\" y1=\"54\" x2=\"349\" y2=\"54\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"83\" y=\"96\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">desired state</text><text x=\"477\" y=\"96\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">Terraform's memory</text><rect x=\"205\" y=\"170\" width=\"150\" height=\"48\" rx=\"10\" class=\"bxt\"/><text x=\"280\" y=\"199\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">real world</text><line x1=\"280\" y1=\"168\" x2=\"280\" y2=\"82\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"318\" y=\"128\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">refresh</text><text x=\"280\" y=\"236\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">what really exists</text><text x=\"280\" y=\"266\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">plan compares all three; apply makes reality match the code</text></svg>",
    "diagram_caption": "Plan compares three pictures: your code, the state file and the real world. moved, import and refresh-only each fix one link.",
    "worked": {
@@ -1076,8 +1076,8 @@
      "what": "After changing the backend block, copy the existing state to the new place."
     }
    ],
-   "mistake": "Renaming a resource, or moving it into a module, without a `moved` block. In git it looks like a harmless rename. To Terraform it is a destroy plus a create, and the real object is rebuilt, data and all. After every refactor, read the plan: you want \"has moved to\" and `0 to destroy`.",
-   "real_world": "At PayLoop (made up), each environment's state lives in a versioned S3 bucket with locking, and only the pipeline's role may write to it. A nightly job runs `terraform plan -refresh-only` and posts any drift to the team chat. When someone changes production by hand during an incident, the follow-up is a pull request that brings the code in line, never a quiet `apply -refresh-only`.",
+   "mistake": "You rename a resource, or move it into a module, and leave out the `moved` block. In git it looks like a harmless rename. To Terraform it is a destroy plus a create, and the real object is rebuilt, data and all. After every refactor, read the plan: you want \"has moved to\" and `0 to destroy`.",
+   "real_world": "Drift usually starts with a hand fix during an incident. At PayLoop, a payments company made up for this course, a nightly job runs `terraform plan -refresh-only` and posts any drift to the team chat. Each environment's state lives in a versioned, locked S3 bucket, and only the pipeline's role may write to it. The follow-up to a hand change is a pull request that brings the code in line, never a quiet `apply -refresh-only`.",
    "task": {
     "title": "State surgery on infra/local: rename, drift, import, retire",
     "steps": [
@@ -1105,9 +1105,9 @@
    "recap": [
     "Plan compares three pictures: your code, the state and the real world, refreshed from the provider.",
     "State maps addresses to real IDs and holds every attribute, secrets included, in plain text.",
-    "`moved` renames without rebuilding, `import` adopts, and `removed` forgets; all of them show up in the plan.",
+    "`moved` renames without rebuilding, `import` adopts, and `removed` forgets. You see each of them in the plan.",
     "Read every import plan: \"must be replaced\" means your code does not match the real object yet.",
-    "`apply -refresh-only` updates state only; the next normal apply still enforces the code.",
+    "`apply -refresh-only` updates state only, and the next normal apply still enforces the code.",
     "Teams keep state in a locked remote backend, such as S3 with `use_lockfile = true`, and never in git."
    ],
    "check": [
@@ -1120,7 +1120,7 @@
       "In the state file, in plain text"
      ],
      "answer": 3,
-     "why": "`sensitive` only hides the value in Terraform's output; the state still stores it as plain text."
+     "why": "`sensitive` only hides the value in Terraform's output. The state still stores it as plain text."
     },
     {
      "q": "Someone runs `docker update --restart=always` on a container that your code declares with `restart = \"no\"`. You run `terraform apply -refresh-only`, then `terraform plan`. What does the plan show?",
@@ -1142,7 +1142,7 @@
       "Nothing, because the code did not change"
      ],
      "answer": 0,
-     "why": "`state rm` only made Terraform forget; the code still asks for the container, so apply tries to create it and Docker refuses the duplicate name."
+     "why": "`state rm` only made Terraform forget. The code still asks for the container, so apply tries to create it and Docker refuses the duplicate name."
     }
    ],
    "interview": [
@@ -1161,7 +1161,7 @@
    ],
    "deeper": {
     "minutes": 12,
-    "body": "State holds every attribute, so it holds every secret that passes through a resource. Terraform gives you several tools, and they do different jobs.\n\n1. `sensitive = true` on a variable or output hides the value in plan, apply and output, and that is all. The value is still in the state in plain text. It is still worth using, because it keeps secrets out of CI logs.\n2. `ephemeral = true` on a variable (Terraform 1.10 and later) makes the value exist only during the run. It is never written to plan or state files, and Terraform enforces that. In a test, an ephemeral variable passed into an ordinary argument failed the plan with `Ephemeral values are not valid for \"input\", because it is not a write-only attribute and must be persisted to state.`\n3. Write-only arguments (Terraform 1.11 and later) are arguments a provider sends to the API but never stores. The docs' example gives an AWS database its password through `password_wo`, generated by an `ephemeral \"random_password\"` block. Terraform never stores the value, so it cannot tell when it changed. You bump a number in a second argument, `password_wo_version`, to send a new password.\n4. An `ephemeral` resource block, like `ephemeral \"random_password\"`, produces a value that only lives during the run, so the secret never touches state.\n\nNot every provider supports write-only arguments yet, so check the provider's docs for each secret you handle.\n\nThen protect the state itself, because it will still hold IDs, addresses and whatever else a provider returns:\n- Keep it in a remote backend that encrypts at rest, such as S3 with server-side encryption.\n- Limit who can read it. Reading state is close to reading production.\n- On OpenTofu, turn on state encryption. An `encryption` block inside `terraform` encrypts state and plan files with a key from a passphrase or a key service such as AWS KMS.\n\nWhich tool should you reach for first? Keep secrets out of `.tf` files and committed `.tfvars` files, always. Mark anything secret as `sensitive`. Where your Terraform and provider versions allow it, pass secrets as ephemeral values into write-only arguments, so they never reach the state. And whatever is left, protect by protecting the state."
+    "body": "State holds every attribute, so it holds every secret that passes through a resource. Terraform gives you several tools, and they do different jobs.\n\n1. `sensitive = true` on a variable or output hides the value in plan, apply and output, and that is all. The value is still in the state in plain text. It is still worth using, because it keeps secrets out of CI logs.\n2. `ephemeral = true` on a variable (Terraform 1.10 and later) makes the value exist only during the run. It is never written to plan or state files, and Terraform enforces that. In a test, an ephemeral variable passed into an ordinary argument failed the plan with `Ephemeral values are not valid for \"input\", because it is not a write-only attribute and must be persisted to state.`\n3. Write-only arguments (Terraform 1.11 and later) are arguments a provider sends to the API but never stores. The docs' example gives an AWS database its password through `password_wo`, generated by an `ephemeral \"random_password\"` block. Terraform never stores the value, so it cannot tell when it changed. You bump a number in a second argument, `password_wo_version`, to send a new password.\n4. An `ephemeral` resource block, like `ephemeral \"random_password\"`, produces a value that only lives during the run, so the secret never touches state.\n\nNot every provider supports write-only arguments yet, so check the provider's docs for each secret you handle.\n\nThen protect the state itself, because it will still hold IDs, addresses and whatever else a provider returns:\n- Keep it in a remote backend that encrypts at rest, such as S3 with server-side encryption.\n- Limit who can read it. Reading state is close to reading production.\n- On OpenTofu, turn on state encryption. An `encryption` block inside `terraform` encrypts state and plan files with a key from a passphrase or a key service such as AWS KMS.\n\nWhich tool should you reach for first? Keep secrets out of `.tf` files and committed `.tfvars` files, always. Mark anything secret as `sensitive`. Where your Terraform and provider versions allow it, pass secrets as ephemeral values into write-only arguments, so they never reach the state. Anything that still ends up in state, you protect by locking down the state itself."
    },
    "sources": [
     {
@@ -1196,7 +1196,7 @@
      "Copying the whole folder and editing it"
     ],
     "answer": 2,
-    "why": "CLI workspaces share one backend, so the docs call them unsuitable for isolation; a separate root per environment that calls shared modules gets its own backend and permissions."
+    "why": "CLI workspaces share one backend, so the docs call them unsuitable for isolation. A separate root per environment that calls shared modules gets its own backend and permissions."
    },
    "terms": [
     {
@@ -1205,7 +1205,7 @@
     },
     {
      "term": "Root module",
-     "plain": "The folder where you run terraform; it calls child modules and owns the state."
+     "plain": "The folder where you run terraform. It calls child modules and owns the state."
     },
     {
      "term": "Child module",
@@ -1231,7 +1231,7 @@
    "sections": [
     {
      "h": "Every folder is a module",
-     "body": "You have written modules since Day 25 without the word. A **module** is a folder of `.tf` files. The folder where you run `terraform` is the root module. When it calls another folder with a `module` block, that folder becomes a child module. Shortened, a call looks like this: `module \"dev\" { source = \"../modules/hello-stack\"  name = \"hello\"  host_port = 8080 }`.\n\nThink of a child module as a Kotlin function:\n- Its variables are the parameters. Those without a default are required.\n- Its outputs are the return values, read as `module.dev.url`.\n- Its resources are the side effects. Call it twice and you get two sets of real objects.\n\nThe comparison breaks in one place. A function call is gone when it returns, but a module call lives on in the state. Its resources get addresses with a module prefix, such as `module.dev.docker_container.app`, and they stay until you remove the call.\n\nAfter you add or change a `module` block, run `terraform init` again. It records where each module lives, and it downloads remote modules into `.terraform/modules`. Local folders are used in place. You can see what init found in `.terraform/modules/modules.json`, which lists each call and its folder. If you forget init, plan stops with `Error: Module not installed` and tells you to run it.",
+     "body": "You have written modules since Day 25 without knowing the word. A **module** is a folder of `.tf` files. The folder where you run `terraform` is the root module. When it calls another folder with a `module` block, that folder becomes a child module. Shortened, a call looks like this: `module \"dev\" { source = \"../modules/hello-stack\"  name = \"hello\"  host_port = 8080 }`.\n\nA child module works like a Kotlin function:\n- Its variables are the parameters. Those without a default are required.\n- Its outputs are the return values, read as `module.dev.url`.\n- Its resources are the side effects. Call it twice and you get two sets of real objects.\n\nThe difference is what happens afterwards. A function call is gone once it returns, while a module call lives on in the state. Its resources get addresses with a module prefix, such as `module.dev.docker_container.app`, and they stay until you remove the call.\n\nAfter you add or change a `module` block, run `terraform init` again. It records where each module lives, and it downloads remote modules into `.terraform/modules`. Local folders are used in place. You can see what init found in `.terraform/modules/modules.json`, which lists each call and its folder. If you forget init, plan stops with `Error: Module not installed` and tells you to run it.",
      "refs": [
       {
        "title": "Modules overview (Terraform docs)",
@@ -1263,7 +1263,7 @@
     },
     {
      "h": "Where modules come from, and pinning them",
-     "body": "The `source` argument says where a module lives:\n- A local path that starts with `./` or `../`. Terraform uses the folder in place, and a change shows up on the next plan.\n- The public registry, such as `terraform-aws-modules/vpc/aws`, with a separate `version` argument like `version = \"~> 6.7\"`.\n- A git repository, such as `git::https://example.com/acme/tf-modules.git//vpc?ref=v1.2.0`, where `?ref=` pins a tag or a commit.\n\nRegistry modules save real work. The [terraform-aws-modules VPC module](https://github.com/terraform-aws-modules/terraform-aws-vpc) builds a whole network with subnets and gateways from a handful of arguments. Remember that a module runs with your permissions and creates real, billed resources. Read one before you use it, the way you would read a library before adding it to `build.gradle.kts`.\n\nPin every remote module. HashiCorp's style guide says to pin modules to a specific major and minor version, because an unpinned module can change your infrastructure on the next `init`. To move to a newer version, change the constraint, run `terraform init -upgrade`, and read the plan before you apply.",
+     "body": "The `source` argument says where a module lives:\n- A local path that starts with `./` or `../`. Terraform uses the folder in place, and a change shows up on the next plan.\n- The public registry, such as `terraform-aws-modules/vpc/aws`, with a separate `version` argument like `version = \"~> 6.7\"`.\n- A git repository, such as `git::https://example.com/acme/tf-modules.git//vpc?ref=v1.2.0`, where `?ref=` pins a tag or a commit.\n\nRegistry modules save real work. The [terraform-aws-modules VPC module](https://github.com/terraform-aws-modules/terraform-aws-vpc) builds a whole network with subnets and gateways from a handful of arguments. A module runs with your permissions and creates real, billed resources. Read one before you use it, the way you would read a library before adding it to `build.gradle.kts`.\n\nPin every remote module. HashiCorp's style guide says to pin modules to a specific major and minor version, because an unpinned module can change your infrastructure on the next `init`. To move to a newer version, change the constraint, run `terraform init -upgrade`, and read the plan before you apply.",
      "refs": [
       {
        "title": "Module sources (Terraform docs)",
@@ -1279,7 +1279,7 @@
     },
     {
      "h": "Small modules, composed in a thin root",
-     "body": "How big should a module be? Draw the line around something one team owns and changes as a unit, like \"one hello-devops stack\" or \"one service's database\". Avoid both extremes:\n- A module that wraps a single resource adds a layer to read and saves nothing.\n- One giant module for the whole company puts everything at risk on every change, and its plans take minutes.\n\nComposition means wiring small modules together in the root, instead of nesting them deeply. Data flows through arguments and outputs. In the lab, the root owns the Redis image and passes its ID into both stacks. The module does not create the image itself, because two stacks would then manage the same image twice.\n\nA good root module ends up short. It configures providers, calls modules, and connects outputs to inputs. HashiCorp's docs describe each environment the same way: a backend block plus a small number of module blocks, with arguments for the few things that differ. Free advice from many teams: if your root folder grows past a few hundred lines, look for a module hiding in it.",
+     "body": "How big should a module be? Draw the line around something one team owns and changes as a unit, like \"one hello-devops stack\" or \"one service's database\". Avoid both extremes:\n- A module that wraps a single resource adds a layer to read and saves nothing.\n- One giant module for the whole company puts everything at risk on every change, and its plans take minutes.\n\nComposition means wiring small modules together in the root, instead of nesting them deeply. Data flows through arguments and outputs. In the lab, the root owns the Redis image and passes its ID into both stacks. The module does not create the image itself, because two stacks would then manage the same image twice.\n\nA good root module ends up short. It configures providers, calls modules, and connects outputs to inputs. HashiCorp's docs describe each environment the same way: a backend block plus a small number of module blocks, with arguments for the few things that differ. A rough rule: when a root folder grows past a few hundred lines, part of it probably belongs in a module.",
      "refs": [
       {
        "title": "Module composition (Terraform docs)",
@@ -1295,7 +1295,7 @@
     },
     {
      "h": "Environments: workspaces, folders or tfvars files",
-     "body": "Dev, test and prod need the same shape with small differences. Teams handle that in three ways:\n1. One folder, several workspaces. `terraform workspace new qa` gives the same code a second, empty state, and `terraform.workspace` holds the current name.\n2. One folder, one `.tfvars` file per environment, used as `terraform plan -var-file=prod.tfvars`. Each environment still needs its own state, so you also switch backend settings per environment, which is easy to get wrong.\n3. One folder per environment, like `envs/dev` and `envs/prod`. Each is a short root that calls shared modules and has its own backend and state.\n\nHashiCorp's own docs lean towards the third. They say CLI workspaces share one backend, so they are not a suitable isolation mechanism when environments need separate credentials and access controls. Prod should not share a bucket, or a set of permissions, with someone's experiment.\n\nSo most teams use a folder per long-lived environment, with differences kept in a few module arguments. Workspaces are still handy for short-lived copies, such as one stack per feature branch. They need care, though: the worked example shows a fresh workspace planning to create containers whose names and ports are already taken. If you use workspaces, build names from `terraform.workspace`, such as `name = \"site-${terraform.workspace}\"`, and look up ports in a map keyed by workspace. With the S3 backend, each extra workspace's state is stored under `env:/<workspace>/` in the same bucket, next to the default one.",
+     "body": "Dev, test and prod need the same shape with small differences. Teams handle that in three ways:\n1. One folder, several workspaces. `terraform workspace new qa` gives the same code a second, empty state, and `terraform.workspace` holds the current name.\n2. One folder, one `.tfvars` file per environment, used as `terraform plan -var-file=prod.tfvars`. Each environment still needs its own state, so you also switch backend settings per environment, which is easy to get wrong.\n3. One folder per environment, like `envs/dev` and `envs/prod`. Each is a short root that calls shared modules and has its own backend and state.\n\nHashiCorp's own docs lean towards the third. They say CLI workspaces share one backend, so they are not a suitable isolation mechanism when environments need separate credentials and access controls. Prod should not share a bucket, or a set of permissions, with someone's experiment.\n\nThat is why most teams use a folder per long-lived environment, with differences kept in a few module arguments. Workspaces are still handy for short-lived copies, such as one stack per feature branch. They need care, though: the worked example shows a fresh workspace planning to create containers whose names and ports are already taken. If you use workspaces, build names from `terraform.workspace`, such as `name = \"site-${terraform.workspace}\"`, and look up ports in a map keyed by workspace. With the S3 backend, each extra workspace's state is stored under `env:/<workspace>/` in the same bucket, next to the default one.",
      "refs": [
       {
        "title": "Workspaces (Terraform docs)",
@@ -1347,9 +1347,9 @@
      ]
     }
    ],
-   "analogy": "A module is like an architect's house plan. The same plan builds many houses on different plots, and each owner picks a few options, such as the paint colour and the size of the garage. The comparison breaks in one place: changing the plan does not touch houses already built, but changing a module changes every stack that uses it on the next apply.",
+   "analogy": "A module is like an architect's house plan. The same plan builds many houses on different plots, and each owner picks a few options, such as the paint colour and the size of the garage. Once a house is built, later changes to the plan leave it alone. A module is different: change it, and every stack that uses it changes on its next apply.",
    "diagram": "<svg viewBox=\"0 0 560 250\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"The infra/local root module calls the hello-stack module twice, as dev and test\"><rect x=\"8\" y=\"96\" width=\"130\" height=\"48\" rx=\"10\" class=\"bx\"/><text x=\"73\" y=\"125\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">infra/local</text><text x=\"73\" y=\"162\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">root module</text><rect x=\"200\" y=\"40\" width=\"150\" height=\"48\" rx=\"10\" class=\"bxo\"/><text x=\"275\" y=\"69\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">module dev</text><text x=\"275\" y=\"104\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">port 8080</text><rect x=\"200\" y=\"152\" width=\"150\" height=\"48\" rx=\"10\" class=\"bxt\"/><text x=\"275\" y=\"181\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">module test</text><text x=\"275\" y=\"216\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">port 8082</text><rect x=\"412\" y=\"96\" width=\"140\" height=\"48\" rx=\"10\" class=\"bxg\"/><text x=\"482\" y=\"125\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">hello-stack</text><text x=\"482\" y=\"162\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">one folder of code</text><line x1=\"140\" y1=\"110\" x2=\"198\" y2=\"70\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"140\" y1=\"130\" x2=\"198\" y2=\"170\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"352\" y1=\"70\" x2=\"410\" y2=\"108\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"352\" y1=\"170\" x2=\"410\" y2=\"132\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"280\" y=\"240\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">two calls, one module, two separate stacks</text></svg>",
-   "diagram_caption": "infra/local calls the hello-stack module twice. Same code, different names and ports, two separate stacks.",
+   "diagram_caption": "infra/local calls the hello-stack module twice, with different names and ports, so you get two separate stacks.",
    "worked": {
     "title": "One module, two environment folders, and a workspace",
     "steps": [
@@ -1369,12 +1369,12 @@
       "lang": "console"
      },
      {
-      "say": "Do the same in `envs/prod`. Two folders, two state files, and no way for a prod apply to touch dev.",
+      "say": "Do the same in `envs/prod`. Each folder now has its own state file, and a prod apply has no way to touch dev.",
       "code": "$ cd ../prod && terraform init && terraform apply -auto-approve\nApply complete! Resources: 2 added, 0 changed, 0 destroyed.\nOutputs:\nurl = \"http://localhost:8202\"\n$ curl -s localhost:8202\n<h1>Hello from prod</h1>\n$ ls ../*/terraform.tfstate\n../dev/terraform.tfstate\n../prod/terraform.tfstate",
       "lang": "console"
      },
      {
-      "say": "Now compare a workspace. In `envs/dev`, create one called qa. Terraform switches to a new, empty state, so the plan wants to create everything again, with the same name `site-dev` and port 8201 that dev already uses. Applying would fail. Workspaces copy the code, not the differences. Switch back and delete it.",
+      "say": "Now compare a workspace. In `envs/dev`, create one called qa. Terraform switches to a new, empty state, so the plan wants to create everything again, with the same name `site-dev` and port 8201 that dev already uses. Applying would fail, because the code does not use the workspace name anywhere. Switch back and delete it.",
       "code": "$ cd ../dev && terraform workspace new qa\nCreated and switched to workspace \"qa\"!\n$ terraform workspace list\n  default\n* qa\n$ terraform plan\n  # module.site.docker_container.site will be created\n  # module.site.docker_image.nginx will be created\nPlan: 2 to add, 0 to change, 0 to destroy.\n$ terraform workspace select default && terraform workspace delete qa\nSwitched to workspace \"default\".\nDeleted workspace \"qa\"!",
       "lang": "console"
      },
@@ -1511,8 +1511,8 @@
      "what": "Lint every folder below this one."
     }
    ],
-   "mistake": "Copying a whole folder for each environment and editing the copies by hand. Within weeks dev and prod differ in ways nobody chose, and every fix has to be made twice. Put the shared shape in a module, and keep each environment folder down to a backend and a few module arguments.",
-   "real_world": "At PayLoop (made up), the platform team keeps a `service` module in its own git repo and releases it with tags such as v2.3.0. Its `terraform test` suite runs on every pull request. Each product team has `envs/dev` and `envs/prod` folders that call the module with `?ref=` pinned. An upgrade goes to dev first, and prod gets the new tag a week later through a one-line pull request.",
+   "mistake": "Each environment starts as a copy of a whole folder, and people edit the copies by hand. Within weeks dev and prod differ in ways nobody chose, and every fix has to be made twice. Put the shared shape in a module, and keep each environment folder down to a backend and a few module arguments.",
+   "real_world": "Once several product teams need the same service setup, copying folders stops working. A platform team keeps one `service` module in its own git repo, releases it with tags such as v2.3.0 and runs its `terraform test` suite on every pull request. Product teams call it from their `envs/dev` and `envs/prod` folders with `?ref=` pinned. An upgrade goes to dev first, and prod gets the new tag a week later through a one-line pull request.",
    "task": {
     "title": "Turn infra/local into a module used twice",
     "steps": [
@@ -1535,15 +1535,15 @@
    },
    "explain_back": {
     "prompt": "In 3 to 4 sentences, explain to a teammate how one module can create both a dev and a test stack without them colliding. Mention inputs, outputs and resource addresses.",
-    "answer": "The module is one folder of code with variables as its inputs and outputs as its return values. The root calls it twice, as `module.dev` and `module.test`, with different inputs such as the name prefix and the port. Every name inside is built from the name input, so Docker gets `hello-web` and `hello-test-web`, and each call's resources get their own addresses in the state. Changing the module's code changes both stacks on the next apply, which is the point."
+    "answer": "The module is one folder of code with variables as its inputs and outputs as its return values. The root calls it twice, as `module.dev` and `module.test`, with different inputs such as the name prefix and the port. Every name inside is built from the name input, so Docker gets `hello-web` and `hello-test-web`, and each call's resources get their own addresses in the state. One change to the module's code reaches both stacks on the next apply, so a fix is made once."
    },
    "recap": [
-    "Every folder is a module; the root calls child modules with `module` blocks and `source`.",
+    "Every folder is a module. The root calls child modules with `module` blocks and `source`.",
     "Variables are a module's API, outputs its return values, and resources get addresses like `module.dev.docker_container.app`.",
     "Run `terraform init` after adding a module; pin every remote module's version.",
     "Keep modules focused and roots thin: providers, module calls and wiring.",
     "Prefer a folder per long-lived environment over CLI workspaces when credentials differ.",
-    "`terraform test` runs `.tftest.hcl` files; `mock_provider` makes tests free and fast."
+    "`terraform test` runs `.tftest.hcl` files, and `mock_provider` makes those tests free and fast."
    ],
    "check": [
     {
@@ -1596,7 +1596,7 @@
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Once other teams use your module, it becomes a product with users, and changes need the care you give a library.\n\nVersion it with git tags and semantic versioning. A new optional input is a minor version, like v1.3.0. A renamed input, a removed output, or anything that replaces resources is a major version, like v2.0.0. Callers pin with `?ref=v1.3.0` in a git source, or with `version = \"~> 1.3\"` for a registry module. HashiCorp's style guide names registry module repos `terraform-<PROVIDER>-<NAME>`, such as `terraform-aws-vpc`.\n\nRefactors inside a module need `moved` blocks too, and they belong in the module itself. Say version 2 renames `docker_container.app` to `docker_container.web`. A `moved` block inside the module turns that into a move for every caller, on their next apply. The refactoring docs strongly recommend keeping old `moved` blocks in shared modules, because removing one breaks anyone still upgrading from an older version.\n\nTest where your users will feel it:\n- Plan-mode tests with a mock provider for naming, validation and wiring. They are fast and need no credentials.\n- An apply-mode test against a sandbox account for anything subtle, such as IAM policies. It costs a little time and money, so many teams run it nightly instead of on every push.\n- An `examples` folder with a small root that calls the module. It doubles as documentation and as an extra check that the module really works from the outside.\n\nTwo bigger tools exist once a company has many environments. HCP Terraform has Stacks, which describe repeated deployments of the same components with `component` and `deployment` blocks, each deployment with its own state. Some teams use a wrapper tool to generate many small roots from one template. Neither is needed for this course. Folders, modules and pinned versions carry you a long way, and they work the same in Terraform and OpenTofu."
+    "body": "Once other teams use your module, it becomes a product with users, and changes need the care you give a library.\n\nVersion it with git tags and semantic versioning. A new optional input is a minor version, like v1.3.0. A renamed input, a removed output, or anything that replaces resources is a major version, like v2.0.0. Callers pin with `?ref=v1.3.0` in a git source, or with `version = \"~> 1.3\"` for a registry module. HashiCorp's style guide names registry module repos `terraform-<PROVIDER>-<NAME>`, such as `terraform-aws-vpc`.\n\nRefactors inside a module need `moved` blocks too, and they belong in the module itself. Say version 2 renames `docker_container.app` to `docker_container.web`. A `moved` block inside the module turns that into a move for every caller, on their next apply. The refactoring docs strongly recommend keeping old `moved` blocks in shared modules, because removing one breaks anyone still upgrading from an older version.\n\nTest where your users will feel it:\n- Plan-mode tests with a mock provider for naming, validation and wiring. They are fast and need no credentials.\n- An apply-mode test against a sandbox account for anything subtle, such as IAM policies. It costs a little time and money, so many teams run it nightly instead of on every push.\n- An `examples` folder with a small root that calls the module. It is documentation, and also a check that the module works when someone calls it from outside.\n\nTwo bigger tools exist once a company has many environments. HCP Terraform has Stacks, which describe repeated deployments of the same components with `component` and `deployment` blocks, each deployment with its own state. Some teams use a wrapper tool to generate many small roots from one template. You need neither for this course. It sticks to folders, modules and pinned versions, which work the same in Terraform and OpenTofu."
    },
    "sources": [
     {
@@ -1666,7 +1666,7 @@
    "sections": [
     {
      "h": "Before any cloud: make the account safe",
-     "body": "Everything on AWS today is optional. The rest of the course runs on your laptop, and the worked example below needs no account. Day 10 explained cloud costs and free plans. This is the checklist to finish before your first apply, in order:\n1. Sign up and choose the Free plan. Accounts created since July 15, 2025 pick a plan. The Free plan gives up to $200 in credits for six months and cannot charge your card. When the credits or the six months run out, the account closes, and you have 90 days to upgrade if you want it back.\n2. Protect the root user, the email login you signed up with. It can do anything, even close the account. Turn on MFA for it and never use it for daily work.\n3. In Billing and Cost Management, open Budgets and create a zero spend budget from a template. It emails you once your spending goes above the free usage.\n4. Make an everyday login that is not root (next section).\n\nOlder accounts stay on the previous free tier and can be billed, so the budget matters even more there. Also, do not create an AWS Organization on a learning account: AWS lists joining Organizations among the actions that move a Free plan account to the Paid plan.\n\nA budget alert only sends email. It stops nothing, and its numbers can lag by hours. Destroying what you create is what protects you, and it is the last step today. IAM roles and the OIDC provider cost nothing. S3 charges per gigabyte stored each month plus a little per request, and a state file is a few kilobytes, so today's bucket costs close to nothing. Check the S3 pricing page for your Region anyway.",
+     "body": "Everything on AWS today is optional. The rest of the course runs on your laptop, and the worked example below needs no account. Day 10 explained cloud costs and free plans. This is the checklist to finish before your first apply, in order:\n1. Sign up and choose the Free plan. Accounts created since July 15, 2025 pick a plan. The Free plan gives up to $200 in credits for six months and cannot charge your card. When the credits or the six months run out, the account closes, and you have 90 days to upgrade if you want it back.\n2. Protect the root user, the email login you signed up with. It can do anything, even close the account. Turn on MFA for it and never use it for daily work.\n3. In Billing and Cost Management, open Budgets and create a zero spend budget from a template. It emails you once your spending goes above the free usage.\n4. Make an everyday login that is not root (next section).\n\nOlder accounts stay on the previous free tier and can be billed, so the budget matters even more there. Do not create an AWS Organization on a learning account either: AWS lists joining Organizations among the actions that move a Free plan account to the Paid plan.\n\nA budget alert only sends email. It stops nothing, and its numbers can lag by hours. Destroying what you create is what protects you, and it is the last step today. IAM roles and the OIDC provider cost nothing. S3 charges per gigabyte stored each month plus a little per request, and a state file is a few kilobytes, so today's bucket costs close to nothing. Check the S3 pricing page for your Region anyway.",
      "refs": [
       {
        "title": "Choosing an AWS Free Tier plan",
@@ -1740,7 +1740,7 @@
     },
     {
      "h": "The pipeline: checks, plan on pull requests, apply on main",
-     "body": "The lab's `.github/workflows/terraform.yml` runs when anything under `infra/` changes. It has three jobs:\n1. `checks` runs on every pull request and push, with no cloud login. It runs `terraform fmt -check`, tflint, a trivy scan, `terraform validate` for `infra/local` and `infra/aws`, and the hello-stack module's tests with the mock provider from Day 28.\n2. `plan` runs on pull requests once the checks pass. It logs in to AWS with OIDC, runs `terraform plan -out=tfplan`, and puts the plan on the run's summary page for reviewers.\n3. `apply` runs after a merge to main. It waits in the `production` environment until a required reviewer approves, then plans and applies.\n\nThe cheap checks run first, so a formatting slip fails before anything logs in to AWS. The AWS jobs also have `vars.AWS_ROLE_ARN != ''` in their `if`. Until you save the role ARN as a repository variable, they are skipped, so a repo without an AWS account still gets green checks.\n\nA few more settings are worth spotting:\n- `concurrency` with `cancel-in-progress: false` on the AWS jobs, so a second run waits and never stops an apply halfway.\n- `TF_VAR_` environment variables filled from the `github` context, so CI passes your owner, repo and their IDs without any secrets.\n- `id-token: write` only on the two jobs that log in to AWS. The checks job can only read the repo.\n- Third-party actions pinned to full commit SHAs, as on Day 21.",
+     "body": "The lab's `.github/workflows/terraform.yml` runs when anything under `infra/` changes. It has three jobs:\n1. `checks` runs on every pull request and push, with no cloud login. It runs `terraform fmt -check`, tflint, a trivy scan, `terraform validate` for `infra/local` and `infra/aws`, and the hello-stack module's tests with the mock provider from Day 28.\n2. `plan` runs on pull requests once the checks pass. It logs in to AWS with OIDC, runs `terraform plan -out=tfplan`, and puts the plan on the run's summary page for reviewers.\n3. `apply` runs after a merge to main. It waits in the `production` environment until a required reviewer approves, then plans and applies.\n\nThe cheap checks run first, so a formatting slip fails before anything logs in to AWS. The AWS jobs also have `vars.AWS_ROLE_ARN != ''` in their `if`. Until you save the role ARN as a repository variable, they are skipped, so a repo without an AWS account still gets green checks.\n\nLook for these settings in the file as well:\n- `concurrency` with `cancel-in-progress: false` on the AWS jobs, so a second run waits and never stops an apply halfway.\n- `TF_VAR_` environment variables filled from the `github` context, so CI passes your owner, repo and their IDs without any secrets.\n- `id-token: write` only on the two jobs that log in to AWS. The checks job can only read the repo.\n- Third-party actions pinned to full commit SHAs, as on Day 21.",
      "refs": [
       {
        "title": "hashicorp/setup-terraform",
@@ -1781,7 +1781,7 @@
      ]
     }
    ],
-   "analogy": "OIDC works like a hotel key card. At the front desk (GitHub) you prove who you are, and you get a card that opens one room (the IAM role) and stops working at checkout. Nobody carries a master key that works forever. The picture misses one thing. A hotel checks your passport in person, while AWS only trusts GitHub's signature. That is why the trust policy must name exactly which repo may get a card.",
+   "analogy": "OIDC works like a hotel key card. At the front desk (GitHub) you prove who you are, and you get a card that opens one room (the IAM role) and stops working at checkout. Nobody carries a master key that works forever. A real hotel checks your passport in person, though, and AWS never sees you at all. It only trusts GitHub's signature, so the trust policy must name exactly which repo may get a card.",
    "diagram": "<svg viewBox=\"0 0 560 252\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A pull request runs checks and a plan job; after merge and approval the apply job runs; both swap an OIDC token for an IAM role that acts on S3\"><rect x=\"8\" y=\"30\" width=\"120\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"68\" y=\"57\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">pull request</text><rect x=\"150\" y=\"30\" width=\"100\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"200\" y=\"57\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">plan job</text><rect x=\"272\" y=\"30\" width=\"140\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"342\" y=\"57\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">merge, approve</text><rect x=\"434\" y=\"30\" width=\"118\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"493\" y=\"57\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">apply job</text><line x1=\"130\" y1=\"52\" x2=\"147\" y2=\"52\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"252\" y1=\"52\" x2=\"269\" y2=\"52\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"414\" y1=\"52\" x2=\"431\" y2=\"52\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"200\" y=\"92\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">after checks pass</text><text x=\"500\" y=\"106\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">environment gate</text><rect x=\"80\" y=\"170\" width=\"120\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"140\" y=\"197\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">OIDC token</text><rect x=\"250\" y=\"170\" width=\"110\" height=\"44\" rx=\"10\" class=\"bxg\"/><text x=\"305\" y=\"197\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">IAM role</text><rect x=\"410\" y=\"170\" width=\"110\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"465\" y=\"197\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">AWS S3</text><line x1=\"202\" y1=\"192\" x2=\"247\" y2=\"192\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"225\" y=\"184\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">swap</text><line x1=\"362\" y1=\"192\" x2=\"407\" y2=\"192\" class=\"ln\" marker-end=\"url(#ar)\"/><text x=\"385\" y=\"184\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">acts on</text><line x1=\"190\" y1=\"98\" x2=\"132\" y2=\"166\" class=\"lnd\" marker-end=\"url(#ar)\"/><line x1=\"490\" y1=\"78\" x2=\"172\" y2=\"166\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"280\" y=\"240\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">short-lived credentials, no stored keys</text></svg>",
    "diagram_caption": "Checks and a plan run on pull requests. After merge and approval the apply job runs. Both AWS jobs swap a GitHub OIDC token for short-lived AWS credentials.",
    "worked": {
@@ -1927,7 +1927,7 @@
     }
    ],
    "mistake": "Running `terraform destroy` while the state still lives in the bucket you are destroying. The bucket goes away, and Terraform has nowhere to save the final state. First comment out the backend block and run `terraform init -migrate-state` to bring the state home, then destroy.",
-   "real_world": "At PayLoop (still made up), engineers have read-only access to production. Every infrastructure change goes through a pull request with its plan posted for review. Only the pipeline's role can apply, and only after a second person approves. When the team accepts a scanner finding, they write the reason next to it, so auditors can see each decision.",
+   "real_world": "Where auditors check every production change, engineers get read-only access to production. Infrastructure changes go through a pull request with the plan posted for review. Only the pipeline's role can apply, and only after a second person approves. When the team accepts a scanner finding, the reason goes next to it, so auditors can see each decision.",
    "task": {
     "title": "Optional: the bucket on AWS, state in S3, CI, then clean up",
     "steps": [
@@ -1944,7 +1944,7 @@
     "hints": [
      "If the plan job fails at the AWS login, compare the `sub` values in the role's trust policy with your repo. Repos created after July 15, 2026 use the numeric ID form.",
      "Tag the bucket, not `default_tags`. A default tag also changes the IAM resources, and the CI role may not change IAM.",
-     "If `terraform destroy` fails on the bucket, check that `force_destroy = true` is still in `main.tf`; versioned buckets keep old file versions."
+     "If `terraform destroy` fails on the bucket, check that `force_destroy = true` is still in `main.tf`. Versioned buckets keep old file versions."
     ],
     "done_when": "The apply job in GitHub ended with `Apply complete!`, and after cleanup `aws s3 ls` no longer lists your hello-devops bucket."
    },
@@ -1958,7 +1958,7 @@
     "Create the state bucket with local state, then move state into it with `terraform init -migrate-state`.",
     "CI runs cheap checks first, plans on pull requests, and applies on main after an environment approval.",
     "OIDC gives CI short-lived credentials, and the trust policy's `sub` check decides who may use the role.",
-    "Scanners such as trivy, tflint and checkov advise; you decide, and pin the scanner itself by digest or SHA."
+    "Scanners such as trivy, tflint and checkov give advice, and you decide what to fix. Pin the scanner itself by digest or SHA."
    ],
    "check": [
     {
@@ -2034,13 +2034,13 @@
   }
  ],
  "recap": [
-  "IaC keeps infrastructure in reviewed, versioned files; Terraform is declarative, so a second apply changes nothing.",
+  "IaC keeps infrastructure in reviewed, versioned files. Terraform is declarative, so a second apply changes nothing.",
   "The loop is init, plan, apply, destroy. Read every plan, and look for `forces replacement` before you type yes.",
-  "HCL is typed: variables with validation, locals, outputs, for expressions and functions, all testable in `terraform console`.",
+  "HCL has types, variables with validation, locals, outputs, for expressions and functions. Try any expression in `terraform console`.",
   "`for_each` keys copies by name; `count` keys them by position, so removing an item shifts and replaces later copies.",
-  "State maps addresses to real objects and holds secrets in plain text; keep it in a locked remote backend, never in git.",
-  "`moved`, `import` and `removed` blocks change state through reviewed plans; refresh-only mode deals with drift.",
-  "Modules package a shape you call many times; long-lived environments get their own root folders, and `terraform test` checks modules.",
+  "State maps addresses to real objects and holds secrets in plain text, so it lives in a locked remote backend and never in git.",
+  "`moved`, `import` and `removed` blocks change state through plans you review. Refresh-only mode shows drift and copies it into state.",
+  "A module packages a shape you call many times. Each long-lived environment gets its own root folder, and `terraform test` checks the modules.",
   "In CI: cheap checks first, plan on pull requests, apply on main after approval, OIDC instead of keys, and scanners pinned by digest or SHA."
  ],
  "flashcards": [
@@ -2086,7 +2086,7 @@
   },
   {
    "front": "Does `terraform state rm` delete the real object?",
-   "back": "No. Terraform only forgets it; the object keeps running."
+   "back": "No. Terraform forgets it, and the object keeps running."
   },
   {
    "front": "What two arguments does an `import` block need?",
@@ -2122,7 +2122,7 @@
    "title": "Terraform language documentation",
    "url": "https://developer.hashicorp.com/terraform/language",
    "kind": "docs",
-   "why": "The official reference for every block, expression and function used in this part."
+   "why": "The official reference. Every block, expression and function in this part has a page here."
   },
   {
    "title": "Get started with Terraform and Docker (HashiCorp tutorials)",
@@ -2146,19 +2146,19 @@
    "title": "Terraform explained in 15 mins (TechWorld with Nana)",
    "url": "https://www.youtube.com/watch?v=l5k1ai_GBDE",
    "kind": "watch",
-   "why": "A clear overview of the architecture and the basic commands, good for a second explanation of Day 25."
+   "why": "A quick tour of the architecture and the basic commands. Watch it if Day 25 needs a second explanation."
   },
   {
    "title": "Complete Terraform course: from beginner to pro (DevOps Directive)",
    "url": "https://www.youtube.com/watch?v=7xngnjfIlK4",
    "kind": "watch",
-   "why": "About two and a half hours on AWS covering variables, modules, environments, testing and CI; it is from 2022, so it locks state with DynamoDB, which is now deprecated."
+   "why": "About two and a half hours on AWS: variables, modules, environments, testing and CI. It is from 2022, so it still locks state with DynamoDB, which is now deprecated."
   },
   {
    "title": "Terraform course: automate your AWS cloud infrastructure (freeCodeCamp)",
    "url": "https://www.youtube.com/watch?v=SLB_c_ayRMo",
    "kind": "watch",
-   "why": "A longer AWS project if you want more cloud practice after Day 29; destroy as you go."
+   "why": "A longer AWS project for more cloud practice after Day 29. Destroy what you build as you go."
   },
   {
    "title": "Snapshot demo: automating tests for Terraform (HashiCorp)",
@@ -2170,7 +2170,7 @@
    "title": "Terraform: Up & Running, 3rd edition, chapter 5 (Yevgeniy Brikman)",
    "url": "https://www.oreilly.com/library/view/terraform-up-and/9781098116736/ch05.html",
    "kind": "read",
-   "why": "The standard Terraform book; this chapter covers loops, conditionals and their gotchas in depth (paid)."
+   "why": "The standard Terraform book (paid). Chapter 5 goes deep on loops, conditionals and the ways they go wrong."
   },
   {
    "title": "Terraform best practices (Anton Babenko)",
@@ -2182,7 +2182,7 @@
    "title": "Migrating from Terraform to OpenTofu (guide source)",
    "url": "https://github.com/opentofu/opentofu/blob/main/website/docs/intro/migration/migration-guide.mdx",
    "kind": "docs",
-   "why": "Read this before switching a real state between the two tools; it starts with backing up state."
+   "why": "Read this before you move a real state between the two tools. Its first step is a backup of the state."
   }
  ],
  "quiz": [
@@ -2217,7 +2217,7 @@
     "The `.terraform.lock.hcl` file"
    ],
    "answer": 0,
-   "why": "With `use_lockfile = true`, the first run holds a lock file and the second is refused; `.terraform.lock.hcl` only pins provider versions."
+   "why": "With `use_lockfile = true`, the first run holds a lock file and the second is refused. `.terraform.lock.hcl` has nothing to do with it: that file pins provider versions."
   },
   {
    "q": "What does `[for s in [\"a\", \"b\", \"c\"] : upper(s) if s != \"b\"]` evaluate to?",
@@ -2239,7 +2239,7 @@
     "A `removed` block for each resource"
    ],
    "answer": 2,
-   "why": "Without `moved` blocks Terraform sees old addresses vanish and new ones appear; with them the plan shows moves and 0 to destroy."
+   "why": "Without `moved` blocks, Terraform sees the old addresses vanish and new ones appear. With them, the plan shows three moves and 0 to destroy."
   },
   {
    "q": "Which `terraform test` setup checks a module without creating any real resources?",
@@ -2261,7 +2261,7 @@
     "From your laptop, with your own login"
    ],
    "answer": 3,
-   "why": "Keeping IAM changes out of CI means a pull request cannot give the pipeline more power."
+   "why": "You apply IAM changes from your laptop, with your own login. Keeping them out of CI means a pull request cannot give the pipeline more power."
   },
   {
    "q": "You applied with `-var host_port=9000` yesterday. Today you run `terraform plan` with no flags and no tfvars file. What do you see?",
