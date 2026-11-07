@@ -1,0 +1,193 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.348
+An AI agent is a model in a loop that uses tools.
+
+2
+00:00:06.348 --> 00:00:09.327
+But the model inside only produces text.
+
+3
+00:00:09.533 --> 00:00:13.935
+It cannot open a network connection, or start kubectl by itself.
+
+4
+00:00:14.167 --> 00:00:17.865
+The program around it, called the host, does that part.
+
+5
+00:00:17.865 --> 00:00:22.841
+That is the agent you install, such as Claude Code, or Copilot in VS Code.
+
+6
+00:00:23.067 --> 00:00:28.983
+On every call, the host sends the model your goal, the conversation so far, and a list of tools.
+
+7
+00:00:30.000 --> 00:00:35.532
+Each tool is plain text too: a name, a short description, and the arguments it takes.
+
+8
+00:00:35.733 --> 00:00:37.635
+The model replies with text.
+
+9
+00:00:37.635 --> 00:00:44.493
+To use a tool, it writes a tool call in a fixed format: pods_list_in_namespace, with namespace hello.
+
+10
+00:00:44.700 --> 00:00:52.067
+The host spots the tool call, asks for your approval if needed, and runs the tool, with the credentials you configured.
+
+11
+00:00:52.300 --> 00:00:57.427
+Then it adds the result to the conversation, as text, and calls the model again.
+
+12
+00:00:57.633 --> 00:01:00.121
+The model keeps no memory between calls.
+
+13
+00:01:00.121 --> 00:01:04.473
+Each call carries the whole conversation again, tool results included.
+
+14
+00:01:05.200 --> 00:01:09.960
+So it reads the events, then fetches the logs of the restarting container.
+
+15
+00:01:09.960 --> 00:01:12.147
+One step at a time, the same loop.
+
+16
+00:01:12.367 --> 00:01:17.664
+When a reply has no tool call in it, that reply is the answer, and the loop stops.
+
+17
+00:01:17.867 --> 00:01:25.105
+One question can mean dozens of calls, and each call resends the whole conversation, so later steps cost more.
+
+18
+00:01:25.333 --> 00:01:31.911
+So cap every run: a timeout on every CI job, and a spending limit on every API key.
+
+19
+00:01:32.933 --> 00:01:35.068
+Where does the tool list come from?
+
+20
+00:01:35.068 --> 00:01:40.008
+Without a standard, five agents and four systems need twenty pieces of glue code.
+
+21
+00:01:40.233 --> 00:01:47.375
+With a shared protocol, each agent speaks it once, and each system gets one server: nine pieces.
+
+22
+00:01:47.375 --> 00:01:51.020
+That protocol is the Model Context Protocol, MCP.
+
+23
+00:01:52.033 --> 00:01:55.799
+Inside the host, one MCP client talks to each server.
+
+24
+00:01:55.799 --> 00:02:00.559
+A server wraps one system, such as a Kubernetes cluster, or GitHub.
+
+25
+00:02:00.767 --> 00:02:05.157
+Each client asks its server for its tools, with a tools/list request.
+
+26
+00:02:05.157 --> 00:02:09.292
+The host merges the answers into the one list it sends the model.
+
+27
+00:02:09.500 --> 00:02:15.139
+When the model writes a tool call, the host passes it to the right client, which sends tools/call.
+
+28
+00:02:15.367 --> 00:02:21.901
+The server does the real work, such as a request to the Kubernetes API, and returns the result.
+
+29
+00:02:22.133 --> 00:02:25.023
+The messages are JSON-RPC 2.0.
+
+30
+00:02:25.023 --> 00:02:28.105
+A local server talks over stdio.
+
+31
+00:02:28.105 --> 00:02:31.476
+A remote one, over Streamable HTTP.
+
+32
+00:02:32.300 --> 00:02:34.414
+So where do the guardrails sit?
+
+33
+00:02:34.414 --> 00:02:35.574
+Not in the model.
+
+34
+00:02:35.574 --> 00:02:39.939
+The MCP specification says the protocol cannot enforce security.
+
+35
+00:02:39.939 --> 00:02:45.532
+It puts that job on the host, which must get your consent before it runs any tool.
+
+36
+00:02:46.133 --> 00:02:47.672
+Next, the credentials.
+
+37
+00:02:47.672 --> 00:02:52.919
+A tool can do only what its credentials allow, whatever the model asks for.
+
+38
+00:02:52.919 --> 00:03:02.153
+In the lab, the Kubernetes server signs in as the ai-agent ServiceAccount: read-only in hello, with a token that expires in an hour.
+
+39
+00:03:02.367 --> 00:03:05.874
+The server's read_only setting hides the tools that write.
+
+40
+00:03:05.874 --> 00:03:08.716
+Its own docs call that a best-effort guardrail.
+
+41
+00:03:08.933 --> 00:03:12.826
+The API server checks every call against the token's RBAC.
+
+42
+00:03:12.826 --> 00:03:15.309
+A delete is refused there, Forbidden.
+
+43
+00:03:15.309 --> 00:03:17.188
+That is the lock that holds.
+
+44
+00:03:17.900 --> 00:03:19.292
+Then a person decides.
+
+45
+00:03:19.292 --> 00:03:25.807
+Keep the approval prompts on for commands that change things, and route changes through a pull request.
+
+46
+00:03:26.033 --> 00:03:33.656
+And an agent that reads untrusted text, such as an issue or a log line, gets no write access and no secrets.
+
+47
+00:03:33.867 --> 00:03:35.274
+The model only asks.
+
+48
+00:03:35.274 --> 00:03:41.112
+The host runs the tool, MCP carries the call, and the token's rights set the limit.

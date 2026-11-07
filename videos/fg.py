@@ -73,8 +73,9 @@ CAPS = HERE / "captions"; CAPS.mkdir(exist_ok=True)
 
 
 def _ts(t):
-    h, r = divmod(t, 3600); m, s = divmod(r, 60)
-    return f"{int(h):02d}:{int(m):02d}:{s:06.3f}"
+    ms = int(round(t * 1000))  # round first, so 59.9996 s becomes 1:00.000 and never "00:60.000"
+    h, r = divmod(ms, 3_600_000); m, r = divmod(r, 60_000)
+    return f"{h:02d}:{m:02d}:{r // 1000:02d}.{r % 1000:03d}"
 
 
 class VoiceScene(Scene):
