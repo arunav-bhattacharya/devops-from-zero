@@ -42,7 +42,7 @@ Every lesson follows this shape, in this order on the page:
 
 1. Guess first (`guess`): one multiple-choice question asked BEFORE reading. It targets a common misconception so the reveal teaches. Its `why` explains the answer in 1 to 2 sentences.
 2. Words you'll meet (`terms`): 5 to 8 terms, one plain line each (no jargon inside the definition). These also become spaced-repetition cards, so make each one a clean, self-contained fact.
-3. The explanation (`sections`): 5 to 7 sections. Intuition first, then mechanics. One idea per section. Define each term in the text the first time too. Say plainly when something is hard ("this trips most people up").
+3. The explanation (`sections`): 5 to 7 sections. Intuition first, then mechanics. One idea per section. Define each term in the text the first time too. Say plainly when something is hard, in words that fit the case (never the stock phrase "this trips most people up").
 4. Analogy (`analogy`): one everyday analogy for the core idea, and one sentence on where it breaks.
 5. Diagram (`diagram`): one simple inline SVG that shows the mechanism (rules below).
 6. Worked example (`worked`): 4 to 8 steps; solve one concrete example step by step, narrating WHY each step happens, with commands and their real output where it helps. It must differ from the hands-on task.
@@ -83,6 +83,13 @@ Part extras: `intro` (2 to 4 sentences), `recap` (6 to 10 bullets), `resources` 
 ## Voice: human, blog mode (the learner asked for this)
 
 All prose must read as if a person wrote it. Apply the human-writing skill (`/root/.claude/skills/synced/5c806f8d-0769-4e35-ac24-a3ea18081c67_433d709e-8728-4258-b10c-98909f71fe68/human-writing/SKILL.md`) in blog mode: an experienced engineer writing a blog-style lesson for one friend. Direct, concrete, uneven rhythm that follows the thought, plain opinions where there is a real basis ("for one app on your laptop, port-forward is enough"). Cut staging lines, forced triads, one-line closers, "-ing" tails, "serves as", filler transitions and fake-deep sayings. Never invent anecdotes, numbers or sources to sound human.
+
+Shapes that read as templated when they repeat across lessons (run `python3 brief/tells.py content/pN.json` to find them):
+- Analogies: say where the comparison stops working in your own words, folded into the analogy. Never a formula such as "Where it breaks:".
+- In real teams (`real_world`): open with the situation or the problem, not "At <company>". Use a made-up company name at most once per part.
+- Common mistake: open with the mistake itself, not "The most common mistake is" or "The classic mistake".
+- Never "this trips most people up", "here's the thing", "the key idea", "in other words", "think of it as", "in short".
+- Do not open several sections of one lesson, or the same field across lessons, with the same words.
 
 ## Human writing rules (checked by the validator)
 
