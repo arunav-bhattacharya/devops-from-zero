@@ -1,0 +1,12 @@
+{
+  "Rules": [
+    {
+      "ID": "tidy-reports",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "reports/" },
+      "Expiration": { "Days": 30 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 7 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}

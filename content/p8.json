@@ -1665,8 +1665,8 @@
    ],
    "sections": [
     {
-     "h": "Before any cloud: make the account safe",
-     "body": "Everything on AWS today is optional. The rest of the course runs on your laptop, and the worked example below needs no account. Day 12 explained cloud costs and free plans. This is the checklist to finish before your first apply, in order:\n1. Sign up and choose the Free plan. Accounts created since July 15, 2025 pick a plan. The Free plan gives up to $200 in credits for six months and cannot charge your card. When the credits or the six months run out, the account closes, and you have 90 days to upgrade if you want it back.\n2. Protect the root user, the email login you signed up with. It can do anything, even close the account. Turn on MFA for it and never use it for daily work.\n3. In Billing and Cost Management, open Budgets and create a zero spend budget from a template. It emails you once your spending goes above the free usage.\n4. Make an everyday login that is not root (next section).\n\nOlder accounts stay on the previous free tier and can be billed, so the budget matters even more there. Do not create an AWS Organization on a learning account either: AWS lists joining Organizations among the actions that move a Free plan account to the Paid plan.\n\nA budget alert only sends email. It stops nothing, and its numbers can lag by hours. Destroying what you create is what protects you, and it is the last step today. IAM roles and the OIDC provider cost nothing. S3 charges per gigabyte stored each month plus a little per request, and a state file is a few kilobytes, so today's bucket costs close to nothing. Check the S3 pricing page for your Region anyway.",
+     "h": "Before any cloud: the account from Day 13, and what today costs",
+     "body": "Everything on AWS today is optional. The rest of the course runs on your laptop, and the worked example below needs no account.\n\nIf you skipped Day 13, do it first. It opens the account on the Free plan, puts MFA on the root user, sets a zero-spend budget and gives you an everyday IAM user with `aws login`. Today adds nothing to that list. One warning from it matters again here: do not create an AWS Organization on a learning account, because joining one moves a Free plan account to the Paid plan.\n\nIf you ran Day 14's `cleanup.sh`, nothing from those lessons is still running, so today's bill starts from zero. Today's resources are cheap too, because almost nothing here bills by the hour:\n- IAM roles and the OIDC provider cost nothing.\n- S3 charges per gigabyte stored each month plus a little per request. A state file is a few kilobytes, so the bucket costs close to nothing. Check the S3 pricing page for your Region anyway.\n\nA budget alert only sends email. It stops nothing, and its numbers can lag by hours. Destroying what you create is what protects you, and it is the last step today.",
      "refs": [
       {
        "title": "Choosing an AWS Free Tier plan",
@@ -1686,8 +1686,8 @@
      ]
     },
     {
-     "h": "A login for your laptop that is not root",
-     "body": "Terraform's AWS provider finds credentials the same way as the AWS CLI. Its docs list the order. Arguments in the provider block come first, then environment variables such as `AWS_PROFILE`, then the shared files in `~/.aws`. Last come the credentials of a container or a machine running in AWS. Install the CLI with `brew install awscli`, and check the current AWS docs if anything differs.\n\nYou have two common ways to get a login that is not root:\n- IAM Identity Center, AWS's single sign-on. You sign in through the browser and get short-lived credentials. Run `aws configure sso` once, then `aws sso login` each day.\n- An IAM user with MFA and an access key, saved with `aws configure`. It is simpler, but the key is a long-lived password on your disk. Delete it when you finish.\n\nIdentity Center is the better habit, with one catch. It is built on AWS Organizations, which would move a Free plan account to the Paid plan. To stay on the Free plan, use the IAM user today and delete its key tonight.\n\nThen run `aws sts get-caller-identity`. It should print your 12-digit account ID and a user or role that is not root. If that works, Terraform will work too, because it reads the same credentials. Never put an access key into a `.tf` file or a `.tfvars` file.",
+     "h": "How Terraform finds your AWS credentials",
+     "body": "Terraform's AWS provider finds credentials the same way as the AWS CLI. Its docs list the order:\n1. Arguments in the provider block.\n2. Environment variables, such as `AWS_PROFILE` or `AWS_ACCESS_KEY_ID`.\n3. The shared files in `~/.aws`.\n4. The credentials of a container or a machine running in AWS, such as Day 14's instance role.\n\nSo the login from Day 13 works as it is. Run `aws login --profile learn`, then `export AWS_PROFILE=learn` in the same terminal. `aws sts get-caller-identity` should print your 12-digit account ID and your IAM user, not root. Inside Terraform, the `aws_caller_identity` data source asks the same question, and the next section uses its answer to name the bucket.\n\n`aws login` is newer than many tools. If Terraform, or any other tool, says it found no credentials while `aws sts get-caller-identity` works, run `eval \"$(aws configure export-credentials --profile learn --format env)\"`. It copies the profile's short-lived credentials into your terminal's environment variables, which every tool checks. Leftover `AWS_ACCESS_KEY_ID` variables beat `AWS_PROFILE` (Day 13), so when a plan shows the wrong account, run `aws configure list`.\n\nLeave a `profile` argument out of the provider block. A profile name ties the code to your laptop, while an environment variable keeps the same code working in CI. Never put an access key into a `.tf` file or a `.tfvars` file either. In CI the same provider block finds the short-lived variables that the `configure-aws-credentials` action exports, which is step 2 in the list above. They come from OIDC with no stored key, and the next sections build that.",
      "refs": [
       {
        "title": "AWS provider: authentication and configuration (docs source)",
@@ -1695,8 +1695,8 @@
        "kind": "docs"
       },
       {
-       "title": "Configure IAM Identity Center authentication with the AWS CLI",
-       "url": "https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html",
+       "title": "Login for AWS local development using console credentials (AWS CLI docs)",
+       "url": "https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sign-in.html",
        "kind": "docs"
       }
      ]
@@ -1818,7 +1818,7 @@
       "lang": "console"
      },
      {
-      "say": "Try a plan with no credentials at all. It stops at the provider. CI logs in with OIDC at exactly this point, and your laptop needs `aws sso login` or your IAM user's profile.",
+      "say": "Try a plan with no credentials at all. It stops at the provider. CI logs in with OIDC at exactly this point, and your laptop needs the `aws login` profile from Day 13.",
       "code": "$ terraform plan\nPlanning failed. Terraform encountered an error while generating this plan.\n\nError: No valid credential sources found\n\n  with provider[\"registry.terraform.io/hashicorp/aws\"],\n  on versions.tf line 22, in provider \"aws\":\n  22: provider \"aws\" {",
       "lang": "console"
      }
@@ -1870,12 +1870,12 @@
    ],
    "commands": [
     {
-     "cmd": "aws configure sso",
-     "what": "Set up a CLI profile that signs in through IAM Identity Center."
+     "cmd": "aws login --profile learn",
+     "what": "Sign the CLI in with your console login and get short-lived credentials (Day 13)."
     },
     {
-     "cmd": "aws sso login",
-     "what": "Sign in through the browser and get short-lived credentials for today."
+     "cmd": "aws configure export-credentials --profile learn --format env",
+     "what": "Print a profile's temporary credentials as variables, for a tool that cannot read the profile."
     },
     {
      "cmd": "aws sts get-caller-identity",
@@ -1932,14 +1932,14 @@
     "title": "Optional: the bucket on AWS, state in S3, CI, then clean up",
     "steps": [
      "No AWS account? Do only steps 6 and 7 without AWS: push a branch that changes a file under `infra/`, and check that the `checks` job passes while `plan` and `apply` are skipped.",
-     "Secure the account: Free plan, root MFA, a zero spend budget with your email, and a login that is not root. `aws sts get-caller-identity` must not show root.",
+     "Sign in as on Day 13 (`aws login --profile learn` and `export AWS_PROFILE=learn`). `aws sts get-caller-identity` must show your IAM user, not root.",
      "In `infra/aws`, create `terraform.tfvars` as in the worked example, then run `terraform init` and `terraform apply`. Read the plan first: how many resources, and which are IAM?",
      "Uncomment the backend block, paste the bucket name from `terraform output bucket_name`, and run `terraform init -migrate-state`. Then run `terraform state list` to see it read state from S3.",
      "In GitHub, save `terraform output github_actions_role_arn` as a repository variable named `AWS_ROLE_ARN`. Check that the `production` environment from Day 27 still has you as a required reviewer.",
      "Add `.github/workflows/terraform.yml`. On a branch, add a `tags` argument to the bucket resource only, push, and open a pull request.",
      "Read the plan on the run's summary page. Then merge, approve the apply job, and watch it finish.",
      "Clean up from your laptop: comment out the backend block, run `terraform init -migrate-state` to bring the state home, then `terraform destroy`.",
-     "Delete the `AWS_ROLE_ARN` variable so the AWS jobs skip again, delete any IAM access key you created today, and keep or delete the budget."
+     "Delete the `AWS_ROLE_ARN` variable so the AWS jobs skip again, run `aws logout --profile learn` if you are done for the day, and keep the budget."
     ],
     "hints": [
      "If the plan job fails at the AWS login, compare the `sub` values in the role's trust policy with your repo. Repos created after July 15, 2026 use the numeric ID form.",

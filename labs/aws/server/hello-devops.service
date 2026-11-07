@@ -1,0 +1,28 @@
+# hello-devops.service: run the app with gunicorn under systemd (Day 14).
+# user-data.sh copies this file to /etc/systemd/system/ and starts it.
+[Unit]
+Description=hello-devops web app
+# gunicorn binds a port, so start once the network is up.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Run as the unprivileged "hello" user that user-data.sh creates, never as root.
+User=hello
+Group=hello
+WorkingDirectory=/opt/hello-devops
+Environment=APP_VERSION=1.0.0
+Environment="GREETING=Hello from EC2"
+# Print log lines at once, so journalctl and CloudWatch see them immediately.
+Environment=PYTHONUNBUFFERED=1
+# Bind 0.0.0.0 so traffic from outside the server can reach the app (Day 10).
+# The security group decides who may connect. --access-logfile - writes one
+# line per request to the journal.
+ExecStart=/opt/hello-devops/venv/bin/gunicorn --bind 0.0.0.0:8000 --workers 2 --access-logfile - app:app
+# Start it again if it crashes, but not after a clean stop (Day 6).
+Restart=on-failure
+RestartSec=2
+
+[Install]
+# Start at boot.
+WantedBy=multi-user.target
