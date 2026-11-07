@@ -1,0 +1,35 @@
+import json, sys
+d = json.load(open(sys.argv[1]))
+i = int(sys.argv[2])
+if i < 0:
+    print("INTRO:", d['intro']); print("RECAP:", d['recap'])
+    for f in d['flashcards']: print("FC:", f)
+    for q in d['quiz']: print("QUIZ:", q)
+    for r in d['resources']: print("RES:", r['title'], '|', r['why'])
+    sys.exit()
+l = d['lessons'][i]
+print(l['id'], l['title'], l['minutes'])
+print("GOAL:", l['goal'])
+print("GUESS:", json.dumps(l['guess'], indent=1))
+for t in l['terms']: print("TERM:", t['term'], '=>', t['plain'])
+for n, s in enumerate(l['sections']):
+    print(f"\n## [{n}] {s['h']}\n{s['body']}")
+print("\nANALOGY:", l['analogy'])
+print("CAPTION:", l['diagram_caption'])
+print("\nWORKED:", l['worked']['title'])
+for s in l['worked']['steps']:
+    print(" SAY:", s['say']); 
+    if s.get('code'): print("  CODE:\n" + s['code'])
+print("\nCODE FILES:", [c['title'] for c in l['code']])
+for c in l['commands']: print(" CMD:", c['cmd'], '=>', c['what'])
+print("\nMISTAKE:", l['mistake'])
+print("REAL:", l['real_world'])
+print("\nTASK:", l['task']['title'])
+for s in l['task']['steps']: print(" STEP:", s)
+for s in l['task']['hints']: print(" HINT:", s)
+print(" DONE:", l['task']['done_when'])
+print("\nEB PROMPT:", l['explain_back']['prompt']); print("EB ANSWER:", l['explain_back']['answer'])
+print("\nRECAP:", json.dumps(l['recap'], indent=1))
+for c in l['check']: print("CHECK:", json.dumps(c))
+for c in l['interview']: print("INTERVIEW Q:", c['q']); print("  A:", c['a'])
+print("\nDEEPER:", l['deeper']['body'])
