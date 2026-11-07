@@ -12,3 +12,5 @@ brief/scratch/**/test/
 brief/scratch/v3/**/*.orig.json
 brief/scratch/v3/**/*.bak*
 brief/scratch/v3/**/*.merged.json
+brief/scratch/v4/orig/
+brief/scratch/v4/**/*.orig.json
