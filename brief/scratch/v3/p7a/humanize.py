@@ -16,6 +16,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[4]
 SRC = ROOT / "content/p7.json"
 OUT = ROOT / "brief/scratch/v3/p7a/lessons.json"
+ORIG = ROOT / "brief/scratch/v3/p7a/p7.orig.json"
 IDS = ["d30", "d31", "d32", "d33", "d34"]
 
 EDITS = {
@@ -100,13 +101,13 @@ EDITS = {
         ],
         "sections.5.body": [
             ("Think of namespaces as folders, not walls. A Pod in one namespace can still reach a Pod in another over the network, and blocking that takes a NetworkPolicy (Day 33).",
-             "Namespaces group names the way folders group files, and they do not isolate the network. A Pod in one namespace can still reach a Pod in another, and blocking that takes a NetworkPolicy (Day 33)."),
+             "Namespaces group names the way folders group files. They do not isolate the network: a Pod in one namespace can still reach a Pod in another, and blocking that takes a NetworkPolicy (Day 33)."),
             ("Check it before anything risky with `kubectl config current-context`. This matters more than it sounds. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters.",
-             "Check it before anything risky with `kubectl config current-context`, because it is not always the cluster you think. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters."),
+             "Check it before anything risky with `kubectl config current-context`, because the current context is not always the one you think. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters."),
         ],
         "sections.6.body": [
             ("Most days you need about a dozen kubectl commands. Here they are, grouped by the question they answer:",
-             "About a dozen kubectl commands cover most days. Grouped by the question they answer:"),
+             "You need about a dozen kubectl commands on a normal day, and each one answers a question:"),
         ],
         "analogy": (
             "A Pod is like a shared hotel room. Everyone in it has the same room number (one IP address), can use the same desk "
@@ -115,8 +116,8 @@ EDITS = {
             "A Pod never moves: Kubernetes throws it away and builds a new one, with a new number."
         ),
         "real_world": (
-            "Engineers on a busy team rarely write Pod YAML from scratch. A checkout Pod at a payments company might hold the app, "
-            "a native sidecar that ships logs to the central log system, and an init container that waits for the database during "
+            "Engineers on a busy team rarely write Pod YAML from scratch. Take a checkout Pod at a payments company. It runs the app "
+            "with a native sidecar that ships logs to the central log system, and an init container waits for the database at "
             "start-up. The team copies a template like that from its repo, checks unknown fields with `kubectl explain`, and diffs "
             "it against `kubectl get -o yaml` when something behaves differently than expected."
         ),
@@ -155,6 +156,8 @@ EDITS = {
             "investigate afterwards."
         ),
         "deeper.body": [
+            ("How does the Deployment controller decide each step? On every pass of its loop, it works out two numbers.",
+             "On every pass of its loop, the Deployment controller works out two numbers, and they decide each step."),
             ("A few more fields are worth knowing by name:", "You will also meet three fields by name:"),
         ],
     },
@@ -162,7 +165,7 @@ EDITS = {
     "d33": {
         "sections.0.body": [
             ("On Day 14 you met Docker networks: containers on one machine, on a private network, with ports published to the host.",
-             "The Docker networks of Day 14 put containers on one machine on a private network, with ports published to the host."),
+             "Docker networks (Day 14) connected containers on one machine through a private network, with ports published to the host."),
             ("There is a catch. Pod IPs do not last.", "Pod IPs do not last, though."),
             ("So never put a Pod IP in a config file. That is the problem Services solve.",
              "So never put a Pod IP in a config file. Put a Service in front of the Pods instead."),
@@ -177,7 +180,7 @@ EDITS = {
         ],
         "sections.4.body": [
             ("It has a few modes:", "It can run in three modes:"),
-            ("A few consequences matter in practice:", "In practice this has three effects:"),
+            ("A few consequences matter in practice:", "Three things about this matter in practice:"),
         ],
         "sections.6.body": [
             ("Here is how the rules work. The second one is the one people miss:",
@@ -187,8 +190,8 @@ EDITS = {
             "A Service is like a company's main phone number. Callers dial one number and get whichever agent is free. Agents can "
             "join, leave or change desks, and nobody updates a phone book. CoreDNS is the phone book that maps the company name to "
             "that one number, and a NetworkPolicy is the receptionist's list of who may be put through. A good phone system also "
-            "sends each call to the least busy agent. kube-proxy cannot: it picks a Pod per connection and does not know how busy "
-            "each Pod is."
+            "sends each call to the least busy agent, which kube-proxy cannot do. It picks a Pod per connection and does not know "
+            "how busy each Pod is."
         ),
         "mistake": (
             "Blaming the network when a Service \"does not work\". Most of the time the selector does not match the Pod labels "
@@ -197,7 +200,7 @@ EDITS = {
         ),
         "real_world": (
             "Auditors at a payments company like to see that the database accepts connections only from Pods labeled "
-            "`app: payments-api`. A deny-all ingress policy in each team's namespace, plus one allow rule, shows exactly that. "
+            "`app: payments-api`. A deny-all ingress policy in each team's namespace, plus one allow rule, gives them that proof. "
             "Every app gets a ClusterIP Service, and only the Gateway is exposed outside the cluster. Apps call each other by "
             "`service.namespace` names, so the same config works in dev, staging and production clusters."
         ),
@@ -237,9 +240,9 @@ EDITS = {
         "analogy": (
             "A ConfigMap read as env vars is like a note in a new employee's locker on their first day. They read it once and never "
             "look again, so a changed note only reaches the next new hire. A mounted file is the notice board in the hallway, which "
-            "people see whenever they walk past. A Secret is the same note in an envelope marked confidential. The envelope is not "
-            "sealed, which is all base64 gives you. The office picture is too kind in one place, though: in a namespace, anyone "
-            "allowed to create Pods can read every Secret, as if anyone allowed to hire staff could open every envelope the team holds."
+            "people see whenever they walk past. A Secret is the same note in an envelope marked confidential, and base64 is an "
+            "envelope that is not sealed. The office picture is too kind in one place, though. In a namespace, anyone allowed to "
+            "create Pods can read every Secret. That is like letting anyone who may hire staff open every envelope the team holds."
         ),
         "real_world": (
             "Config should roll back with the code, and database passwords should never touch git. One payments team gets both. "
@@ -248,6 +251,8 @@ EDITS = {
             "into the cluster every hour, and the clusters have KMS encryption at rest turned on."
         ),
         "deeper.body": [
+            ("How long does a mounted ConfigMap take to update? The docs give a formula rather than a number: the kubelet's sync period plus the delay of its cache.",
+             "A mounted ConfigMap updates after the kubelet's sync period plus the delay of its cache. The docs give that formula instead of a number."),
             ("Secrets have a few more corners worth knowing:", "Three more details about Secrets:"),
             ("Finally, a word on size and count. A Secret, like a ConfigMap,", "A Secret, like a ConfigMap,"),
         ],
@@ -267,6 +272,11 @@ def walk(obj, path):
 def main():
     data = json.loads(SRC.read_text())
     lessons = {L["id"]: L for L in data["lessons"]}
+    # my five lessons must still be the ones I copied before editing
+    orig = {L["id"]: L for L in json.loads(ORIG.read_text())["lessons"]}
+    for lid in IDS:
+        if lessons[lid] != orig[lid]:
+            sys.exit(f"{lid} in content/p7.json differs from the saved original; stop and check")
     out = []
     for lid in IDS:
         L = json.loads(json.dumps(lessons[lid]))  # deep copy
