@@ -10,7 +10,7 @@ import sys
 PATTERNS = {
     # formula endings and openers that repeat across lessons
     "analogy limit as a formula": r"\b(where (the |this )?(analogy|picture|comparison|metaphor) (breaks|fails|stops working)|where it breaks|the analogy breaks|the picture (breaks|fails)|the comparison (breaks|fails))\b",
-    "'this trips people up'": r"\bthis trips (most |a lot of )?(people|learners|beginners) up\b",
+    "'this trips people up'": r"\btrips (up )?(most |a lot of |many )?(people|learners|beginners|newcomers|teams)( up)?\b",
     "run-up 'here is/here's the ...'": r"\bhere(?: i|')s (the|what|how|where|why) (part|thing|catch|trick|point|deal|key)\b",
     "'the key idea/point/insight'": r"\bthe key (idea|point|insight|takeaway|thing)\b",
     "'in other words'": r"\bin other words\b",

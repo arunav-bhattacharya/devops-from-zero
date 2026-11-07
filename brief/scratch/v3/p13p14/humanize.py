@@ -4,7 +4,8 @@
 Each edit is either
   ("set", path, new_text)          replace a whole prose field, or
   ("sub", path, old, new)          replace one exact substring (must occur once).
-Only prose fields are touched. Run once; it reads and writes the live JSON files.
+Only prose fields are touched. It reads and writes the live JSON files, so restore the originals first:
+  cp p13.orig.json ../../../../content/p13.json; cp p14.orig.json ../../../../content/p14.json
 """
 import json
 import pathlib
@@ -97,7 +98,7 @@ One gap in the lab: `actions/checkout@v7` and `actions/attest@v4` still use tags
 
     ("sub", f"{L52}.sections.3.body",
      "Why keep a list? Picture the morning the next xz is announced. Without SBOMs, every team pulls and inspects its images to find out whether they are affected.",
-     "The list earns its keep on the morning the next xz is announced. Without SBOMs, every team pulls and inspects its images to find out whether they are affected."),
+     "You need that list most on the morning the next xz is announced. Without SBOMs, every team pulls and inspects its images to find out whether they are affected."),
     ("sub", f"{L52}.sections.3.body",
      "My rule: fail on HIGH and CRITICAL findings that already have a fixed version, and track the rest. That is exactly what the release workflow does with",
      "My rule: fail on HIGH and CRITICAL findings that already have a fixed version, and track the rest. The release workflow does this with"),
@@ -199,7 +200,7 @@ So the protection has layers:
      "Part 13 fits in a list you can tick, and you can prove each item with one command or one file:"),
 
     ("set", f"{L53}.analogy", """
-A night club splits the same job three ways. RBAC is the guest list: it decides who gets in and which rooms each guest may enter. Admission control is the bouncer who also checks what you carry (no glass bottles), whoever you are. The secrets manager is the cloakroom, with a ticket for every coat and a log of who took what. A bouncer might wave a friend through, but an admission policy never does. It treats every request the same, so one typo in a Deny policy can lock out everybody, you included.
+A night club has a version of each of these. RBAC is the guest list: it decides who gets in and which rooms each guest may enter. Admission control is the bouncer who also checks what you carry (no glass bottles), whoever you are. The secrets manager is the cloakroom, with a ticket for every coat and a log of who took what. A bouncer might wave a friend through, but an admission policy never does. It treats every request the same, so one typo in a Deny policy can lock out everybody, you included.
 """),
 
     ("set", f"{L53}.mistake", """
@@ -225,7 +226,7 @@ Product teams want to hear about a policy failure in their pull request, long be
 # ----------------------------------------------------------------------------------------------
 P14 = [
     ("set", "intro", """
-Part 14 is the last part. Day 54 shows what happens when many teams need what you built: platform teams build golden paths, FinOps gives every cost an owner, and AI agents work inside the same guardrails as people. Day 55 is your capstone. One change travels through every part of the course with a check at each stage, and you finish with a plan for what to learn next.
+Part 14 is the last part. Day 54 shows what happens when many teams need what you built. Platform teams build golden paths, FinOps gives every cost an owner, and AI agents work inside the same guardrails as people. Day 55 is your capstone. One change travels through every part of the course with a check at each stage, and you finish with a plan for what to learn next.
 """),
     ("set", "resources.10.why", "Free online, and the best next read on running systems reliably. One chapter a week is a good pace."),
 
@@ -249,7 +250,7 @@ A classic operations team does work for other teams, through tickets. A platform
 
     ("sub", f"{L54}.sections.2.body",
      "The adoption row teaches the most. A platform that teams use because a manager said so sits at level 2. A platform that teams choose because it is faster sits at level 3.",
-     "Read the adoption row first, because it is the hardest one to fake. A platform that teams use because a manager said so sits at level 2. One that teams choose because it is faster sits at level 3."),
+     "Start with the adoption row, which says the most about whether the platform helps. A platform that teams use because a manager said so sits at level 2. One that teams choose because it is faster sits at level 3."),
 
     ("set", f"{L54}.sections.4.body", """
 About 90% of the nearly 5,000 technology professionals in Google's DORA survey used AI at work, according to its [2025 report on AI-assisted software development](https://dora.dev/dora-report-2025/). Its main finding is that AI is an amplifier: it makes strong teams stronger and struggling teams worse. More AI use now goes with higher delivery throughput, and it still goes with less stable delivery.
@@ -266,7 +267,7 @@ GitHub's docs leave three jobs with you: you define the goal and the limits, you
 
     ("sub", f"{L54}.sections.5.body",
      "Why a custom Role, and not the built-in `view` ClusterRole? The built-in role would work today, but it is aggregated. Tools such as Argo CD or Kyverno can add their own rules to it when you install them. A Role that lists every action stays exactly as written.\n\nThis is where the GitOps setup from Part 8 pays off again. With Argo CD applying git, an agent never needs write access to the cluster.",
-     "The lab writes its own Role instead of binding the built-in `view` ClusterRole. `view` would work today, but it is aggregated: tools such as Argo CD or Kyverno can add their own rules to it when you install them. A Role that lists every action stays exactly as written.\n\nThe GitOps setup from Part 8 helps here too. Argo CD applies whatever is in git, so an agent never needs write access to the cluster."),
+     "The lab writes its own Role instead of binding the built-in `view` ClusterRole. The built-in role would work today, but it is aggregated: tools such as Argo CD or Kyverno can add their own rules to it when you install them. A Role that lists every action stays exactly as written.\n\nThe GitOps setup from Part 8 helps here too. Argo CD applies whatever is in git, so an agent never needs write access to the cluster."),
 
     ("set", f"{L54}.analogy", """
 A platform works like the shared services in a big office building. Every company in the building uses the same reception, mail room, network and security desk, so no tenant builds its own. A golden path is the standard office fit-out: you move in on Monday and start work on Monday. Buildings change slowly, though, and a platform has to change every month as its users do. A tenant who tears out the standard fit-out is also telling the landlord something about it.
@@ -303,10 +304,10 @@ Expect several sittings, perhaps a week or two of your usual 45 minutes a day. N
 
     ("sub", f"{L55}.sections.2.body",
      "The second one can fail, and that is what makes it useful.",
-     "Nobody can fail the weak version, so passing it tells you nothing."),
+     "The weak version cannot clearly fail, so passing it tells you nothing."),
     ("sub", f"{L55}.sections.2.body",
      "Run it after every stage, not only after the one you just did. Adding a later stage often breaks an earlier one: a new policy that rejects Redis, or a port-forward that grabbed port 8081. An older line that turns red tells you exactly where to look, which is the same idea as running the whole test suite and not only the newest test.",
-     "Rerun the whole script after every stage, not only the line for the stage you just finished. Adding a later stage often breaks an earlier one: a new policy that rejects Redis, or a port-forward that grabbed port 8081. An older line that turns red points you straight at the cause. You run the whole test suite for the same reason, not only the newest test."),
+     "Run it after every stage, and read every line, not only the one for the stage you just finished. Adding a later stage often breaks an earlier one: a new policy that rejects Redis, or a port-forward that grabbed port 8081. An older line that turns red points you straight at the cause. You run the whole test suite for the same reason, not only the newest test."),
 
     ("set", f"{L55}.sections.3.body", """
 A game day is a planned session where you break things on purpose and watch how the system, and you, respond. So far you have only seen hello-devops working, which tells you little about what happens when Redis dies. Before each drill, write down what you expect to see. Afterwards, write down what happened. Wherever the two differ, your picture of the system was wrong, and that is what you write up.
