@@ -1,0 +1,16 @@
+# The version catalog: every library and plugin version in one file.
+# Build scripts use these as libs.<name> and libs.plugins.<name>.
+
+[versions]
+kotlin = "2.4.21"
+junit = "6.1.3"
+
+[libraries]
+# The Kotlin Gradle plugin as a normal library, so build-logic can apply it.
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+# JUnit's BOM: keeps every JUnit module on the same version.
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+
+[plugins]
+# Jib builds container images without a Dockerfile (optional, Day 24).
+jib = { id = "com.google.cloud.tools.jib", version = "3.5.4" }
