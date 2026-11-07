@@ -301,7 +301,7 @@
     }
    ],
    "mistake": "`gradle build` runs whatever Gradle you installed last, while `./gradlew build` runs the version the project pins. Use the global one, and the build can pass for you and fail in CI, or the other way round. Always run `./gradlew`, and keep IntelliJ on the wrapper (its default). Use a global Gradle only to create the wrapper once.",
-   "real_world": "A payments ledger service with many Gradle projects runs `./gradlew build` in CI on every pull request. The wrapper pins Gradle, so laptops and runners agree, and a Gradle upgrade is an ordinary pull request that changes `gradle-wrapper.properties`. When CI gets slow, the team's first move is to read which tasks did work and which were UP-TO-DATE or FROM-CACHE.",
+   "real_world": "One ledger service, split into many Gradle projects, runs `./gradlew build` in CI on every pull request. The wrapper pins Gradle, so laptops and runners agree, and a Gradle upgrade is an ordinary pull request that changes `gradle-wrapper.properties`. When CI gets slow, the team's first move is to read which tasks did work and which were UP-TO-DATE or FROM-CACHE.",
    "task": {
     "title": "Start hello-jvm",
     "steps": [

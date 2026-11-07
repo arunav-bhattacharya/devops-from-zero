@@ -596,7 +596,7 @@
     }
    ],
    "mistake": "Don't install Python packages outside a venv, and never with `sudo pip`. Packages from different projects then fight over versions, and Homebrew's Python refuses anyway with \"externally-managed-environment\". Before any `pip install`, activate the project's `.venv` and check that your prompt starts with `(.venv)`.",
-   "real_world": "When a test passes on one laptop and fails on another, the cause is often a different tool version. So some teams hand new engineers one setup script on day one, which installs the same versions everyone else uses. Python packages are pinned in requirements files and the JDK version is pinned in the build, so CI runs the same versions too. Others go further with dev containers, where the whole toolbox runs inside a container.",
+   "real_world": "A test that passes on one laptop and fails on another often comes down to a different tool version. So some teams hand new engineers one setup script on day one, which installs the same versions everyone else uses. Python packages are pinned in requirements files and the JDK version is pinned in the build, so CI runs the same versions too. Others go further with dev containers, where the whole toolbox runs inside a container.",
    "task": {
     "title": "Install your toolbox and ship hello-devops",
     "steps": [

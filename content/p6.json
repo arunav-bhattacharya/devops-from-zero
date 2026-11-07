@@ -678,7 +678,7 @@
     }
    ],
    "mistake": "`count` over a list of names, such as servers or sites, works until someone removes an item from the middle. Then every later copy is replaced. Use `for_each` over a set or map with stable keys from the start. If `count` code already exists, the Go deeper section shows how to switch without destroying anything.",
-   "real_world": "A payments product that runs in several regions keeps the list of regions in one map variable, with a key per region. Adding a region adds one key, and the plan shows only that region's resources. Reviewers send back any pull request that uses `count` over a list of names, because the next removal would replace everything after it.",
+   "real_world": "For a product that runs in several regions, the list of regions lives in one map variable, with a key per region. Adding a region adds one key, and the plan shows only that region's resources. Reviewers send back any pull request that uses `count` over a list of names, because the next removal would replace everything after it.",
    "task": {
     "title": "Three nginx sites from one map with for_each",
     "steps": [

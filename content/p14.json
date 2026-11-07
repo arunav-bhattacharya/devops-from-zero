@@ -292,7 +292,7 @@
     }
    ],
    "mistake": "Don't adopt every trending tool at once. Each tool in this lesson solves a problem you only feel at a certain size. Backstage pays off with many teams, not one repository, and a FinOps tool is useless until workloads carry owner labels. Get the basics solid on one real project, then add a tool when you can name the pain it removes.",
-   "real_world": "When a team needs a new service, the platform team's golden path sets up CI, signing, an Argo CD app, dashboards and a team label in one go. Finance gets a weekly cost report per team from those labels, and the teams with the biggest unused requests get a pull request that right-sizes them. An AI agent with a read-only identity drafts the routine upgrade pull requests, and humans review and merge them through the same pipeline.",
+   "real_world": "The platform team's golden path gives every new service CI, signing, an Argo CD app, dashboards and a team label, all set up in one go. Finance gets a weekly cost report per team from those labels, and the teams with the biggest unused requests get a pull request that right-sizes them. An AI agent with a read-only identity drafts the routine upgrade pull requests, and humans review and merge them through the same pipeline.",
    "task": {
     "title": "Make cost visible per team, then score your platform",
     "steps": [
