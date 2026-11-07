@@ -1,0 +1,22 @@
+import json,sys
+d=json.load(open(sys.argv[1]))
+L=[l for l in d['lessons'] if l['id']==sys.argv[2]][0]
+print('GOAL:',L['goal'])
+print('GUESS:',L['guess']['q'],L['guess']['options'],L['guess']['answer'],'\n WHY:',L['guess']['why'])
+for t in L['terms']: print('TERM:',t['term'],'=',t['plain'])
+for i,s in enumerate(L['sections'],1): print(f'\n=== SEC{i}: {s["h"]}\n{s["body"]}')
+print('\nANALOGY:',L['analogy'])
+print('\nCAPTION:',L['diagram_caption'])
+print('\nWORKED:',L['worked']['title'])
+for i,s in enumerate(L['worked']['steps'],1): print(f' W{i} SAY:',s['say']); print('   CODE:',repr(s.get('code',''))[:200])
+print('\nMISTAKE:',L['mistake'])
+print('\nREAL:',L['real_world'])
+print('\nTASK:',L['task']['title'])
+for s in L['task']['steps']: print(' -',s)
+for s in L['task']['hints']: print(' H:',s)
+print(' DONE:',L['task']['done_when'])
+print('\nEXPLAIN P:',L['explain_back']['prompt']); print('EXPLAIN A:',L['explain_back']['answer'])
+print('\nRECAP:'); [print(' -',x) for x in L['recap']]
+for c in L['check']: print('CHECK:',c['q'],c['options'],c['answer'],'\n WHY:',c['why'])
+for c in L['interview']: print('\nIV Q:',c['q'],'\n A:',c['a'])
+print('\nDEEPER:',L['deeper']['body'])

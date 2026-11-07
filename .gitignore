@@ -9,3 +9,5 @@ brief/scratch/**/__pycache__/
 *.tfstate.*
 brief/scratch/**/test/
 *.db
+brief/scratch/v3/**/*.orig.json
+brief/scratch/v3/**/*.bak*
