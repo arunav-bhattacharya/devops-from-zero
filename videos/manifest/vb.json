@@ -1,5 +1,32 @@
 {
- "d10": [{"slug": "d10-dns-tcp", "title": "Connecting by name: the DNS lookup chain, then the TCP handshake", "after": 6, "file": "p3/d10_dns_tcp.py", "scene": "D10DnsTcp", "poster_at": 74.5}],
- "d11": [{"slug": "d11-https", "title": "HTTPS: what TLS adds, the certificate chain, and where TLS ends", "after": 6, "file": "p3/d11_https.py", "scene": "D11Https", "poster_at": 0}],
- "d14": [{"slug": "d14-request-path", "title": "One request to your EC2 server: route table, gateway and security group", "after": 1, "file": "p3/d14_request_path.py", "scene": "D14RequestPath", "poster_at": 0}]
+ "d10": [
+  {
+   "slug": "d10-dns-tcp",
+   "title": "Connecting by name: the DNS lookup chain, then the TCP handshake",
+   "after": 6,
+   "file": "p3/d10_dns_tcp.py",
+   "scene": "D10DnsTcp",
+   "poster_at": 74.5
+  }
+ ],
+ "d11": [
+  {
+   "slug": "d11-https",
+   "title": "HTTPS: what TLS adds, the certificate chain, and where TLS ends",
+   "after": 6,
+   "file": "p3/d11_https.py",
+   "scene": "D11Https",
+   "poster_at": 0
+  }
+ ],
+ "d14": [
+  {
+   "slug": "d14-request-path",
+   "title": "One request to your EC2 server: route table, gateway and security group",
+   "after": 1,
+   "file": "p3/d14_request_path.py",
+   "scene": "D14RequestPath",
+   "poster_at": 183.5
+  }
+ ]
 }

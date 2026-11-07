@@ -1,193 +1,189 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:08.927
+00:00:02.700 --> 00:00:08.893
 An image is built from a Dockerfile, a list of build steps that Docker follows from top to bottom.
 
 2
-00:00:09.067 --> 00:00:11.305
+00:00:09.100 --> 00:00:11.338
 The first step picks a base image.
 
 3
-00:00:11.305 --> 00:00:17.955
+00:00:11.338 --> 00:00:17.988
 The slim Python image already brings four layers: Debian files, the Python build, and two small ones.
 
 4
-00:00:18.733 --> 00:00:24.215
+00:00:18.800 --> 00:00:24.282
 Each step that changes files adds one read-only layer, on top of the ones below.
 
 5
-00:00:24.215 --> 00:00:27.984
+00:00:24.282 --> 00:00:28.051
 A layer holds only the file changes that one step made.
 
 6
-00:00:28.133 --> 00:00:32.872
+00:00:28.267 --> 00:00:33.006
 The pip install layer holds the weight, 26.7 megabytes.
 
 7
-00:00:32.872 --> 00:00:36.147
+00:00:33.006 --> 00:00:36.280
 The code layer is only 12.3 kilobytes.
 
 8
-00:00:36.333 --> 00:00:40.790
+00:00:36.500 --> 00:00:41.030
 Steps that only change settings, like the default command, add no layer.
 
 9
-00:00:40.790 --> 00:00:45.371
-They edit the image's config, and docker history lists them at zero bytes.
+00:00:41.030 --> 00:00:43.169
+They only edit the image's config.
 
 10
-00:00:46.333 --> 00:00:51.618
+00:00:44.200 --> 00:00:49.485
 Docker names every layer by its digest, a sha256 hash of its content.
 
 11
-00:00:51.618 --> 00:00:55.755
+00:00:49.485 --> 00:00:53.621
 The same content gets the same name, on every machine.
 
 12
-00:00:55.933 --> 00:00:58.607
+00:00:53.833 --> 00:00:56.507
 Change one byte, and the name changes.
 
 13
-00:00:59.667 --> 00:01:01.067
+00:00:57.633 --> 00:00:59.033
 Images share layers.
 
 14
-00:01:01.067 --> 00:01:05.547
+00:00:59.033 --> 00:01:03.513
 Build two images from the same base, each adding one small file.
 
 15
-00:01:05.733 --> 00:01:09.772
+00:01:03.733 --> 00:01:07.772
 Their four base layers are the same bytes, with the same digests.
 
 16
-00:01:09.933 --> 00:01:13.119
+00:01:08.000 --> 00:01:11.185
 So your disk and the registry store them only once.
 
 17
-00:01:13.267 --> 00:01:18.066
+00:01:11.400 --> 00:01:16.199
 docker system df listed each image at 178 megabytes.
 
 18
-00:01:18.066 --> 00:01:22.219
+00:01:16.199 --> 00:01:20.352
 But only 16.84 kilobytes of each was its own.
 
 19
-00:01:24.200 --> 00:01:30.244
+00:01:22.367 --> 00:01:28.411
 Start a container from the nginx image, and Docker adds one thin writable layer on top.
 
 20
-00:01:30.400 --> 00:01:33.846
+00:01:28.633 --> 00:01:32.080
 OverlayFS shows all the layers as one folder tree.
 
 21
-00:01:33.846 --> 00:01:37.155
+00:01:32.080 --> 00:01:35.388
 That merged view is the container's root folder.
 
 22
-00:01:37.333 --> 00:01:42.567
+00:01:35.600 --> 00:01:40.833
 A read looks from the top layer down, and uses the first copy of the file it finds.
 
 23
-00:01:42.733 --> 00:01:47.917
+00:01:41.067 --> 00:01:46.251
 The first write to that file copies the whole file up, into the container layer.
 
 24
-00:01:47.917 --> 00:01:49.861
+00:01:46.251 --> 00:01:48.194
 Later writes change that copy.
 
 25
-00:01:49.861 --> 00:01:51.287
+00:01:48.194 --> 00:01:49.620
 This is copy-on-write.
 
 26
-00:01:51.467 --> 00:01:54.332
+00:01:49.833 --> 00:01:52.699
 A new file goes straight into the container layer.
 
 27
-00:01:54.467 --> 00:01:59.316
+00:01:52.900 --> 00:01:57.749
 A delete only adds a small marker, a whiteout, that hides the file below.
 
 28
-00:01:59.467 --> 00:02:05.980
-docker diff lists exactly those changes: C for changed, A for added, and D for deleted.
+00:01:57.967 --> 00:02:03.733
+docker diff lists those changes: C for changed, A for added, and D for deleted.
 
 29
-00:02:06.133 --> 00:02:14.823
-In the lesson's test, that container layer was 106 kilobytes, on top of 177 megabytes of shared image.
-
-30
-00:02:15.000 --> 00:02:18.317
+00:02:03.967 --> 00:02:07.283
 Remove the container, and its layer goes with it.
 
-31
-00:02:18.317 --> 00:02:19.941
+30
+00:02:07.283 --> 00:02:08.908
 The image never changes.
 
-32
-00:02:20.733 --> 00:02:21.815
+31
+00:02:09.733 --> 00:02:10.815
 Back to building.
 
-33
-00:02:21.815 --> 00:02:25.125
+32
+00:02:10.815 --> 00:02:14.125
 Docker keeps every layer it builds in a build cache.
 
-34
-00:02:25.125 --> 00:02:32.636
+33
+00:02:14.125 --> 00:02:21.636
 On the next build, if a step and everything before it are unchanged, Docker reuses the saved layer, and prints CACHED.
 
-35
-00:02:33.333 --> 00:02:40.572
+34
+00:02:22.367 --> 00:02:29.605
 But if something changed, Docker rebuilds that layer, and every layer after it, even ones whose steps did not change.
 
-36
-00:02:40.733 --> 00:02:40.999
+35
+00:02:29.833 --> 00:02:30.099
 Why?
 
-37
-00:02:40.999 --> 00:02:46.322
+36
+00:02:30.099 --> 00:02:35.422
 Each layer holds the changes one step made, on top of the exact layers below it.
 
-38
-00:02:46.322 --> 00:02:54.705
+37
+00:02:35.422 --> 00:02:43.805
 If a lower layer changes, Docker cannot know whether a later pip install would give the same result, without running it again.
 
-39
-00:02:55.467 --> 00:02:57.597
+38
+00:02:44.633 --> 00:02:46.764
 So the order of the steps matters.
 
-40
-00:02:57.597 --> 00:03:00.856
+39
+00:02:46.764 --> 00:02:50.023
 Say you copy all your code first, and install after.
 
-41
-00:03:01.000 --> 00:03:03.299
+40
+00:02:50.233 --> 00:02:52.532
 Now edit one comment in your code.
 
-42
-00:03:03.299 --> 00:03:08.437
+41
+00:02:52.532 --> 00:02:57.671
 The copy step changes, so the slow install runs again, on every single edit.
 
-43
-00:03:09.133 --> 00:03:18.932
+42
+00:02:58.400 --> 00:03:08.199
 So order the steps from rarely changed to often changed: the base image, then the requirements file on its own, then pip install, and the code last.
 
-44
-00:03:19.067 --> 00:03:22.759
+43
+00:03:08.400 --> 00:03:12.092
 Now a code edit rebuilds only the last, small layer.
 
-45
-00:03:22.759 --> 00:03:29.363
+44
+00:03:12.092 --> 00:03:18.696
 In the lesson, that build took 0.3 seconds, against about 10 seconds for a fresh pip install.
 
-46
-00:03:30.133 --> 00:03:34.021
+45
+00:03:19.500 --> 00:03:23.388
 Layers are read-only, named by their content, and shared.
 
-47
-00:03:34.021 --> 00:03:36.818
+46
+00:03:23.388 --> 00:03:26.185
 A container adds one thin writable layer.
 
-48
-00:03:36.818 --> 00:03:41.865
+47
+00:03:26.185 --> 00:03:31.232
 And a change rebuilds every step after it, so slow, stable steps go first.

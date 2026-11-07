@@ -1,0 +1,201 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.230
+Sooner or later, two lines of work have to come together.
+
+2
+00:00:06.230 --> 00:00:09.327
+Git gives you two ways to do it: merge and rebase.
+
+3
+00:00:09.533 --> 00:00:14.029
+You start a branch called feature, and make two commits on it, D and E.
+
+4
+00:00:14.029 --> 00:00:16.245
+Meanwhile, main stays where it was.
+
+5
+00:00:16.467 --> 00:00:19.716
+Now you switch to main, and run git merge feature.
+
+6
+00:00:19.933 --> 00:00:23.371
+main gained no commits since feature split off from it.
+
+7
+00:00:23.371 --> 00:00:26.558
+So git simply moves the main pointer forward, to E.
+
+8
+00:00:26.558 --> 00:00:27.996
+It creates nothing new.
+
+9
+00:00:28.200 --> 00:00:31.985
+That is called a fast-forward, and git prints exactly that.
+
+10
+00:00:31.985 --> 00:00:34.037
+History stays one straight line.
+
+11
+00:00:34.267 --> 00:00:35.645
+Now a different story.
+
+12
+00:00:35.645 --> 00:00:39.528
+While you worked on feature, someone added a commit C to main.
+
+13
+00:00:39.733 --> 00:00:44.375
+Both branches have new commits now, so a fast-forward is impossible.
+
+14
+00:00:44.375 --> 00:00:49.221
+Git finds the merge base: the newest commit that both branches contain.
+
+15
+00:00:49.221 --> 00:00:50.313
+Here, that is B.
+
+16
+00:00:50.533 --> 00:00:54.011
+Then it compares each side with the base.
+
+17
+00:00:54.011 --> 00:00:57.065
+Say the base has a tax rate of 0.20.
+
+18
+00:00:57.065 --> 00:01:01.476
+main changed it to 0.25, and feature still has 0.20.
+
+19
+00:01:01.700 --> 00:01:04.872
+Only main changed that line, so git takes 0.25.
+
+20
+00:01:04.872 --> 00:01:11.015
+Without the base, git would see two different lines, and could not tell which side changed.
+
+21
+00:01:11.233 --> 00:01:18.216
+If both sides had changed that same line in different ways, that would be a conflict, and git would stop and ask you.
+
+22
+00:01:18.433 --> 00:01:23.401
+So git combines the two sets of changes into a new merge commit, M.
+
+23
+00:01:23.401 --> 00:01:25.551
+It has two parents: C, and E.
+
+24
+00:01:25.767 --> 00:01:26.829
+main moves to M.
+
+25
+00:01:26.829 --> 00:01:31.412
+The history shows both lines of work, and no existing commit changed.
+
+26
+00:01:31.412 --> 00:01:34.533
+That is why a merge is safe on shared branches.
+
+27
+00:01:35.767 --> 00:01:39.408
+Rebase is the other way to bring your branch up to date.
+
+28
+00:01:39.408 --> 00:01:40.773
+Same start as before.
+
+29
+00:01:40.773 --> 00:01:43.829
+This time, on feature, you run git rebase main.
+
+30
+00:01:44.033 --> 00:01:45.608
+It works in three steps.
+
+31
+00:01:45.608 --> 00:01:50.596
+First, it lists the commits on your branch that main does not have: D and E.
+
+32
+00:01:50.800 --> 00:01:54.348
+Second, it moves your branch to main's newest commit, C.
+
+33
+00:01:54.567 --> 00:01:58.729
+Third, it applies your commits again, one at a time, on top.
+
+34
+00:01:58.729 --> 00:02:00.255
+D prime, then E prime.
+
+35
+00:02:00.967 --> 00:02:03.417
+Each replayed commit has a new parent.
+
+36
+00:02:03.417 --> 00:02:08.639
+The parent is part of a commit's hash, so D prime is a new commit, with a new ID.
+
+37
+00:02:08.867 --> 00:02:13.522
+The old D and E still exist, but no branch points to them any more.
+
+38
+00:02:13.522 --> 00:02:14.981
+Only the reflog does.
+
+39
+00:02:15.200 --> 00:02:19.815
+You end up with one straight line of history, as if you had started your work today.
+
+40
+00:02:20.733 --> 00:02:22.987
+Now the one rule that matters most.
+
+41
+00:02:22.987 --> 00:02:26.400
+Do not rebase commits that other people already have.
+
+42
+00:02:26.633 --> 00:02:30.165
+Say a teammate fetched your branch before you rebased it.
+
+43
+00:02:30.165 --> 00:02:32.581
+Their copy still holds the old D and E.
+
+44
+00:02:32.581 --> 00:02:35.059
+Your history and theirs no longer match.
+
+45
+00:02:35.267 --> 00:02:42.932
+If they now merge your rebased branch, their history holds each of your changes twice, under the old IDs and the new ones.
+
+46
+00:02:43.133 --> 00:02:45.337
+Someone has to clean that up by hand.
+
+47
+00:02:45.567 --> 00:02:49.457
+Rebasing your own branch, before anyone builds on it, is fine.
+
+48
+00:02:49.457 --> 00:02:51.340
+That is how most teams use it.
+
+49
+00:02:52.267 --> 00:02:56.877
+A merge adds a commit with two parents, and it is safe on shared branches.
+
+50
+00:02:56.877 --> 00:03:03.544
+A rebase copies your commits on top with new IDs: great for your own branch, never for commits others have.

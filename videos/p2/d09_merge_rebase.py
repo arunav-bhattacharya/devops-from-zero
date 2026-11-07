@@ -59,7 +59,7 @@ class D09MergeRebase(VoiceScene):
         ff = M("Fast-forward", 26, GREEN_M).next_to(cmdg, DOWN, buff=0.25)
         line = VGroup(A, B, D, E)
         self.beat("That is called a fast-forward, and git prints exactly that. History stays one straight line.",
-                  FadeIn(ff, shift=DOWN * 0.1), Indicate(line, color=YELLOW_M, scale_factor=1.05, rate_func=late(0.4, 1.0, there_and_back)), run_time=2.2)
+                  FadeIn(ff, shift=DOWN * 0.1), *[n[0].animate(rate_func=late(0.4, 1.0, there_and_back)).set_stroke(YELLOW_M, width=7) for n in line], run_time=2.2)
 
         # ---------- 2. three-way merge
         C = node("C", MAIN_C).move_to([X["C"], TOP, 0])
@@ -88,7 +88,7 @@ class D09MergeRebase(VoiceScene):
         res = vbox("result", "0.25", GREEN_M).move_to([4.75, -3.05, 0])
         r_a = Arrow(vf.get_right(), res.get_left(), buff=0.12, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.2)
         self.beat("Only main changed that line, so git takes 0.25. Without the base, git would see two different lines, and could not tell which side changed.",
-                  Indicate(vm, color=MAIN_C, scale_factor=1.06), GrowArrow(r_a, rate_func=late(0.3)), FadeIn(res, shift=LEFT * 0.15, rate_func=late(0.4)), run_time=2.8)
+                  Circumscribe(vm, color=MAIN_C, buff=0.06), GrowArrow(r_a, rate_func=late(0.3)), FadeIn(res, shift=LEFT * 0.15, rate_func=late(0.4)), run_time=2.8)
         conf = T("both sides changed the same line, differently?  a conflict: git stops and asks you", 24, RED_M).move_to(DOWN * 3.05)
         self.beat("If both sides had changed that same line in different ways, that would be a conflict, and git would stop and ask you.",
                   FadeOut(VGroup(vb, vm, vf, res, r_a), rate_func=late(0.0, 0.3)), FadeIn(conf, rate_func=late(0.35)), run_time=2.0)
@@ -151,7 +151,7 @@ class D09MergeRebase(VoiceScene):
                   FadeOut(VGroup(k1, k2, k_a, newid)), gone.animate.set_opacity(0.3), FadeIn(refl, rate_func=late(0.4)), run_time=2.4)
         straight = VGroup(A, B, C, D1, E1)
         self.beat("You end up with one straight line of history, as if you had started your work today.",
-                  Indicate(straight, color=YELLOW_M, scale_factor=1.05), run_time=2.0)
+                  *[n[0].animate(rate_func=there_and_back).set_stroke(YELLOW_M, width=7) for n in straight], run_time=2.0)
 
         # ---------- 4. never rebase commits others have
         self.play(FadeOut(Group(*self.mobjects)), run_time=0.7)

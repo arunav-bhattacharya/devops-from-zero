@@ -1,5 +1,5 @@
 {
  "d36": [{"slug": "d36-idempotence", "title": "How Ansible changes a server: check first, then report ok or changed", "after": 6, "file": "p9/d36_idempotence.py", "scene": "D36Idempotence", "poster_at": 172.5}],
- "d47": [{"slug": "d47-gitops", "title": "GitOps with Argo CD: pull from git, compare, sync, and roll back with git revert", "after": 6, "file": "p11/d47_gitops.py", "scene": "D47GitOps", "poster_at": 133.0}],
+ "d47": [{"slug": "d47-gitops", "title": "GitOps with Argo CD: pull from git, compare, sync, and roll back with git revert", "after": 6, "file": "p11/d47_gitops.py", "scene": "D47GitOps", "poster_at": 102.5}],
  "d50": [{"slug": "d50-scrape", "title": "How Prometheus scrapes /metrics and stores one sample per series", "after": 3, "file": "p12/d50_scrape.py", "scene": "D50Scrape", "poster_at": 133.0}]
 }
