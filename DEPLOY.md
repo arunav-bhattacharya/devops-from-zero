@@ -23,7 +23,7 @@ It needs two secrets from your Cloudflare account:
 4. Run the first deploy. Open the **Actions** tab → **deploy** → **Run workflow** → **Run workflow**.
    It takes about a minute. The log ends with the site's URL.
 
-From then on, every push to `main` redeploys. If a run fails with "Add CLOUDFLARE_API_TOKEN...", a secret is missing.
+From then on, every push to `main` redeploys. Without the secrets, each run shows "Skipped" instead of deploying.
 
 ## Option C: let Cloudflare watch the repo instead
 
