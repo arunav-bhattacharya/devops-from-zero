@@ -6,6 +6,20 @@ visitor's progress is saved in their own browser.
 
 Cloudflare's dashboard changes now and then, so button names may differ a little from these steps.
 
+## Quickest: one script on your Mac
+
+```bash
+git clone https://github.com/arunav-bhattacharya/devops-from-zero ~/code/devops-from-zero
+```
+
+```bash
+bash ~/code/devops-from-zero/scripts/cloudflare-setup.sh
+```
+
+It deploys the site now (Option B below), then offers to set up Option A for you: it checks the API token
+you paste, stores both GitHub secrets with `gh secret set`, and runs the deploy workflow once.
+If the folder already exists, skip the clone; the script pulls the latest code itself.
+
 ## Option A: GitHub Actions deploys on every push (set up once)
 
 The repo has `.github/workflows/deploy.yml`. On every push to `main` it runs `wrangler deploy` on GitHub's servers.
