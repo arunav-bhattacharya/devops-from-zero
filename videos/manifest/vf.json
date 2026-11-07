@@ -1,6 +1,6 @@
 {
  "d57": [{"slug": "d57-tracing", "title": "Following one request: spans, the traceparent header, the Collector and the waterfall", "after": 2, "file": "p14/d57_tracing.py", "scene": "D57Tracing", "poster_at": 196}],
  "d58": [{"slug": "d58-sidecar", "title": "How a sidecar catches traffic, and what Envoy does with it", "after": 5, "file": "p15/d58_sidecar.py", "scene": "D58Sidecar", "poster_at": 246}],
- "d63": [{"slug": "d63-supply-chain", "title": "The supply chain link by link: SBOM, signing, attestations and verify", "after": 5, "file": "p17/d63_supply_chain.py", "scene": "D63SupplyChain", "poster_at": 270}],
- "d66": [{"slug": "d66-agent-tools", "title": "How an agent runs tools: the loop, MCP and the guardrails", "after": 2, "file": "p18/d66_agent_tools.py", "scene": "D66AgentTools", "poster_at": 200}]
+ "d63": [{"slug": "d63-supply-chain", "title": "The supply chain link by link: SBOM, signing, attestations and verify", "after": 5, "file": "p17/d63_supply_chain.py", "scene": "D63SupplyChain", "poster_at": 272}],
+ "d66": [{"slug": "d66-agent-tools", "title": "How an agent runs tools: the loop, MCP and the guardrails", "after": 2, "file": "p18/d66_agent_tools.py", "scene": "D66AgentTools", "poster_at": 211}]
 }
