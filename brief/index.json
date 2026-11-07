@@ -220,7 +220,7 @@
     "from": [
      "d09"
     ],
-    "scope": "Git itself moved to Days 8 and 9; this lesson starts where they stop. Keep and deepen first-edition Day 11: git for teams (branches, commits, merge vs rebase in brief, pull requests, review, conflicts), trunk-based vs GitFlow, CI, continuous delivery vs deployment, pipeline stages, build once deploy many, deployment strategies, semantic versioning and tags."
+    "scope": "Starts where Day 9 stops. The pull request flow on GitHub step by step (branch, push, open with gh pr create, checks, review, merge methods, delete the branch), code review that helps (small pull requests, what reviewers look for, comments that teach), CODEOWNERS and how a ruleset makes owner review required, two green pull requests that break main together and the settings that prevent it. Then trunk-based development vs GitFlow, CI vs continuous delivery vs continuous deployment, deployment strategies (rolling, blue/green, canary, feature flags) and semantic versions with release tags."
    },
    {
     "id": "d24",

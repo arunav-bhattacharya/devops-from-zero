@@ -609,7 +609,7 @@
      "Open the practice box once from any folder, run `grep PRETTY /etc/os-release`, and exit.",
      "Create `~/code/hello-devops`, run `git init -b main` inside it, and save the five starter files from this lesson there.",
      "Create and activate a venv with Python 3.14, install `requirements-dev.txt`, and run the tests. Then start the app with `python app.py`, open http://localhost:8000, reload a few times, and stop it with Ctrl+C.",
-     "Commit the five files, then publish them with `gh repo create hello-devops --public --source=. --push`. Open the repo on GitHub to see them."
+     "If git does not know your name and email yet, set them with `git config --global user.name \"Your Name\"` and `git config --global user.email you@example.com` (Day 8 explains this). Commit the five files, then publish them with `gh repo create hello-devops --public --source=. --push`. Open the repo on GitHub to see them."
     ],
     "hints": [
      "If a version check fails right after an install, open a new terminal tab and try again.",
