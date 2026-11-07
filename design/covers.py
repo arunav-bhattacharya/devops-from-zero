@@ -36,16 +36,21 @@ def frame(n, noun, caption, days):
 
 # ---------------- motifs ----------------
 def m_route(r):
-    """Start: 55 stations on a boustrophedon route; part boundaries as larger rings."""
-    pts, rows, per = [], 5, 11
-    for i in range(55):
+    """Start: one station per day on a boustrophedon route; the first day of each part as a larger ring."""
+    import json
+    idx = json.loads((ROOT / "brief/index.json").read_text())
+    days = [int(L["id"][1:]) for P in idx for L in P["lessons"]]
+    starts = {int(P["lessons"][0]["id"][1:]) for P in idx}
+    per = 12
+    rows = -(-len(days) // per)
+    pts = []
+    for i in range(len(days)):
         row, k = divmod(i, per)
         if row % 2:
             k = per - 1 - k
-        pts.append((X0 + 40 + k * 70, Y0 + 30 + row * 60))
+        pts.append((X0 + 46 + k * 64, Y0 + 24 + row * (246 // (rows - 1))))
     d = "M" + "L".join(f"{x} {y}" for x, y in pts)
     out = [f'<path class="cv-sm" d="{d}" fill="none"/>']
-    starts = {1, 3, 8, 11, 17, 22, 25, 30, 39, 41, 45, 47, 50, 52, 54}
     for i, (x, y) in enumerate(pts, 1):
         if i == 1:
             out.append(f'<circle class="cv-fo" cx="{x}" cy="{y}" r="7"/>')
@@ -382,10 +387,10 @@ def m_seal(r):
 
 
 def m_converge(r):
-    """Capstone: fourteen small emblems around one central container."""
-    out, cx, cy, R = [], X0 + 400, Y0 + 147, 128
-    for k in range(14):
-        a = -math.pi / 2 + 2 * math.pi * k / 14
+    """Capstone: one small emblem per earlier part around one central container."""
+    out, cx, cy, R, N = [], X0 + 400, Y0 + 147, 128, 19
+    for k in range(N):
+        a = -math.pi / 2 + 2 * math.pi * k / N
         x, y = cx + R * math.cos(a), cy + R * math.sin(a)
         out.append(f'<path class="cv-sm" d="M{f(cx + 44 * math.cos(a))} {f(cy + 44 * math.sin(a))}L{f(x - 16 * math.cos(a))} {f(y - 16 * math.sin(a))}" opacity="0.45"/>')
         shape = k % 4
@@ -404,27 +409,161 @@ def m_converge(r):
     return out
 
 
-PLATES = [
-    (0, "start", "route survey of a learning path", m_route),
-    (1, "linux", "one line survives the filter", m_streams),
-    (2, "networking", "an address space, subdivided", m_cidr),
-    (3, "docker", "stacked layers in the yard", m_stacks),
-    (4, "actions", "a run with one step in progress", m_run),
-    (5, "gradle", "the task graph, mostly up to date", m_dag),
-    (6, "terraform", "a plan read as a field of marks", m_plan),
-    (7, "kubernetes", "the loop restores what went missing", m_reconcile),
-    (8, "argo cd", "drift pulled back to what git says", m_sync),
-    (9, "prometheus", "counters, sampled; a rate that spikes", m_counters),
-    (10, "grafana", "one panel turns", m_panels),
-    (11, "logs and traces", "the slow span", m_waterfall),
-    (12, "dynatrace", "a root cause, traced through layers", m_topology),
-    (13, "devsecops", "sealed, with a chain of custody", m_seal),
-    (14, "capstone", "every part, converging", m_converge),
+def m_git(r):
+    """Git: a main line with branches that leave and merge back; one branch replayed (rebased) as ghosts."""
+    out, ym = [], Y0 + 150
+    xs = [X0 + 30 + k * 62 for k in range(13)]
+    out.append(f'<path class="cv-sk" d="M{xs[0]} {ym}H{xs[-1]}" stroke-width="1.8"/>')
+    # feature branch above: leaves at 1, commits at 2-4, merges at 6
+    yb = ym - 92
+    out.append(f'<path class="cv-st" d="M{xs[1]} {ym}C{xs[1] + 30} {ym} {xs[2] - 30} {yb} {xs[2]} {yb}H{xs[4]}C{xs[4] + 40} {yb} {xs[6] - 40} {ym} {xs[6]} {ym}" fill="none" stroke-width="1.8"/>')
+    for k in (2, 3, 4):
+        out.append(f'<circle class="cv-ft" cx="{xs[k]}" cy="{yb}" r="8"/>')
+    # a branch below that was rebased: ghosts on the old base, real commits replayed on the new tip
+    yg = ym + 92
+    out.append(f'<path class="cv-sm" d="M{xs[3]} {ym}C{xs[3] + 30} {ym} {xs[4] - 30} {yg} {xs[4]} {yg}H{xs[6]}" fill="none" stroke-dasharray="3 5"/>')
+    for k in (4, 5, 6):
+        out.append(f'<circle class="cv-bgf cv-sm" cx="{xs[k]}" cy="{yg}" r="7" stroke-dasharray="2 3"/>')
+    out.append(f'<path class="cv-sk" d="M{xs[8]} {ym}C{xs[8] + 30} {ym} {xs[9] - 30} {yg} {xs[9]} {yg}H{xs[11]}" fill="none" stroke-width="1.8"/>')
+    for k in (9, 10, 11):
+        out.append(f'<circle class="cv-bgf cv-sk" cx="{xs[k]}" cy="{yg}" r="8"/>')
+    out.append(f'<path class="cv-sm" d="M{xs[5]} {yg + 22}C{xs[6]} {yg + 40} {xs[8]} {yg + 40} {xs[9] - 4} {yg + 16}" fill="none" stroke-dasharray="2 6" stroke-linecap="round"/>')
+    for k, x in enumerate(xs):
+        cls = "cv-fo" if k == 12 else ("cv-bgf cv-sk" if k == 6 else "cv-fk")
+        out.append(f'<circle class="{cls}" cx="{x}" cy="{ym}" r="{9 if k in (6, 12) else 6}"/>')
+    out.append(f'<path class="cv-so" d="M{xs[12]} {ym - 22}v-26" stroke-width="2.4" stroke-linecap="round"/>')
+    return out
+
+
+def m_script(r):
+    """Python: a script read as indentation; one line raises; the exit code comes out the side."""
+    out, rh, cw = [], 16, 9
+    depth = [0, 0, 1, 1, 2, 2, 2, 1, 1, 2, 3, 3, 2, 1, 0, 0, 1, 1]
+    bad = 11
+    for i, dpt in enumerate(depth):
+        y = Y0 + 10 + i * rh
+        x = X0 + 70 + dpt * 4 * cw
+        for k in range(dpt):
+            out.append(f'<path class="cv-sm" d="M{X0 + 74 + k * 4 * cw} {y - 4}v{rh}" opacity="0.35"/>')
+        n = r.randint(10, 32 - dpt * 3)
+        col = 0
+        while col < n:
+            ln = r.choice((2, 3, 4, 5, 7))
+            cls = "cv-fo" if i == bad else ("cv-ft" if dpt == 0 and col == 0 else "cv-fm")
+            op = "" if cls != "cv-fm" else f' opacity="{r.choice((0.4, 0.55, 0.75))}"'
+            out.append(f'<rect class="{cls}" x="{x + col * cw}" y="{y}" width="{ln * cw - 3}" height="5" rx="1"{op}/>')
+            col += ln + 1
+    yb = Y0 + 10 + bad * rh + 2
+    out.append(f'<path class="cv-so" d="M{X0 + 520} {yb}H{X1 - 150}" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round"/>')
+    out.append(f'<rect class="cv-bgf cv-sk" x="{X1 - 140}" y="{yb - 34}" width="96" height="68" rx="4"/>')
+    out.append(f'<path class="cv-so" d="M{X1 - 102} {yb - 14}l12 -8v44M{X1 - 104} {yb + 22}h28" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')
+    for k in range(3):
+        out.append(f'<rect class="cv-ft" x="{X1 - 140}" y="{Y1 - 60 + k * 14}" width="{30 + k * 18}" height="5" rx="1" opacity="0.8"/>')
+    return out
+
+
+def m_fanout(r):
+    """Ansible: one control node, many hosts in groups; a few changed, the rest already right."""
+    out, cx, cy = [], X0 + 60, Y0 + 147
+    groups = [(Y0 + 40, 8), (Y0 + 147, 8), (Y0 + 254, 8)]
+    changed = {(0, 2), (1, 5), (1, 6), (2, 0)}
+    for gi, (gy, n) in enumerate(groups):
+        gx0 = X0 + 330
+        out.append(f'<path class="cv-sm" d="M{cx + 22} {cy}C{cx + 160} {cy} {gx0 - 140} {gy} {gx0 - 26} {gy}" fill="none" opacity="0.7"/>')
+        out.append(f'<rect class="cv-bgf cv-sm" x="{gx0 - 18}" y="{gy - 30}" width="{n * 56 + 12}" height="60" rx="6" fill="none" stroke-dasharray="3 4"/>')
+        for k in range(n):
+            x = gx0 + k * 56
+            hot = (gi, k) in changed
+            out.append(f'<rect class="{"cv-fo" if hot else "cv-bgf cv-sk"}" x="{x}" y="{gy - 16}" width="36" height="32" rx="3"/>')
+            if not hot:
+                out.append(f'<path class="cv-st" d="M{x + 10} {gy}l6 6l11 -12" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>')
+    out.append(f'<rect class="cv-fk" x="{cx - 26}" y="{cy - 26}" width="52" height="52" rx="4"/>')
+    out.append(f'<path class="cv-sbg" d="M{cx - 14} {cy - 8}l10 8l-10 8M{cx + 2} {cy + 10}h14" fill="none" stroke-width="2.4" stroke-linecap="round"/>')
+    return out
+
+
+def m_mesh(r):
+    """Service mesh: services with a sidecar each; a control plane above sends config; one call is encrypted."""
+    out = []
+    svcs = [(X0 + 90, Y0 + 150), (X0 + 300, Y0 + 230), (X0 + 330, Y0 + 100), (X0 + 540, Y0 + 180), (X0 + 720, Y0 + 110), (X0 + 730, Y0 + 255)]
+    cp = (X0 + 410, Y0 + 14)
+    calls = [(0, 2), (0, 1), (2, 3), (1, 3), (3, 4), (3, 5), (2, 4)]
+    hot = (2, 3)
+    for a, b in calls:
+        (xa, ya), (xb, yb) = svcs[a], svcs[b]
+        cls = "cv-so" if (a, b) == hot else "cv-sk"
+        out.append(f'<path class="{cls}" d="M{xa + 34} {ya + 12}L{xb + 34} {yb + 12}" stroke-width="{2.6 if (a, b) == hot else 1.2}" opacity="{1 if (a, b) == hot else 0.6}"/>')
+    for x, y in svcs:
+        out.append(f'<path class="cv-st" d="M{cp[0]} {cp[1] + 16}L{x + 34} {y - 4}" stroke-dasharray="2 6" stroke-linecap="round" opacity="0.8"/>')
+    for i, (x, y) in enumerate(svcs):
+        out.append(f'<rect class="cv-bgf cv-sk" x="{x - 22}" y="{y - 4}" width="44" height="32" rx="4"/>')
+        out.append(f'<rect class="{"cv-fo" if i in hot else "cv-ft"}" x="{x + 26}" y="{y}" width="16" height="24" rx="3"/>')
+    out.append(f'<rect class="cv-fk" x="{cp[0] - 60}" y="{cp[1] - 12}" width="120" height="28" rx="14"/>')
+    for k in range(4):
+        out.append(f'<circle class="cv-bg" cx="{cp[0] - 36 + k * 24}" cy="{cp[1] + 2}" r="3"/>')
+    mx, my = (svcs[2][0] + svcs[3][0]) / 2 + 34, (svcs[2][1] + svcs[3][1]) / 2 + 12
+    out.append(f'<rect class="cv-bgf cv-so" x="{f(mx - 9)}" y="{f(my - 4)}" width="18" height="14" rx="2" stroke-width="1.8"/>')
+    out.append(f'<path class="cv-so" d="M{f(mx - 5)} {f(my - 4)}v-5a5 5 0 0 1 10 0v5" fill="none" stroke-width="1.8"/>')
+    return out
+
+
+def m_agent(r):
+    """AI: a model in a loop that calls tools; reads pass freely, the one write waits at a gate."""
+    out, cx, cy, R = [], X0 + 230, Y0 + 147, 104
+    out.append(f'<circle class="cv-sm" cx="{cx}" cy="{cy}" r="{R}" fill="none" stroke-dasharray="4 6"/>')
+    for k in range(6):
+        a = -math.pi / 2 + 2 * math.pi * k / 6
+        x, y = cx + R * math.cos(a), cy + R * math.sin(a)
+        out.append(f'<circle class="{"cv-ft" if k % 2 else "cv-bgf cv-sk"}" cx="{f(x)}" cy="{f(y)}" r="9"/>')
+    a0 = -math.pi / 2 + 0.25
+    out.append(f'<path class="cv-st" d="M{f(cx + (R + 16) * math.cos(a0))} {f(cy + (R + 16) * math.sin(a0))}A{R + 16} {R + 16} 0 0 1 {f(cx + (R + 16) * math.cos(a0 + 1.1))} {f(cy + (R + 16) * math.sin(a0 + 1.1))}" fill="none" stroke-width="2" stroke-linecap="round"/>')
+    out.append(f'<rect class="cv-fk" x="{cx - 30}" y="{cy - 30}" width="60" height="60" rx="30"/>')
+    for k in range(3):
+        out.append(f'<circle class="cv-bg" cx="{cx - 14 + k * 14}" cy="{cy}" r="3.4"/>')
+    tx = X0 + 470
+    for i in range(5):
+        y = Y0 + 30 + i * 58
+        write = i == 3
+        out.append(f'<path class="{"cv-so" if write else "cv-sm"}" d="M{cx + R + 12} {cy}C{tx - 90} {cy} {tx - 100} {y + 14} {tx} {y + 14}" fill="none" opacity="{1 if write else 0.6}" stroke-width="{2 if write else 1}"/>')
+        if write:
+            out.append(f'<path class="cv-sk" d="M{tx + 40} {y - 6}v40" stroke-width="3"/>')
+            out.append("".join(f'<path class="cv-fy" d="M{tx + 46 + j * 14} {y + 26}h7l-7 10h-7z"/>' for j in range(6)))
+            out.append(f'<rect class="cv-fo" x="{tx + 52}" y="{y}" width="150" height="28" rx="3"/>')
+        else:
+            out.append(f'<rect class="cv-bgf cv-sk" x="{tx}" y="{y}" width="200" height="28" rx="3"/>')
+            for k in range(3):
+                out.append(f'<rect class="cv-fm" x="{tx + 12 + k * 44}" y="{y + 12}" width="34" height="4" rx="1" opacity="0.6"/>')
+    out.append(f'<circle class="cv-bgf cv-st" cx="{tx + 250}" cy="{Y0 + 30 + 3 * 58 + 14}" r="16" stroke-width="2"/>')
+    out.append(f'<path class="cv-st" d="M{tx + 250} {Y0 + 30 + 3 * 58 + 4}a5 5 0 1 1 0 0.1M{tx + 240} {Y0 + 30 + 3 * 58 + 26}q10 -12 20 0" fill="none" stroke-width="1.8"/>')
+    return out
+
+
+PLATES = [  # (part, noun, caption, motif, seed); the seed keeps each older plate as it was before the renumbering
+    (0, "start", "route survey of a learning path", m_route, 0),
+    (1, "linux", "one line survives the filter", m_streams, 1),
+    (2, "git", "branches leave, merge, and replay", m_git, 2),
+    (3, "networking", "an address space, subdivided", m_cidr, 2),
+    (4, "python", "the line that raised, and its exit code", m_script, 4),
+    (5, "docker", "stacked layers in the yard", m_stacks, 3),
+    (6, "actions", "a run with one step in progress", m_run, 4),
+    (7, "gradle", "the task graph, mostly up to date", m_dag, 5),
+    (8, "terraform", "a plan read as a field of marks", m_plan, 6),
+    (9, "ansible", "most hosts already right; four changed", m_fanout, 9),
+    (10, "kubernetes", "the loop restores what went missing", m_reconcile, 7),
+    (11, "argo cd", "drift pulled back to what git says", m_sync, 8),
+    (12, "prometheus", "counters, sampled; a rate that spikes", m_counters, 9),
+    (13, "grafana", "one panel turns", m_panels, 10),
+    (14, "logs and traces", "the slow span", m_waterfall, 11),
+    (15, "service mesh", "every call through a sidecar; one sealed", m_mesh, 15),
+    (16, "dynatrace", "a root cause, traced through layers", m_topology, 12),
+    (17, "devsecops", "sealed, with a chain of custody", m_seal, 13),
+    (18, "ai", "reads run freely; the write waits at the gate", m_agent, 18),
+    (19, "capstone", "every part, converging", m_converge, 14),
 ]
 
 
-def plate(n, noun, caption, fn, days):
-    body = frame(n, noun, caption, days) + fn(random.Random(n))
+def plate(n, noun, caption, fn, days, seed):
+    body = frame(n, noun, caption, days) + fn(random.Random(seed))
     return (f'<svg class="cv" viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Plate {n}: {noun}">'
             + "".join(body) + "</svg>")
 
@@ -434,10 +573,11 @@ def main():
     idx = json.loads((ROOT / "brief/index.json").read_text())
     OUT.mkdir(parents=True, exist_ok=True)
     svgs = []
-    for (n, noun, cap, fn), P in zip(PLATES, idx):
+    for (n, noun, cap, fn, seed), P in zip(PLATES, idx):
+        assert P["part"] == n, (P["part"], n)
         days = [int(L["id"][1:]) for L in P["lessons"]]
         rng = f"DAY {days[0]:02d}" if len(days) == 1 else f"DAYS {days[0]:02d} TO {days[-1]:02d}"
-        svg = plate(n, noun, cap, fn, rng)
+        svg = plate(n, noun, cap, fn, rng, seed)
         (OUT / f"p{n}.svg").write_text(svg)
         svgs.append(svg)
     css = (ROOT / "site/art.css").read_text()
