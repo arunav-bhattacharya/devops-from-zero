@@ -1,0 +1,40 @@
+import json, sys, re
+path, lid = sys.argv[1], sys.argv[2]
+p = json.load(open(path))
+L = [l for l in p['lessons'] if l['id'] == lid][0]
+def w(s): return len(re.findall(r"\S+", s))
+print("=== ", L['id'], L['title'], "minutes", L['minutes'])
+print("GOAL:", L['goal'])
+g = L['guess']; print("GUESS:", g['q'], g['options'], g['answer'], "WHY:", g['why'])
+print("TERMS:")
+for t in L['terms']: print("  -", t['term'], ":", t['plain'])
+tot = 0
+for i, s in enumerate(L['sections']):
+    tot += w(s['body'])
+    print(f"\n--- S{i} [{w(s['body'])}w] H: {s['h']}")
+    print(s['body'])
+print("\nSECTION WORDS:", tot)
+print("\nANALOGY:", L['analogy'])
+print("\nCAPTION:", L['diagram_caption'])
+print("\nWORKED:", L['worked']['title'])
+for st in L['worked']['steps']:
+    print("  SAY:", st['say'])
+    if st.get('code'): print("  CODE:\n" + "\n".join("     " + x for x in st['code'].split("\n")))
+print("\nCODE FILES:")
+for c in L['code']: print("  ", c['title'], c.get('run'), "\n" + "\n".join("     " + x for x in c['src'].split("\n")))
+print("\nCOMMANDS:")
+for c in L['commands']: print("  ", c['cmd'], "::", c['what'])
+print("\nMISTAKE:", L['mistake'])
+print("\nREAL_WORLD:", L['real_world'])
+t = L['task']; print("\nTASK:", t['title'])
+for s in t['steps']: print("  STEP:", s)
+for s in t['hints']: print("  HINT:", s)
+print("  DONE:", t['done_when'])
+print("\nEXPLAIN PROMPT:", L['explain_back']['prompt'])
+print("EXPLAIN ANSWER:", L['explain_back']['answer'])
+print("\nRECAP:"); [print("  -", r) for r in L['recap']]
+print("\nCHECK:")
+for c in L['check']: print("  Q:", c['q'], c['options'], c['answer'], "WHY:", c['why'])
+print("\nINTERVIEW:")
+for c in L['interview']: print("  Q:", c['q'], "\n  A:", c['a'])
+print("\nDEEPER:", L['deeper']['minutes'], "\n" + L['deeper']['body'])
