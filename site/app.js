@@ -284,7 +284,7 @@ function viewHome() {
   <section class="hero">
     <span class="label">${tot} lessons · about 45 minutes each · at your own pace</span>
     <h1>DevOps,<em>from zero</em></h1>
-    <p class="sub">Linux, networking, Docker, GitHub Actions, Gradle, Terraform and Kubernetes, then how teams run things today: GitOps with Argo CD, Prometheus, Grafana, ELK and EFK, OpenTelemetry, Dynatrace and supply-chain security. You ship a real app, <span style="white-space:nowrap">hello-devops</span>, from your laptop to a cluster.</p>
+    <p class="sub">Linux, Git, networking, hands-on AWS, Python scripts, Docker, GitHub Actions, Gradle, Terraform, Ansible and Kubernetes, then how teams run things today: GitOps with Argo CD, Prometheus, Grafana, ELK and EFK, OpenTelemetry, service mesh, Dynatrace, supply-chain security and AI in DevOps. You ship a real app, <span style="white-space:nowrap">hello-devops</span>, from your laptop to a cluster.</p>
     <div class="meta"><span>${C.parts.length} parts</span><span>${tot} lessons</span><span>2 lab projects</span><span>Free tools, runs on your laptop</span></div>
   </section>
   ${term}

@@ -1,26 +1,31 @@
 # DevOps, from zero
 
 A hands-on DevOps course for an engineer who has never done cloud or DevOps work.
-55 lessons in 15 parts, about 45 focused minutes each, at your own pace. You ship a real app,
+68 lessons in 20 parts, about 45 focused minutes each, at your own pace. You ship a real app,
 `hello-devops`, from your laptop to a Kubernetes cluster, and build a Kotlin service with Gradle on the way.
 
 | Part | Days | Topic |
 |---|---|---|
 | 0 | 1–2 | Start here: the DevOps map, set up your laptop |
 | 1 | 3–7 | The Linux command line (shell, files, grep and regex, pipes, permissions, processes, systemd, SSH, scripts) |
-| 2 | 8–10 | Networking and the cloud (IP, ports, DNS, HTTP, TLS, proxies, load balancers, regions, IAM, cost) |
-| 3 | 11–16 | Docker (containers, images and layers, Dockerfiles, volumes and networks, Compose, production images) |
-| 4 | 17–21 | CI/CD with GitHub Actions |
-| 5 | 22–24 | Builds with Gradle |
-| 6 | 25–29 | Infrastructure as Code with Terraform |
-| 7 | 30–38 | Kubernetes (nine lessons, ending with a break-and-fix troubleshooting lab) |
-| 8 | 39–40 | GitOps with Argo CD |
-| 9 | 41–44 | Monitoring with Prometheus |
-| 10 | 45–46 | Dashboards with Grafana |
-| 11 | 47–49 | Logs and traces: ELK, EFK and OpenTelemetry |
-| 12 | 50–51 | Dynatrace |
-| 13 | 52–53 | DevSecOps |
-| 14 | 54–55 | Platform engineering, AI in DevOps, and your capstone |
+| 2 | 8–9 | Version control with Git (snapshots, undo, branches, merge, rebase, remotes) |
+| 3 | 10–14 | Networking and the cloud (IP, ports, DNS, HTTP, TLS, load balancers, cloud basics), then hands-on AWS (IAM, CLI, S3, EC2, VPC, CloudWatch) |
+| 4 | 15–16 | Python scripts for automation (files, JSON, CLI tools, APIs, boto3, tests) |
+| 5 | 17–22 | Docker (containers, images and layers, Dockerfiles, volumes and networks, Compose, production images) |
+| 6 | 23–27 | CI/CD with GitHub Actions |
+| 7 | 28–30 | Builds with Gradle |
+| 8 | 31–35 | Infrastructure as Code with Terraform |
+| 9 | 36–37 | Configuration management with Ansible |
+| 10 | 38–46 | Kubernetes (nine lessons, ending with a break-and-fix troubleshooting lab) |
+| 11 | 47–48 | GitOps with Argo CD |
+| 12 | 49–52 | Monitoring with Prometheus |
+| 13 | 53–54 | Dashboards with Grafana |
+| 14 | 55–57 | Logs and traces: ELK, EFK and OpenTelemetry |
+| 15 | 58–60 | Service mesh: Envoy, Istio, Linkerd and Cilium |
+| 16 | 61–62 | Dynatrace |
+| 17 | 63–64 | DevSecOps |
+| 18 | 65–66 | AI in DevOps (assistants, agents, MCP, guardrails) |
+| 19 | 67–68 | Platform engineering and your capstone |
 
 Every lesson has a warm-up guess, key words, sections with a diagram and an analogy, a worked example
 with real output, the files and commands it uses, a hands-on task with hints, "explain it back",
@@ -32,10 +37,10 @@ every link and video, the finished lab files, and a plan that moves with your pa
 
 | Folder | What it holds |
 |---|---|
-| `content/` | The lessons, one JSON file per part (`p0.json` to `p14.json`); `content/v1/` is the first edition |
-| `labs/` | The finished, checked lab projects: `hello-devops`, `hello-jvm`, `linux`, `terraform-practice` |
+| `content/` | The lessons, one JSON file per part (`p0.json` to `p19.json`); `content/v1/` is the first edition |
+| `labs/` | The finished, checked lab projects: `hello-devops`, `hello-jvm`, `linux`, `git`, `aws`, `python-ops`, `ansible`, `terraform-practice` |
 | `brief/` | The course plan (`index.json`), the writer brief and the validator |
-| `research_notes/`, `reports/` | The research behind the second edition |
+| `research_notes/`, `reports/` | The research behind the second edition (the third edition's new parts were researched by their writers) |
 | `design/` | The "Freight Notation" design philosophy and the generator for the part plates |
 | `site/` | The site source: `template.html`, `app.css`, `art.css`, `app.js`, `art/` and `build.py` |
 | `public/index.html` | The built site as a complete web page (what Cloudflare serves) |
