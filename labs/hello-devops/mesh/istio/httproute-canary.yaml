@@ -1,0 +1,34 @@
+# A canary inside the mesh, written with the Gateway API (Day 59).
+# The parentRef is a Service, not a Gateway: the route applies to every meshed call
+# to http://hello-devops (the GAMMA way, Day 60). Envoy on the caller's side does the split.
+# Uses only Standard-channel fields of Gateway API v1.6.0, the version Istio 1.31's docs install.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hello-devops-canary
+  namespace: hello-mesh
+spec:
+  parentRefs:
+    - group: "" # "" is the core API group, where Service lives
+      kind: Service
+      name: hello-devops
+      port: 80
+  rules:
+    # Rule 1: testers who send "x-canary: always" always reach the canary.
+    - matches:
+        - headers:
+            - name: x-canary
+              value: always
+      backendRefs:
+        - name: hello-canary
+          port: 80
+    # Rule 2: everyone else. About 9 in 10 requests stay on version 1.
+    - backendRefs:
+        - name: hello-devops
+          port: 80
+          weight: 90
+        - name: hello-canary
+          port: 80
+          weight: 10
+      timeouts:
+        request: 3s # give up after 3 seconds and answer 504

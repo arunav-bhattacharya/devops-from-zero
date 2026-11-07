@@ -1,0 +1,16 @@
+# A waypoint: an Envoy proxy that Istio runs for the hello-mesh namespace (ambient mode).
+# This is the file that "istioctl waypoint generate --for service -n hello-mesh" prints.
+# Same as: istioctl waypoint apply -n hello-mesh
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: waypoint
+  namespace: hello-mesh
+  labels:
+    istio.io/waypoint-for: service # handle traffic sent to Services (the default)
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE # Istio's mTLS tunnel between ztunnels and waypoints

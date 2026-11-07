@@ -1,0 +1,169 @@
+# Envoy in front of two versions of hello-devops (Day 58).
+# One listener on port 10000, one route table, two clusters:
+#   hello_v1: two copies of version 1.0.0 (v1a, v1b)
+#   hello_v2: one copy of the canary, version 2.0.0 (v2)
+# About 9 in 10 requests go to hello_v1 and 1 in 10 to hello_v2.
+# The admin interface on port 9901 shows the stats (/stats) and the hosts (/clusters).
+
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0 # inside the container; compose.yaml publishes it on 127.0.0.1 only
+      port_value: 9901
+
+# A runtime layer you can change through the admin interface while Envoy runs.
+# Day 59 uses it to switch on fault injection with POST /runtime_modify.
+layered_runtime:
+  layers:
+    - name: admin
+      admin_layer: {}
+
+static_resources:
+  listeners:
+    - name: ingress
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 10000
+      filter_chains:
+        - filters:
+            # The HTTP connection manager turns bytes into HTTP requests,
+            # runs the HTTP filters and picks a route.
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                access_log:
+                  # One line per request on stdout: see it with docker compose logs envoy
+                  - name: envoy.access_loggers.stdout
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                route_config:
+                  name: hello_routes
+                  virtual_hosts:
+                    - name: hello
+                      domains: ["*"] # any Host header
+                      # Retries for every route in this virtual host.
+                      retry_policy:
+                        retry_on: "5xx,reset,connect-failure"
+                        num_retries: 2
+                        per_try_timeout: 1s
+                        # Retry on a different host than the one that just failed.
+                        retry_host_predicate:
+                          - name: envoy.retry_host_predicates.previous_hosts
+                            typed_config:
+                              "@type": type.googleapis.com/envoy.extensions.retry.host.previous_hosts.v3.PreviousHostsPredicate
+                        host_selection_retry_max_attempts: 3
+                      routes:
+                        # Testers can always reach the canary with the header "x-canary: always".
+                        - match:
+                            prefix: "/"
+                            headers:
+                              - name: x-canary
+                                string_match:
+                                  exact: always
+                          route:
+                            cluster: hello_v2
+                            timeout: 3s
+                        # Everyone else: a 90/10 split between the two clusters.
+                        - match:
+                            prefix: "/"
+                          route:
+                            weighted_clusters:
+                              clusters:
+                                - name: hello_v1
+                                  weight: 90
+                                - name: hello_v2
+                                  weight: 10
+                            timeout: 3s # the whole request, retries included
+                http_filters:
+                  # Fault injection, switched off (0 percent). Day 59 turns it on at run time.
+                  - name: envoy.filters.http.fault
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.fault.v3.HTTPFault
+                      abort:
+                        http_status: 503
+                        percentage:
+                          numerator: 0
+                          denominator: HUNDRED
+                      delay:
+                        fixed_delay: 2s
+                        percentage:
+                          numerator: 0
+                          denominator: HUNDRED
+                  # The router sends the request to the cluster the route chose. It must be last.
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+    - name: hello_v1
+      type: STRICT_DNS # look up each host name and keep every address it returns
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: hello_v1
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address: { address: v1a, port_value: 8000 }
+              - endpoint:
+                  address:
+                    socket_address: { address: v1b, port_value: 8000 }
+      # Active health check: Envoy asks each host for /healthz every 5 seconds.
+      health_checks:
+        - timeout: 1s
+          interval: 5s
+          unhealthy_threshold: 2
+          healthy_threshold: 1
+          no_traffic_interval: 5s # the default is 60s while a cluster has had no traffic yet
+          http_health_check:
+            path: /healthz
+      # Passive health check: watch real answers and eject a host after 3 errors in a row.
+      outlier_detection:
+        consecutive_5xx: 3
+        interval: 5s
+        base_ejection_time: 30s
+        max_ejection_percent: 50 # the default is 10%, which with 2 hosts ejects nobody
+        # /healthz only proves the process is up. Do not let it undo an ejection.
+        successful_active_health_check_uneject_host: false
+      # Circuit breakers: limits that make Envoy fail fast instead of queueing forever.
+      circuit_breakers:
+        thresholds:
+          - max_connections: 100
+            max_pending_requests: 50
+            max_requests: 100
+            max_retries: 3
+
+    - name: hello_v2
+      type: STRICT_DNS
+      connect_timeout: 1s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: hello_v2
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address: { address: v2, port_value: 8000 }
+      health_checks:
+        - timeout: 1s
+          interval: 5s
+          unhealthy_threshold: 2
+          healthy_threshold: 1
+          no_traffic_interval: 5s # the default is 60s while a cluster has had no traffic yet
+          http_health_check:
+            path: /healthz
+      outlier_detection:
+        consecutive_5xx: 3
+        interval: 5s
+        base_ejection_time: 30s
+        max_ejection_percent: 50
+        successful_active_health_check_uneject_host: false
+      circuit_breakers:
+        thresholds:
+          - max_connections: 100
+            max_pending_requests: 50
+            max_requests: 100
+            max_retries: 3

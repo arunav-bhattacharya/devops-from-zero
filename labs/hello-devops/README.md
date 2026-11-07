@@ -22,6 +22,7 @@ reference: every file the lessons build, already checked. Use it to compare your
 | `observability/` | Days 50 to 54 (Prometheus, Alertmanager, Grafana, Loki) |
 | `logging/` | Days 55 and 56 (Elasticsearch, Kibana, Fluent Bit) |
 | `tracing/` | Day 57 (OpenTelemetry Collector, Jaeger) |
+| `mesh/` | Days 58 to 60 (Envoy with Compose; Istio sidecar and ambient manifests; Linkerd GAMMA route and checklist) |
 | `dynatrace/` | Day 62 |
 | `policy/`, `security/` | Day 64 (and Day 66 for the AI agent policy and kubeconfig) |
 | `ai/` | Days 65 and 66 (AGENTS.md, review checklist, MCP config, read-only RBAC, AI review workflow) |

@@ -1,0 +1,12 @@
+# Mutual TLS for every workload in hello-mesh (Day 59).
+# STRICT: accept only mTLS traffic from other mesh workloads. Plain text is refused.
+# The default, with no policy, is PERMISSIVE: accept both mTLS and plain text.
+# On a real system, run PERMISSIVE first, check that every caller uses mTLS, then switch.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: hello-mesh
+spec:
+  mtls:
+    mode: STRICT

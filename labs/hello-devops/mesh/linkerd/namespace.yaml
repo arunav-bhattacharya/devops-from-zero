@@ -1,0 +1,9 @@
+# The namespace for the Linkerd lab (Day 60).
+# The annotation tells Linkerd's proxy injector to add its proxy to every new Pod here.
+# The apps themselves are the same as in the Istio lab: kubectl apply -f ../istio/apps.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello-mesh
+  annotations:
+    linkerd.io/inject: enabled

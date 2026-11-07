@@ -1,0 +1,39 @@
+# The same canary as ../istio/httproute-canary.yaml, for Linkerd (Day 60).
+# The spec is identical: this is GAMMA, the Gateway API for traffic inside a mesh.
+# Only the annotations are Linkerd's own: they add retries, which Linkerd reads from
+# annotations because Gateway API v1.5 has no retry field in its Standard channel.
+# Linkerd 2.20 works with Gateway API v1.2.1 to v1.5.1, so install v1.5.1.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hello-devops-canary
+  namespace: hello-mesh
+  annotations:
+    retry.linkerd.io/http: 5xx # retry any 5xx answer
+    retry.linkerd.io/limit: "2" # at most 2 retries per request
+    retry.linkerd.io/timeout: 1s # give each try 1 second
+spec:
+  parentRefs:
+    - group: "" # "" is the core API group, where Service lives
+      kind: Service
+      name: hello-devops
+      port: 80
+  rules:
+    # Rule 1: testers who send "x-canary: always" always reach the canary.
+    - matches:
+        - headers:
+            - name: x-canary
+              value: always
+      backendRefs:
+        - name: hello-canary
+          port: 80
+    # Rule 2: everyone else. About 9 in 10 requests stay on version 1.
+    - backendRefs:
+        - name: hello-devops
+          port: 80
+          weight: 90
+        - name: hello-canary
+          port: 80
+          weight: 10
+      timeouts:
+        request: 3s # give up after 3 seconds and answer 504

@@ -1,0 +1,43 @@
+# Who may call hello-devops and the canary (Day 59). Needs mTLS, because the caller's
+# identity comes from its certificate.
+# Istio checks DENY policies first, then ALLOW policies. Once any ALLOW policy selects
+# a workload, every request that no ALLOW rule matches is refused with 403.
+
+# 1. Deny /metrics to everyone outside the "monitoring" namespace.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-metrics
+  namespace: hello-mesh
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: hello-devops
+  action: DENY
+  rules:
+    - from:
+        - source:
+            notNamespaces: ["monitoring"]
+      to:
+        - operation:
+            paths: ["/metrics"]
+---
+# 2. Allow only the client's identity, only GET, only these paths.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-client-get
+  namespace: hello-mesh
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: hello-devops
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/hello-mesh/sa/client"]
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/", "/healthz", "/readyz"]

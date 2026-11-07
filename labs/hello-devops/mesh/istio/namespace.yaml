@@ -1,0 +1,15 @@
+# Two namespaces for the Istio lab (Day 59).
+# hello-mesh: in the mesh. The label tells Istio to add an Envoy sidecar to every new Pod here.
+#   Pods that already run get no sidecar until they restart.
+# outside: not in the mesh. Use it to test what PeerAuthentication STRICT does to plain-text callers.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello-mesh
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outside

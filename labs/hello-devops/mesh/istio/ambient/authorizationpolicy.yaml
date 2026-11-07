@@ -1,0 +1,26 @@
+# Ambient variant of ../authorizationpolicy.yaml (Day 59).
+# ztunnel cannot read HTTP, so a policy with paths or methods must be attached to the
+# waypoint. targetRefs to a Service does that: the waypoint for that Service enforces it.
+# A selector-based policy with HTTP rules would be enforced by ztunnel and turn into a DENY.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-client-get
+  namespace: hello-mesh
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: hello-devops
+    - group: ""
+      kind: Service
+      name: hello-canary
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/hello-mesh/sa/client"]
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/", "/healthz", "/readyz"]

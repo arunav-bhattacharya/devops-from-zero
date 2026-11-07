@@ -1,0 +1,44 @@
+# Fault injection with Istio's own routing API (Day 59).
+# Only requests with the header "x-fault: on" get faults, so normal traffic is not hurt.
+# Do not use this together with httproute-canary.yaml: delete that route first, so that
+# only one routing API controls calls to hello-devops.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: hello-devops
+  namespace: hello-mesh
+spec:
+  hosts:
+    - hello-devops.hello-mesh.svc.cluster.local
+  http:
+    # Rule 1: test traffic. 1 in 2 requests waits 2 seconds; 1 in 5 gets a 503 at once.
+    # Istio switches off timeouts and retries on a rule that injects faults.
+    - match:
+        - headers:
+            x-fault:
+              exact: "on"
+      fault:
+        delay:
+          percentage:
+            value: 50
+          fixedDelay: 2s
+        abort:
+          percentage:
+            value: 20
+          httpStatus: 503
+      route:
+        - destination:
+            host: hello-devops.hello-mesh.svc.cluster.local
+            port:
+              number: 80
+    # Rule 2: everyone else, with a timeout and retries.
+    - route:
+        - destination:
+            host: hello-devops.hello-mesh.svc.cluster.local
+            port:
+              number: 80
+      timeout: 3s
+      retries:
+        attempts: 2
+        perTryTimeout: 1s
+        retryOn: 5xx,reset,connect-failure

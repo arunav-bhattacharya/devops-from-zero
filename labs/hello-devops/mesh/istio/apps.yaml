@@ -1,0 +1,167 @@
+# hello-devops in the mesh (Day 59): version 1, a canary, and a client to call them from.
+# Each app gets its own ServiceAccount, because Istio builds each workload's identity from it:
+#   spiffe://cluster.local/ns/hello-mesh/sa/<service account name>
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hello-devops
+  namespace: hello-mesh
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hello-canary
+  namespace: hello-mesh
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: client
+  namespace: hello-mesh
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-devops
+  namespace: hello-mesh
+  labels:
+    app: hello-devops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-devops
+  template:
+    metadata:
+      labels:
+        app: hello-devops # Istio uses app and version in its metrics
+        version: v1
+        app.kubernetes.io/part-of: hello-devops # the AuthorizationPolicy selects on this
+    spec:
+      serviceAccountName: hello-devops
+      containers:
+        - name: web
+          image: hello-devops:1.0.0
+          imagePullPolicy: IfNotPresent # use the image kind loaded; do not pull it
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APP_VERSION
+              value: "1.0.0"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-canary
+  namespace: hello-mesh
+  labels:
+    app: hello-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-canary
+  template:
+    metadata:
+      labels:
+        app: hello-canary
+        version: v2
+        app.kubernetes.io/part-of: hello-devops
+    spec:
+      serviceAccountName: hello-canary
+      containers:
+        - name: web
+          image: hello-devops:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APP_VERSION
+              value: "1.1.0-canary"
+            - name: GREETING
+              value: "Hello from the canary!"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-devops
+  namespace: hello-mesh
+  labels:
+    app: hello-devops
+spec:
+  selector:
+    app: hello-devops
+  ports:
+    - name: http # the name tells Istio this port speaks HTTP
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-canary
+  namespace: hello-mesh
+  labels:
+    app: hello-canary
+spec:
+  selector:
+    app: hello-canary
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+# A Pod that does nothing but wait, so you can run curl from inside the mesh:
+#   kubectl exec -n hello-mesh deploy/client -- curl -s http://hello-devops/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: hello-mesh
+  labels:
+    app: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      serviceAccountName: client
+      containers:
+        - name: curl
+          image: curlimages/curl:8.22.0
+          command: ["sleep", "infinity"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi

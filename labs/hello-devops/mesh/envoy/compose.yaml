@@ -1,0 +1,53 @@
+# Day 58: Envoy in front of two versions of hello-devops.
+# Needs the image hello-devops:1.0.0 (Day 19). If you do not have it:
+#   docker build -t hello-devops:1.0.0 ../..
+# Start:  docker compose up -d
+# Proxy:  curl -s localhost:10000/
+# Admin:  curl -s localhost:9901/clusters
+# Stop:   docker compose down
+name: mesh-envoy
+
+services:
+  envoy:
+    image: envoyproxy/envoy:v1.40.2
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    ports:
+      - "127.0.0.1:10000:10000" # the proxy: send your requests here
+      - "127.0.0.1:9901:9901" # the admin interface has no login, so keep it on localhost
+    depends_on:
+      - v1a
+      - v1b
+      - v2
+
+  # Version 1: two copies that share one Redis for the visit counter.
+  v1a:
+    image: hello-devops:1.0.0
+    pull_policy: never # a local image you built; never look for it on Docker Hub
+    environment:
+      APP_VERSION: "1.0.0"
+      REDIS_HOST: redis
+
+  # The second copy of version 1 has its own Redis, so you can break this one copy on
+  # purpose: docker compose stop redis-b. Its /healthz stays 200, but / starts to fail.
+  v1b:
+    image: hello-devops:1.0.0
+    pull_policy: never
+    environment:
+      APP_VERSION: "1.0.0"
+      REDIS_HOST: redis-b
+
+  # Version 2: the canary.
+  v2:
+    image: hello-devops:1.0.0
+    pull_policy: never
+    environment:
+      APP_VERSION: "2.0.0"
+      GREETING: "Hello from the canary!"
+      REDIS_HOST: redis
+
+  redis:
+    image: redis:8-alpine
+
+  redis-b:
+    image: redis:8-alpine

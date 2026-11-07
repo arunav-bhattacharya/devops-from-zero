@@ -1,0 +1,17 @@
+# Ambient variant (Day 59): use this instead of ../namespace.yaml.
+# istio.io/dataplane-mode=ambient puts every Pod here in the mesh through ztunnel, the
+# per-node proxy. No sidecars, and Pods do not need a restart.
+# istio.io/use-waypoint=waypoint sends traffic for this namespace's Services through the
+# waypoint proxy in waypoint.yaml, which does the HTTP (L7) work.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hello-mesh
+  labels:
+    istio.io/dataplane-mode: ambient
+    istio.io/use-waypoint: waypoint
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outside

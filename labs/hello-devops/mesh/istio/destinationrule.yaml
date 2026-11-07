@@ -1,0 +1,23 @@
+# Circuit breaking for calls to hello-devops (Day 59).
+# Istio turns this into the same Envoy settings you wrote by hand on Day 58:
+#   connectionPool   -> circuit_breakers (fail fast when too many calls wait)
+#   outlierDetection -> outlier_detection (eject a Pod after 3 errors in a row)
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: hello-devops
+  namespace: hello-mesh
+spec:
+  host: hello-devops.hello-mesh.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 10 # at most 10 connections from each caller's proxy
+      http:
+        http1MaxPendingRequests: 5 # more than 5 waiting requests: answer 503 at once
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50 # never eject more than half the Pods
