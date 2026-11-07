@@ -254,7 +254,7 @@ class D08GitStore(VoiceScene):
         main_a3 = harrow(main_t.get_bottom() + DOWN * 0.04 + LEFT * 3.6, dots[2].get_top() + UP * 0.06, PTR_C)
         mval_back = M("c711550a5dd6a4cff3ec0eb68273f42a3d462a29", 20, PTR_C).move_to(mval, aligned_edge=LEFT)
         still = T("still in .git", 26, GREY_B).move_to([2.7, 1.35, 0])
-        self.beat("Most undo commands work the same way. A hard reset two commits back just moves main to an older commit.",
+        self.beat("Most undo commands work the same way. A hard reset two commits back moves main to an older commit, and resets your files to match.",
                   Transform(cmd, cmd2), VGroup(main_t, head_t, head_a).animate.shift(LEFT * 3.6), Transform(main_a, main_a3),
                   Transform(mval, mval_back, rate_func=late(0.4)), run_time=2.4)
         self.beat("The newer commits are not deleted. They are still in .git, and the reflog can lead you back to them.",

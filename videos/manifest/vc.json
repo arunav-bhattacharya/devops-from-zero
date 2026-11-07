@@ -1,0 +1,6 @@
+{
+ "d17": [{"slug": "d17-container", "title": "What a container really is: a process with its own view and limits", "after": 3, "file": "p5/d17_container.py", "scene": "D17Container", "poster_at": 130.0}],
+ "d18": [{"slug": "d18-layers", "title": "Image layers, the container layer and the build cache", "after": 2, "file": "p5/d18_layers.py", "scene": "D18Layers", "poster_at": 125.0}],
+ "d24": [{"slug": "d24-push", "title": "What happens when you push: event, workflow, runner and steps", "after": 0, "file": "p6/d24_push.py", "scene": "D24Push", "poster_at": 86.0}],
+ "d31": [{"slug": "d31-plan", "title": "How Terraform decides what to do: your files, the state and the real world", "after": 1, "file": "p8/d31_plan.py", "scene": "D31Plan", "poster_at": 104.0}]
+}

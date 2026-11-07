@@ -10,9 +10,16 @@ def panel(w, h, color=GREY_B, sw=2.5, a=0.08):
     return RoundedRectangle(corner_radius=0.15, width=w, height=h, stroke_color=color, stroke_width=sw).set_fill(tint(color, a), 1)
 
 
+def code_line(text, size=20, color=WHITE):
+    """Monospace line with an invisible bar in front, so every line has the same height and left edge."""
+    t = M("|" + text, size, color)
+    t[0].set_opacity(0)
+    return t
+
+
 def card(lines, color):
     """A resource block: address on top, settings below, in a thin outlined box."""
-    rows = VGroup(*[M(l, 20, color if i == 0 else WHITE) for i, l in enumerate(lines)]).arrange(DOWN, aligned_edge=LEFT, buff=0.13)
+    rows = VGroup(*[code_line(l, 20, color if i == 0 else WHITE) for i, l in enumerate(lines)]).arrange(DOWN, aligned_edge=LEFT, buff=0.08)
     r = RoundedRectangle(corner_radius=0.1, width=rows.width + 0.35, height=rows.height + 0.3, stroke_color=color, stroke_width=1.5)
     rows.move_to(r)
     return VGroup(r, rows)
@@ -51,11 +58,11 @@ class D31Plan(VoiceScene):
                   FadeOut(VGroup(lp, lh, steps, script)), flash(rp, BLUE_M), run_time=2.0)
 
         # ---- 2. the three pictures
-        XF, XS, XW = -4.45, 0.0, 4.45
+        XF, XS, XW = -4.4, 0.0, 4.4
         colY, colH = 0.72, 3.35
-        fpan = panel(4.3, colH, BLUE_M).move_to([XF, colY, 0])
-        span = panel(4.0, colH, GOLD_M).move_to([XS, colY, 0])
-        wpan = panel(4.3, colH, TEAL_M).move_to([XW, colY, 0])
+        fpan = panel(4.5, colH, BLUE_M).move_to([XF, colY, 0])
+        span = panel(3.9, colH, GOLD_M).move_to([XS, colY, 0])
+        wpan = panel(4.5, colH, TEAL_M).move_to([XW, colY, 0])
 
         def head(title, sub, color, x):
             return VGroup(T(title, 28, color), M(sub, 20, GREY_B)).arrange(DOWN, buff=0.1).move_to([x, 3.05, 0])
@@ -123,9 +130,7 @@ class D31Plan(VoiceScene):
         self.beat("Now run plan again, without touching the file. Terraform asks Docker about each ID in its state.",
                   LaggedStart(*[FadeIn(l, shift=RIGHT * 0.15) for l in p2], lag_ratio=0.4), Create(ask1), Create(ask2), run_time=2.8)
         self.play(travel(Line(ask1.get_start(), ask1.get_end()), GOLD_M), travel(Line(ask2.get_start(), ask2.get_end()), GOLD_M), run_time=0.9)
-        ok = VGroup(*[tick(True, 0.2).move_to(m[0].get_corner(UR) + LEFT * 0.32 + DOWN * 0.24) for m in (c1, c2)],
-                    *[tick(True, 0.2).next_to(m, RIGHT, buff=0.25) for m in (s1[0], s2[0])],
-                    tick(True, 0.2).next_to(img, UL, buff=0.02), tick(True, 0.2).next_to(ctr, UL, buff=0.0))
+        ok = VGroup(*[tick(True, 0.22).next_to(h[0], RIGHT, buff=0.25) for h in (fh, sh, wh)])
         nochg = plan_lines(("No changes. Your infrastructure matches the configuration.", TEAL_M))
         self.beat("Docker reports both objects, with the settings your file asks for. All three pictures agree, so the plan is empty.",
                   LaggedStart(*[Create(o) for o in ok], lag_ratio=0.15), Succession(Wait(1.6), AnimationGroup(FadeOut(p2), FadeIn(nochg))), run_time=3.6)
@@ -137,7 +142,7 @@ class D31Plan(VoiceScene):
         self.play(FadeOut(VGroup(ok, ask1, ask2, idem, nochg)), run_time=0.6)
 
         # ---- 5. change a setting: update in place
-        newr = M('restart = "unless-stopped"', 20, YELLOW_M).move_to(c2[1][2], aligned_edge=LEFT)
+        newr = code_line('restart = "unless-stopped"', 20, YELLOW_M).move_to(c2[1][2], aligned_edge=LEFT)
         self.beat("Now edit the file. Change restart, from no, to unless-stopped.",
                   Transform(c2[1][2], newr), c2[0].animate.stretch_to_fit_width(c1[0].width).align_to(c1[0], LEFT), run_time=1.6)
         p3 = plan_lines(('~ docker_container.web     restart: "no" -> "unless-stopped"', GOLD_M), ("Plan: 0 to add, 1 to change, 0 to destroy.", WHITE))

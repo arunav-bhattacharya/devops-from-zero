@@ -133,33 +133,33 @@ So it waits, and starts only after both succeed.
 And no file moves from one job to the next, unless you save it.
 
 34
-00:01:47.267 --> 00:01:47.557
+00:01:47.400 --> 00:01:47.690
 Six.
 
 35
-00:01:47.557 --> 00:01:53.936
+00:01:47.690 --> 00:01:54.069
 The result appears on the commit, and on its pull request: a green tick, or a red cross.
 
 36
-00:01:54.133 --> 00:01:56.401
+00:01:54.267 --> 00:01:56.535
 Then GitHub deletes the machines.
 
 37
-00:01:56.401 --> 00:01:58.051
+00:01:56.535 --> 00:01:58.184
 Nothing on them is kept.
 
 38
-00:01:58.200 --> 00:02:00.248
+00:01:58.333 --> 00:02:00.382
 Your laptop took no part.
 
 39
-00:02:00.248 --> 00:02:01.477
+00:02:00.382 --> 00:02:01.611
 It only pushed.
 
 40
-00:02:02.267 --> 00:02:08.276
+00:02:02.400 --> 00:02:08.409
 Push, event, workflow, a fresh runner for each job, steps in order, and the result on the commit.
 
 41
-00:02:08.276 --> 00:02:10.259
+00:02:08.409 --> 00:02:10.392
 Then the machine is thrown away.

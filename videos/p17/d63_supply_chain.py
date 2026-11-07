@@ -4,6 +4,19 @@ from fg import *
 # how the voice says this video's terms (spoken text only; captions keep the spelling)
 SAY.extend([(r"\bapp\.py\b", "app dot pie"), (r"\bcosign\b", "co-sign"), (r"\bOIDC\b", "O I D C"), (r"\bSLSA\b", "salsa"), (r"\bCVE\b", "C V E")])
 
+# caption timestamps: round to whole milliseconds first, so a cue never reads "00:01:60.000"
+import fg as _fg
+
+
+def _ts_ms(t):
+    ms = int(round(t * 1000))
+    h, r = divmod(ms, 3600000); m, r = divmod(r, 60000); s, ms = divmod(r, 1000)
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+
+
+_fg._ts = _ts_ms
+
+
 
 def panel(rows, color, buff=0.28):
     fr = RoundedRectangle(corner_radius=0.12, width=rows.width + 2 * buff, height=rows.height + 2 * buff, stroke_color=color, stroke_width=2.5)
@@ -16,7 +29,7 @@ class D63SupplyChain(VoiceScene):
         self.title_card("The software supply chain", "where it can be tampered with, and the check at each link")
 
         # ---------- 1. the image is mostly other people's work
-        fr = RoundedRectangle(corner_radius=0.15, width=6.4, height=3.7, stroke_color=BLUE_M, stroke_width=3).move_to([0, -0.2, 0])
+        fr = RoundedRectangle(corner_radius=0.15, width=6.6, height=4.0, stroke_color=BLUE_M, stroke_width=3).move_to([0, -0.3, 0])
         flab = T("hello-devops image", 26, BLUE_M).next_to(fr, UP, buff=0.15)
 
         def layer(txt, h, col, w=6.0):
@@ -24,10 +37,11 @@ class D63SupplyChain(VoiceScene):
             return VGroup(r, T(txt, 24).move_to(r))
         deb = layer("87 Debian packages (base image)", 1.25, GREY_B)
         py = layer("Python", 0.62, YELLOW_M)
-        pk = layer("about 10 Python packages: Flask, gunicorn, redis…", 0.62, TEAL_M)
+        pk = layer("about 10 Python packages", 0.62, TEAL_M)
         app = layer("app.py", 0.5, BLUE_M, w=1.6)
-        stack = VGroup(deb, py, pk).arrange(UP, buff=0.12).move_to(fr).shift(DOWN * 0.3)
-        app.next_to(pk, UP, buff=0.12).align_to(pk, LEFT)
+        stack = VGroup(deb, py, pk, app).arrange(UP, buff=0.12)
+        app.align_to(pk, LEFT)
+        stack.move_to(fr)
         self.beat("Your hello-devops image is mostly other people's work. Your own code is one file, app.py.",
                   Create(fr), FadeIn(flab), FadeIn(app, shift=DOWN * 0.15), run_time=2.2)
         self.beat("The rest is 87 Debian packages from the base image, Python itself, and about 10 Python packages, such as Flask, gunicorn and redis.",
@@ -36,8 +50,8 @@ class D63SupplyChain(VoiceScene):
         # ---------- 2. the chain, link by link
         names = ["Code", "Libraries", "CI build", "Registry", "Cluster"]
         xs = [-5.6, -2.8, 0.0, 2.8, 5.6]
-        links = [box(n, GREY_B, w=2.15, size=26).move_to([x, 0.55, 0]) for n, x in zip(names, xs)]
-        arr = [edge_arrow(links[i], links[i + 1]) for i in range(4)]
+        links = [box(n, GREY_B, w=1.95, size=26).move_to([x, 0.55, 0]) for n, x in zip(names, xs)]
+        arr = [Arrow(links[i].get_right(), links[i + 1].get_left(), buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.4) for i in range(4)]
         self.play(FadeOut(VGroup(fr, flab, deb, py, pk, app)), run_time=0.7)
         self.beat("Everything your code passes through on its way to production is your software supply chain. Follow it from source to a running Pod.",
                   LaggedStart(*[AnimationGroup(Create(l[0]), Write(l[1])) for l in links], lag_ratio=0.3),
@@ -84,7 +98,7 @@ class D63SupplyChain(VoiceScene):
                   FadeOut(s2), Succession(FadeIn(u1), Wait(2.2), AnimationGroup(ReplacementTransform(u1, u2), FadeIn(g2, shift=UP * 0.1))), run_time=5.0)
 
         b3, g3 = bad("tag pushed again", 3), good("sign, attest", 3)
-        r1 = M("hello-devops:1.2.0           can be pushed again", 22, RED_M)
+        r1 = M("hello-devops:1.2.0" + " " * 12 + "can be pushed again", 22, RED_M)
         r2 = M("hello-devops@sha256:<64 hex>  cannot change", 22, GREEN_M)
         rr = VGroup(r1, r2).arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to([0, -2.6, 0])
         self.beat("At the registry, someone can push hello-devops:1.2.0 again, with new content. A digest cannot change. So the workflow signs the digest.",
@@ -143,21 +157,21 @@ class D63SupplyChain(VoiceScene):
         ful = box("Fulcio", TEAL_M, w=1.9, size=26).move_to([0.6, 2.35, 0])
         fl = T("certificate authority", 20, TEAL_M).next_to(ful, DOWN, buff=0.12)
         reg = RoundedRectangle(corner_radius=0.15, width=6.6, height=1.75, stroke_color=GREY_B, stroke_width=2).move_to([0.2, -2.35, 0])
-        regl = T("registry", 22, GREY_B).next_to(reg, LEFT, buff=0.15).align_to(reg, UP)
+        regl = T("registry", 22, GREY_B).move_to(reg.get_corner(UR) + np.array([-0.75, -0.35, 0]))
         dig = M("hello-devops@sha256:…", 22, BLUE_M).move_to(reg.get_top() + DOWN * 0.4)
         self.beat("Next, sign the image. A signature answers two questions: who made it, and has anyone changed it since? cosign, from the Sigstore project, signs without a stored key.",
                   Create(job[0]), Write(job[1]), Succession(Wait(2.4), AnimationGroup(Create(cos[0]), Write(cos[1]), Create(reg), FadeIn(regl), FadeIn(dig))), run_time=5.0)
         tok = chip("OIDC token: release.yml, tag v1.2.0", BLUE_M, 20).next_to(job, RIGHT, buff=0.3).shift(UP * 0.8)
         self.beat("The release job asks GitHub for an OIDC token: a short signed note that says, I am release.yml in this repository, running for tag v1.2.0.",
                   FadeIn(tok, shift=RIGHT * 0.2), run_time=1.6)
-        key = chip("key pair, in memory only", GOLD_M, 20).next_to(cos, DOWN, buff=0.25)
+        key = chip("key pair, in memory only", GOLD_M, 20).move_to([-4.9, 1.2, 0])
         cert = chip("certificate: 10 minutes, identity release.yml", TEAL_M, 20).move_to([0.9, 0.05, 0])
         self.beat("cosign makes a fresh key pair that lives only in memory. Fulcio checks the token, and issues a certificate for that key. It is valid for 10 minutes, with the workflow identity written inside.",
                   FadeIn(key, shift=UP * 0.1),
                   Succession(Wait(1.6), AnimationGroup(Create(ful[0]), Write(ful[1]), FadeIn(fl)), tok.animate.next_to(ful, UP, buff=0.12),
-                             Wait(0.4), FadeIn(cert, shift=DOWN * 0.15)), run_time=7.0)
+                             Wait(0.4), FadeIn(cert, shift=DOWN * 0.15), cert.animate.next_to(cos, RIGHT, buff=0.2)), run_time=7.0)
         sig = chip("signature", GOLD_M, 20).move_to(reg.get_bottom() + UP * 0.5 + LEFT * 2.0)
-        a_sig = Arrow(cos.get_bottom() + DOWN * 0.65, sig.get_top(), buff=0.12, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.12)
+        a_sig = Arrow(cos.get_bottom(), sig.get_top(), buff=0.12, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.12)
         self.beat("cosign signs the image digest, never a tag, and stores the signature in the registry, next to the image.",
                   Indicate(dig, color=YELLOW_M), GrowArrow(a_sig), Succession(Wait(0.8), FadeIn(sig, shift=DOWN * 0.15)), run_time=3.0)
         rek = box("Rekor", PURPLE_M, w=1.9, size=26).move_to([5.3, 2.35, 0])

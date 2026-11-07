@@ -21,7 +21,9 @@ def node(letter, color, r=0.36, size=30):
 
 def back(a, b, color=GREY_B):
     """Arrow from commit a back to its parent b, edge to edge."""
-    return edge_arrow(a, b, color, buff=0.06)
+    pa, pb = ends(a, b)
+    return Arrow(pa, pb, buff=0.06, stroke_width=3, color=color, tip_length=0.2,
+                 max_tip_length_to_length_ratio=0.4, max_stroke_width_to_length_ratio=8)
 
 
 def btag(text, color):
@@ -32,7 +34,7 @@ class D09MergeRebase(VoiceScene):
     def construct(self):
         self.title_card("Merge or rebase?", "two ways to bring lines of work together")
 
-        X = {"A": -5.4, "B": -3.6, "C": -1.8, "D": -1.8, "E": 0.0}
+        X = {"A": -3.6, "B": -1.8, "C": 0.0, "D": 0.0, "E": 1.8}
         A, B = node("A", MAIN_C).move_to([X["A"], TOP, 0]), node("B", MAIN_C).move_to([X["B"], TOP, 0])
         ab = back(B, A)
         main_t = btag("main", MAIN_C).next_to(B, UP, buff=0.35)
@@ -70,10 +72,9 @@ class D09MergeRebase(VoiceScene):
                   Succession(Wait(1.0), AnimationGroup(GrowFromCenter(C), GrowArrow(cB), FadeIn(main_t3, shift=DOWN * 0.15))), run_time=2.8)
         main_t = main_t3
 
-        ring = Circle(radius=0.52, stroke_color=YELLOW_M, stroke_width=4).move_to(B)
-        base_l = T("merge base", 26, YELLOW_M).next_to(ring, UP, buff=0.15)
+        base_l = T("merge base", 26, YELLOW_M).next_to(B, UP, buff=0.3)
         self.beat("Both branches have new commits now, so a fast-forward is impossible. Git finds the merge base: the newest commit that both branches contain. Here, that is B.",
-                  Succession(Wait(3.0), AnimationGroup(Create(ring), FadeIn(base_l, shift=DOWN * 0.1))), run_time=4.4)
+                  B[0].animate(rate_func=late(0.65)).set_stroke(YELLOW_M, width=6), FadeIn(base_l, shift=DOWN * 0.1, rate_func=late(0.65)), run_time=4.4)
 
         def vbox(head, val, color):
             g = VGroup(T(head, 24, color), M(f"TAX_RATE = {val}", 22)).arrange(DOWN, buff=0.15)
@@ -90,13 +91,13 @@ class D09MergeRebase(VoiceScene):
                   Indicate(vm, color=MAIN_C, scale_factor=1.06), GrowArrow(r_a, rate_func=late(0.3)), FadeIn(res, shift=LEFT * 0.15, rate_func=late(0.4)), run_time=2.8)
         conf = T("both sides changed the same line, differently?  a conflict: git stops and asks you", 24, RED_M).move_to(DOWN * 3.05)
         self.beat("If both sides had changed that same line in different ways, that would be a conflict, and git would stop and ask you.",
-                  FadeOut(VGroup(vb, vm, vf, res, r_a)), FadeIn(conf, rate_func=late(0.3)), run_time=2.0)
+                  FadeOut(VGroup(vb, vm, vf, res, r_a), rate_func=late(0.0, 0.3)), FadeIn(conf, rate_func=late(0.35)), run_time=2.0)
 
-        Mn = node("M", MERGE_C).move_to([1.8, TOP, 0])
+        Mn = node("M", MERGE_C).move_to([3.6, TOP, 0])
         mC, mE = back(Mn, C, MERGE_C), back(Mn, E, MERGE_C)
         two = T("two parents", 26, MERGE_C).next_to(Mn, RIGHT, buff=0.3)
         self.beat("So git combines the two sets of changes into a new merge commit, M. It has two parents: C, and E.",
-                  FadeOut(conf), FadeOut(ring), FadeOut(base_l), GrowFromCenter(Mn), GrowArrow(mC, rate_func=late(0.3)), GrowArrow(mE, rate_func=late(0.45)),
+                  FadeOut(conf), B[0].animate.set_stroke(MAIN_C, width=3), FadeOut(base_l), GrowFromCenter(Mn), GrowArrow(mC, rate_func=late(0.3)), GrowArrow(mE, rate_func=late(0.45)),
                   FadeIn(two, rate_func=late(0.5)), run_time=2.6)
         main_t4 = btag("main", MAIN_C).next_to(Mn, UP, buff=0.35)
         safe = VGroup(tick(True, 0.22), T("history shows both lines.  safe on shared branches", 26, GREEN_M)).arrange(RIGHT, buff=0.25).move_to(DOWN * 3.05)
@@ -113,16 +114,14 @@ class D09MergeRebase(VoiceScene):
 
         steps = VGroup(T("1. list your commits that main does not have", 26), T("2. move your branch to main's newest commit", 26),
                        T("3. apply your commits again, one at a time", 26)).arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to([0, -3.05, 0])
-        rD = Circle(radius=0.52, stroke_color=YELLOW_M, stroke_width=4).move_to(D)
-        rE = Circle(radius=0.52, stroke_color=YELLOW_M, stroke_width=4).move_to(E)
         self.beat("It works in three steps. First, it lists the commits on your branch that main does not have: D and E.",
-                  FadeIn(steps[0], shift=UP * 0.1), Succession(Wait(2.4), AnimationGroup(Create(rD), Create(rE))), run_time=3.4)
+                  FadeIn(steps[0], shift=UP * 0.1), D[0].animate(rate_func=late(0.7)).set_stroke(YELLOW_M, width=6), E[0].animate(rate_func=late(0.7)).set_stroke(YELLOW_M, width=6), run_time=3.4)
 
         feat_c = btag("feature", FEAT_C).next_to(main_t, UP, buff=0.12)
         self.beat("Second, it moves your branch to main's newest commit, C.",
-                  FadeIn(steps[1], shift=UP * 0.1), FadeOut(rD), FadeOut(rE), Transform(feat_t, feat_c, rate_func=late(0.3)), run_time=2.2)
+                  FadeIn(steps[1], shift=UP * 0.1), D[0].animate.set_stroke(FEAT_C, width=3), E[0].animate.set_stroke(FEAT_C, width=3), Transform(feat_t, feat_c, rate_func=late(0.3)), run_time=2.2)
 
-        D1, E1 = node("D'", FEAT_C).move_to([0.0, TOP, 0]), node("E'", FEAT_C).move_to([1.8, TOP, 0])
+        D1, E1 = node("D'", FEAT_C).move_to([1.8, TOP, 0]), node("E'", FEAT_C).move_to([3.6, TOP, 0])
         d1C, e1D = back(D1, C), back(E1, D1)
         f_d1 = btag("feature", FEAT_C).next_to(D1, UP, buff=0.35)
         f_e1 = btag("feature", FEAT_C).next_to(E1, UP, buff=0.35)
@@ -138,11 +137,10 @@ class D09MergeRebase(VoiceScene):
             g = VGroup(M(title, 24, color), M(f"parent {parent}", 22, YELLOW_M if "'" in title else WHITE), T("the same change", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
             r = RoundedRectangle(corner_radius=0.12, width=3.0, height=g.height + 0.45, stroke_color=color, stroke_width=2.5).set_fill(tint(color, 0.12), 1)
             return VGroup(r, g.move_to(r))
-        k1 = card("commit D", "B", GREY_B).move_to([-3.4, -2.85, 0])
-        k2 = card("commit D'", "C", FEAT_C).move_to([1.4, -2.85, 0])
+        k1 = card("commit D", "B", GREY_B).move_to([-4.6, -2.85, 0])
+        k2 = card("commit D'", "C", FEAT_C).move_to([-0.6, -2.85, 0])
         k_a = Arrow(k1.get_right(), k2.get_left(), buff=0.15, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.15)
         newid = T("new parent, so a new hash", 26, YELLOW_M).next_to(k2, RIGHT, buff=0.35)
-        fit(newid, 6.9 - k2.get_right()[0] - 0.35 - 0.3)
         self.beat("Each replayed commit has a new parent. The parent is part of a commit's hash, so D prime is a new commit, with a new ID.",
                   FadeIn(k1, shift=UP * 0.1), GrowArrow(k_a, rate_func=late(0.3)), FadeIn(k2, shift=UP * 0.1, rate_func=late(0.35)),
                   FadeIn(newid, rate_func=late(0.7)), run_time=4.2)
@@ -163,32 +161,32 @@ class D09MergeRebase(VoiceScene):
             ns = VGroup(*[node(l, c, r=0.3, size=26).move_to([x, y, 0]) for l, x, c in zip(letters, xs, colors)])
             ar = VGroup(*[back(ns[i + 1], ns[i]) for i in range(len(ns) - 1)])
             return ns, ar
-        xs = [-5.0, -3.6, -2.2, -0.8, 0.6]
+        xs = [-4.0, -2.6, -1.2, 0.2, 1.6]
         yours, y_ar = row(1.7, ["A", "B", "C", "D'", "E'"], xs, [MAIN_C] * 3 + [FEAT_C] * 2)
         y_lab = T("your copy, after the rebase", 26, GREY_B).next_to(yours, UP, buff=0.3).align_to(yours, LEFT)
         theirs, t_ar = row(-0.7, ["A", "B", "C"], xs[:3], [MAIN_C] * 3)
-        tD, tE = node("D", FEAT_C, r=0.3, size=26).move_to([-2.2, -2.1, 0]), node("E", FEAT_C, r=0.3, size=26).move_to([-0.8, -2.1, 0])
+        tD, tE = node("D", FEAT_C, r=0.3, size=26).move_to([-1.2, -2.1, 0]), node("E", FEAT_C, r=0.3, size=26).move_to([0.2, -2.1, 0])
         tdB, teD = back(tD, theirs[1]), back(tE, tD)
         t_lab = T("a teammate's copy, fetched earlier", 26, GREY_B).next_to(theirs, UP, buff=0.3).align_to(theirs, LEFT)
-        old_hl = VGroup(*[Circle(radius=0.42, stroke_color=RED_M, stroke_width=3).move_to(n) for n in (tD, tE)])
+        ul = Line(tD.get_corner(DL) + DOWN * 0.15, tE.get_corner(DR) + DOWN * 0.15, stroke_color=RED_M, stroke_width=4)
+        old_hl = VGroup(ul, T("the old D and E", 24, RED_M).next_to(ul, DOWN, buff=0.12))
         self.beat("Now the one rule that matters most. Do not rebase commits that other people already have.",
                   Write(warn), FadeIn(VGroup(yours, y_ar, y_lab)), run_time=2.4)
         self.beat("Say a teammate fetched your branch before you rebased it. Their copy still holds the old D and E. Your history and theirs no longer match.",
                   FadeIn(VGroup(theirs, t_ar, t_lab)), FadeIn(VGroup(tD, tE, tdB, teD), rate_func=late(0.3)),
-                  Create(old_hl, rate_func=late(0.65)), run_time=4.0)
+                  FadeIn(old_hl, rate_func=late(0.65)), run_time=4.0)
 
-        tD1, tE1 = yours[3].copy().move_to([-0.8, -0.7, 0]), yours[4].copy().move_to([0.6, -0.7, 0])
+        tD1, tE1 = yours[3].copy().move_to([0.2, -0.7, 0]), yours[4].copy().move_to([1.6, -0.7, 0])
         tdc, ted = back(tD1, theirs[2]), back(tE1, tD1)
-        tM = node("M", MERGE_C, r=0.3, size=26).move_to([2.2, -1.4, 0])
+        tM = node("M", MERGE_C, r=0.3, size=26).move_to([3.2, -1.4, 0])
         tmE1, tmE = back(tM, tE1, MERGE_C), back(tM, tE, MERGE_C)
         self.beat("If they now merge your rebased branch, their history holds each of your changes twice, under the old IDs and the new ones.",
                   TransformFromCopy(yours[3], tD1), TransformFromCopy(yours[4], tE1), GrowArrow(tdc), GrowArrow(ted),
                   Succession(Wait(1.8), AnimationGroup(GrowFromCenter(tM), GrowArrow(tmE1), GrowArrow(tmE))), run_time=3.6)
-        twice = VGroup(*[Circle(radius=0.42, stroke_color=RED_M, stroke_width=3).move_to(n) for n in (tD1, tE1)])
         tw_l = T("each change twice", 26, RED_M).next_to(tM, RIGHT, buff=0.4)
         self.beat("Someone has to clean that up by hand.",
-                  Create(twice), FadeIn(tw_l, shift=LEFT * 0.1), run_time=1.6)
-        ok = VGroup(tick(True, 0.24), T("your own branch, before anyone builds on it: fine", 28, GREEN_M)).arrange(RIGHT, buff=0.3).move_to(DOWN * 3.3)
+                  *[n[0].animate.set_stroke(RED_M, width=5) for n in (tD, tE, tD1, tE1)], FadeIn(tw_l, shift=LEFT * 0.1), run_time=1.6)
+        ok = VGroup(tick(True, 0.24), T("your own branch, before anyone builds on it: fine", 28, GREEN_M)).arrange(RIGHT, buff=0.3).move_to(DOWN * 3.45)
         self.beat("Rebasing your own branch, before anyone builds on it, is fine. That is how most teams use it.",
                   FadeIn(ok, shift=UP * 0.15), run_time=1.6)
 

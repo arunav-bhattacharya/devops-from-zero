@@ -1,205 +1,205 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:10.142
+00:00:02.700 --> 00:00:10.109
 Your server lives inside a VPC, your own private network in AWS.
 
 2
-00:00:10.142 --> 00:00:15.120
+00:00:10.109 --> 00:00:15.087
 The default VPC is the block 172.31.0.0/16.
 
 3
-00:00:15.267 --> 00:00:19.319
+00:00:15.300 --> 00:00:19.352
 Each availability zone gets one /20 subnet.
 
 4
-00:00:19.319 --> 00:00:24.219
+00:00:19.352 --> 00:00:24.252
 That is 4,096 addresses, minus the 5 that AWS keeps.
 
 5
-00:00:24.400 --> 00:00:27.881
+00:00:24.467 --> 00:00:27.948
 Your server lands in one of them.
 
 6
-00:00:27.881 --> 00:00:32.733
+00:00:27.948 --> 00:00:32.800
 It only knows its private address, 172.31.0.5.
 
 7
-00:00:32.933 --> 00:00:40.266
+00:00:33.033 --> 00:00:40.366
 On it, gunicorn listens on 0.0.0.0, port 8000, so outside traffic can reach it.
 
 8
-00:00:40.266 --> 00:00:43.144
+00:00:40.366 --> 00:00:43.244
 Something else decides who may.
 
 9
-00:00:43.333 --> 00:00:46.618
+00:00:43.467 --> 00:00:46.751
 An internet gateway is attached to the VPC.
 
 10
-00:00:46.618 --> 00:00:48.680
+00:00:46.751 --> 00:00:48.813
 It is the VPC's front door.
 
 11
-00:00:48.867 --> 00:00:51.747
+00:00:49.033 --> 00:00:51.913
 The subnet's route table has two rules.
 
 12
-00:00:51.747 --> 00:00:54.405
+00:00:51.913 --> 00:00:54.572
 Addresses inside the VPC stay local.
 
 13
-00:00:54.600 --> 00:01:00.923
+00:00:54.800 --> 00:01:01.123
 And 0.0.0.0/0, which means every address, goes to the internet gateway.
 
 14
-00:01:00.923 --> 00:01:05.109
+00:01:01.123 --> 00:01:05.309
 That one route is what makes the subnet public.
 
 15
-00:01:05.267 --> 00:01:08.990
+00:01:05.533 --> 00:01:09.257
 The server also gets a public address, but it never sees it.
 
 16
-00:01:08.990 --> 00:01:13.024
+00:01:09.257 --> 00:01:13.291
 The internet gateway holds the pair, and swaps one for the other.
 
 17
-00:01:13.200 --> 00:01:14.452
+00:01:13.500 --> 00:01:14.752
 Last, the firewall.
 
 18
-00:01:14.452 --> 00:01:16.692
+00:01:14.752 --> 00:01:16.992
 A security group wraps the server.
 
 19
-00:01:16.692 --> 00:01:21.369
+00:01:16.992 --> 00:01:21.669
 The lab's group, hello-devops-web, starts with no inbound rules at all.
 
 20
-00:01:21.800 --> 00:01:26.948
+00:01:22.200 --> 00:01:27.348
 Now send one request from your Mac, to the public address, on port 8000.
 
 21
-00:01:27.133 --> 00:01:31.876
+00:01:27.567 --> 00:01:32.309
 At the internet gateway, the public destination is swapped for the private one.
 
 22
-00:01:32.067 --> 00:01:34.863
+00:01:32.533 --> 00:01:35.330
 Inside, it reaches the security group.
 
 23
-00:01:34.863 --> 00:01:38.102
+00:01:35.330 --> 00:01:38.568
 No rule allows it, so the packet is dropped.
 
 24
-00:01:38.102 --> 00:01:38.764
+00:01:38.568 --> 00:01:39.231
 Silently.
 
 25
-00:01:38.933 --> 00:01:42.022
+00:01:39.433 --> 00:01:42.522
 Your curl hears nothing back, and times out.
 
 26
-00:01:42.022 --> 00:01:44.480
+00:01:42.522 --> 00:01:44.980
 Day 10 said a timeout means a drop.
 
 27
-00:01:44.480 --> 00:01:45.673
+00:01:44.980 --> 00:01:46.173
 Here is the drop.
 
 28
-00:01:45.867 --> 00:01:48.121
+00:01:46.400 --> 00:01:48.654
 So add one inbound rule.
 
 29
-00:01:48.121 --> 00:01:53.005
+00:01:48.654 --> 00:01:53.539
 TCP port 8000, from your own address only, as a /32.
 
 30
-00:01:53.200 --> 00:01:54.122
+00:01:53.767 --> 00:01:54.689
 Send it again.
 
 31
-00:01:54.122 --> 00:01:56.099
+00:01:54.689 --> 00:01:56.666
 The gateway swaps the address.
 
 32
-00:01:56.099 --> 00:01:59.855
+00:01:56.666 --> 00:02:00.421
 The security group finds a matching rule, and lets it in.
 
 33
-00:01:60.000 --> 00:02:01.121
+00:02:00.633 --> 00:02:01.754
 gunicorn answers.
 
 34
-00:02:01.121 --> 00:02:03.428
+00:02:01.754 --> 00:02:04.061
 The reply needs no rule of its own.
 
 35
-00:02:03.428 --> 00:02:05.471
+00:02:04.061 --> 00:02:06.105
 The security group is stateful.
 
 36
-00:02:05.471 --> 00:02:08.965
+00:02:06.105 --> 00:02:09.599
 It remembers the connection, and lets the answer out.
 
 37
-00:02:09.133 --> 00:02:19.700
+00:02:09.800 --> 00:02:20.367
 Your Mac's address is outside the VPC, so the only route that matches is 0.0.0.0/0, to the internet gateway.
 
 38
-00:02:19.867 --> 00:02:23.257
+00:02:20.600 --> 00:02:23.991
 The gateway swaps the private source back to the public one.
 
 39
-00:02:23.257 --> 00:02:26.365
+00:02:23.991 --> 00:02:27.099
 So your Mac gets its answer from the address it called.
 
 40
-00:02:27.333 --> 00:02:31.415
+00:02:28.100 --> 00:02:32.182
 Port 8000 is open to you alone, and port 22 stays closed.
 
 41
-00:02:31.415 --> 00:02:34.280
+00:02:32.182 --> 00:02:35.047
 So how do you get a shell on the server?
 
 42
-00:02:34.467 --> 00:02:36.154
+00:02:35.267 --> 00:02:36.954
 With Session Manager.
 
 43
-00:02:36.154 --> 00:02:44.592
+00:02:36.954 --> 00:02:45.392
 A small program on the server, the SSM Agent, keeps an outbound HTTPS connection open to Systems Manager.
 
 44
-00:02:44.733 --> 00:02:46.698
+00:02:45.600 --> 00:02:47.565
 Outbound is allowed by default.
 
 45
-00:02:46.698 --> 00:02:52.213
+00:02:47.565 --> 00:02:53.080
 And because the security group is stateful, traffic on that connection flows both ways.
 
 46
-00:02:52.400 --> 00:02:54.759
+00:02:53.300 --> 00:02:55.659
 On your Mac, you run start-session.
 
 47
-00:02:54.759 --> 00:02:59.880
+00:02:55.659 --> 00:03:00.780
 AWS checks your IAM permissions, and joins your terminal to that connection.
 
 48
-00:03:00.067 --> 00:03:01.860
+00:03:01.000 --> 00:03:02.793
 You arrive as ssm-user.
 
 49
-00:03:01.860 --> 00:03:04.667
+00:03:02.793 --> 00:03:05.600
 No port to open, and no key to lose.
 
 50
-00:03:04.800 --> 00:03:13.149
+00:03:05.800 --> 00:03:14.149
 So one request: the route table points to the gateway, the gateway swaps the address, and the security group opens one port.
 
 51
-00:03:13.149 --> 00:03:16.717
+00:03:14.149 --> 00:03:17.717
 And Session Manager dials out, so port 22 stays shut.

@@ -1,0 +1,5 @@
+{
+ "d05": [{"slug": "d05-pipes", "title": "Three streams and a pipe: how the shell connects programs", "after": 2, "file": "p1/d05_pipes.py", "scene": "D05Pipes", "poster_at": 205.0}],
+ "d08": [{"slug": "d08-git-store", "title": "How Git stores your work: snapshots, hashes and pointers", "after": 2, "file": "p2/d08_git_store.py", "scene": "D08GitStore", "poster_at": 193.0}],
+ "d09": [{"slug": "d09-merge-rebase", "title": "Merge or rebase: fast-forward, merge commits and replayed commits", "after": 3, "file": "p2/d09_merge_rebase.py", "scene": "D09MergeRebase", "poster_at": 180.0}]
+}

@@ -138,7 +138,7 @@ class D36Idempotence(VoiceScene):
         pj = [jchip('"ping": "pong"', GREEN_M).move_to([(LX0 + LX1) / 2, y, 0]) for y in NY]
         pout = [cl(f"{n} | SUCCESS", s, 20, GREEN_M) for n, s in zip(NAMES, SLOT[1:4])]
         self.beat("The ping module checks both. It logs in to every server, and each one answers pong when SSH and Python work.",
-                  Succession(Write(ping), go, LaggedStart(*[FadeIn(j, shift=LEFT * 0.3) for j in pj], lag_ratio=0.15),
+                  Succession(AnimationGroup(Write(ping), FadeOut(sshl)), go, LaggedStart(*[FadeIn(j, shift=LEFT * 0.3) for j in pj], lag_ratio=0.15),
                              LaggedStart(*[ReplacementTransform(j, o) for j, o in zip(pj, pout)], lag_ratio=0.15)), run_time=6.0)
 
         # 5. a task describes a result
@@ -160,7 +160,7 @@ class D36Idempotence(VoiceScene):
             cur["y"] = new
             return a
 
-        self.play(FadeOut(needs), FadeOut(sshl), FadeOut(agl), FadeOut(VGroup(ping, *pout), shift=0.2 * UP), run_time=0.6)
+        self.play(FadeOut(needs), FadeOut(agl), FadeOut(VGroup(ping, *pout), shift=0.2 * UP), run_time=0.6)
         self.beat("Your playbook lists tasks. Each task calls one module, and describes the result you want.",
                   Create(divider), LaggedStart(*[FadeIn(l, shift=0.1 * RIGHT) for l in yaml], lag_ratio=0.12), run_time=2.2)
         self.beat("Here, the apt module, and the result: tree and htop must be present.",

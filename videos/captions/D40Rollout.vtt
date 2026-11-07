@@ -1,11 +1,11 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:06.258
+00:00:02.700 --> 00:00:06.224
 hello-devops runs as a Deployment with three replicas.
 
 2
-00:00:06.258 --> 00:00:08.933
+00:00:06.224 --> 00:00:08.900
 The Deployment does not make Pods itself.
 
 3
@@ -13,209 +13,209 @@ The Deployment does not make Pods itself.
 It owns a ReplicaSet, and the ReplicaSet keeps three Pods of version 1.0.0 running.
 
 4
-00:00:16.133 --> 00:00:19.916
+00:00:16.200 --> 00:00:19.983
 In front of them, a Service sends requests to every ready Pod.
 
 5
-00:00:21.267 --> 00:00:23.709
+00:00:21.400 --> 00:00:23.843
 Now you change the image to 1.1.0.
 
 6
-00:00:23.709 --> 00:00:29.600
+00:00:23.843 --> 00:00:29.733
 That line sits under template, and only a change to the template starts a rollout.
 
 7
-00:00:29.800 --> 00:00:31.831
+00:00:29.967 --> 00:00:31.998
 Changing replicas would not.
 
 8
-00:00:31.831 --> 00:00:33.355
+00:00:31.998 --> 00:00:33.521
 That is only scaling.
 
 9
-00:00:33.533 --> 00:00:40.900
+00:00:33.733 --> 00:00:41.100
 On its next pass, the Deployment controller compares its template with the template inside each ReplicaSet it owns.
 
 10
-00:00:41.067 --> 00:00:44.203
+00:00:41.333 --> 00:00:44.470
 1.1.0 is not 1.0.0.
 
 11
-00:00:44.203 --> 00:00:46.349
+00:00:44.470 --> 00:00:46.616
 None matches.
 
 12
-00:00:46.533 --> 00:00:51.297
+00:00:46.833 --> 00:00:51.597
 So it creates a new ReplicaSet for the new template, starting at zero Pods.
 
 13
-00:00:51.467 --> 00:00:53.299
+00:00:51.800 --> 00:00:53.633
 Two settings set the pace.
 
 14
-00:00:53.299 --> 00:00:57.176
+00:00:53.633 --> 00:00:57.509
 maxSurge is one: at most one extra Pod, so four in all.
 
 15
-00:00:57.333 --> 00:01:01.457
+00:00:57.733 --> 00:01:01.857
 maxUnavailable is zero: never fewer than three ready Pods.
 
 16
-00:01:02.333 --> 00:01:02.994
+00:01:02.767 --> 00:01:03.427
 Step one.
 
 17
-00:01:02.994 --> 00:01:05.417
+00:01:03.427 --> 00:01:05.850
 The new ReplicaSet scales to one.
 
 18
-00:01:05.417 --> 00:01:08.647
+00:01:05.850 --> 00:01:09.080
 Now there are four Pods: three old, one new.
 
 19
-00:01:08.800 --> 00:01:11.784
+00:01:09.300 --> 00:01:12.284
 The new Pod is starting, but it is not ready yet.
 
 20
-00:01:11.784 --> 00:01:13.549
+00:01:12.284 --> 00:01:14.049
 The Service sends it nothing.
 
 21
-00:01:13.733 --> 00:01:17.427
+00:01:14.267 --> 00:01:17.960
 And with maxUnavailable at zero, no old Pod may go.
 
 22
-00:01:17.427 --> 00:01:19.165
+00:01:17.960 --> 00:01:19.699
 So the Deployment waits.
 
 23
-00:01:19.333 --> 00:01:22.013
+00:01:19.900 --> 00:01:22.580
 Readiness decides when each step may happen.
 
 24
-00:01:22.013 --> 00:01:26.643
+00:01:22.580 --> 00:01:27.209
 The kubelet checks the new Pod, and writes the result into the Pod's status.
 
 25
-00:01:26.800 --> 00:01:30.462
+00:01:27.433 --> 00:01:31.096
 If it never became ready, the rollout would stall right here.
 
 26
-00:01:30.462 --> 00:01:32.744
+00:01:31.096 --> 00:01:33.377
 The three old Pods would keep serving.
 
 27
-00:01:32.933 --> 00:01:35.768
+00:01:33.600 --> 00:01:36.434
 Kubernetes would not roll back on its own.
 
 28
-00:01:35.768 --> 00:01:36.915
+00:01:36.434 --> 00:01:37.581
 It waits for you.
 
 29
-00:01:37.067 --> 00:01:38.795
+00:01:37.800 --> 00:01:39.528
 But this one passes.
 
 30
-00:01:38.795 --> 00:01:39.832
+00:01:39.528 --> 00:01:40.565
 It is ready.
 
 31
-00:01:40.000 --> 00:01:42.108
+00:01:40.767 --> 00:01:42.875
 Only now may an old Pod go.
 
 32
-00:01:42.108 --> 00:01:44.685
+00:01:42.875 --> 00:01:45.452
 The old ReplicaSet scales to two.
 
 33
-00:01:44.867 --> 00:01:46.361
+00:01:45.667 --> 00:01:47.161
 Look at the Service now.
 
 34
-00:01:46.361 --> 00:01:49.412
+00:01:47.161 --> 00:01:50.212
 It sends requests to ready Pods of both versions.
 
 35
-00:01:49.412 --> 00:01:52.588
+00:01:50.212 --> 00:01:53.388
 So the new version must work alongside the old one.
 
 36
-00:01:54.133 --> 00:01:54.904
+00:01:55.000 --> 00:01:55.770
 Step three.
 
 37
-00:01:54.904 --> 00:01:59.736
+00:01:55.770 --> 00:02:00.603
 The new ReplicaSet scales to two, and waits for that Pod to be ready.
 
 38
-00:02:00.733 --> 00:02:01.531
+00:02:01.633 --> 00:02:02.431
 Step four.
 
 39
-00:02:01.531 --> 00:02:03.605
+00:02:02.431 --> 00:02:04.505
 The old one scales to one.
 
 40
-00:02:03.800 --> 00:02:05.492
+00:02:04.733 --> 00:02:06.425
 The new one scales to three.
 
 41
-00:02:06.400 --> 00:02:09.159
+00:02:07.333 --> 00:02:10.092
 And finally, the old one scales to zero.
 
 42
-00:02:10.533 --> 00:02:14.111
+00:02:11.500 --> 00:02:15.078
 At no point were there fewer than three ready Pods.
 
 43
-00:02:14.111 --> 00:02:19.933
+00:02:15.078 --> 00:02:20.900
 The price is room: one extra Pod at a time needs spare CPU and memory on some node.
 
 44
-00:02:20.133 --> 00:02:22.593
+00:02:21.133 --> 00:02:23.593
 The old ReplicaSet is not deleted.
 
 45
-00:02:22.593 --> 00:02:25.992
+00:02:23.593 --> 00:02:26.992
 It stays, at zero, as a record of that version.
 
 46
-00:02:26.133 --> 00:02:28.743
+00:02:27.200 --> 00:02:29.809
 That record is what makes rollback fast.
 
 47
-00:02:28.933 --> 00:02:31.644
+00:02:30.033 --> 00:02:32.744
 Say version 1.1.0 has a bug.
 
 48
-00:02:31.644 --> 00:02:34.451
+00:02:32.744 --> 00:02:35.551
 You run kubectl rollout undo.
 
 49
-00:02:34.600 --> 00:02:38.063
+00:02:35.767 --> 00:02:39.229
 The undo copies the old template back into the Deployment.
 
 50
-00:02:38.200 --> 00:02:43.007
+00:02:39.433 --> 00:02:44.240
 Now the template matches the old ReplicaSet, the one still waiting at zero.
 
 51
-00:02:43.200 --> 00:02:49.628
+00:02:44.467 --> 00:02:50.895
 So the Deployment scales it back up, and the new one down, by the same rules, one ready Pod at a time.
 
 52
-00:02:50.800 --> 00:02:52.653
+00:02:52.100 --> 00:02:53.953
 The undo is itself a rollout.
 
 53
-00:02:52.653 --> 00:02:56.296
+00:02:53.953 --> 00:02:57.596
 The old version comes back with a new number, revision 3.
 
 54
-00:02:56.467 --> 00:03:00.018
+00:02:57.800 --> 00:03:01.352
 A rolling update is two ReplicaSets trading Pods.
 
 55
-00:03:00.018 --> 00:03:07.339
+00:03:01.352 --> 00:03:08.672
 One goes up, one goes down, inside maxSurge and maxUnavailable, and every step waits for a ready Pod.

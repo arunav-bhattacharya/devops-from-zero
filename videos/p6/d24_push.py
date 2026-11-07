@@ -206,8 +206,8 @@ class D24Push(VoiceScene):
         commit_l = T("on the commit and its pull request", 22, GREY_B).next_to(row, UP, buff=0.15).align_to(row, LEFT)
         small = VGroup(*[mbox(n, BLUE_M, size=26, w=2.6, h=0.9) for n in ("lint", "test", "build")]).arrange(RIGHT, buff=0.7).move_to([0, -1.6, 0])
         sm_l = T("three fresh machines", 22, GREY_B).next_to(small, DOWN, buff=0.25)
-        self.play(FadeOut(VGroup(ln, tn, needs, own, tl, tt, tb)), ReplacementTransform(lint, small[0]), ReplacementTransform(test, small[1]),
-                  ReplacementTransform(build, small[2]), FadeIn(sm_l), run_time=0.9)
+        self.play(FadeOut(VGroup(ln, tn, needs, own, tl, tt, tb, lint, test, build)), run_time=0.6)
+        self.play(LaggedStart(*[FadeIn(m, shift=UP * 0.2) for m in small], lag_ratio=0.2), FadeIn(sm_l), run_time=0.8)
         self.beat("Six. The result appears on the commit, and on its pull request: a green tick, or a red cross.",
                   done(2), on(5), Create(row), FadeIn(commit_l), FadeIn(rc), LaggedStart(*[FadeIn(c, shift=LEFT * 0.1) for c in checks], lag_ratio=0.3),
                   run_time=2.6)

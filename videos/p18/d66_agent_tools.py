@@ -5,6 +5,19 @@ from fg import *
 SAY.extend([(r"\btools/(list|call)\b", r"tools \1"), (r"\bstdio\b", "standard I O"), (r"\bJSON-RPC\b", "jay-son R P C"),
             (r"\bpods_list_in_namespace\b", "pods list in namespace"), (r"\bread_only\b", "read only")])
 
+# caption timestamps: round to whole milliseconds first, so a cue never reads "00:01:60.000"
+import fg as _fg
+
+
+def _ts_ms(t):
+    ms = int(round(t * 1000))
+    h, r = divmod(ms, 3600000); m, r = divmod(r, 60000); s, ms = divmod(r, 1000)
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+
+
+_fg._ts = _ts_ms
+
+
 
 def person(color=GREY_B):
     head = Circle(radius=0.16, stroke_color=color, stroke_width=3).set_fill(BLACK, 1)
@@ -124,19 +137,19 @@ class D66AgentTools(VoiceScene):
 
         self.play(FadeOut(VGroup(agents, systems, bar, barl, nine, n20)), run_time=0.8)
         model = box("Model", BLUE_M, w=1.6).move_to([-5.6, 0.6, 0])
-        hfr = RoundedRectangle(corner_radius=0.18, width=3.0, height=3.6, stroke_color=GOLD_M, stroke_width=3).move_to([-1.6, 0.6, 0])
+        hfr = RoundedRectangle(corner_radius=0.18, width=2.4, height=3.6, stroke_color=GOLD_M, stroke_width=3).move_to([-1.6, 0.6, 0])
         hl = T("host", 26, GOLD_M).move_to(hfr.get_top() + DOWN * 0.35)
         c1 = box("client", GOLD_M, w=1.8, h=0.65, size=24).move_to([-1.6, 1.3, 0])
         c2 = box("client", GOLD_M, w=1.8, h=0.65, size=24).move_to([-1.6, -0.4, 0])
-        s1 = box("Kubernetes server", TEAL_M, w=3.0, h=0.75, size=24).move_to([2.45, 1.3, 0])
-        s2 = box("GitHub server", TEAL_M, w=3.0, h=0.75, size=24).move_to([2.45, -0.4, 0])
-        api = box("API server", GREY_B, w=1.9, h=0.75, size=24).move_to([5.45, 1.3, 0])
+        s1 = box("Kubernetes server", TEAL_M, w=3.0, h=0.75, size=24).move_to([2.85, 1.3, 0])
+        s2 = box("GitHub server", TEAL_M, w=3.0, h=0.75, size=24).move_to([2.85, -0.4, 0])
+        api = box("API server", GREY_B, w=1.7, h=0.75, size=24).move_to([5.55, 1.3, 0])
         l1 = Line(c1.get_right(), s1.get_left(), stroke_width=3, color=GREY_B)
         l2 = Line(c2.get_right(), s2.get_left(), stroke_width=3, color=GREY_B)
         self.beat("Inside the host, one MCP client talks to each server. A server wraps one system, such as a Kubernetes cluster, or GitHub.",
                   Create(model[0]), Write(model[1]), Create(hfr), FadeIn(hl), Create(c1[0]), Write(c1[1]), Create(c2[0]), Write(c2[1]),
                   Succession(Wait(1.4), AnimationGroup(Create(l1), Create(l2), Create(s1[0]), Write(s1[1]), Create(s2[0]), Write(s2[1]))), run_time=4.4)
-        tlq = VGroup(M("tools/list", 22, YELLOW_M).next_to(l1, UP, buff=0.1), M("tools/list", 22, YELLOW_M).next_to(l2, UP, buff=0.1))
+        tlq = VGroup(M("tools/list", 20, YELLOW_M).move_to([0.475, 1.6, 0]), M("tools/list", 20, YELLOW_M).move_to([0.475, -0.1, 0]))
         lst = VGroup(M("pods_list_in_namespace", 20, TEAL_M), M("pods_log", 20, TEAL_M), M("…", 20, TEAL_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         lst2 = VGroup(M("GitHub tools …", 20, TEAL_M))
         merged = VGroup(lst.copy(), lst2.copy()).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
@@ -146,7 +159,7 @@ class D66AgentTools(VoiceScene):
         self.beat("Each client asks its server for its tools, with a tools/list request. The host merges the answers into the one list it sends the model.",
                   FadeIn(tlq), Succession(AnimationGroup(travel(l1, YELLOW_M, run_time=0.8), travel(l2, YELLOW_M, run_time=0.8)),
                                           Wait(1.0), AnimationGroup(FadeIn(mlist, shift=LEFT * 0.3), FadeIn(mll))), run_time=4.6)
-        tc = M("tools/call", 22, GOLD_M).next_to(l1, UP, buff=0.1)
+        tc = M("tools/call", 20, GOLD_M).move_to([0.475, 1.6, 0])
         a_ma = Arrow(model.get_right(), c1.get_left(), buff=0.15, stroke_width=3, color=BLUE_M, max_tip_length_to_length_ratio=0.12)
         l3 = Line(s1.get_right(), api.get_left(), stroke_width=3, color=GREY_B)
         self.beat("When the model writes a tool call, the host passes it to the right client, which sends tools/call.",
@@ -156,14 +169,14 @@ class D66AgentTools(VoiceScene):
                                                                         travel(Line(l1.get_end(), l1.get_start()), GREEN_M, run_time=0.8)), run_time=3.6)
         tp1 = T("stdio: a local child process", 22, GREY_B).next_to(s1, DOWN, buff=0.15)
         tp2 = T("Streamable HTTP: a remote server", 22, GREY_B).next_to(s2, DOWN, buff=0.15)
-        jr = M("JSON-RPC 2.0", 22, YELLOW_M).move_to([2.45, 2.6, 0])
+        jr = M("JSON-RPC 2.0", 22, YELLOW_M).move_to([2.85, 2.6, 0])
         self.beat("The messages are JSON-RPC 2.0. A local server talks over stdio. A remote one, over Streamable HTTP.",
                   FadeIn(jr), Succession(Wait(1.6), FadeIn(tp1, shift=UP * 0.1), Wait(0.6), FadeIn(tp2, shift=UP * 0.1)), run_time=3.8)
 
         # ---------- 3. where the guardrails sit
         self.play(FadeOut(VGroup(tp1, tp2, jr, tc, mlist, mll)), run_time=0.6)
         g_host = SurroundingRectangle(hfr, buff=0.08, color=GREEN_M, stroke_width=4)
-        consent = chip("your consent before any tool runs", GREEN_M, 22).move_to([-1.6, -1.75, 0])
+        consent = chip("your consent before any tool runs", GREEN_M, 22).move_to([-1.9, -1.75, 0])
         self.beat("So where do the guardrails sit? Not in the model. The MCP specification says the protocol cannot enforce security. It puts that job on the host, which must get your consent before it runs any tool.",
                   Succession(Wait(3.0), AnimationGroup(Create(g_host), FadeIn(consent, shift=UP * 0.1))), run_time=6.0)
         self.play(FadeOut(g_host), run_time=0.4)
@@ -175,7 +188,7 @@ class D66AgentTools(VoiceScene):
         ro_n = T("hides write tools: best effort", 22, TEAL_M).next_to(ro, DOWN, buff=0.1)
         self.beat("The server's read_only setting hides the tools that write. Its own docs call that a best-effort guardrail.",
                   FadeIn(ro, shift=UP * 0.1), Succession(Wait(1.6), FadeIn(ro_n, shift=UP * 0.1)), run_time=3.6)
-        dele = M("kubectl delete deploy redis", 22, RED_M).move_to([3.4, -2.4, 0])
+        dele = M("kubectl delete deploy redis", 22, RED_M).move_to([3.85, -2.4, 0])
         forb = M("Error from server (Forbidden)", 22, RED_M).next_to(dele, DOWN, buff=0.15)
         lk = SurroundingRectangle(api, buff=0.1, color=RED_M, stroke_width=4)
         rb = T("RBAC decides", 22, RED_M).next_to(api, DOWN, buff=0.2)
@@ -187,7 +200,7 @@ class D66AgentTools(VoiceScene):
         dlg_rows = VGroup(T("The agent wants to run:", 22), M("scale deploy redis --replicas=0", 20, YELLOW_M),
                           VGroup(chip("approve", GREEN_M, 20), chip("deny", RED_M, 20)).arrange(RIGHT, buff=0.3)).arrange(DOWN, buff=0.2)
         dlg_fr = RoundedRectangle(corner_radius=0.12, width=dlg_rows.width + 0.5, height=dlg_rows.height + 0.45, stroke_color=WHITE, stroke_width=2.5).set_fill(BLACK, 1)
-        dlg = VGroup(dlg_fr, dlg_rows.move_to(dlg_fr)).move_to([3.4, -2.35, 0])
+        dlg = VGroup(dlg_fr, dlg_rows.move_to(dlg_fr)).move_to([3.85, -2.4, 0])
         who = person().next_to(dlg, LEFT, buff=0.35)
         self.beat("Then a person decides. Keep the approval prompts on for commands that change things, and route changes through a pull request.",
                   FadeIn(dlg, shift=UP * 0.15), FadeIn(who), Succession(Wait(2.4), Indicate(dlg_rows[2][1], color=RED_M, scale_factor=1.15)), run_time=4.4)

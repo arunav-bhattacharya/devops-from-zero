@@ -1,0 +1,181 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.998
+Every Pod gets its own IP address.
+
+2
+00:00:04.998 --> 00:00:08.175
+Here are three hello-devops Pods, on two nodes.
+
+3
+00:00:08.400 --> 00:00:11.073
+Say a config file points straight at one of them.
+
+4
+00:00:11.300 --> 00:00:13.055
+But Pod IPs do not last.
+
+5
+00:00:13.055 --> 00:00:17.223
+Rollouts, scaling and failures replace Pods all the time.
+
+6
+00:00:17.433 --> 00:00:19.198
+The new Pod gets a new IP.
+
+7
+00:00:19.198 --> 00:00:21.777
+The config file now points at nothing.
+
+8
+00:00:22.000 --> 00:00:24.584
+So never put a Pod IP in a config file.
+
+9
+00:00:24.584 --> 00:00:27.432
+Put a Service in front of the Pods instead.
+
+10
+00:00:28.133 --> 00:00:34.711
+A Service gives a changing set of Pods one stable virtual IP address, and one DNS name.
+
+11
+00:00:34.933 --> 00:00:38.747
+The API server gives it an address from the Service range.
+
+12
+00:00:38.747 --> 00:00:43.416
+That address is its ClusterIP, and it stays put while Pods come and go.
+
+13
+00:00:43.633 --> 00:00:45.960
+Other Pods call it on port 80.
+
+14
+00:00:45.960 --> 00:00:49.449
+The app inside each Pod listens on port 8000.
+
+15
+00:00:49.667 --> 00:00:53.587
+The full name adds the namespace, hello, and the cluster suffix.
+
+16
+00:00:53.587 --> 00:00:57.445
+From the same namespace, the short name hello-devops is enough.
+
+17
+00:00:57.667 --> 00:01:00.556
+How does the Service know which Pods are its own?
+
+18
+00:01:00.556 --> 00:01:03.269
+With a label selector, just like a Deployment.
+
+19
+00:01:03.500 --> 00:01:07.048
+It takes every ready Pod labeled app: hello-devops.
+
+20
+00:01:07.267 --> 00:01:10.943
+A Pod with another label, like this client, is left out.
+
+21
+00:01:11.667 --> 00:01:14.631
+The EndpointSlice controller watches the Pods.
+
+22
+00:01:14.631 --> 00:01:19.723
+It keeps a list: the IP and port of each matching Pod, and whether it is ready.
+
+23
+00:01:19.933 --> 00:01:25.209
+Whenever a Pod comes, goes, or changes readiness, the controller updates the list.
+
+24
+00:01:25.433 --> 00:01:28.256
+Say this Pod starts failing its readiness check.
+
+25
+00:01:28.256 --> 00:01:31.313
+It keeps running, but its entry is marked not ready.
+
+26
+00:01:31.533 --> 00:01:34.459
+The third piece is kube-proxy, on every node.
+
+27
+00:01:34.459 --> 00:01:40.507
+It watches Services and EndpointSlices, and writes packet rules into the node's Linux kernel.
+
+28
+00:01:40.733 --> 00:01:47.445
+The rules say: traffic for the ClusterIP, port 80, goes to one of these ready Pods, on port 8000.
+
+29
+00:01:47.445 --> 00:01:50.005
+The Pod that is not ready is skipped.
+
+30
+00:01:50.233 --> 00:01:53.452
+So the ClusterIP lives on no network card.
+
+31
+00:01:53.452 --> 00:01:55.751
+It exists only as these rules.
+
+32
+00:01:55.967 --> 00:01:57.304
+Now follow one call.
+
+33
+00:01:57.304 --> 00:02:00.780
+The client sends a request to hello-devops, by name.
+
+34
+00:02:01.000 --> 00:02:07.001
+First, CoreDNS, the cluster's DNS server, turns the name into the ClusterIP.
+
+35
+00:02:08.233 --> 00:02:11.147
+The packet leaves for the ClusterIP, port 80.
+
+36
+00:02:11.147 --> 00:02:14.903
+The rules in the kernel of the client's own node catch it.
+
+37
+00:02:15.733 --> 00:02:20.768
+They pick one ready Pod, and send the packet to its IP, on port 8000.
+
+38
+00:02:20.768 --> 00:02:22.957
+Here, a Pod on the other node.
+
+39
+00:02:25.367 --> 00:02:27.412
+kube-proxy itself carries nothing.
+
+40
+00:02:27.412 --> 00:02:33.188
+The kernel picks a Pod on a connection's first packet, and keeps it until the connection closes.
+
+41
+00:02:33.400 --> 00:02:36.007
+A new connection may land on another Pod.
+
+42
+00:02:36.007 --> 00:02:37.851
+That is how the load spreads.
+
+43
+00:02:40.567 --> 00:02:41.941
+Pods come and go.
+
+44
+00:02:41.941 --> 00:02:44.527
+The name and the ClusterIP stay.
+
+45
+00:02:44.733 --> 00:02:51.695
+The EndpointSlice tracks the ready Pods, and kube-proxy's rules on every node send each call to one of them.

@@ -171,7 +171,7 @@ class D11Https(VoiceScene):
         checks.arrange(DOWN, buff=0.25, aligned_edge=LEFT).move_to([-1.0, -1.45, 0])
         q = T("?", 30, YELLOW_M).move_to(checks[2][0])
         self.beat("The client checks the certificate. The right name. Still valid. Signed by someone it trusts.",
-                  FadeOut(kx), Succession(Wait(0.6), *[FadeIn(c, shift=RIGHT * 0.15) for c in checks[:2]],
+                  Succession(FadeOut(kx, run_time=0.6), *[FadeIn(c, shift=RIGHT * 0.15) for c in checks[:2]],
                                           AnimationGroup(FadeIn(checks[2][1], shift=RIGHT * 0.15), FadeIn(q))), run_time=3.6)
         enc = msg(-2.65, -3.05, GOLD_M)
         enc_l = VGroup(lock_icon(GOLD_M, 0.8), T("the HTTP request, encrypted", 22, GOLD_M)).arrange(RIGHT, buff=0.15).move_to(enc.point_from_proportion(0.5) + UP * 0.32)
@@ -241,8 +241,7 @@ class D11Https(VoiceScene):
         self.beat("The server sends its certificate, plus the intermediates. The client follows that chain up, to a root it already trusts.",
                   Succession(AnimationGroup(FadeIn(server), Create(sent), FadeIn(sent_l), Create(sl)),
                              AnimationGroup(FadeIn(dot), MoveAlongPath(dot, climb, rate_func=smooth)),
-                             AnimationGroup(Create(match), Create(ok))), run_time=5.0)
-        self.play(FadeOut(dot), run_time=0.3)
+                             AnimationGroup(Create(match), Create(ok), FadeOut(dot))), run_time=5.0)
 
         bad = tick(False, 0.25).next_to(c_int, RIGHT, buff=0.35)
         why = T("missing, expired,\nor another name", 22, RED_M).next_to(bad, RIGHT, buff=0.25)

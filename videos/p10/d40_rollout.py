@@ -178,7 +178,8 @@ class D40Rollout(VoiceScene):
         cmp2 = DashedLine([cl[3].get_left()[0], crect.get_bottom()[1] - 0.04, 0], [cl[3].get_left()[0], old[0].get_top()[1] + 0.04, 0], dash_length=0.08, stroke_width=2, color=GREEN_M)
         ok = tick(True, 0.2).move_to(cmp2)
         self.beat("Now the template matches the old ReplicaSet, the one still waiting at zero.",
-                  old.animate.set_opacity(1), Create(cmp2), Create(ok), run_time=1.6)
+                  old.animate.set_opacity(1), Create(cmp2), Create(ok),
+                  Transform(old_lab, T("revision 1", 22, OLD).move_to(old_lab, aligned_edge=LEFT)), run_time=1.6)
         bk = [pod(OLD, x) for x in OLD_X]
         line = "So the Deployment scales it back up, and the new one down, by the same rules, one ready Pod at a time."
         path, dur = voice(line)
