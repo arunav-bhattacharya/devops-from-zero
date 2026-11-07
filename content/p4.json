@@ -1,0 +1,1110 @@
+{
+ "part": 4,
+ "title": "Python scripts for automation",
+ "intro": "Day 7 left you with Bash scripts that fail loudly, and a rule to switch to Python once a script grows. This part is that switch. Day 15 writes scripts from the standard library alone and runs them with uv. Day 16 calls the GitHub API and AWS, tests both without a network, and installs the result as commands. Every script lives in labs/python-ops, and its 30 tests run offline in about ten seconds.",
+ "lessons": [
+  {
+   "id": "d15",
+   "title": "Python for ops scripts: files, JSON, arguments and exit codes",
+   "minutes": 50,
+   "goal": "By the end you can write a Python script that reads logs, takes arguments and environment variables, reports on stdout and stderr, and returns exit codes that CI can act on, and you can run it with uv.",
+   "guess": {
+    "q": "Your Python script calls `subprocess.run([\"git\", \"pull\"])` and git fails with a merge conflict. What does your script do next?",
+    "options": [
+     "Python raises an exception and the script stops",
+     "It carries on to the next line as if git had worked",
+     "Python prints git's error and exits with code 1",
+     "It waits until someone fixes the conflict"
+    ],
+    "answer": 1,
+    "why": "`run()` only records git's exit code in the result it returns. Unless you pass `check=True` or look at `returncode`, the script carries on, like bash without `set -e`."
+   },
+   "terms": [
+    {
+     "term": "uv",
+     "plain": "A fast tool from Astral that installs Python versions, creates virtual environments and runs scripts and projects."
+    },
+    {
+     "term": "Virtual environment",
+     "plain": "A folder with its own Python and packages for one project, so projects cannot break each other."
+    },
+    {
+     "term": "Inline script metadata",
+     "plain": "A `# /// script` comment block at the top of a Python file that lists the Python version and packages it needs (PEP 723)."
+    },
+    {
+     "term": "Exit code",
+     "plain": "The number a program returns when it ends: 0 means success, any other number means a kind of failure."
+    },
+    {
+     "term": "argparse",
+     "plain": "Python's standard module that reads command-line arguments and flags and writes the --help text."
+    },
+    {
+     "term": "Standard error (stderr)",
+     "plain": "The output stream for messages to people, kept apart from the real output on stdout."
+    },
+    {
+     "term": "Aware datetime",
+     "plain": "A Python date and time that carries its time zone, so comparing and converting it gives correct answers."
+    },
+    {
+     "term": "subprocess.run",
+     "plain": "The standard function that starts another program, waits for it to finish, and returns its exit code and output."
+    }
+   ],
+   "sections": [
+    {
+     "h": "When a Bash script should become Python",
+     "body": "Day 7 ended with a rule of thumb: once a script needs real data structures or grows past about a hundred lines, write it in Python. Bash is very good at starting programs and wiring their output together. It gets painful as soon as you need to keep data around and make decisions about it.\n\nMove to Python when a script needs any of these:\n\n- Data you look things up in, such as counts per path. The bash 3.2 on your Mac has no associative arrays at all.\n- JSON or an HTTP API. One `jq` call is fine. Five of them glued together with `$(...)` are a program in disguise.\n- Different handling for different errors: a missing file, a timeout, a 404.\n- Tests. pytest (Day 16) is far easier than testing a shell script.\n- The same behaviour on macOS and Linux. `sed -i` and `date -d` differ between the two; Python's `re` and `datetime` do not.\n\nKeep Bash for short glue: a five-line CI step, a `RUN` line in a Dockerfile, or `healthcheck.sh` from Day 7. Keep the Day 7 habits too. A Python script also needs a clear exit code, messages on stderr and a loud failure, and most of today is about doing that well.\n\nPython is already installed on GitHub's Ubuntu runners and on Ubuntu and Amazon Linux servers. Its standard library covers files, JSON, CSV, regular expressions, time zones and running other programs, and today's scripts use nothing else. Day 16 adds the two outside packages most ops scripts need: requests and boto3.",
+     "refs": [
+      {
+       "title": "Python for DevOps (Gift, Behrman, Deza, Gheorghiu; O'Reilly)",
+       "url": "https://www.oreilly.com/library/view/python-for-devops/9781492057680/",
+       "kind": "read"
+      },
+      {
+       "title": "The Python Standard Library",
+       "url": "https://docs.python.org/3/library/index.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Python versions, environments and one-file scripts with uv",
+     "body": "On Day 2 you set up hello-devops the classic way: Homebrew's Python, `python3 -m venv .venv`, `source .venv/bin/activate`, then `pip install -r requirements-dev.txt`. That still works, and hello-devops keeps it, because its Dockerfile and its CI (Day 25) use pip.\n\nFor new tools this course uses uv, one program from Astral, the company that also makes ruff. It does the jobs of those three tools, and a few more:\n\n- `uv python install 3.14` downloads a Python version, so you stop depending on what Homebrew has.\n- `uv init` starts a project with a `pyproject.toml`, the standard file for a project's name, Python version and dependencies.\n- `uv add requests` adds a dependency and writes the exact version of every package to `uv.lock`. Commit that file, so CI and teammates get the versions you tested.\n- `uv run <command>` first makes `.venv` match the lock file, then runs the command inside it. You never activate anything.\n- `uvx ruff check` runs a tool in a throwaway environment.\n\nA **virtual environment** is still underneath: uv creates the same kind of `.venv` folder that `python3 -m venv` makes. You just stop managing it by hand.\n\nA single script does not even need a project. PEP 723 defines inline script metadata: a comment block at the top of the file. It names the Python version and the packages the script needs. The command `uv init --script check.py --python 3.14` creates the block, and `uv add --script check.py requests` adds a package to it. Then `uv run check.py` builds a cached environment with those packages and runs the script. The first run printed `Installed 5 packages in 4ms`, and the second printed nothing extra.\n\nThe lab's `scripts/logsum.py` has such a block with an empty package list. Inside a project, a script with a block ignores the project and uses only its own list. With the shebang `#!/usr/bin/env -S uv run --script` and `chmod +x`, you can also start it as `./logsum.py`. Read a script from the internet before you `uv run` it, because uv installs whatever its block asks for.\n\nPython 3.15 came out in October 2026. The course stays on 3.14, the version in its Docker images and CI, and the lab pins it in `.python-version`.",
+     "refs": [
+      {
+       "title": "uv: Running scripts",
+       "url": "https://docs.astral.sh/uv/guides/scripts/",
+       "kind": "docs"
+      },
+      {
+       "title": "PEP 723: Inline script metadata",
+       "url": "https://peps.python.org/pep-0723/",
+       "kind": "read"
+      },
+      {
+       "title": "UV: a faster, all-in-one package manager to replace pip and venv (Corey Schafer)",
+       "url": "https://www.youtube.com/watch?v=AMdG7IjgSPM",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "The skeleton every ops script shares",
+     "body": "Open `scripts/logsum.py` in the Files section. Every script in the lab has the same shape, top to bottom:\n\n1. The shebang and the PEP 723 block.\n2. A docstring with examples and the exit codes. It is the first thing a tired person reads.\n3. Imports, then constants such as the regex for one log line.\n4. Small functions that each do one job and return data. `parse_access` never prints.\n5. `main(argv=None) -> int`, which reads the arguments, calls the functions, prints, and returns an exit code.\n6. `if __name__ == \"__main__\": sys.exit(main())` as the last line.\n\nThat last line runs `main` only when you start the file as a program. When a test imports the file, nothing runs. The test calls `main([\"access\", \"x.log\"])` itself and checks the number it gets back, which is what Day 16 does.\n\n`argparse` turns `sys.argv` into named values and writes `--help` for you. The summarizer uses four of its features:\n\n- Positional arguments (`file`) and options (`--top 5`), each with a `type` that converts the text and rejects bad values.\n- `choices=[\"text\", \"json\"]`, so `--format xml` fails at once.\n- Subcommands, like git's: `logsum access FILE` and `logsum app FILE` share their common options through a parent parser.\n- Defaults from the environment: `default=os.environ.get(\"LOGSUM_MAX_ERROR_RATE\", \"1.0\")`. A flag beats the variable, and the variable beats the built-in default.\n\nOn a bad argument, argparse prints the usage line and exits with 2, the same \"you called me wrong\" code that `healthcheck.sh` used on Day 7. Read settings with `os.environ.get(\"NAME\", default)`. Plain `os.environ[\"NAME\"]` raises `KeyError` when the variable is missing, which is right only for a setting the script cannot run without.",
+     "refs": [
+      {
+       "title": "Argparse tutorial (Python docs)",
+       "url": "https://docs.python.org/3/howto/argparse.html",
+       "kind": "docs"
+      },
+      {
+       "title": "argparse reference",
+       "url": "https://docs.python.org/3/library/argparse.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Log lines into numbers: pathlib, re and Counter",
+     "body": "`pathlib.Path` is how current Python handles files. `Path.home() / \"code\" / \"linux-lab\"` joins the parts with `/` on any OS. `path.read_text()`, `path.exists()` and `path.glob(\"*.log\")` replace most uses of `open`, `os.path` and `ls`.\n\nA regular expression (Day 4) with named groups turns one access log line into a dictionary. You name a group with `(?P<name>...)`. Write the pattern as a raw string, `r\"...\"`, so Python leaves its backslashes alone. Try the pattern on one line in the REPL before you trust it on 238 lines; the worked example does exactly that.\n\n`collections.Counter` is a dictionary made for counting. `paths[path] += 1` needs no setup, and `paths.most_common(5)` returns the top five. With it, one pass over the file collects everything at once: requests per path, per status class and per server error.\n\nHow does that compare with Day 5? The pipeline `awk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn` prints the same three lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. The Python version pays off once you want several answers from one pass, a time window, JSON output, a limit and tests.\n\nIt also counts more honestly. The summarizer strips the query string, so `/api/products` has 75 requests. The awk top list splits the same path into 34 for `/api/products` and 24 for `/api/products?page=3`.\n\nFor big files, loop over the open file with `for line in f:` instead of reading it all with `read_text()`. Memory then stays flat, as the Go deeper section measures.",
+     "refs": [
+      {
+       "title": "Regular expression HOWTO (Python docs)",
+       "url": "https://docs.python.org/3/howto/regex.html",
+       "kind": "docs"
+      },
+      {
+       "title": "pathlib: object-oriented filesystem paths",
+       "url": "https://docs.python.org/3/library/pathlib.html",
+       "kind": "docs"
+      },
+      {
+       "title": "collections.Counter",
+       "url": "https://docs.python.org/3/library/collections.html#collections.Counter",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Dates, JSON and CSV without surprises",
+     "body": "Time zones are where ops scripts go quietly wrong. A Python `datetime` is either naive, with no time zone, or **aware**, with one. Comparing a naive one with an aware one raises `TypeError: can't compare offset-naive and offset-aware datetimes`, which is at least loud. The quiet bug is a naive local time compared with UTC log times, which is off by an hour or two and never complains.\n\nThree habits prevent it:\n\n- Parse the zone the log gives you. `%z` in `strptime(text, \"%d/%b/%Y:%H:%M:%S %z\")` reads the `+0000`. `datetime.fromisoformat(\"2026-10-30T09:00:01Z\")` understands the `Z` since Python 3.11.\n- Ask for the current time as `datetime.now(UTC)`. `datetime.utcnow()` returns a naive value and has been deprecated since Python 3.12.\n- Convert only for display. `when.astimezone(ZoneInfo(\"Europe/Berlin\"))` turned 09:00:08 UTC into 10:00:08+01:00. The summarizer's `--tz` option does that.\n\nJSON is the format for other programs. `json.dumps(report, indent=2)` writes it, and `json.loads(text)` reads it. For JSON Lines, such as `events.jsonl` from Day 5, call `json.loads` once per line. When a script prints JSON, print nothing else to stdout, so `| jq` keeps working.\n\nCSV is for people with spreadsheets. Use the `csv` module instead of `\",\".join(...)`, because it quotes values that contain commas. Open the file with `newline=\"\"`, as the `csv` docs ask, or an extra `\\r` ends up in each line on Windows.",
+     "refs": [
+      {
+       "title": "datetime: aware and naive objects",
+       "url": "https://docs.python.org/3/library/datetime.html",
+       "kind": "docs"
+      },
+      {
+       "title": "zoneinfo: IANA time zone support",
+       "url": "https://docs.python.org/3/library/zoneinfo.html",
+       "kind": "docs"
+      },
+      {
+       "title": "json: JSON encoder and decoder",
+       "url": "https://docs.python.org/3/library/json.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Exit codes, stderr and errors that say what to do",
+     "body": "CI, cron, systemd and Kubernetes exec probes decide success or failure from your script's exit code alone. A Python script ends with a code in one of three ways:\n\n- `sys.exit(main())` turns the number `main` returns into the exit code.\n- An uncaught exception prints a traceback and exits with 1.\n- argparse exits with 2 on bad arguments.\n\nSo the lab uses one contract in every script: 0 means all good, 1 means the check found a problem, and 2 means the script could not do its job. A caller can then tell \"the error rate is too high\" apart from \"the log file is missing\".\n\nOutput goes to two places. The report goes to stdout. Everything for people, such as warnings, progress and the reason for a failure, goes to stderr. The `logging` module sends messages there after `logging.basicConfig(stream=sys.stderr, ...)`, and its levels let a `-v` flag turn on DEBUG messages. Pass values as arguments, `log.warning(\"line %d skipped\", number)`, so the text is only built when the message is shown.\n\nCatch the errors you expect, by name, and turn each into one clear line. In the summarizer, `except FileNotFoundError` becomes `logsum: ERROR no such file: nope.log` and exit code 2. Let every other exception crash with its traceback, since a traceback is the quickest way to debug something you did not expect. And never log a token or a password, not even at DEBUG.",
+     "refs": [
+      {
+       "title": "Logging HOWTO (Python docs)",
+       "url": "https://docs.python.org/3/howto/logging.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Logging basics: files, levels and formatting (Corey Schafer)",
+       "url": "https://www.youtube.com/watch?v=-ARI4Cz-awo",
+       "kind": "watch"
+      },
+      {
+       "title": "sys.exit",
+       "url": "https://docs.python.org/3/library/sys.html#sys.exit",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Running other programs safely with subprocess",
+     "body": "Sooner or later a script calls `git`, `kubectl` or `terraform`. `subprocess.run` starts the program and waits for it. Give it four things every time:\n\n- A list of arguments, `[\"git\", \"rev-parse\", \"--short\", \"HEAD\"]`, so no shell ever reads them.\n- `check=True`, so a non-zero exit raises `CalledProcessError` instead of passing silently.\n- `capture_output=True, text=True`, to get stdout and stderr back as strings.\n- `timeout=30`, so a hung command raises `TimeoutExpired` instead of hanging your script.\n\nIn `/tmp`, `subprocess.run([\"git\", \"log\", \"-1\"], check=True, capture_output=True, text=True)` raised `CalledProcessError(128, ['git', 'log', '-1'])`, and `err.stderr` held `fatal: not a git repository`. That message is exactly what to log before you exit with 2.\n\n`shell=True` with outside input is how scripts get hijacked. With `name = \"x; echo pwned\"`, the call `subprocess.run(f\"ls {name}\", shell=True)` printed `pwned`, because the shell ran the second command. The list form passed the whole string to `ls` as one argument, and `ls` answered `cannot access 'x; echo pwned'`.\n\nEnvironment variables flow down to the child, as on Day 7. To add one, copy the current environment: `env={**os.environ, \"KUBECONFIG\": path}`. Passing `env={\"KUBECONFIG\": path}` alone gives the child no `PATH` and no `HOME` at all.",
+     "refs": [
+      {
+       "title": "subprocess: security considerations",
+       "url": "https://docs.python.org/3/library/subprocess.html",
+       "kind": "docs"
+      },
+      {
+       "title": "The subprocess module: wrapping programs with Python (Real Python)",
+       "url": "https://realpython.com/python-subprocess/",
+       "kind": "read"
+      }
+     ]
+    }
+   ],
+   "analogy": "A script reports back like a parcel delivery. The tracking status (delivered, failed, unknown address) is the exit code: it is what the depot's systems act on. The note on your door is stderr, written for a person. The parcel itself is stdout, the thing you actually wanted. Unlike a parcel, a script can hand over half its output and still fail, so a caller checks the exit code before trusting what arrived.",
+   "diagram": "<svg viewBox=\"0 0 560 236\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A script takes arguments, environment variables and a log file, and gives back a report on stdout, messages on stderr and an exit code\"><rect class=\"bx\" x=\"16\" y=\"24\" width=\"130\" height=\"34\" rx=\"10\"/><text class=\"t\" x=\"81\" y=\"46\" font-size=\"13\" text-anchor=\"middle\">arguments</text><rect class=\"bx\" x=\"16\" y=\"98\" width=\"130\" height=\"34\" rx=\"10\"/><text class=\"t\" x=\"81\" y=\"120\" font-size=\"13\" text-anchor=\"middle\">env vars</text><rect class=\"bx\" x=\"16\" y=\"172\" width=\"130\" height=\"34\" rx=\"10\"/><text class=\"t\" x=\"81\" y=\"194\" font-size=\"13\" text-anchor=\"middle\">log file</text><rect class=\"bxo\" x=\"215\" y=\"98\" width=\"130\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"120\" font-size=\"13\" text-anchor=\"middle\">logsum.py</text><rect class=\"bxt\" x=\"414\" y=\"24\" width=\"130\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"479\" y=\"46\" font-size=\"13\" text-anchor=\"middle\">stdout</text><rect class=\"bxt\" x=\"414\" y=\"98\" width=\"130\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"479\" y=\"120\" font-size=\"13\" text-anchor=\"middle\">stderr</text><rect class=\"bxt\" x=\"414\" y=\"172\" width=\"130\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"479\" y=\"194\" font-size=\"13\" text-anchor=\"middle\">exit code</text><line class=\"ln\" x1=\"146\" y1=\"41\" x2=\"211\" y2=\"107\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"146\" y1=\"115\" x2=\"211\" y2=\"115\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"146\" y1=\"189\" x2=\"211\" y2=\"123\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"345\" y1=\"107\" x2=\"410\" y2=\"41\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"345\" y1=\"115\" x2=\"410\" y2=\"115\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"345\" y1=\"123\" x2=\"410\" y2=\"189\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"479\" y=\"74\" font-size=\"11\" text-anchor=\"middle\">report or JSON</text><text class=\"ts\" x=\"479\" y=\"148\" font-size=\"11\" text-anchor=\"middle\">messages for people</text><text class=\"ts\" x=\"479\" y=\"222\" font-size=\"11\" text-anchor=\"middle\">0, 1 or 2 for CI</text><text class=\"ts\" x=\"81\" y=\"222\" font-size=\"11\" text-anchor=\"middle\">the script reads</text><text class=\"ts\" x=\"280\" y=\"148\" font-size=\"11\" text-anchor=\"middle\">main() returns</text></svg>",
+   "diagram_caption": "Inputs come from arguments, environment variables and files; results leave on three separate channels.",
+   "worked": {
+    "title": "A log summarizer CI can trust",
+    "steps": [
+     {
+      "say": "Get the lab and let uv build its environment. `uv sync` reads `.python-version` and `uv.lock`, downloads Python 3.14 if you do not have it, and fills `.venv`. The sample logs are in `~/code/linux-lab` from Day 3. (Output trimmed.)",
+      "code": "$ brew install uv\n$ git -C ~/code/devops-from-zero pull\n$ cp -R ~/code/devops-from-zero/labs/python-ops ~/code/python-ops\n$ cd ~/code/python-ops\n$ uv sync\nUsing CPython 3.14.10\nCreating virtual environment at: .venv\nResolved 29 packages in 1ms\nInstalled 28 packages in 68ms",
+      "lang": "console"
+     },
+     {
+      "say": "Before writing any loop, try the pattern on one line. `uv run python` starts the REPL inside the project. `groupdict()` shows what each named group caught. The status comes back as text, so the script converts it with `int()` before comparing.",
+      "code": "$ uv run python\n>>> import re\n>>> from pathlib import Path\n>>> line = (Path.home() / \"code/linux-lab/access.log\").read_text().splitlines()[0]\n>>> pat = re.compile(r'(?P<ip>\\S+) \\S+ \\S+ \\[(?P<time>[^\\]]+)\\] \"(?P<method>[A-Z]+) (?P<path>\\S+) [^\"]*\" (?P<status>\\d{3})')\n>>> pat.match(line).groupdict()\n{'ip': '203.0.113.7', 'time': '30/Oct/2026:09:00:08 +0000', 'method': 'GET', 'path': '/api/products?page=3', 'status': '429'}",
+      "lang": "console"
+     },
+     {
+      "say": "Run the summarizer. Of 238 requests, 11 were server errors (4.6%), and the default limit is 1%, so it exits with 1. The report went to stdout and the one-line reason to stderr.",
+      "code": "$ uv run scripts/logsum.py access ~/code/linux-lab/access.log\naccess.log: 238 requests, 0 skipped\nfrom 2026-10-30 09:00:08 UTC to 2026-10-30 09:48:44 UTC\nstatus: 2xx 181, 3xx 16, 4xx 30, 5xx 11\nerror rate (5xx): 4.6% (limit 1.0%)\n\ntop 5 paths:\n     75  /api/products\n     19  /api/checkout\n     18  /healthz\n     18  /login\n     16  /\n\nserver errors:\n      6  500 /api/checkout\n      3  502 /api/payments/charge\n      2  504 /api/checkout\nlogsum: ERROR error rate 4.6% is above the limit of 1.0%\n$ echo $?\n1",
+      "lang": "console"
+     },
+     {
+      "say": "Raise the limit with the flag or the environment variable, and the same log passes. The `--tz` option changes only how times are shown. The log's 09:00 UTC is 10:00 in Berlin, where summer time had ended five days earlier.",
+      "code": "$ uv run scripts/logsum.py access ~/code/linux-lab/access.log --max-error-rate 5 --tz Europe/Berlin | head -n 2\naccess.log: 238 requests, 0 skipped\nfrom 2026-10-30 10:00:08 CET to 2026-10-30 10:48:44 CET\n$ LOGSUM_MAX_ERROR_RATE=5 uv run scripts/logsum.py access ~/code/linux-lab/access.log > /dev/null\n$ echo $?\n0",
+      "lang": "console"
+     },
+     {
+      "say": "`--format json` is for other programs. Because log messages go to stderr, stdout holds only JSON, and jq can read it without any cleanup.",
+      "code": "$ uv run scripts/logsum.py access ~/code/linux-lab/access.log --format json --max-error-rate 5 | jq -c '.error_rate, .status_classes, .top_paths[0]'\n4.62\n{\"2xx\":181,\"3xx\":16,\"4xx\":30,\"5xx\":11}\n[\"/api/products\",75]",
+      "lang": "console"
+     },
+     {
+      "say": "Check the numbers against Day 5. The awk pipeline finds the same server errors. Its top paths differ, because awk keeps query strings and splits `/api/products` in two.",
+      "code": "$ cd ~/code/linux-lab\n$ awk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn\n      6 500 /api/checkout\n      3 502 /api/payments/charge\n      2 504 /api/checkout\n$ awk '{print $7}' access.log | sort | uniq -c | sort -rn | head -n 2\n     34 /api/products\n     24 /api/products?page=3",
+      "lang": "console"
+     },
+     {
+      "say": "In CI the script is one step, and the exit code is the whole interface. A run above the limit turns the job red; you write no extra code for that.",
+      "code": "- name: Error rate gate\n  run: uv run scripts/logsum.py access logs/access.log --max-error-rate 2",
+      "lang": "yaml"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "python",
+     "title": "scripts/logsum.py (in labs/python-ops)",
+     "src": "#!/usr/bin/env -S uv run --script\n# /// script\n# requires-python = \">=3.12\"\n# dependencies = []\n# ///\n\"\"\"logsum.py: summarize the Part 1 sample logs (labs/linux, copied to ~/code/linux-lab).\n\nExamples:\n  uv run scripts/logsum.py access ~/code/linux-lab/access.log\n  uv run scripts/logsum.py access ~/code/linux-lab/access.log --max-error-rate 5\n  uv run scripts/logsum.py app ~/code/linux-lab/app.log --format json\n\nExit codes: 0 all good, 1 over a limit you set, 2 bad usage or unreadable file.\n\"\"\"\n\nimport argparse\nimport csv\nimport json\nimport logging\nimport os\nimport re\nimport sys\nfrom collections import Counter\nfrom dataclasses import dataclass, field\nfrom datetime import datetime\nfrom pathlib import Path\nfrom zoneinfo import ZoneInfo, ZoneInfoNotFoundError\n\nlog = logging.getLogger(\"logsum\")\n\n# One line of the nginx \"combined\" format, for example:\n# 203.0.113.7 - - [30/Oct/2026:09:00:08 +0000] \"GET /api/cart HTTP/1.1\" 200 4642 \"-\" \"curl/8.5.0\"\nACCESS_LINE = re.compile(\n    r\"(?P<ip>\\S+) \\S+ \\S+ \\[(?P<time>[^\\]]+)\\] \"\n    r'\"(?P<method>[A-Z]+) (?P<path>\\S+) [^\"]*\" '\n    r\"(?P<status>\\d{3}) (?P<size>\\d+|-)\"\n)\n\n# One line of app.log, for example:\n# 2026-10-30T09:04:30Z ERROR checkout-api req=8e9f0a database connection refused: orders-db:5432\nAPP_LINE = re.compile(\n    r\"(?P<time>\\S+) (?P<level>[A-Z]+)\\s+(?P<service>\\S+) req=(?P<req>\\S+) (?P<msg>.*)\"\n)\n\n\n@dataclass\nclass AccessStats:\n    requests: int = 0\n    skipped: int = 0\n    first: datetime | None = None\n    last: datetime | None = None\n    paths: Counter = field(default_factory=Counter)\n    classes: Counter = field(default_factory=Counter)\n    server_errors: Counter = field(default_factory=Counter)\n\n    @property\n    def error_rate(self) -> float:\n        \"\"\"Server errors (5xx) as a percentage of all requests.\"\"\"\n        if self.requests == 0:\n            return 0.0\n        return 100 * self.classes[\"5xx\"] / self.requests\n\n\ndef parse_access(lines) -> AccessStats:\n    stats = AccessStats()\n    for number, line in enumerate(lines, start=1):\n        match = ACCESS_LINE.match(line)\n        if not match:\n            # A bad line should not stop a 3 a.m. report, but it must be visible.\n            stats.skipped += 1\n            log.warning(\"line %d does not look like an access log line, skipped\", number)\n            continue\n        stats.requests += 1\n        # %z reads the \"+0000\" part, so `when` knows its time zone.\n        when = datetime.strptime(match[\"time\"], \"%d/%b/%Y:%H:%M:%S %z\")\n        stats.first = when if stats.first is None else min(stats.first, when)\n        stats.last = when if stats.last is None else max(stats.last, when)\n        path = match[\"path\"].split(\"?\", 1)[0]  # /api/products?page=3 counts as /api/products\n        status = int(match[\"status\"])\n        stats.paths[path] += 1\n        stats.classes[f\"{status // 100}xx\"] += 1\n        if status >= 500:\n            stats.server_errors[f\"{status} {path}\"] += 1\n    return stats\n\n\ndef parse_app(lines) -> dict:\n    levels: Counter = Counter()\n    errors: Counter = Counter()\n    times = []\n    continued = 0\n    for number, line in enumerate(lines, start=1):\n        if line[:1].isspace():\n            continued += 1  # a stack trace line that belongs to the line above\n            continue\n        match = APP_LINE.match(line)\n        if not match:\n            log.warning(\"line %d does not look like an app log line, skipped\", number)\n            continue\n        levels[match[\"level\"]] += 1\n        times.append(datetime.fromisoformat(match[\"time\"]))  # \"Z\" works since Python 3.11\n        if match[\"level\"] == \"ERROR\":\n            errors[match[\"msg\"]] += 1\n    return {\"levels\": levels, \"errors\": errors, \"times\": times, \"continued\": continued}\n\n\ndef read_lines(path: Path) -> list[str]:\n    # errors=\"replace\": one broken byte must not crash the whole report.\n    return path.read_text(encoding=\"utf-8\", errors=\"replace\").splitlines()\n\n\ndef show_time(when: datetime | None, zone: ZoneInfo) -> str:\n    return when.astimezone(zone).strftime(\"%Y-%m-%d %H:%M:%S %Z\") if when else \"-\"\n\n\ndef write_csv(path: Path, stats: AccessStats) -> None:\n    errors_by_path: Counter = Counter()\n    for key, count in stats.server_errors.items():\n        errors_by_path[key.split(\" \", 1)[1]] += count\n    with path.open(\"w\", newline=\"\", encoding=\"utf-8\") as f:\n        writer = csv.writer(f)\n        writer.writerow([\"path\", \"requests\", \"server_errors\"])\n        for p, count in stats.paths.most_common():\n            writer.writerow([p, count, errors_by_path[p]])\n    log.info(\"wrote %d rows to %s\", len(stats.paths), path)\n\n\ndef run_access(args) -> int:\n    stats = parse_access(read_lines(args.file))\n    ok = stats.error_rate <= args.max_error_rate\n    if args.csv:\n        write_csv(args.csv, stats)\n    if args.format == \"json\":\n        report = {\n            \"file\": args.file.name,\n            \"requests\": stats.requests,\n            \"skipped\": stats.skipped,\n            \"first\": stats.first.isoformat() if stats.first else None,\n            \"last\": stats.last.isoformat() if stats.last else None,\n            \"status_classes\": dict(sorted(stats.classes.items())),\n            \"error_rate\": round(stats.error_rate, 2),\n            \"max_error_rate\": args.max_error_rate,\n            \"ok\": ok,\n            \"top_paths\": stats.paths.most_common(args.top),\n            \"server_errors\": stats.server_errors.most_common(),\n        }\n        print(json.dumps(report, indent=2))\n    else:\n        zone = args.tz\n        print(f\"{args.file.name}: {stats.requests} requests, {stats.skipped} skipped\")\n        print(f\"from {show_time(stats.first, zone)} to {show_time(stats.last, zone)}\")\n        classes = \", \".join(f\"{k} {v}\" for k, v in sorted(stats.classes.items()))\n        print(f\"status: {classes}\")\n        print(f\"error rate (5xx): {stats.error_rate:.1f}% (limit {args.max_error_rate:.1f}%)\")\n        print(f\"\\ntop {args.top} paths:\")\n        for p, count in stats.paths.most_common(args.top):\n            print(f\"{count:7}  {p}\")\n        print(\"\\nserver errors:\")\n        for key, count in stats.server_errors.most_common():\n            print(f\"{count:7}  {key}\")\n    if not ok:\n        log.error(\n            \"error rate %.1f%% is above the limit of %.1f%%\", stats.error_rate, args.max_error_rate\n        )\n        return 1\n    return 0\n\n\ndef run_app(args) -> int:\n    result = parse_app(read_lines(args.file))\n    levels, errors, times = result[\"levels\"], result[\"errors\"], result[\"times\"]\n    if args.format == \"json\":\n        report = {\n            \"file\": args.file.name,\n            \"levels\": dict(levels),\n            \"first\": min(times).isoformat() if times else None,\n            \"last\": max(times).isoformat() if times else None,\n            \"stack_trace_lines\": result[\"continued\"],\n            \"top_errors\": errors.most_common(args.top),\n        }\n        print(json.dumps(report, indent=2))\n    else:\n        zone = args.tz\n        print(f\"{args.file.name}: \" + \", \".join(f\"{k} {v}\" for k, v in levels.most_common()))\n        if times:\n            print(f\"from {show_time(min(times), zone)} to {show_time(max(times), zone)}\")\n        print(f\"\\ntop {args.top} errors:\")\n        for msg, count in errors.most_common(args.top):\n            print(f\"{count:7}  {msg}\")\n    if args.max_errors is not None and levels[\"ERROR\"] > args.max_errors:\n        log.error(\"%d ERROR lines, the limit is %d\", levels[\"ERROR\"], args.max_errors)\n        return 1\n    return 0\n\n\ndef zone(name: str) -> ZoneInfo:\n    \"\"\"argparse type: turn 'Europe/Berlin' into a time zone, or fail with a clear message.\"\"\"\n    try:\n        return ZoneInfo(name)\n    except (ZoneInfoNotFoundError, ValueError):\n        raise argparse.ArgumentTypeError(f\"unknown time zone {name!r}\") from None\n\n\ndef build_parser() -> argparse.ArgumentParser:\n    parser = argparse.ArgumentParser(prog=\"logsum\", description=\"Summarize the Part 1 sample logs.\")\n    parser.add_argument(\"-v\", \"--verbose\", action=\"store_true\", help=\"also print debug messages\")\n    # Settings shared by both subcommands.\n    common = argparse.ArgumentParser(add_help=False)\n    common.add_argument(\"file\", type=Path, help=\"the log file to read\")\n    common.add_argument(\"--top\", type=int, default=5, metavar=\"N\", help=\"rows to show (default 5)\")\n    common.add_argument(\n        \"--format\", choices=[\"text\", \"json\"], default=\"text\", help=\"text for people, json for jq\"\n    )\n    common.add_argument(\n        \"--tz\",\n        type=zone,\n        default=\"UTC\",\n        metavar=\"ZONE\",\n        help=\"show times in this zone (default UTC)\",\n    )\n\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    access = sub.add_parser(\"access\", parents=[common], help=\"nginx access log\")\n    access.add_argument(\n        \"--max-error-rate\",\n        type=float,\n        metavar=\"PCT\",\n        # A flag beats the environment variable, which beats the default.\n        default=float(os.environ.get(\"LOGSUM_MAX_ERROR_RATE\", \"1.0\")),\n        help=\"fail when more than this percent of requests are 5xx (default 1.0)\",\n    )\n    access.add_argument(\n        \"--csv\", type=Path, metavar=\"FILE\", help=\"also write per-path counts to this CSV file\"\n    )\n    access.set_defaults(handler=run_access)\n\n    app = sub.add_parser(\"app\", parents=[common], help=\"app log with levels\")\n    app.add_argument(\n        \"--max-errors\", type=int, metavar=\"N\", help=\"fail when there are more ERROR lines than N\"\n    )\n    app.set_defaults(handler=run_app)\n    return parser\n\n\ndef main(argv: list[str] | None = None) -> int:\n    args = build_parser().parse_args(argv)\n    # Log messages go to stderr, so stdout stays clean for the report (and for jq).\n    logging.basicConfig(\n        level=logging.DEBUG if args.verbose else logging.INFO,\n        format=\"logsum: %(levelname)s %(message)s\",\n        stream=sys.stderr,\n        force=True,\n    )\n    try:\n        return args.handler(args)\n    except FileNotFoundError:\n        log.error(\"no such file: %s\", args.file)\n        return 2\n    except PermissionError:\n        log.error(\"no permission to read %s\", args.file)\n        return 2\n\n\nif __name__ == \"__main__\":\n    sys.exit(main())",
+     "run": "uv run scripts/logsum.py access ~/code/linux-lab/access.log"
+    },
+    {
+     "lang": "text",
+     "title": "scripts/urls.txt (input for today's hands-on)",
+     "src": "# urls.txt: the endpoints healthcheck.py asks, one per line.\n# Start hello-devops first (python app.py, or docker compose up from Part 5).\nhttp://localhost:8000/healthz\nhttp://localhost:8000/readyz\nhttps://www.example.com/",
+     "run": "uv run scripts/healthcheck.py scripts/urls.txt"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "brew install uv",
+     "what": "Install uv on a Mac (the uv docs also have a standalone installer)."
+    },
+    {
+     "cmd": "uv python install 3.14",
+     "what": "Download and install a Python version that uv manages."
+    },
+    {
+     "cmd": "uv python list",
+     "what": "Show the Python versions uv can find or download."
+    },
+    {
+     "cmd": "uv sync",
+     "what": "Make the project's .venv match uv.lock exactly, installing Python if needed."
+    },
+    {
+     "cmd": "uv run scripts/logsum.py access ~/code/linux-lab/access.log",
+     "what": "Run a script with the right Python and packages, without activating anything."
+    },
+    {
+     "cmd": "uv run python",
+     "what": "Start a Python REPL inside the project's environment."
+    },
+    {
+     "cmd": "uv init --script check.py --python 3.14",
+     "what": "Create a one-file script with an inline metadata block."
+    },
+    {
+     "cmd": "uv add --script check.py requests",
+     "what": "Add a package to a script's inline metadata block."
+    },
+    {
+     "cmd": "uv run --python 3.13 check.py",
+     "what": "Run the same script on a different Python version."
+    },
+    {
+     "cmd": "uvx ruff check check.py",
+     "what": "Run a tool (here ruff) in a throwaway environment, without installing it."
+    },
+    {
+     "cmd": "chmod +x scripts/logsum.py && ./scripts/logsum.py --help",
+     "what": "Make a script with a uv shebang executable, then run it directly."
+    },
+    {
+     "cmd": "echo $?",
+     "what": "Print the exit code of the last command."
+    },
+    {
+     "cmd": "uv run scripts/logsum.py access ~/code/linux-lab/access.log 2> /dev/null",
+     "what": "Keep the report, drop the log messages on stderr."
+    },
+    {
+     "cmd": "nc -l 9998",
+     "what": "Listen on a port and never answer: a test target for timeouts (stop it with Ctrl+C)."
+    }
+   ],
+   "mistake": "Wrapping the whole script in `try: ... except Exception: pass` turns a crash into a silent success. The script exits 0, CI goes green, and nothing was checked. Catch the exceptions you expect by name, say on stderr what went wrong, return a non-zero code, and let everything else crash with its traceback.",
+   "real_world": "An engineer on call at 3 a.m. and a deploy pipeline often need the same check. A script with `--help`, a JSON mode and fixed exit codes serves both: the person reads the text, and the pipeline reads the code. Teams keep such scripts in one repo with a lock file and run ruff and pytest on them in CI. They also agree on one exit-code contract, so alerts and pipelines can act on a result without parsing any text.",
+   "task": {
+    "title": "A URL health checker in Python",
+    "steps": [
+     "Make a folder `~/code/ops-scripts`, then run `uv init --script healthcheck.py --python 3.14` in it.",
+     "Create `urls.txt` with one URL per line: the `/healthz` and `/readyz` URLs of hello-devops on port 8000, plus `http://localhost:9998/`. Your script skips blank lines and lines that start with `#`.",
+     "Use argparse for the file name and a `--timeout` option. Its default comes from a `HEALTHCHECK_TIMEOUT` environment variable, or 5 seconds.",
+     "For each URL, call `urllib.request.urlopen(url, timeout=...)` from the standard library and print one line on stdout: OK or FAIL, the URL, and a short reason.",
+     "Catch the failures by name and give each its own reason: an HTTP error status, no connection, and a timeout.",
+     "Exit with 0 when every URL is fine, 1 when any failed, and 2 for a missing file. Send the summary line to stderr with logging.",
+     "Start hello-devops (`python app.py` in its venv from Day 2) and run your checker. Then stop the app and run it again. Check `echo $?` each time.",
+     "Run `nc -l 9998` in another terminal, so that URL accepts the connection and never answers. Run the checker with `--timeout 2` and time it.",
+     "Run `uvx ruff check healthcheck.py`, fix what it reports, and compare your script with `scripts/healthcheck.py` in the lab."
+    ],
+    "hints": [
+     "`urlopen` raises `urllib.error.HTTPError` for 4xx and 5xx answers. It is a subclass of `URLError`, so put its `except` first.",
+     "A refused connection arrives as `URLError`; look at `err.reason`. A timeout can arrive as `TimeoutError` or inside a `URLError`.",
+     "Only allow `http` and `https` URLs: `urlopen` would also open `file:///etc/passwd`."
+    ],
+    "done_when": "You are done when your checker prints one line per URL, exits 0 with hello-devops running and 1 with it stopped, and gives up on the `nc` URL after your timeout."
+   },
+   "explain_back": {
+    "prompt": "Explain in 3 to 4 sentences how a script should report its result to CI and to a person. Mention stdout, stderr and exit codes, and say why a broad `except` is dangerous.",
+    "answer": "CI only reads the exit code, so the script returns 0 when all is well, 1 when the check found a problem, and 2 when it could not run. The report or JSON goes to stdout, where another program can read it cleanly. Messages for people, such as warnings and the reason for a failure, go to stderr through logging. A broad `except Exception: pass` hides failures and lets the script exit 0, so CI goes green even though nothing worked."
+   },
+   "recap": [
+    "Move a script from Bash to Python when it needs data structures, JSON, error handling or tests.",
+    "uv installs Python, keeps .venv in sync with uv.lock, and runs commands with `uv run`.",
+    "A `# /// script` block lets one file carry its own Python version and packages.",
+    "Shape every script as small functions plus `main(argv) -> int` and `sys.exit(main())`.",
+    "Keep datetimes aware: parse the zone from the log and use `datetime.now(UTC)`.",
+    "Call programs with a list of arguments, `check=True` and a timeout, never `shell=True` with outside input."
+   ],
+   "check": [
+    {
+     "q": "A cron job runs a Python script that hits a `KeyError` nobody catches. What does cron see?",
+     "options": [
+      "Exit code 0, because Python itself ran",
+      "Exit code 2, the code for usage errors",
+      "Exit code 1, with a traceback on stderr",
+      "No exit code until the job is killed"
+     ],
+     "answer": 2,
+     "why": "An uncaught exception prints a traceback to stderr and ends Python with exit code 1."
+    },
+    {
+     "q": "A script compares `datetime.now()` with a time parsed from a log line using `%z`. What happens?",
+     "options": [
+      "Python raises a TypeError about naive and aware datetimes",
+      "Python converts both to UTC and compares them correctly",
+      "The comparison always returns False",
+      "Python assumes the log time is local time"
+     ],
+     "answer": 0,
+     "why": "`datetime.now()` is naive and the parsed value is aware, and Python refuses to compare the two; use `datetime.now(UTC)`."
+    },
+    {
+     "q": "A script must run `kubectl get pods -n NAME`, where NAME comes from a command-line argument. Which call is safe?",
+     "options": [
+      "`subprocess.run(f\"kubectl get pods -n {name}\", shell=True)`",
+      "`os.system(\"kubectl get pods -n \" + name)`",
+      "`subprocess.run(\"kubectl get pods -n \" + name, shell=True, check=True)`",
+      "`subprocess.run([\"kubectl\", \"get\", \"pods\", \"-n\", name], check=True, timeout=30)`"
+     ],
+     "answer": 3,
+     "why": "Only the list form keeps NAME as one argument that no shell interprets, and `check` and `timeout` make failures loud."
+    }
+   ],
+   "interview": [
+    {
+     "q": "When do you write an ops script in Python instead of Bash?",
+     "a": "When it needs data structures, JSON or HTTP, different handling for different errors, or tests. Bash is good glue for a few commands and short CI steps, but its quoting and error handling get fragile as scripts grow. Python's standard library covers files, JSON, regular expressions, time zones and subprocesses, and behaves the same on macOS and Linux. I keep the Bash habits either way: clear exit codes, messages on stderr and failing loudly."
+    },
+    {
+     "q": "How do you run an external command safely from Python?",
+     "a": "I use `subprocess.run` with a list of arguments, so no shell parses them and there is no injection risk. I pass `check=True` so a non-zero exit raises `CalledProcessError`, `capture_output=True, text=True` to read its output, and a `timeout` so a hung command cannot hang my script. I avoid `shell=True`, and never use it with outside input. On failure I log the command's stderr and exit with a clear code."
+    },
+    {
+     "q": "Why do scripts have a main() function and `if __name__ == \"__main__\"`?",
+     "a": "The guard runs `main` only when the file is executed, not when it is imported. That lets tests import the module and call `main([...])` with their own arguments, then assert on the exit code it returns. Having `main` return an int and calling `sys.exit(main())` keeps the exit-code logic in one place. It also keeps parsing and printing apart from the functions that do the work, which makes them easy to test."
+    }
+   ],
+   "deeper": {
+    "minutes": 12,
+    "body": "The summarizer reads a whole file into memory with `read_text()`. For a 238-line practice log that is fine. On a server, access logs can grow to gigabytes, so it is worth knowing what that choice costs.\n\nTo find out, we repeated `access.log` 4,200 times: 999,600 lines, 158 MB. Then we parsed it in two ways with the same `parse_access` function:\n\n- `parse_access(read_lines(path))`, which reads everything first, peaked at 384 MB of memory.\n- `with path.open() as f: parse_access(f)`, which hands over one line at a time, peaked at 15 MB.\n\n`parse_access` already accepts any iterable of lines, so streaming needed no change inside it. That is a good reason to write parsing functions this way. A file, a list in a test, `sys.stdin` and a decompressed stream all work.\n\nRotated logs are usually compressed, such as `access.log.2.gz`. The call `gzip.open(path, \"rt\", encoding=\"utf-8\")` opens one as text, and you can loop over it like any file. Our 158 MB test log compressed to 11 MB, though it repeats itself far more than a real log does. To support pipes as well, accept `-` as the file name and read `sys.stdin`. Then `zcat access.log.*.gz | logsum access -` works the way Unix tools do.\n\nSpeed is the other cost. Both runs took 11 to 12 seconds for a million lines. The awk filter `awk '$9 >= 500'` went through the same file in under half a second. A quick profile on 100,000 lines showed where the time goes: the regex took 0.05 seconds, while `datetime.strptime` took 0.79 seconds, about three quarters of the total. Two cheap fixes are open to you:\n\n1. Access logs are written in time order, so you only need to parse the first and the last timestamp, not every one.\n2. On a busy server many lines share the same second, so caching parsed values with `functools.lru_cache` avoids parsing the same text twice.\n\nThat is the general pattern for Python ops scripts. Write the clear version first, measure on realistic data, and fix the one hot spot the profile shows. The command `uv run python -m cProfile -s cumtime scripts/logsum.py access big.log` prints which functions used the time."
+   },
+   "sources": [
+    {
+     "title": "uv: Running scripts",
+     "url": "https://docs.astral.sh/uv/guides/scripts/"
+    },
+    {
+     "title": "PEP 723: Inline script metadata",
+     "url": "https://peps.python.org/pep-0723/"
+    },
+    {
+     "title": "subprocess: Subprocess management",
+     "url": "https://docs.python.org/3/library/subprocess.html"
+    },
+    {
+     "title": "Logging HOWTO",
+     "url": "https://docs.python.org/3/howto/logging.html"
+    }
+   ]
+  },
+  {
+   "id": "d16",
+   "title": "Python and APIs: HTTP, AWS with boto3, and testing your scripts",
+   "minutes": 50,
+   "goal": "By the end you can call the GitHub API and AWS from Python with timeouts, retries and pagination, test both without a network, and install the result as a command.",
+   "guess": {
+    "q": "Your script calls `requests.get(url)` without a timeout. The server accepts the connection and then never answers. How long does your script wait?",
+    "options": [
+     "30 seconds, the requests default",
+     "It retries three times, then raises",
+     "Forever, unless something kills it",
+     "Until TCP gives up after two minutes"
+    ],
+    "answer": 2,
+    "why": "requests has no default timeout, so the call can hang for as long as the connection stays open. Always pass `timeout=`, for example `timeout=(3.05, 10)`."
+   },
+   "terms": [
+    {
+     "term": "REST API",
+     "plain": "A web service you call with HTTP methods on URLs, usually sending and receiving JSON."
+    },
+    {
+     "term": "Timeout",
+     "plain": "The longest your code waits for a connection or an answer before it gives up with an error."
+    },
+    {
+     "term": "Exponential backoff",
+     "plain": "Waiting longer after each failed try, for example 2 seconds, then 4, then 8, so a busy server can recover."
+    },
+    {
+     "term": "Pagination",
+     "plain": "An API returns a long list in pages, and you ask for the next page until there is none."
+    },
+    {
+     "term": "boto3 client",
+     "plain": "A Python object for one AWS service, with one method per API call, such as `s3.list_buckets()`."
+    },
+    {
+     "term": "Paginator",
+     "plain": "A boto3 helper that fetches every page of a list call for you."
+    },
+    {
+     "term": "Waiter",
+     "plain": "A boto3 helper that asks AWS again and again until a resource reaches a state, such as running."
+    },
+    {
+     "term": "Mock",
+     "plain": "A stand-in that answers in place of a real service during a test, so the test runs offline."
+    }
+   ],
+   "sections": [
+    {
+     "h": "The requests library is still the default for scripts",
+     "body": "The Day 15 health checker used `urllib.request` from the standard library. That is fine for a status code. Once you need JSON, headers, sessions and retries, use a library. There are two serious choices:\n\n- requests: synchronous, with an API that has barely changed in years, and a mocking library, `responses`, made for it.\n- httpx: almost the same API, plus async code and HTTP/2.\n\nFor ops scripts, pick requests today. The httpx project has had no stable release since 0.28.1 in December 2024. Its 1.0 has been out only as development releases that change the API, and Pydantic now maintains a fork named httpx2 that keeps the old one. That split will settle. Until it does, a script that runs from cron for three years is better off on the library that does not move. Reach for httpx2 when you really need async or HTTP/2.\n\nFour habits make every call safe:\n\n1. Always pass `timeout=`. Requests has no default, so a server that accepts the connection and never answers hangs your script forever. The value `timeout=(3.05, 10)` waits 3.05 seconds to connect and 10 seconds for each part of the answer. The requests docs suggest a connect value slightly above a multiple of 3, the default TCP retransmission window.\n2. Call `response.raise_for_status()`. A 404 or a 500 is not an exception in requests until you ask for one.\n3. Read the body with `response.json()`, after the status check.\n4. Use a `requests.Session` for more than one call. It keeps the connection open and sends the same headers every time.",
+     "refs": [
+      {
+       "title": "requests: Advanced usage (timeouts, sessions, retries)",
+       "url": "https://requests.readthedocs.io/en/latest/user/advanced/",
+       "kind": "docs"
+      },
+      {
+       "title": "Python Requests tutorial (Corey Schafer)",
+       "url": "https://www.youtube.com/watch?v=tb8gHvYlCFs",
+       "kind": "watch"
+      },
+      {
+       "title": "httpx2, Pydantic's continuation of httpx",
+       "url": "https://github.com/pydantic/httpx2",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Tokens, retries and pages: the GitHub API",
+     "body": "`gh-runs` asks GitHub for a repo's recent Actions runs with `GET https://api.github.com/repos/OWNER/REPO/actions/runs`. Three headers go with every request:\n\n- `Accept: application/vnd.github+json`, the media type GitHub recommends.\n- `X-GitHub-Api-Version: 2026-03-10`, the newest API version. Without the header, GitHub picks one for you; it answered with `2022-11-28` when we left it out.\n- `Authorization: Bearer <token>`, with the token read from the `GITHUB_TOKEN` environment variable.\n\nLocally, `export GITHUB_TOKEN=\"$(gh auth token)\"` borrows the token the gh CLI got on Day 2. In GitHub Actions, the same variable can come from the built-in token (Day 27). The script never prints the token and never takes it as a flag, because flags end up in your shell history and in `ps` output. Without a token you get 60 requests an hour, and with one you get 5,000.\n\nRetry only when asking again can help: a 429 (too many requests), a 502, 503 or 504, or a dropped connection. Never retry a 401 or a 404, because the answer will not change. Retry only idempotent methods (Day 11): a repeated GET is harmless, while a repeated POST may start two deploys. Requests does none of this by default. The lab mounts urllib3's `Retry` on the session with `status_forcelist=[429, 500, 502, 503, 504]` and `allowed_methods=[\"GET\"]`. With `backoff_factor=1` it waits 0, then 2, then 4 seconds, and it obeys a `Retry-After` header when the server sends one.\n\nGitHub returns at most 100 items per page and puts the next page's address in the `Link` header. Requests parses that header into `response.links[\"next\"][\"url\"]`. The `list_runs` function follows it until there is no next page or it has enough runs.",
+     "refs": [
+      {
+       "title": "GitHub REST API: using pagination",
+       "url": "https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api",
+       "kind": "docs"
+      },
+      {
+       "title": "GitHub REST API: rate limits",
+       "url": "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api",
+       "kind": "docs"
+      },
+      {
+       "title": "GitHub REST API: workflow runs",
+       "url": "https://docs.github.com/en/rest/actions/workflow-runs",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "AWS from Python: boto3 sessions, profiles and clients",
+     "body": "Boto3 is AWS's SDK for Python. Every script starts from a session, which holds one set of credentials and one region:\n\n- `boto3.Session(profile_name=\"learn\")` uses the `learn` profile from Day 13. Run `aws login --profile learn` first, and boto3 picks up the same sign-in. That needs boto3's `crt` extra, which the lab's `pyproject.toml` asks for.\n- Leave the profile out and boto3 searches the usual places in order: environment variables such as `AWS_PROFILE`, the files in `~/.aws`, and finally a container or instance role (Day 14).\n- `session.client(\"s3\")` gives you a client. It has one method per API call, in snake_case, so ListBuckets becomes `list_buckets()`.\n\nAnswers are plain dictionaries, shaped like the JSON the CLI printed on Day 13. Errors come in two families:\n\n- `botocore.exceptions.ClientError`: AWS answered with an error. `err.response[\"Error\"][\"Code\"]` holds a code such as `AccessDenied` or `NoSuchBucket`, and you decide per code.\n- `botocore.exceptions.BotoCoreError`: no useful answer at all. No credentials, an unknown profile and an expired sign-in all land here.\n\nStart every AWS script with `sts.get_caller_identity()` and log the account and identity it returns. It is the Python twin of `aws sts get-caller-identity`, it needs no permissions, and it catches \"wrong account\" before anything else runs.\n\nUse clients rather than the older resource interface (`boto3.resource`). The boto3 docs say AWS does not intend to add new features to resources.",
+     "refs": [
+      {
+       "title": "boto3: Low-level clients (and waiters)",
+       "url": "https://docs.aws.amazon.com/boto3/latest/guide/clients.html",
+       "kind": "docs"
+      },
+      {
+       "title": "boto3: Error handling",
+       "url": "https://docs.aws.amazon.com/boto3/latest/guide/error-handling.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Paginators, waiters and a read-only report",
+     "body": "Most AWS list calls return one page at a time. For example, `list_objects_v2` returns at most 1,000 keys and a token for the next page. A script that forgets this sees 1,000 objects in a bucket that holds 5,000. A paginator asks for every page for you. The call `ec2.get_paginator(\"describe_instances\").paginate(Filters=[...])` gives an iterator of pages. Then `pages.search(\"Reservations[].Instances[]\")` pulls every instance out of them with JMESPath, the same language as `--query` on Day 13.\n\nA waiter polls until a resource reaches a state. The waiter from `ec2.get_waiter(\"instance_running\")` calls DescribeInstances every 15 seconds, up to 40 times, then raises `WaiterError`. Each client lists its waiters in `waiter_names`; S3 has four, including `bucket_exists`. The lab uses waiters wherever code creates something and must wait for it: in `seed_moto.py` and in the tests.\n\n`aws-report` puts the pieces together. It only reads, and it needs three permissions: `s3:ListAllMyBuckets`, `s3:GetBucketVersioning` and `ec2:DescribeInstances`. It reports two things:\n\n- S3 buckets where versioning is off or suspended. Versioning keeps old copies of objects, so an overwrite or a delete can be undone, which is why Day 13's bucket has it on.\n- EC2 instances that still exist and have no `owner` tag, so nobody knows whom to ask before stopping them. Stopped instances count, because their disks still cost money.\n\nA bucket the script may not read becomes a finding, `cannot read versioning (AccessDenied)`, instead of a crash. A report that dies on bucket 3 of 200 tells you nothing about the other 197.",
+     "refs": [
+      {
+       "title": "boto3: Paginators",
+       "url": "https://docs.aws.amazon.com/boto3/latest/guide/paginators.html",
+       "kind": "docs"
+      },
+      {
+       "title": "AWS SDKs: service-specific endpoints (AWS_ENDPOINT_URL)",
+       "url": "https://docs.aws.amazon.com/sdkref/latest/guide/feature-ss-endpoints.html",
+       "kind": "docs"
+      }
+     ]
+    },
+    {
+     "h": "Testing scripts with pytest",
+     "body": "A script that runs at 3 a.m. deserves tests as much as the app it watches. The pytest runner finds files named `test_*.py` and runs every function named `test_*`. When an `assert` fails, it shows the values on both sides. In the lab, `uv run pytest` runs 30 tests in about 8 seconds, offline.\n\nThe `main(argv) -> int` shape from Day 15 is what makes this easy: call `main([\"access\", str(path)])` and assert on the number it returns. Three built-in fixtures do most of the rest. A fixture is something pytest prepares for a test that names it as an argument:\n\n- `tmp_path` is a fresh empty folder for this one test. Write a three-line log into it, with one broken line, instead of depending on real files.\n- `monkeypatch` changes things for one test only. `monkeypatch.setenv(\"LOGSUM_MAX_ERROR_RATE\", \"50\")` and `monkeypatch.delenv(\"GITHUB_TOKEN\")` are undone when the test ends, so no test leaks settings into the next.\n- `capsys` captures what the code printed. `out, err = capsys.readouterr()` lets you check that the report went to stdout and the reason went to stderr.\n\nYou can write your own fixtures with `@pytest.fixture`, and code after a `yield` inside one runs as cleanup. The file `test_healthcheck.py` uses that to start a real web server on 127.0.0.1 for each test. The server shuts down afterwards, so the 503 and timeout cases are real without leaving the laptop.\n\nWhat deserves a test in an ops script? The exit codes, the parsing of realistic input including one malformed line, and every error message a tired person will read. Leave argparse and requests alone; their own authors test them.",
+     "refs": [
+      {
+       "title": "pytest: How to monkeypatch/mock modules and environments",
+       "url": "https://docs.pytest.org/en/stable/how-to/monkeypatch.html",
+       "kind": "docs"
+      },
+      {
+       "title": "pytest: How to use temporary directories and files",
+       "url": "https://docs.pytest.org/en/stable/how-to/tmp_path.html",
+       "kind": "docs"
+      },
+      {
+       "title": "Please learn how to write tests in Python: pytest tutorial (Tech With Tim)",
+       "url": "https://www.youtube.com/watch?v=EgpLj86ZHFQ",
+       "kind": "watch"
+      }
+     ]
+    },
+    {
+     "h": "Fake services: responses for HTTP, moto for AWS",
+     "body": "Tests that call the real GitHub or AWS are slow and flaky, and they need secrets in CI. Replace the service and keep your code as it is.\n\n`responses` patches requests so that registered URLs get canned answers. Inside a test marked `@responses.activate`, `responses.get(url, json={...}, status=200)` registers one answer. A request to any URL you did not register raises `ConnectionError`, so a test cannot reach the internet by accident. Matchers check what you sent, such as the `Authorization` header. `registries.OrderedRegistry` hands out answers in order, a 502 and then a 200, which proves the retry works. Pass `backoff=0` in that test so it does not sleep.\n\nMoto does the same for AWS. Inside `with mock_aws():`, every boto3 call goes to an in-memory fake AWS that starts empty for each test. The test creates the buckets and instances it needs, then calls the real function. Two rules from the moto docs:\n\n1. Set fake credentials first, `AWS_ACCESS_KEY_ID=testing` and the rest, with `monkeypatch.setenv`. If your shell holds real keys, this makes sure they are never used.\n2. Start the mock before you create any client. A client made earlier, for example at import time, is not mocked.\n\nMoto is a model of AWS, not AWS. It does not check IAM permissions unless you ask it to, so a test passes even when the real role would be denied. It also has quirks: in the lab, a bucket named `logs` failed in moto with a 404, and a rename fixed it. Run a new check once against a real account before you trust it. The same moto also runs as a server (`moto_server -p 5050`) that boto3 reaches through `AWS_ENDPOINT_URL`, the same idea as `--endpoint-url` on Day 13.",
+     "refs": [
+      {
+       "title": "Moto: getting started",
+       "url": "https://docs.getmoto.org/en/latest/docs/getting_started.html",
+       "kind": "docs"
+      },
+      {
+       "title": "responses: mock the requests library",
+       "url": "https://github.com/getsentry/responses",
+       "kind": "read"
+      }
+     ]
+    },
+    {
+     "h": "Ship it: a command, ruff and CI",
+     "body": "A folder of scripts becomes a tool when teammates can install it. `pyproject.toml` lists commands under `[project.scripts]`. The line `gh-runs = \"python_ops.gh_runs:main\"` means: make a command named `gh-runs` that calls `main` in that module. Since uv 0.12, `uv init` creates this kind of project by default, with the code under `src/` and uv's own build backend. Three ways to use the commands:\n\n- `uv run gh-runs ...` inside the project folder.\n- `uv tool install --editable .` puts `gh-runs` and `aws-report` on your PATH, each in its own environment. With `--editable`, your code changes apply without reinstalling.\n- `uv tool install git+https://github.com/YOU/python-ops` installs them for a teammate straight from git.\n\nruff lints and formats in one fast tool: `uv run ruff check` finds likely bugs, and `uv run ruff format` fixes the layout. The lab turns on a few rule groups that suit ops code, each explained in `pyproject.toml`. Three of them earn their place:\n\n- `S113` flags `requests.get(url)` without a timeout. It does not see calls on a `Session`, so the habit still matters.\n- `S602` flags `shell=True`, and `PLW1510` flags `subprocess.run` without `check=`.\n- `DTZ` flags naive datetimes such as `datetime.now()`.\n\nLast comes CI. The lab's `ci.yml` installs uv with `astral-sh/setup-uv`, runs `uv sync --locked`, then ruff and pytest. `--locked` fails the job when `uv.lock` no longer matches `pyproject.toml`. Each step fails the job through its exit code, just like the scripts themselves. Day 25 builds a full pipeline with caching and a matrix; this one is a short preview you can push today.",
+     "refs": [
+      {
+       "title": "uv: Using tools (uv tool install)",
+       "url": "https://docs.astral.sh/uv/guides/tools/",
+       "kind": "docs"
+      },
+      {
+       "title": "uv: Using uv in GitHub Actions",
+       "url": "https://docs.astral.sh/uv/guides/integration/github/",
+       "kind": "docs"
+      },
+      {
+       "title": "The Ruff linter",
+       "url": "https://docs.astral.sh/ruff/linter/",
+       "kind": "docs"
+      }
+     ]
+    }
+   ],
+   "analogy": "The responses and moto libraries work like a flight simulator. Pilots practise an engine failure in the simulator, because nobody can arrange one on a real flight. Your tests practise a 502, an expired token or an untagged instance the same way. A simulator is only as good as its model of the aircraft, though. Moto does not check IAM permissions by default, so a test can pass while the real call would be denied. One flight in the real thing is still part of the training.",
+   "diagram": "<svg viewBox=\"0 0 560 216\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Your script calls requests or boto3; in a real run they talk to GitHub or AWS, under pytest they talk to responses or moto\"><rect class=\"bx\" x=\"16\" y=\"88\" width=\"120\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"76\" y=\"113\" font-size=\"13\" text-anchor=\"middle\">your script</text><rect class=\"bxp\" x=\"172\" y=\"88\" width=\"160\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"252\" y=\"113\" font-size=\"13\" text-anchor=\"middle\">requests / boto3</text><rect class=\"bxt\" x=\"392\" y=\"24\" width=\"152\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"468\" y=\"49\" font-size=\"13\" text-anchor=\"middle\">GitHub / AWS</text><rect class=\"bxg\" x=\"392\" y=\"148\" width=\"152\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"468\" y=\"173\" font-size=\"13\" text-anchor=\"middle\">responses / moto</text><line class=\"ln\" x1=\"136\" y1=\"108\" x2=\"168\" y2=\"108\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"332\" y1=\"100\" x2=\"388\" y2=\"50\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"332\" y1=\"116\" x2=\"388\" y2=\"166\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"76\" y=\"146\" font-size=\"11\" text-anchor=\"middle\">gh-runs, aws-report</text><text class=\"ts\" x=\"252\" y=\"146\" font-size=\"11\" text-anchor=\"middle\">timeouts, retries</text><text class=\"ts\" x=\"468\" y=\"82\" font-size=\"11\" text-anchor=\"middle\">real run: network, cost</text><text class=\"ts\" x=\"468\" y=\"206\" font-size=\"11\" text-anchor=\"middle\">pytest: offline, fast</text></svg>",
+   "diagram_caption": "The same code talks to the real service in a run and to a fake one under pytest.",
+   "worked": {
+    "title": "gh-runs, from a raw request to a tested command",
+    "steps": [
+     {
+      "say": "Look at the raw answer before you write code. The JSON has a total and a list of runs, and the `Link` header holds the next page. Public repos need no token; your numbers will differ.",
+      "code": "$ curl -s -H \"Accept: application/vnd.github+json\" -H \"X-GitHub-Api-Version: 2026-03-10\" \\\n    \"https://api.github.com/repos/arunav-bhattacharya/devops-from-zero/actions/runs?per_page=2\" \\\n    | jq -c '{total_count, first: (.workflow_runs[0] | {run_number, name, conclusion, head_branch})}'\n{\"total_count\":21,\"first\":{\"run_number\":19,\"name\":\"deploy\",\"conclusion\":\"success\",\"head_branch\":\"main\"}}\n$ curl -sI -H \"X-GitHub-Api-Version: 2026-03-10\" \"https://api.github.com/repos/arunav-bhattacharya/devops-from-zero/actions/runs?per_page=2\" | grep -i '^link'\nLink: <https://api.github.com/repositories/1439251123/actions/runs?per_page=2&page=2>; rel=\"next\", <https://api.github.com/repositories/1439251123/actions/runs?per_page=2&page=11>; rel=\"last\"",
+      "lang": "console"
+     },
+     {
+      "say": "Now the tool. Borrow the gh CLI's token through an environment variable and ask for five runs. Every run passed, so the exit code is 0.",
+      "code": "$ cd ~/code/python-ops\n$ export GITHUB_TOKEN=\"$(gh auth token)\"\n$ uv run gh-runs arunav-bhattacharya/devops-from-zero --limit 5\n#19    success    main                 2026-11-07 17:08:47  deploy\n#18    success    main                 2026-11-07 17:08:26  deploy\n#17    success    main                 2026-11-07 17:07:16  deploy\n#16    success    main                 2026-11-07 17:02:26  deploy\n#15    success    main                 2026-11-07 16:46:25  deploy\n5 runs, 0 failed\n$ echo $?\n0",
+      "lang": "console"
+     },
+     {
+      "say": "`-v` turns on DEBUG logging, and urllib3 then logs every HTTP request it sends. It is the quickest way to see the query string, the pages and any retries.",
+      "code": "$ uv run gh-runs arunav-bhattacharya/devops-from-zero --limit 2 -v\nurllib3.connectionpool: Starting new HTTPS connection (1): api.github.com:443\nurllib3.connectionpool: https://api.github.com:443 \"GET /repos/arunav-bhattacharya/devops-from-zero/actions/runs?per_page=2 HTTP/1.1\" 200 None\n#19    success    main                 2026-11-07 17:08:47  deploy\n#18    success    main                 2026-11-07 17:08:26  deploy\n2 runs, 0 failed",
+      "lang": "console"
+     },
+     {
+      "say": "Ask for more runs and the old failures appear. The table stays on stdout and the links to the failed runs go to stderr. The exit code turns 1, which is what a scheduled CI job would act on. (Output trimmed.)",
+      "code": "$ uv run gh-runs arunav-bhattacharya/devops-from-zero --limit 25\n...\n#2     failure    main                 2026-10-31 23:13:08  deploy\n#1     failure    main                 2026-10-31 23:05:20  deploy\n21 runs, 4 failed\ngh-runs: failed: deploy #4 https://github.com/arunav-bhattacharya/devops-from-zero/actions/runs/42391569154\ngh-runs: failed: deploy #3 https://github.com/arunav-bhattacharya/devops-from-zero/actions/runs/41251679651\ngh-runs: failed: deploy #2 https://github.com/arunav-bhattacharya/devops-from-zero/actions/runs/41251586511\ngh-runs: failed: deploy #1 https://github.com/arunav-bhattacharya/devops-from-zero/actions/runs/41251021139\n$ echo $?\n1",
+      "lang": "console"
+     },
+     {
+      "say": "A wrong token, a used-up rate limit or a 502 are hard to cause on purpose, so the tests cause them with `responses`. All eight run in a tenth of a second, with no network.",
+      "code": "$ uv run pytest tests/test_gh_runs.py -v\ntests/test_gh_runs.py::test_sends_token_and_version_headers PASSED       [ 12%]\ntests/test_gh_runs.py::test_follows_the_link_header_to_the_next_page PASSED [ 25%]\ntests/test_gh_runs.py::test_failed_run_exits_1_and_names_it PASSED       [ 37%]\ntests/test_gh_runs.py::test_run_in_progress_shows_its_status PASSED      [ 50%]\ntests/test_gh_runs.py::test_retries_a_502_then_succeeds PASSED           [ 62%]\ntests/test_gh_runs.py::test_bad_token_exits_2_with_a_hint PASSED         [ 75%]\ntests/test_gh_runs.py::test_rate_limit_says_when_it_resets PASSED        [ 87%]\ntests/test_gh_runs.py::test_no_token_warns PASSED                        [100%]\n============================== 8 passed in 0.12s ===============================",
+      "lang": "console"
+     },
+     {
+      "say": "Let ruff catch the classic slip. In a scratch file, a bare `requests.get` without a timeout is flagged as S113. Then install the commands for everyday use; `--editable` keeps them pointing at your folder. (Output trimmed.)",
+      "code": "$ uv run ruff check --output-format concise scratch.py\nscratch.py:3:5: S113 Probable use of `requests` call without timeout\nFound 1 error.\n$ uv tool install --editable .\nInstalled 2 executables: aws-report, gh-runs\n$ gh-runs --help | head -n 1\nusage: gh-runs [-h] [--branch BRANCH] [--limit LIMIT] [--per-page PER_PAGE]",
+      "lang": "console"
+     }
+    ]
+   },
+   "code": [
+    {
+     "lang": "ini",
+     "title": "pyproject.toml (in labs/python-ops)",
+     "src": "[project]\nname = \"python-ops\"\nversion = \"0.1.0\"\ndescription = \"Small, tested ops scripts for Part 4 of DevOps, from zero\"\nreadme = \"README.md\"\nrequires-python = \">=3.12\"\ndependencies = [\n    # [crt] lets boto3 use the `aws login` sign-in from Day 13.\n    \"boto3[crt]>=1.43.126\",\n    \"requests>=2.34.2\",\n]\n\n# Each line becomes a command on your PATH after `uv sync` or `uv tool install`.\n[project.scripts]\ngh-runs = \"python_ops.gh_runs:main\"\naws-report = \"python_ops.aws_report:main\"\n\n[build-system]\nrequires = [\"uv_build>=0.13.7,<0.14.0\"]\nbuild-backend = \"uv_build\"\n\n[dependency-groups]\ndev = [\n    \"moto[ec2,s3]>=5.2.5\",\n    \"pytest>=9.2.0\",\n    \"responses>=0.26.3\",\n    \"ruff>=0.17.4\",\n]\n\n[tool.pytest]\ntestpaths = [\"tests\"]\n# The Day 15 scripts are single files, not a package: let the tests import them.\npythonpath = [\"scripts\"]\naddopts = [\"-ra\"]\n\n[tool.ruff]\nline-length = 100\n# Where our own code lives, so import sorting knows logsum and python_ops are ours.\nsrc = [\"src\", \"scripts\"]\n\n[tool.ruff.lint]\n# E, W: style errors. F: real bugs such as unused imports and undefined names.\n# I: import order. B: likely bugs. UP: newer syntax. DTZ: datetimes without a time zone.\n# S113: requests without a timeout. S602: subprocess with shell=True.\n# PLW1510: subprocess.run without check=.\nselect = [\"E\", \"W\", \"F\", \"I\", \"B\", \"UP\", \"DTZ\", \"S113\", \"S602\", \"PLW1510\"]",
+     "run": "uv sync && uv run pytest && uv run ruff check"
+    },
+    {
+     "lang": "python",
+     "title": "src/python_ops/gh_runs.py",
+     "src": "\"\"\"gh-runs: list recent GitHub Actions runs for a repository and fail if any failed.\n\nExamples:\n  export GITHUB_TOKEN=\"$(gh auth token)\"\n  uv run gh-runs arunav-bhattacharya/devops-from-zero\n  uv run gh-runs YOUR-USER/hello-devops --branch main --limit 50\n\nExit codes: 0 no failed runs, 1 at least one failed run, 2 could not ask GitHub.\n\"\"\"\n\nimport argparse\nimport logging\nimport os\nimport sys\nfrom datetime import UTC, datetime\n\nimport requests\nfrom requests.adapters import HTTPAdapter\nfrom urllib3.util import Retry\n\nlog = logging.getLogger(\"gh-runs\")\n\nAPI = \"https://api.github.com\"\nAPI_VERSION = \"2026-03-10\"  # pin the API version so a new one cannot change answers under you\nTIMEOUT = (3.05, 10)  # seconds to connect, seconds to wait for each part of the answer\nFAILED = {\"failure\", \"timed_out\", \"startup_failure\"}\n\n\ndef make_session(token: str | None, retries: int = 3, backoff: float = 1.0) -> requests.Session:\n    \"\"\"A session sends the same headers every time and reuses connections.\"\"\"\n    session = requests.Session()\n    session.headers.update(\n        {\n            \"Accept\": \"application/vnd.github+json\",\n            \"X-GitHub-Api-Version\": API_VERSION,\n            \"User-Agent\": \"python-ops-gh-runs\",\n        }\n    )\n    if token:\n        session.headers[\"Authorization\"] = f\"Bearer {token}\"\n    # Retry GETs on 429 and 5xx, waiting longer each time (and as long as\n    # Retry-After asks). Never retry 401 or 404: asking again cannot fix those.\n    retry = Retry(\n        total=retries,\n        backoff_factor=backoff,\n        status_forcelist=[429, 500, 502, 503, 504],\n        allowed_methods=[\"GET\"],\n        raise_on_status=False,  # hand back the last answer, so we can explain it\n    )\n    session.mount(\"https://\", HTTPAdapter(max_retries=retry))\n    return session\n\n\ndef list_runs(\n    session: requests.Session,\n    repo: str,\n    limit: int,\n    branch: str | None = None,\n    per_page: int = 100,\n) -> list[dict]:\n    \"\"\"Return up to `limit` runs, newest first, following GitHub's pages.\"\"\"\n    url = f\"{API}/repos/{repo}/actions/runs\"\n    params: dict | None = {\"per_page\": min(limit, per_page)}\n    if branch:\n        params[\"branch\"] = branch\n    runs: list[dict] = []\n    while url and len(runs) < limit:\n        response = session.get(url, params=params, timeout=TIMEOUT)\n        response.raise_for_status()\n        runs.extend(response.json()[\"workflow_runs\"])\n        # The Link header holds the URL of the next page, query string included.\n        url = response.links.get(\"next\", {}).get(\"url\")\n        params = None\n    return runs[:limit]\n\n\ndef explain(err: requests.HTTPError) -> str:\n    \"\"\"Turn an HTTP error into a sentence a person can act on.\"\"\"\n    response = err.response\n    status = response.status_code\n    if status == 401:\n        return \"GitHub says 401: the token is wrong or expired. Try: gh auth status\"\n    if status in (403, 429) and response.headers.get(\"x-ratelimit-remaining\") == \"0\":\n        reset = int(response.headers.get(\"x-ratelimit-reset\", \"0\"))\n        when = datetime.fromtimestamp(reset, tz=UTC).strftime(\"%H:%M UTC\")\n        return f\"rate limit used up; it resets at {when}. A token raises the limit.\"\n    if status == 404:\n        return \"GitHub says 404: no such repo, or your token cannot see it.\"\n    return f\"GitHub answered {status}: {response.text[:200]}\"\n\n\ndef main(argv: list[str] | None = None) -> int:\n    parser = argparse.ArgumentParser(prog=\"gh-runs\", description=__doc__.splitlines()[0])\n    parser.add_argument(\"repo\", help=\"OWNER/NAME, for example octocat/hello-world\")\n    parser.add_argument(\"--branch\", help=\"only runs for this branch\")\n    parser.add_argument(\"--limit\", type=int, default=20, help=\"how many runs (default 20)\")\n    parser.add_argument(\n        \"--per-page\", type=int, default=100, help=\"runs per request (default and maximum 100)\"\n    )\n    parser.add_argument(\"-v\", \"--verbose\", action=\"store_true\", help=\"log every HTTP request\")\n    args = parser.parse_args(argv)\n    logging.basicConfig(\n        level=logging.DEBUG if args.verbose else logging.WARNING,\n        format=\"%(name)s: %(message)s\",\n        stream=sys.stderr,\n        force=True,\n    )\n\n    if args.repo.count(\"/\") != 1:\n        parser.error(\"repo must look like OWNER/NAME\")  # prints usage and exits with 2\n    token = os.environ.get(\"GITHUB_TOKEN\")\n    if not token:\n        log.warning(\"GITHUB_TOKEN is not set: public repos only, 60 requests an hour\")\n\n    try:\n        session = make_session(token)\n        runs = list_runs(session, args.repo, args.limit, args.branch, args.per_page)\n    except requests.HTTPError as err:\n        log.error(\"%s\", explain(err))\n        return 2\n    except requests.RequestException as err:\n        # DNS failure, refused connection, timeout, too many retries\n        log.error(\"could not reach GitHub: %s\", err)\n        return 2\n\n    failed = [run for run in runs if run[\"conclusion\"] in FAILED]\n    for run in runs:\n        result = run[\"conclusion\"] or run[\"status\"]  # conclusion is null while a run is going\n        created = run[\"created_at\"].replace(\"T\", \" \").removesuffix(\"Z\")\n        branch = run[\"head_branch\"]\n        print(f\"#{run['run_number']:<5} {result:<10} {branch:<20} {created}  {run['name']}\")\n    print(f\"{len(runs)} runs, {len(failed)} failed\")\n    for run in failed:\n        log.error(\"failed: %s #%s %s\", run[\"name\"], run[\"run_number\"], run[\"html_url\"])\n    return 1 if failed else 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main())",
+     "run": "GITHUB_TOKEN=\"$(gh auth token)\" uv run gh-runs YOUR-USER/hello-devops --limit 10"
+    },
+    {
+     "lang": "python",
+     "title": "src/python_ops/aws_report.py",
+     "src": "\"\"\"aws-report: find S3 buckets without versioning and EC2 instances without an owner tag.\n\nExamples:\n  aws login --profile learn          # the sign-in from Day 13\n  uv run aws-report --profile learn --region us-east-1\n  AWS_ENDPOINT_URL=http://localhost:5050 uv run aws-report   # a local moto server\n\nThe report only reads: it calls List, Get and Describe APIs and changes nothing.\nExit codes: 0 nothing found, 1 findings, 2 could not ask AWS.\n\"\"\"\n\nimport argparse\nimport json\nimport logging\nimport sys\n\nimport boto3\nfrom botocore.exceptions import BotoCoreError, ClientError\n\nlog = logging.getLogger(\"aws-report\")\n\n# Instances in these states still exist (and stopped ones can still cost money for disks).\nLIVE_STATES = [\"pending\", \"running\", \"stopping\", \"stopped\"]\n\n\ndef buckets_without_versioning(s3) -> list[dict]:\n    findings = []\n    # list_buckets returns pages too; a paginator asks for every page for you.\n    for page in s3.get_paginator(\"list_buckets\").paginate():\n        for bucket in page.get(\"Buckets\", []):\n            name = bucket[\"Name\"]\n            try:\n                answer = s3.get_bucket_versioning(Bucket=name)\n            except ClientError as err:\n                # One bucket we may not read should not hide the rest of the report.\n                code = err.response[\"Error\"][\"Code\"]\n                findings.append({\"bucket\": name, \"problem\": f\"cannot read versioning ({code})\"})\n                continue\n            # \"Enabled\", \"Suspended\", or no Status at all (never turned on).\n            status = answer.get(\"Status\", \"Disabled\")\n            if status != \"Enabled\":\n                findings.append({\"bucket\": name, \"problem\": f\"versioning {status.lower()}\"})\n    return findings\n\n\ndef instances_without_owner(ec2, tag_key: str = \"owner\") -> list[dict]:\n    findings = []\n    pages = ec2.get_paginator(\"describe_instances\").paginate(\n        Filters=[{\"Name\": \"instance-state-name\", \"Values\": LIVE_STATES}]\n    )\n    # search() runs a JMESPath expression (as in --query on Day 13) over every page.\n    for instance in pages.search(\"Reservations[].Instances[]\"):\n        tags = {t[\"Key\"].lower(): t[\"Value\"] for t in instance.get(\"Tags\", [])}\n        if not tags.get(tag_key.lower()):\n            findings.append(\n                {\n                    \"instance\": instance[\"InstanceId\"],\n                    \"state\": instance[\"State\"][\"Name\"],\n                    \"name\": tags.get(\"name\", \"-\"),\n                    \"problem\": f\"no {tag_key} tag\",\n                }\n            )\n    return findings\n\n\ndef main(argv: list[str] | None = None) -> int:\n    parser = argparse.ArgumentParser(prog=\"aws-report\", description=__doc__.splitlines()[0])\n    parser.add_argument(\"--profile\", help=\"profile from ~/.aws/config (default: AWS_PROFILE)\")\n    parser.add_argument(\"--region\", help=\"region for EC2 (default: from the profile)\")\n    parser.add_argument(\"--owner-tag\", default=\"owner\", help=\"tag every instance needs\")\n    parser.add_argument(\"--format\", choices=[\"text\", \"json\"], default=\"text\")\n    args = parser.parse_args(argv)\n    # Our own messages at INFO; other libraries (botocore) only from WARNING up.\n    logging.basicConfig(format=\"%(name)s: %(message)s\", stream=sys.stderr, force=True)\n    log.setLevel(logging.INFO)\n\n    try:\n        # A session holds one set of credentials and one region; clients come from it.\n        session = boto3.Session(profile_name=args.profile, region_name=args.region)\n        who = session.client(\"sts\").get_caller_identity()\n        log.info(\"account %s, region %s, as %s\", who[\"Account\"], session.region_name, who[\"Arn\"])\n        buckets = buckets_without_versioning(session.client(\"s3\"))\n        instances = instances_without_owner(session.client(\"ec2\"), args.owner_tag)\n    except ClientError as err:\n        error = err.response[\"Error\"]\n        log.error(\"AWS said %s: %s\", error[\"Code\"], error[\"Message\"])\n        return 2\n    except BotoCoreError as err:\n        # No credentials, an unknown profile, an expired sign-in, no region, no network\n        log.error(\"%s\", err)\n        return 2\n\n    if args.format == \"json\":\n        print(json.dumps({\"buckets\": buckets, \"instances\": instances}, indent=2))\n    else:\n        print(f\"S3 buckets without versioning: {len(buckets)}\")\n        for f in buckets:\n            print(f\"  {f['bucket']:<40} {f['problem']}\")\n        print(f\"EC2 instances missing the {args.owner_tag} tag: {len(instances)}\")\n        for f in instances:\n            print(f\"  {f['instance']:<22} {f['state']:<9} {f['name']}\")\n    return 1 if buckets or instances else 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main())",
+     "run": "uv run aws-report --profile learn"
+    },
+    {
+     "lang": "python",
+     "title": "tests/test_gh_runs.py",
+     "src": "\"\"\"Tests for gh-runs. The responses library answers in place of api.github.com.\"\"\"\n\nimport pytest\nimport responses\nfrom responses import matchers, registries\n\nfrom python_ops import gh_runs\n\nRUNS_URL = \"https://api.github.com/repos/octo/shop/actions/runs\"\n\n\ndef run(number, conclusion=\"success\", status=\"completed\"):\n    return {\n        \"run_number\": number,\n        \"name\": \"ci\",\n        \"head_branch\": \"main\",\n        \"status\": status,\n        \"conclusion\": conclusion,\n        \"created_at\": \"2026-11-07T09:00:00Z\",\n        \"html_url\": f\"https://github.com/octo/shop/actions/runs/{number}\",\n    }\n\n\n@pytest.fixture\ndef token(monkeypatch):\n    monkeypatch.setenv(\"GITHUB_TOKEN\", \"test-token\")\n\n\n@responses.activate\ndef test_sends_token_and_version_headers(token):\n    responses.get(\n        RUNS_URL,\n        json={\"workflow_runs\": [run(3)]},\n        match=[\n            matchers.header_matcher(\n                {\"Authorization\": \"Bearer test-token\", \"X-GitHub-Api-Version\": \"2026-03-10\"}\n            ),\n            matchers.query_param_matcher({\"per_page\": \"20\"}),\n        ],\n    )\n    assert gh_runs.main([\"octo/shop\"]) == 0\n\n\n@responses.activate\ndef test_follows_the_link_header_to_the_next_page(token):\n    page2 = \"https://api.github.com/repositories/42/actions/runs?per_page=2&page=2\"\n    responses.get(\n        RUNS_URL,\n        json={\"workflow_runs\": [run(5), run(4)]},\n        headers={\"Link\": f'<{page2}>; rel=\"next\"'},\n    )\n    responses.get(page2, json={\"workflow_runs\": [run(3), run(2)]})\n    session = gh_runs.make_session(\"test-token\")\n    runs = gh_runs.list_runs(session, \"octo/shop\", limit=3, per_page=2)\n    assert [r[\"run_number\"] for r in runs] == [5, 4, 3]\n    assert len(responses.calls) == 2\n\n\n@responses.activate\ndef test_failed_run_exits_1_and_names_it(token, capsys):\n    responses.get(RUNS_URL, json={\"workflow_runs\": [run(8), run(7, conclusion=\"failure\")]})\n    assert gh_runs.main([\"octo/shop\"]) == 1\n    out, err = capsys.readouterr()\n    assert \"2 runs, 1 failed\" in out\n    assert \"actions/runs/7\" in err\n\n\n@responses.activate\ndef test_run_in_progress_shows_its_status(token, capsys):\n    responses.get(RUNS_URL, json={\"workflow_runs\": [run(9, conclusion=None, status=\"in_progress\")]})\n    assert gh_runs.main([\"octo/shop\"]) == 0\n    assert \"in_progress\" in capsys.readouterr().out\n\n\n@responses.activate(registry=registries.OrderedRegistry)\ndef test_retries_a_502_then_succeeds(token):\n    # OrderedRegistry hands out the answers in this order, one per request.\n    responses.get(RUNS_URL, status=502)\n    responses.get(RUNS_URL, json={\"workflow_runs\": [run(1)]})\n    session = gh_runs.make_session(\"test-token\", backoff=0)  # no waiting in tests\n    assert len(gh_runs.list_runs(session, \"octo/shop\", limit=5)) == 1\n    assert len(responses.calls) == 2\n\n\n@responses.activate\ndef test_bad_token_exits_2_with_a_hint(token, capsys):\n    responses.get(RUNS_URL, status=401, json={\"message\": \"Bad credentials\"})\n    assert gh_runs.main([\"octo/shop\"]) == 2\n    assert \"gh auth status\" in capsys.readouterr().err\n    assert len(responses.calls) == 1  # a 401 is never retried\n\n\n@responses.activate\ndef test_rate_limit_says_when_it_resets(token, capsys):\n    responses.get(\n        RUNS_URL,\n        status=403,\n        headers={\"x-ratelimit-remaining\": \"0\", \"x-ratelimit-reset\": \"1793955600\"},\n    )\n    assert gh_runs.main([\"octo/shop\"]) == 2\n    assert \"resets at 09:00 UTC\" in capsys.readouterr().err\n\n\ndef test_no_token_warns(monkeypatch, capsys):\n    monkeypatch.delenv(\"GITHUB_TOKEN\", raising=False)\n    with responses.RequestsMock() as mock:\n        mock.get(RUNS_URL, json={\"workflow_runs\": []})\n        assert gh_runs.main([\"octo/shop\"]) == 0\n    assert \"GITHUB_TOKEN is not set\" in capsys.readouterr().err",
+     "run": "uv run pytest tests/test_gh_runs.py -v"
+    },
+    {
+     "lang": "python",
+     "title": "tests/test_aws_report.py",
+     "src": "\"\"\"Tests for aws-report. moto plays AWS inside this process: nothing leaves your laptop.\"\"\"\n\nimport boto3\nimport pytest\nfrom botocore.exceptions import ClientError\nfrom moto import mock_aws\n\nfrom python_ops import aws_report\n\nREGION = \"eu-central-1\"\n\n\n@pytest.fixture\ndef aws(monkeypatch):\n    \"\"\"Fake credentials first, then moto. Real keys in your shell can never be used.\"\"\"\n    for name in (\"AWS_PROFILE\", \"AWS_ENDPOINT_URL\", \"AWS_SESSION_TOKEN\"):\n        monkeypatch.delenv(name, raising=False)\n    monkeypatch.setenv(\"AWS_ACCESS_KEY_ID\", \"testing\")\n    monkeypatch.setenv(\"AWS_SECRET_ACCESS_KEY\", \"testing\")\n    monkeypatch.setenv(\"AWS_DEFAULT_REGION\", REGION)\n    with mock_aws():\n        yield\n\n\ndef make_bucket(s3, name, versioning=None):\n    s3.create_bucket(Bucket=name, CreateBucketConfiguration={\"LocationConstraint\": REGION})\n    if versioning:\n        s3.put_bucket_versioning(Bucket=name, VersioningConfiguration={\"Status\": versioning})\n\n\ndef make_instance(ec2, tags):\n    image = ec2.describe_images(Owners=[\"amazon\"])[\"Images\"][0][\"ImageId\"]\n    answer = ec2.run_instances(\n        ImageId=image,\n        InstanceType=\"t4g.micro\",\n        MinCount=1,\n        MaxCount=1,\n        TagSpecifications=[\n            {\"ResourceType\": \"instance\", \"Tags\": [{\"Key\": k, \"Value\": v} for k, v in tags.items()]}\n        ],\n    )\n    instance_id = answer[\"Instances\"][0][\"InstanceId\"]\n    # The waiter polls describe_instances until the state is \"running\".\n    ec2.get_waiter(\"instance_running\").wait(InstanceIds=[instance_id])\n    return instance_id\n\n\ndef test_buckets_without_versioning(aws):\n    s3 = boto3.client(\"s3\", region_name=REGION)\n    make_bucket(s3, \"never-versioned\")\n    make_bucket(s3, \"versioned\", versioning=\"Enabled\")\n    make_bucket(s3, \"paused\", versioning=\"Suspended\")\n    findings = aws_report.buckets_without_versioning(s3)\n    assert findings == [\n        {\"bucket\": \"never-versioned\", \"problem\": \"versioning disabled\"},\n        {\"bucket\": \"paused\", \"problem\": \"versioning suspended\"},\n    ]\n\n\ndef test_instances_without_owner(aws):\n    ec2 = boto3.client(\"ec2\", region_name=REGION)\n    make_instance(ec2, {\"Name\": \"web-1\", \"owner\": \"ana\"})\n    lost = make_instance(ec2, {\"Name\": \"test-box\"})\n    shouting = make_instance(ec2, {\"Name\": \"db-1\", \"Owner\": \"li\"})  # tag keys differ in case\n    findings = aws_report.instances_without_owner(ec2)\n    assert [f[\"instance\"] for f in findings] == [lost]\n    assert shouting not in [f[\"instance\"] for f in findings]\n\n\ndef test_terminated_instances_are_ignored(aws):\n    ec2 = boto3.client(\"ec2\", region_name=REGION)\n    gone = make_instance(ec2, {\"Name\": \"old\"})\n    ec2.terminate_instances(InstanceIds=[gone])\n    ec2.get_waiter(\"instance_terminated\").wait(InstanceIds=[gone])\n    assert aws_report.instances_without_owner(ec2) == []\n\n\ndef test_unreadable_bucket_is_reported_not_fatal(aws, monkeypatch):\n    s3 = boto3.client(\"s3\", region_name=REGION)\n    make_bucket(s3, \"locked\")\n\n    def access_denied(**kwargs):\n        raise ClientError(\n            {\"Error\": {\"Code\": \"AccessDenied\", \"Message\": \"Access Denied\"}}, \"GetBucketVersioning\"\n        )\n\n    monkeypatch.setattr(s3, \"get_bucket_versioning\", access_denied)\n    findings = aws_report.buckets_without_versioning(s3)\n    assert findings == [{\"bucket\": \"locked\", \"problem\": \"cannot read versioning (AccessDenied)\"}]\n\n\ndef test_main_exit_codes_and_output(aws, capsys):\n    assert aws_report.main([\"--region\", REGION]) == 0  # an empty account is clean\n    make_bucket(boto3.client(\"s3\", region_name=REGION), \"shop-logs\")\n    assert aws_report.main([\"--region\", REGION]) == 1\n    out, err = capsys.readouterr()\n    assert \"S3 buckets without versioning: 1\" in out\n    assert \"account 123456789012\" in err  # moto's pretend account number\n\n\ndef test_no_credentials_exits_2(monkeypatch, tmp_path, capsys):\n    for name in (\"AWS_ACCESS_KEY_ID\", \"AWS_SECRET_ACCESS_KEY\", \"AWS_SESSION_TOKEN\", \"AWS_PROFILE\"):\n        monkeypatch.delenv(name, raising=False)\n    # Point boto3 at empty config files, and stop it from asking EC2's metadata service.\n    monkeypatch.setenv(\"AWS_CONFIG_FILE\", str(tmp_path / \"config\"))\n    monkeypatch.setenv(\"AWS_SHARED_CREDENTIALS_FILE\", str(tmp_path / \"credentials\"))\n    monkeypatch.setenv(\"AWS_EC2_METADATA_DISABLED\", \"true\")\n    assert aws_report.main([\"--region\", REGION]) == 2\n    assert \"Unable to locate credentials\" in capsys.readouterr().err",
+     "run": "uv run pytest tests/test_aws_report.py -v"
+    },
+    {
+     "lang": "python",
+     "title": "scripts/seed_moto.py",
+     "src": "#!/usr/bin/env -S uv run --script\n# /// script\n# requires-python = \">=3.12\"\n# dependencies = [\"boto3\"]\n# ///\n\"\"\"seed_moto.py: create a few fake resources in a local moto server for aws-report.\n\nStart the server first, in another terminal:\n  uvx --from \"moto[server]\" moto_server -p 5050\nThen:\n  export AWS_ENDPOINT_URL=http://localhost:5050 AWS_ACCESS_KEY_ID=testing \\\n         AWS_SECRET_ACCESS_KEY=testing AWS_DEFAULT_REGION=eu-central-1\n  uv run scripts/seed_moto.py\n\nIt refuses to run unless AWS_ENDPOINT_URL points at your own machine, so it can\nnever create anything in a real AWS account.\n\"\"\"\n\nimport os\nimport sys\nfrom urllib.parse import urlparse\n\nimport boto3\n\nREGION = os.environ.get(\"AWS_DEFAULT_REGION\", \"eu-central-1\")\n\n\ndef main() -> int:\n    endpoint = os.environ.get(\"AWS_ENDPOINT_URL\", \"\")\n    if urlparse(endpoint).hostname not in (\"localhost\", \"127.0.0.1\"):\n        print(\"seed_moto: set AWS_ENDPOINT_URL=http://localhost:5050 first\", file=sys.stderr)\n        return 2\n\n    s3 = boto3.client(\"s3\", region_name=REGION)\n    where = {\"LocationConstraint\": REGION}\n    for name in (\"shop-invoices\", \"shop-tmp-exports\", \"shop-backups\"):\n        s3.create_bucket(Bucket=name, CreateBucketConfiguration=where)\n        # A waiter asks again and again until the bucket exists, or gives up.\n        s3.get_waiter(\"bucket_exists\").wait(Bucket=name)\n    s3.put_bucket_versioning(Bucket=\"shop-backups\", VersioningConfiguration={\"Status\": \"Enabled\"})\n\n    ec2 = boto3.client(\"ec2\", region_name=REGION)\n    image = ec2.describe_images(Owners=[\"amazon\"])[\"Images\"][0][\"ImageId\"]\n    tagged = ec2.run_instances(\n        ImageId=image,\n        InstanceType=\"t4g.micro\",\n        MinCount=1,\n        MaxCount=1,\n        TagSpecifications=[\n            {\n                \"ResourceType\": \"instance\",\n                \"Tags\": [{\"Key\": \"Name\", \"Value\": \"web-1\"}, {\"Key\": \"owner\", \"Value\": \"ana\"}],\n            }\n        ],\n    )\n    untagged = ec2.run_instances(\n        ImageId=image,\n        InstanceType=\"t4g.micro\",\n        MinCount=1,\n        MaxCount=1,\n        TagSpecifications=[\n            {\"ResourceType\": \"instance\", \"Tags\": [{\"Key\": \"Name\", \"Value\": \"test-box\"}]}\n        ],\n    )\n    ids = [r[\"Instances\"][0][\"InstanceId\"] for r in (tagged, untagged)]\n    ec2.get_waiter(\"instance_running\").wait(InstanceIds=ids)\n    print(f\"seed_moto: 3 buckets and 2 running instances ({', '.join(ids)}) in {REGION}\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    sys.exit(main())",
+     "run": "AWS_ENDPOINT_URL=http://localhost:5050 AWS_ACCESS_KEY_ID=testing AWS_SECRET_ACCESS_KEY=testing uv run scripts/seed_moto.py"
+    },
+    {
+     "lang": "yaml",
+     "title": ".github/workflows/ci.yml",
+     "src": "# ci.yml: lint and test python-ops on every push to main and every pull request.\n# GitHub only reads .github/ at the root of a repository, so this runs once\n# python-ops is its own repo (Day 16), not inside the course repo.\nname: ci\n\non:\n  push:\n    branches: [main]\n  pull_request:\n\npermissions:\n  contents: read\n\njobs:\n  check:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v7\n      # setup-uv publishes no short \"v10\" tag, so name the full version.\n      - uses: astral-sh/setup-uv@v10.3.3\n        with:\n          enable-cache: true\n      # --locked fails if uv.lock no longer matches pyproject.toml.\n      # uv reads .python-version and installs that Python.\n      - name: Install Python and the locked dependencies\n        run: uv sync --locked\n      - name: Lint and format check\n        run: uv run ruff check && uv run ruff format --check\n      - name: Tests\n        run: uv run pytest",
+     "run": "git add .github/workflows/ci.yml && git commit -m 'Add CI' && git push"
+    }
+   ],
+   "commands": [
+    {
+     "cmd": "uv add requests \"boto3[crt]\"",
+     "what": "Add runtime dependencies to pyproject.toml and uv.lock."
+    },
+    {
+     "cmd": "uv add --dev pytest ruff responses \"moto[ec2,s3]\"",
+     "what": "Add tools only needed while developing, in the dev group."
+    },
+    {
+     "cmd": "export GITHUB_TOKEN=\"$(gh auth token)\"",
+     "what": "Hand the gh CLI's token to scripts through an environment variable."
+    },
+    {
+     "cmd": "uv run gh-runs OWNER/REPO --limit 20 -v",
+     "what": "List recent workflow runs and log every HTTP request."
+    },
+    {
+     "cmd": "aws login --profile learn",
+     "what": "Sign in the Day 13 profile, so the CLI and boto3 get short-lived credentials."
+    },
+    {
+     "cmd": "uv run aws-report --profile learn --format json",
+     "what": "Run the read-only AWS report and print JSON."
+    },
+    {
+     "cmd": "uvx --from \"moto[server]\" moto_server -p 5050",
+     "what": "Start a local fake AWS on port 5050 (Ctrl+C stops it and forgets everything)."
+    },
+    {
+     "cmd": "export AWS_ENDPOINT_URL=http://localhost:5050",
+     "what": "Send every boto3 and AWS CLI call to that local endpoint."
+    },
+    {
+     "cmd": "uv run pytest -q",
+     "what": "Run all tests quietly."
+    },
+    {
+     "cmd": "uv run pytest -k retries -v",
+     "what": "Run only the tests whose names contain 'retries', one line each."
+    },
+    {
+     "cmd": "uv run ruff check --fix",
+     "what": "Lint the code and fix what can be fixed safely."
+    },
+    {
+     "cmd": "uv run ruff format",
+     "what": "Rewrite the code in ruff's standard layout."
+    },
+    {
+     "cmd": "uv tool install --editable .",
+     "what": "Put the project's commands on your PATH; code edits apply at once."
+    },
+    {
+     "cmd": "uv tool list",
+     "what": "Show installed tools and the commands each one provides."
+    },
+    {
+     "cmd": "uv sync --locked",
+     "what": "Install exactly what uv.lock says, and fail if it is out of date (for CI)."
+    }
+   ],
+   "mistake": "Creating a boto3 client at the top of a module, `s3 = boto3.client(\"s3\")`, and then starting moto inside the test. The client already exists when the mock starts, so moto may not intercept it, and the test can reach real AWS with whatever credentials your shell had. Create clients inside functions, or pass them in, and start `mock_aws()` with fake credentials before any client is made.",
+   "real_world": "Untagged instances are the ones nobody dares to stop, and buckets without versioning are the ones nobody can restore. Platform teams run a read-only report like `aws-report` on a schedule in every account. It assumes a role that can only list and describe, and it posts the findings to the owning team's channel. The report has moto tests in CI, so a change to it cannot break the Monday run.",
+   "task": {
+    "title": "Teach aws-report to find SSH open to the world",
+    "steps": [
+     "In terminal 1, start a fake AWS: `uvx --from \"moto[server]\" moto_server -p 5050`.",
+     "In terminal 2, in `~/code/python-ops`, export `AWS_ENDPOINT_URL=http://localhost:5050`, `AWS_ACCESS_KEY_ID=testing`, `AWS_SECRET_ACCESS_KEY=testing` and `AWS_DEFAULT_REGION=eu-central-1`. Then run `uv run scripts/seed_moto.py` and `uv run aws-report`.",
+     "Create a security group that allows port 22 from `0.0.0.0/0` in moto with the AWS CLI from Day 13: `aws ec2 create-security-group` and `aws ec2 authorize-security-group-ingress`, with the same endpoint.",
+     "Add a function `ssh_open_to_world(ec2)` to `aws_report.py`. It goes through every security group with a paginator and reports groups whose rules allow port 22 from `0.0.0.0/0` or `::/0`.",
+     "Call it from `main`, print the findings in text and JSON, and include them in the exit code.",
+     "Write a moto test with three groups: SSH from `0.0.0.0/0`, SSH from `10.0.0.0/8` and HTTPS from `0.0.0.0/0`. Only the first may be reported.",
+     "Run `uv run pytest` and `uv run ruff check`, and fix anything they report.",
+     "Run `uv run aws-report` against the moto server again and check that your group appears and the exit code is 1.",
+     "Optional, with a real account: run `aws login --profile learn`, then `uv run aws-report --profile learn`. It only reads, so it costs nothing."
+    ],
+    "hints": [
+     "`describe_security_groups` has a paginator; each group has `IpPermissions`, and each permission has `FromPort`, `ToPort`, `IpRanges` and `Ipv6Ranges`.",
+     "`IpProtocol` of `\"-1\"` means all traffic, and then there is no `FromPort`; read the ports with `.get()`.",
+     "moto creates a `default` group in every VPC; your function must not report it."
+    ],
+    "done_when": "You are done when `uv run pytest` passes with your new test, and `aws-report` against the seeded moto server lists your open SSH group and exits 1."
+   },
+   "explain_back": {
+    "prompt": "Explain in 3 to 4 sentences how you make a script that calls an API safe to run in CI, and how you test it without the network. Mention timeouts, retries and mocks.",
+    "answer": "Every call gets a timeout, so a silent server cannot hang the job. Retries go only to errors that may pass, such as 429 and 5xx, only for idempotent methods, with growing waits, and never for 401 or 404. Errors become one clear line on stderr and a non-zero exit code, and the token comes from an environment variable. In tests, responses answers in place of the HTTP API and moto in place of AWS, so pytest can check retries, failures and exit codes offline."
+   },
+   "recap": [
+    "Use requests for scripts, and always pass a timeout and call raise_for_status().",
+    "Retry 429 and 5xx with backoff on idempotent methods only; never retry 401 or 404.",
+    "Follow the Link header or a boto3 paginator, or you only see the first page.",
+    "A boto3 session holds one profile and region; catch ClientError and BotoCoreError separately.",
+    "Test with tmp_path, monkeypatch and capsys; fake HTTP with responses and AWS with moto.",
+    "[project.scripts] plus `uv tool install` turns scripts into commands; ruff and CI keep them honest."
+   ],
+   "check": [
+    {
+     "q": "A cleanup script lists objects with `s3.list_objects_v2(Bucket=b)` and deletes the old ones. The bucket holds 4,000 objects. What happens?",
+     "options": [
+      "It sees every object, since boto3 pages automatically",
+      "It raises an error asking for a paginator",
+      "It only sees the first 1,000 objects",
+      "It sees nothing until versioning is enabled"
+     ],
+     "answer": 2,
+     "why": "A single call returns at most 1,000 keys; use `get_paginator(\"list_objects_v2\")` to get every page."
+    },
+    {
+     "q": "A script sends `POST /deployments` through a session whose urllib3 `Retry` lists 502 in `status_forcelist` but keeps the default allowed methods. The API answers 502. What happens?",
+     "options": [
+      "It returns the 502, since POST is not retried by default",
+      "It retries the POST three times with backoff",
+      "It turns the POST into a GET and retries",
+      "It retries once, and only after waiting 60 seconds"
+     ],
+     "answer": 0,
+     "why": "urllib3 retries only idempotent methods by default, because repeating a POST could create two deployments."
+    },
+    {
+     "q": "A test marked `@responses.activate` registers only `/actions/runs`, but the code also calls `/rate_limit`. What happens in the test?",
+     "options": [
+      "The call goes to the real api.github.com",
+      "requests returns an empty 200 answer",
+      "The test is skipped with a warning",
+      "requests raises ConnectionError for the unregistered URL"
+     ],
+     "answer": 3,
+     "why": "responses refuses every URL you did not register, so a test can never reach the network by accident."
+    }
+   ],
+   "interview": [
+    {
+     "q": "How do you make HTTP calls from a script reliable?",
+     "a": "Every call has a timeout, because requests waits forever by default. I use a Session so headers and connections are reused, and I mount a retry policy that retries 429 and 5xx answers with exponential backoff and honours Retry-After. Only idempotent methods are retried, and 401 or 404 never are. After the call I check the status with raise_for_status, and I turn errors into a clear message and a non-zero exit code."
+    },
+    {
+     "q": "How do you test code that calls AWS?",
+     "a": "For unit tests I use moto's mock_aws, which fakes AWS in memory. I set fake credentials first, so real ones can never be used. Each test creates the resources it needs and then calls the real function, with every client created after the mock starts. Moto does not check IAM by default, so I also run new checks once against a sandbox account with a least-privilege role. For error paths that are hard to fake, I raise a ClientError myself with monkeypatch or use botocore's Stubber."
+    },
+    {
+     "q": "What are boto3 paginators and waiters for?",
+     "a": "Many AWS list calls return one page of results plus a token, so code that makes one call silently misses data. A paginator follows the tokens for you, and its search method can pull items out of every page with JMESPath. A waiter polls a describe call until a resource reaches a state, such as an instance running. It waits a fixed delay between tries and gives up after a maximum number of attempts. Both replace hand-written loops that are easy to get wrong."
+    }
+   ],
+   "deeper": {
+    "minutes": 15,
+    "body": "Kubernetes has an official Python client too, the `kubernetes` package. Part 10 teaches clusters with kubectl; this is what the same questions look like from Python, once you have a cluster.\n\nThe client reads the same kubeconfig as kubectl:\n\n1. `config.load_kube_config()` loads `~/.kube/config` and its current context, exactly like kubectl on your laptop.\n2. `v1 = client.CoreV1Api()` gives an API object for the core resources: pods, services, namespaces.\n3. `v1.list_pod_for_all_namespaces(watch=False)` returns objects with attributes, so `pod.metadata.name` and `pod.status.phase` work without any JSON parsing.\n\nInside a pod, use `config.load_incluster_config()` instead. It reads the token and the CA certificate that Kubernetes mounts for the pod's service account, so no kubeconfig file is needed. What the script may do is then decided by RBAC rules for that service account (Day 64). A read-only report needs only `get` and `list` on the resources it reads.\n\nA report in the style of today's tools would list pods that are not Ready: for each pod, look at `pod.status.conditions` for the condition of type `Ready` with status `False`. Then print a table, return 1 when the list is not empty, and test it with a fake object instead of a cluster. Because the client returns objects, a test can build a few with `client.V1Pod(...)` and pass them to your function, with no network at all.\n\nThe client also supports watching. `watch.Watch().stream(v1.list_namespace, _request_timeout=60)` yields an event every time a namespace is added, changed or deleted. Set a timeout here too, for the same reason as with requests.\n\nWhen should you use the client rather than `subprocess.run([\"kubectl\", \"get\", \"pods\", \"-o\", \"json\"], ...)` plus `json.loads`? The kubectl route is fine for a quick script on your laptop, and its output matches what you see in the terminal. The client wins for anything that runs inside the cluster, needs watches, or should not depend on a kubectl binary being installed. The package's major version follows Kubernetes releases, and its README has a compatibility table, so pick the version that matches your cluster, as you did with kubectl itself.\n\nStart from the examples in the [Kubernetes Python client README](https://github.com/kubernetes-client/python). They run against the kind cluster you build in Part 10."
+   },
+   "sources": [
+    {
+     "title": "requests: Advanced usage",
+     "url": "https://requests.readthedocs.io/en/latest/user/advanced/"
+    },
+    {
+     "title": "boto3: Paginators",
+     "url": "https://docs.aws.amazon.com/boto3/latest/guide/paginators.html"
+    },
+    {
+     "title": "Moto: getting started",
+     "url": "https://docs.getmoto.org/en/latest/docs/getting_started.html"
+    },
+    {
+     "title": "pytest: How to monkeypatch/mock modules and environments",
+     "url": "https://docs.pytest.org/en/stable/how-to/monkeypatch.html"
+    }
+   ]
+  }
+ ],
+ "recap": [
+  "Python takes over from Bash when a script needs data structures, JSON, APIs, error handling or tests.",
+  "uv installs Python, keeps .venv in sync with uv.lock, runs commands with uv run, and runs one-file scripts with a PEP 723 block.",
+  "Every script has the same shape: small functions that return data, main(argv) -> int, and sys.exit(main()).",
+  "One exit-code contract everywhere: 0 all good, 1 the check found a problem, 2 the script could not do its job.",
+  "Reports go to stdout, messages for people go to stderr through logging, and secrets go nowhere.",
+  "Keep datetimes aware, call programs with a list of arguments and check=True, and never use shell=True with outside input.",
+  "HTTP calls get a timeout, raise_for_status, retries with backoff for 429 and 5xx, and pagination through the Link header.",
+  "boto3 starts from a session (profile and region), uses clients, paginators and waiters, and separates ClientError from BotoCoreError.",
+  "pytest with tmp_path, monkeypatch and capsys tests scripts; responses fakes HTTP and moto fakes AWS.",
+  "[project.scripts], uv tool install, ruff and a short CI workflow turn a folder of scripts into a team tool."
+ ],
+ "flashcards": [
+  {
+   "front": "Which signs say a Bash script should become Python?",
+   "back": "It needs data structures, JSON or APIs, different handling for different errors, or tests."
+  },
+  {
+   "front": "What does `uv run` do before it runs your command?",
+   "back": "It makes .venv match uv.lock (creating or fixing it if needed), then runs the command inside it."
+  },
+  {
+   "front": "What is a PEP 723 block?",
+   "back": "A `# /// script` comment block at the top of a file that lists requires-python and dependencies, so `uv run` can build its environment."
+  },
+  {
+   "front": "Why does `main()` return an int?",
+   "back": "`sys.exit(main())` turns it into the exit code, and tests can call main([...]) and assert on the number."
+  },
+  {
+   "front": "What exit code does an uncaught Python exception give?",
+   "back": "1, with a traceback on stderr."
+  },
+  {
+   "front": "What exit code does argparse use for bad arguments?",
+   "back": "2, after printing the usage line."
+  },
+  {
+   "front": "Where do log messages go, and why?",
+   "back": "To stderr, so stdout holds only the report or JSON that other programs read."
+  },
+  {
+   "front": "How do you get the current time safely in Python?",
+   "back": "`datetime.now(UTC)`: an aware datetime. `utcnow()` is naive and deprecated since 3.12."
+  },
+  {
+   "front": "Name the four arguments that make subprocess.run safe.",
+   "back": "A list of arguments, check=True, capture_output=True with text=True, and a timeout."
+  },
+  {
+   "front": "What does requests do if you pass no timeout?",
+   "back": "It waits forever for a server that never answers."
+  },
+  {
+   "front": "Which HTTP answers deserve a retry?",
+   "back": "429 and 5xx such as 502, 503 and 504, for idempotent methods only; never 401 or 404."
+  },
+  {
+   "front": "How do you find the next page in the GitHub REST API?",
+   "back": "Follow the `next` URL in the Link header; requests exposes it as response.links[\"next\"][\"url\"]."
+  },
+  {
+   "front": "What is the difference between ClientError and BotoCoreError?",
+   "back": "ClientError: AWS answered with an error code. BotoCoreError: no usable answer, such as missing credentials or an expired sign-in."
+  },
+  {
+   "front": "What does a boto3 waiter do?",
+   "back": "It polls a describe call until a resource reaches a state, such as instance_running, then raises WaiterError after the last attempt."
+  },
+  {
+   "front": "What do tmp_path, monkeypatch and capsys give a test?",
+   "back": "A fresh folder, temporary changes to env vars and attributes, and the captured stdout and stderr."
+  },
+  {
+   "front": "What two rules keep moto tests safe?",
+   "back": "Set fake credentials first, and start mock_aws() before any boto3 client is created."
+  },
+  {
+   "front": "What does `uv tool install --editable .` do?",
+   "back": "It puts the project's [project.scripts] commands on your PATH, and code edits apply without reinstalling."
+  }
+ ],
+ "resources": [
+  {
+   "title": "uv documentation",
+   "url": "https://docs.astral.sh/uv/",
+   "kind": "docs",
+   "why": "The guides on scripts, projects and tools cover every uv command this part uses."
+  },
+  {
+   "title": "UV: a faster, all-in-one package manager to replace pip and venv (Corey Schafer)",
+   "url": "https://www.youtube.com/watch?v=AMdG7IjgSPM",
+   "kind": "watch",
+   "why": "A calm walk through uv projects, lock files and scripts, compared with pip and venv."
+  },
+  {
+   "title": "The Python Standard Library",
+   "url": "https://docs.python.org/3/library/index.html",
+   "kind": "docs",
+   "why": "The reference for pathlib, argparse, json, csv, datetime, logging and subprocess."
+  },
+  {
+   "title": "Python for DevOps (O'Reilly)",
+   "url": "https://www.oreilly.com/library/view/python-for-devops/9781492057680/",
+   "kind": "read",
+   "why": "A whole book of Python for Linux admin, CI, cloud and Kubernetes work; older tools, same habits."
+  },
+  {
+   "title": "Automate the Boring Stuff with Python (free online)",
+   "url": "https://www.automatetheboringstuff.com",
+   "kind": "read",
+   "why": "Gentle chapters on files, regular expressions and CSV if any of the basics feel shaky."
+  },
+  {
+   "title": "requests: Advanced usage",
+   "url": "https://requests.readthedocs.io/en/latest/user/advanced/",
+   "kind": "docs",
+   "why": "Sessions, timeouts and retries straight from the library's own docs."
+  },
+  {
+   "title": "boto3: Paginators",
+   "url": "https://docs.aws.amazon.com/boto3/latest/guide/paginators.html",
+   "kind": "docs",
+   "why": "How pages, page sizes and JMESPath filtering work for every AWS list call."
+  },
+  {
+   "title": "Moto: getting started",
+   "url": "https://docs.getmoto.org/en/latest/docs/getting_started.html",
+   "kind": "docs",
+   "why": "The decorator, context manager, pytest fixtures and the import-order trap, with examples."
+  },
+  {
+   "title": "pytest: How-to guides",
+   "url": "https://docs.pytest.org/en/stable/how-to/monkeypatch.html",
+   "kind": "docs",
+   "why": "monkeypatch in depth; the sidebar leads to tmp_path, capsys and fixtures."
+  },
+  {
+   "title": "Please learn how to write tests in Python: pytest tutorial (Tech With Tim)",
+   "url": "https://www.youtube.com/watch?v=EgpLj86ZHFQ",
+   "kind": "watch",
+   "why": "A practical tour of pytest, fixtures and mocking for when the test files feel new."
+  },
+  {
+   "title": "The Ruff linter",
+   "url": "https://docs.astral.sh/ruff/linter/",
+   "kind": "docs",
+   "why": "How rule selection works, and where to look up any rule code ruff reports."
+  }
+ ],
+ "quiz": [
+  {
+   "q": "A teammate's 300-line Bash script parses JSON with five jq calls and keeps a list of hosts with settings. What is the strongest reason to rewrite it in Python?",
+   "options": [
+    "Python scripts always run faster than Bash scripts do",
+    "Its data and JSON are easier to handle and test in Python",
+    "Bash scripts cannot run in GitHub Actions workflows",
+    "Python needs no installation on a Mac or on Linux"
+   ],
+   "answer": 1,
+   "why": "Data structures, JSON and tests are where Bash gets fragile and Python is strong; speed is not the reason."
+  },
+  {
+   "q": "You run `uv run scripts/report.py` inside a project, and the script starts with a `# /// script` block. Which packages does it get?",
+   "options": [
+    "The project's dependencies plus the block's",
+    "Only the project's dependencies from uv.lock",
+    "Only the packages listed in the script's block",
+    "None, until you activate .venv"
+   ],
+   "answer": 2,
+   "why": "A script with inline metadata ignores the project and runs in its own environment built from its block."
+  },
+  {
+   "q": "A summarizer prints a JSON report and also prints progress lines with `print()`. `| jq` fails. What is the right fix?",
+   "options": [
+    "Send the progress lines to stderr with logging",
+    "Add the `--raw-output` flag to the jq command",
+    "Print the whole JSON report on a single line",
+    "Remove the progress lines and the exit code"
+   ],
+   "answer": 0,
+   "why": "stdout must hold only the data; messages for people belong on stderr, where jq never sees them."
+  },
+  {
+   "q": "Which exit-code contract lets CI tell 'the check failed' apart from 'the script could not run'?",
+   "options": [
+    "0 on success, and 1 for every kind of failure",
+    "0 all good, 1 the check found a problem, 2 the script could not do its job",
+    "Always exit 0 and print FAILED when something is wrong",
+    "Exit with the number of problems found, up to 1000"
+   ],
+   "answer": 1,
+   "why": "Separate codes let a caller react differently to a real finding and to a broken run; codes also stop at 255."
+  },
+  {
+   "q": "GitHub answers your script with 403 and `x-ratelimit-remaining: 0`. What should the script do?",
+   "options": [
+    "Retry straight away, up to three more times",
+    "Switch the request to the newest API version",
+    "Treat it as a bad token and print the token",
+    "Stop and report when x-ratelimit-reset says it resets"
+   ],
+   "answer": 3,
+   "why": "Retrying before the reset time cannot succeed; say when it resets and exit non-zero."
+  },
+  {
+   "q": "A test sets fake AWS keys with monkeypatch and starts `mock_aws()`, but the module under test created `s3 = boto3.client(\"s3\")` at import time. What is the risk?",
+   "options": [
+    "moto runs slower than usual",
+    "pytest refuses to import the module",
+    "The fake keys leak into other tests",
+    "The client may not be mocked and can call real AWS"
+   ],
+   "answer": 3,
+   "why": "moto must be active before a client is created; an earlier client may bypass the mock."
+  },
+  {
+   "q": "Which ruff rule in the lab flags `requests.get(url)` with no timeout, and what does it miss?",
+   "options": [
+    "S113; it does not see calls made on a requests Session",
+    "DTZ005; it misses POST requests",
+    "PLW1510; it misses calls inside tests",
+    "S602; it misses calls with headers"
+   ],
+   "answer": 0,
+   "why": "S113 checks module-level requests calls, so `session.get` without a timeout still needs your own habit."
+  },
+  {
+   "q": "Why does the lab's CI run `uv sync --locked` instead of `uv sync`?",
+   "options": [
+    "It installs the packages faster from the cache",
+    "It skips the dev group so CI images stay small",
+    "It fails when uv.lock no longer matches pyproject.toml",
+    "It upgrades every package to the newest version"
+   ],
+   "answer": 2,
+   "why": "--locked turns a stale lock file into a red build instead of quietly resolving new versions in CI."
+  },
+  {
+   "q": "A Bash script with `set -euo pipefail` runs `grep -q FATAL app.log` and the log has no FATAL lines. What happens?",
+   "options": [
+    "The script carries on, because grep printed nothing",
+    "grep prints an error and the script carries on",
+    "The script stops, because grep exits 1 when nothing matches",
+    "pipefail turns the result into exit code 0"
+   ],
+   "answer": 2,
+   "why": "grep exits 1 on no match, and `-e` stops the script; write `|| true` when no match is fine. Python's check=True behaves the same way.",
+   "from": "Part 1"
+  },
+  {
+   "q": "Your retry policy covers 503 answers. Which request is safe to retry automatically?",
+   "options": [
+    "POST /payments without an idempotency key",
+    "GET /api/orders/1001",
+    "POST /deployments",
+    "PATCH /accounts/7 that adds 10 to a balance"
+   ],
+   "answer": 1,
+   "why": "GET is idempotent, so repeating it changes nothing; the others can charge, deploy or add twice (Day 11).",
+   "from": "Part 3"
+  }
+ ]
+}

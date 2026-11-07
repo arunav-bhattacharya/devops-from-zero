@@ -1,0 +1,5 @@
+# urls.txt: the endpoints healthcheck.py asks, one per line.
+# Start hello-devops first (python app.py, or docker compose up from Part 5).
+http://localhost:8000/healthz
+http://localhost:8000/readyz
+https://www.example.com/

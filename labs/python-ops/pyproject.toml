@@ -1,0 +1,46 @@
+[project]
+name = "python-ops"
+version = "0.1.0"
+description = "Small, tested ops scripts for Part 4 of DevOps, from zero"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # [crt] lets boto3 use the `aws login` sign-in from Day 13.
+    "boto3[crt]>=1.43.126",
+    "requests>=2.34.2",
+]
+
+# Each line becomes a command on your PATH after `uv sync` or `uv tool install`.
+[project.scripts]
+gh-runs = "python_ops.gh_runs:main"
+aws-report = "python_ops.aws_report:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "moto[ec2,s3]>=5.2.5",
+    "pytest>=9.2.0",
+    "responses>=0.26.3",
+    "ruff>=0.17.4",
+]
+
+[tool.pytest]
+testpaths = ["tests"]
+# The Day 15 scripts are single files, not a package: let the tests import them.
+pythonpath = ["scripts"]
+addopts = ["-ra"]
+
+[tool.ruff]
+line-length = 100
+# Where our own code lives, so import sorting knows logsum and python_ops are ours.
+src = ["src", "scripts"]
+
+[tool.ruff.lint]
+# E, W: style errors. F: real bugs such as unused imports and undefined names.
+# I: import order. B: likely bugs. UP: newer syntax. DTZ: datetimes without a time zone.
+# S113: requests without a timeout. S602: subprocess with shell=True.
+# PLW1510: subprocess.run without check=.
+select = ["E", "W", "F", "I", "B", "UP", "DTZ", "S113", "S602", "PLW1510"]
