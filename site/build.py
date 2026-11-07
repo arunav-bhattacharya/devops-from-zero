@@ -238,8 +238,10 @@ def main():
                                                capture_output=True, text=True, check=True).stdout.strip())
                 except Exception:
                     pass
+                vtt = WEB / "video" / f"{v['slug']}.vtt"
+                # captions go inside the page: claude.ai does not serve .vtt files, so the player makes a blob URL from this text
                 vids.setdefault(lid, []).append({"slug": v["slug"], "title": inline(v["title"]), "after": int(v["after"]), "dur": dur,
-                                                 "vtt": (WEB / "video" / f"{v['slug']}.vtt").exists()})
+                                                 "vtt": vtt.read_text() if vtt.exists() else ""})
     k = 0
     for P in index:
         path = ROOT / f"content/p{P['part']}.json"

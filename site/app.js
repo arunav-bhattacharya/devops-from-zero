@@ -324,8 +324,11 @@ function viewHome() {
 
 /* narrated videos: files sit next to the page in video/, so the same relative path works on Cloudflare and claude.ai */
 const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, "0")}`;
+const VTT = {};
+const vttURL = (v) => { if (!v.vtt) return ""; try { return VTT[v.slug] || (VTT[v.slug] = URL.createObjectURL(new Blob([v.vtt], { type: "text/vtt" }))); } catch { return ""; } };
 function videoHTML(v) {
-  return `<figure class="vid"><video controls preload="none" playsinline poster="video/${v.slug}.jpg"><source src="video/${v.slug}.mp4" type="video/mp4">${v.vtt ? `<track kind="captions" srclang="en" label="English" src="video/${v.slug}.vtt">` : ""}</video>
+  const cap = vttURL(v);
+  return `<figure class="vid"><video controls preload="none" playsinline poster="video/${v.slug}.jpg"><source src="video/${v.slug}.mp4" type="video/mp4">${cap ? `<track kind="captions" srclang="en" label="English" src="${cap}">` : ""}</video>
     <figcaption><span class="vid-k">${ICON.play || ""}Video${v.dur ? ` · ${mmss(v.dur)}` : ""}</span>${v.title}</figcaption></figure>`;
 }
 
