@@ -1,0 +1,61 @@
+---
+# first-playbook.yml (Day 36): two plays, six tasks and one handler.
+# Run it twice: ansible-playbook first-playbook.yml
+- name: Basics on every server
+  hosts: lab
+  become: true # run the tasks as root, through sudo
+  tasks:
+    - name: Install a few everyday tools
+      ansible.builtin.apt:
+        name:
+          - tree
+          - htop
+        state: present
+        update_cache: true
+        cache_valid_time: 3600 # refresh the package list at most once an hour
+
+    - name: Write a login message
+      ansible.builtin.copy:
+        dest: /etc/motd
+        content: |
+          {{ inventory_hostname }} is managed by Ansible. Manual changes will be overwritten.
+        owner: root
+        group: root
+        mode: "0644"
+
+- name: Web server on the load balancer
+  hosts: lb
+  become: true
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Replace the default site with ours
+      ansible.builtin.copy:
+        src: nginx-site.conf # Ansible looks in ./files first
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload nginx # runs the handler below, only if this task changed something
+
+    - name: Put a page in the web folder
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        content: |
+          <h1>Hello from {{ inventory_hostname }}</h1>
+        mode: "0644"
+
+    - name: Start nginx now and at every boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded

@@ -1,0 +1,11 @@
+---
+# Role vars: fixed facts about how the role works. They beat group_vars and
+# host_vars, so keep settings that users may change in defaults/ instead.
+hello_devops_user: hello
+hello_devops_dir: /opt/hello-devops
+hello_devops_packages:
+  - python3-venv
+  - python3-packaging
+hello_devops_files:
+  - app.py
+  - requirements.txt

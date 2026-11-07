@@ -162,12 +162,16 @@ DAYS = [
     ("linux", "", 3), ("hello-jvm", "Dockerfile", 30), ("hello-jvm", ".dockerignore", 30), ("hello-jvm", ".github/", 30),
     ("hello-jvm", "gradle/libs", 29), ("hello-jvm", "build-logic", 29), ("hello-jvm", "greeting", 29), ("hello-jvm", "", 28),
     ("terraform-practice", "", 32),
-    ("git", "", 8), ("aws", "", 13), ("python-ops", "", 15), ("ansible", "", 36),
+    ("git", "", 8), ("aws", "", 13), ("python-ops", "", 15),
+    ("ansible", "roles/", 37), ("ansible", "site.yml", 37), ("ansible", "group_vars", 37), ("ansible", "host_vars", 37), ("ansible", "templates/", 37),
+    ("ansible", "requirements", 37), ("ansible", ".ansible-lint", 37), ("ansible", "aws/", 37), ("ansible", ".github/", 37), ("ansible", "", 36),
 ]
 LANGS = {".py": "python", ".yaml": "yaml", ".yml": "yaml", ".tf": "hcl", ".tpl": "text", ".txt": "text", ".json": "json", ".md": "text",
          ".kts": "kotlin", ".kt": "kotlin", ".toml": "ini", ".properties": "ini", ".sh": "bash", ".conf": "ini", ".alloy": "text",
          ".dql": "text", ".log": "text", ".jsonl": "json", ".j2": "text", ".cfg": "ini", ".ini": "ini"}
-SKIP_DIRS = {".terraform", "__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "charts", ".gradle", "build", ".kotlin", "node_modules"}
+SKIP_DIRS = {".terraform", "__pycache__", ".pytest_cache", ".ruff_cache", ".venv", "charts", ".gradle", "build", ".kotlin", "node_modules", ".keys"}
+# never publish key material or vault passwords that a lab script made on this machine
+SECRET_NAMES = (".vault_pass", ".pem", ".key", "id_ed25519", "id_rsa", "known_hosts")
 PROJECT_ORDER = ["hello-devops", "linux", "git", "aws", "python-ops", "hello-jvm", "terraform-practice", "ansible"]
 
 
@@ -177,7 +181,7 @@ def labs():
     for proj in projects:
         for x in sorted(proj.rglob("*")):
             if not x.is_file() or SKIP_DIRS & set(x.relative_to(proj).parts) or x.name.endswith((".tfstate", ".lock.hcl", ".pyc", ".tgz", ".zip", ".backup", ".jar")) \
-                    or x.name in ("gradlew.bat",) or x.stat().st_size > 200_000:
+                    or x.name in ("gradlew.bat",) or x.name.endswith(SECRET_NAMES) or x.stat().st_size > 200_000:
                 continue
             rel = str(x.relative_to(proj))
             if proj.name == "hello-devops" and rel == "README.md":

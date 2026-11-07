@@ -1,0 +1,14 @@
+---
+# .ansible-lint: settings for ansible-lint in this folder. Run: ansible-lint
+# "production" is the strictest built-in set of rules.
+profile: production
+
+# Files that are not Ansible content.
+exclude_paths:
+  - .keys/
+  - .github/
+  - compose.yaml
+
+# Do not try to download requirements.yml while linting. Install them
+# yourself first: ansible-galaxy collection install -r requirements.yml
+offline: true

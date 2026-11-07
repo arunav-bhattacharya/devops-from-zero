@@ -1,0 +1,8 @@
+# The lab's SSH key pair and known_hosts are made by setup.sh. Never commit them.
+.keys/
+# Vault password files stay on your laptop.
+.vault_pass
+*.vault_pass
+# Retry files and Python caches
+*.retry
+__pycache__/

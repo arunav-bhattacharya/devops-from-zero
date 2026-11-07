@@ -1,0 +1,19 @@
+# inventory.yml: the same inventory as inventory.ini, in YAML.
+# Compare: ansible-inventory -i inventory.yml --graph
+all:
+  children:
+    lab:
+      children:
+        web:
+          hosts:
+            web1:
+              ansible_host: 127.0.0.1
+              ansible_port: 2201
+            web2:
+              ansible_host: 127.0.0.1
+              ansible_port: 2202
+        lb:
+          hosts:
+            lb1:
+              ansible_host: 127.0.0.1
+              ansible_port: 2203

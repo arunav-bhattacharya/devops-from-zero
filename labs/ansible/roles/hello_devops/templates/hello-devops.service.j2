@@ -1,0 +1,18 @@
+# {{ ansible_managed }}
+# Rendered for {{ inventory_hostname }} ({{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}).
+[Unit]
+Description=hello-devops {{ hello_devops_version }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ hello_devops_user }}
+Group={{ hello_devops_user }}
+WorkingDirectory={{ hello_devops_dir }}
+# APP_VERSION, GREETING and the token come from this file (mode 0640).
+EnvironmentFile=/etc/hello-devops.env
+ExecStart={{ hello_devops_dir }}/venv/bin/gunicorn --bind 0.0.0.0:{{ hello_devops_port }} --workers {{ hello_devops_workers }} app:app
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

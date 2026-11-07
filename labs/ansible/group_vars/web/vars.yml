@@ -1,0 +1,7 @@
+---
+# group_vars/web/vars.yml: settings for the web group.
+hello_devops_port: 8000
+hello_devops_greeting: "Hello from Ansible"
+# The real value is encrypted in vault.yml next to this file. Keeping a plain
+# name here means grep and code review can still find where it is used.
+hello_devops_api_token: "{{ vault_hello_devops_api_token }}"

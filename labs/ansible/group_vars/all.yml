@@ -1,0 +1,3 @@
+---
+# group_vars/all.yml: settings for every server in the inventory.
+hello_devops_version: "1.0.0"

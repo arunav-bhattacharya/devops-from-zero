@@ -1,0 +1,47 @@
+# Three practice servers for Part 9: web1 and web2 run hello-devops,
+# lb1 runs nginx in front of them (Day 37). Start them with ./setup.sh.
+#
+# Each one runs systemd as PID 1, like a real server. systemd inside Docker
+# needs extra rights (privileged, the host's cgroup tree, tmpfs mounts).
+# That is fine on your laptop's Docker VM and wrong for anything real.
+name: ansible-lab
+
+x-node: &node
+  build: .
+  image: ansible-lab-node:24.04
+  privileged: true
+  cgroup: host
+  volumes:
+    - /sys/fs/cgroup:/sys/fs/cgroup:rw
+  tmpfs:
+    - /run
+    - /run/lock
+    - /tmp
+  networks: [lab]
+
+services:
+  web1:
+    <<: *node
+    container_name: ansible-web1
+    hostname: web1
+    ports:
+      - "127.0.0.1:2201:22"   # SSH
+      - "127.0.0.1:8101:8000" # hello-devops
+  web2:
+    <<: *node
+    container_name: ansible-web2
+    hostname: web2
+    ports:
+      - "127.0.0.1:2202:22"
+      - "127.0.0.1:8102:8000"
+  lb1:
+    <<: *node
+    container_name: ansible-lb1
+    hostname: lb1
+    ports:
+      - "127.0.0.1:2203:22"
+      - "127.0.0.1:8180:80"   # nginx
+
+networks:
+  lab:
+    name: ansible-lab

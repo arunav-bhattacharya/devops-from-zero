@@ -1,0 +1,11 @@
+---
+# Defaults: the lowest precedence of all. Anyone using the role may
+# override these in group_vars, host_vars, play vars or with -e.
+hello_devops_version: "1.0.0"
+hello_devops_greeting: "Hello, DevOps!"
+hello_devops_port: 8000
+hello_devops_workers: 2
+# Where the app's code comes from: your hello-devops repo next to this folder.
+hello_devops_src_dir: "{{ playbook_dir }}/../hello-devops"
+# A fake secret. group_vars/web/vars.yml sets it from the Vault file.
+hello_devops_api_token: ""

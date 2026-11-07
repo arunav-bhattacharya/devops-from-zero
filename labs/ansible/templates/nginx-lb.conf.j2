@@ -1,0 +1,22 @@
+# {{ ansible_managed }}
+# nginx on {{ inventory_hostname }}: send each request to one of the web servers.
+# Docker's DNS knows the names web1 and web2. On real servers, use their
+# private IP addresses or DNS names instead.
+upstream hello_devops {
+    # Shared memory, so all nginx worker processes take turns together.
+    zone hello_devops 64k;
+{% for host in groups['web'] %}
+    server {{ host }}:{{ hostvars[host]['hello_devops_port'] }};
+{% endfor %}
+}
+
+server {
+    listen 80 default_server;
+    server_tokens off;
+
+    location / {
+        proxy_pass http://hello_devops;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}

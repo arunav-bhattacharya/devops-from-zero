@@ -1,0 +1,75 @@
+---
+# Install hello-devops and run it as a systemd service.
+- name: Install Python's venv support (the pip module needs packaging)
+  ansible.builtin.apt:
+    name: "{{ hello_devops_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_facts['os_family'] == "Debian"
+  tags: [install]
+
+- name: Create a system user for the app
+  ansible.builtin.user:
+    name: "{{ hello_devops_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+  tags: [install]
+
+- name: Create the app folder
+  ansible.builtin.file:
+    path: "{{ hello_devops_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags: [install]
+
+- name: Copy the app's files
+  ansible.builtin.copy:
+    src: "{{ hello_devops_src_dir }}/{{ item }}"
+    dest: "{{ hello_devops_dir }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ hello_devops_files }}"
+  notify: Restart hello-devops
+  tags: [install]
+
+- name: Install the Python packages into a virtual environment
+  ansible.builtin.pip:
+    requirements: "{{ hello_devops_dir }}/requirements.txt"
+    virtualenv: "{{ hello_devops_dir }}/venv"
+    virtualenv_command: python3 -m venv
+  notify: Restart hello-devops
+  tags: [install]
+
+- name: Write the settings file (holds a secret, so no diff in the output)
+  ansible.builtin.template:
+    src: hello-devops.env.j2
+    dest: /etc/hello-devops.env
+    owner: root
+    group: "{{ hello_devops_user }}"
+    mode: "0640"
+  diff: false
+  notify: Restart hello-devops
+  tags: [config]
+
+- name: Write the systemd unit
+  ansible.builtin.template:
+    src: hello-devops.service.j2
+    dest: /etc/systemd/system/hello-devops.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart hello-devops
+  tags: [config]
+
+- name: Start hello-devops now and at every boot
+  ansible.builtin.systemd_service:
+    name: hello-devops
+    state: started
+    enabled: true
+    daemon_reload: true
+  tags: [config]

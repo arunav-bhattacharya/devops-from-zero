@@ -1,0 +1,9 @@
+---
+# ping.yml (Day 36): the smallest useful playbook.
+# Run it: ansible-playbook ping.yml
+- name: Check that Ansible can reach every server
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Log in and run a tiny Python module
+      ansible.builtin.ping:

@@ -1,0 +1,31 @@
+---
+# hello.aws_ec2.yml: ask AWS which servers exist, instead of listing them by hand.
+# The file name must end in aws_ec2.yml. It needs the amazon.aws collection
+# (requirements.yml), boto3 next to Ansible, and an AWS login (Day 13).
+# Try it:  ansible-inventory -i aws/hello.aws_ec2.yml --graph
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+
+# Only running instances that carry the course's Project tag (Days 14 and 35).
+filters:
+  tag:Project: hello-devops
+  instance-state-name: running
+
+# Name each host after its Name tag, or its instance ID if it has none.
+hostnames:
+  - tag:Name
+  - instance-id
+
+# Put hosts into groups from their tags, for example role_web from Role=web.
+keyed_groups:
+  - key: ec2_tags.Role
+    prefix: role
+
+# Set connection variables from what AWS knows about each instance.
+compose:
+  ansible_host: public_ip_address
+  ansible_user: "'ubuntu'"
+
+# Use only ec2_tags, the newer name for the tags variable.
+use_deprecated_tags: false

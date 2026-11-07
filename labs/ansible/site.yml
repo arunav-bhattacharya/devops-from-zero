@@ -1,0 +1,44 @@
+---
+# site.yml (Day 37): the whole lab in one command.
+# Run it: ansible-playbook site.yml --ask-vault-pass
+#     or: ansible-playbook site.yml --vault-password-file .vault_pass
+- name: Web servers run hello-devops
+  hosts: web
+  become: true
+  roles:
+    - hello_devops
+
+- name: The load balancer spreads requests over the web servers
+  hosts: lb
+  become: true
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      tags: [install]
+
+    - name: Write the load balancer config
+      ansible.builtin.template:
+        src: nginx-lb.conf.j2 # Ansible looks in ./templates first
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload nginx
+      tags: [config]
+
+    - name: Start nginx now and at every boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+      tags: [config]
+
+  handlers:
+    - name: Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded

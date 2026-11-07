@@ -1,0 +1,17 @@
+# hello-devops.service (Day 36): run the app with gunicorn under systemd.
+# Day 37 turns this file into a template with variables.
+[Unit]
+Description=hello-devops web app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=hello
+Group=hello
+WorkingDirectory=/opt/hello-devops
+Environment=APP_VERSION=1.0.0
+ExecStart=/opt/hello-devops/venv/bin/gunicorn --bind 0.0.0.0:8000 --workers 2 app:app
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+---
+# host_vars/web2.yml: web2 is the canary. It gets the new greeting first.
+hello_devops_greeting: "Hello from web2, the canary"

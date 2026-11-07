@@ -1,0 +1,3 @@
+# Only the public key may go into the image. Everything else stays out.
+*
+!.keys/id_ed25519.pub

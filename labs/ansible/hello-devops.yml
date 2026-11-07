@@ -1,0 +1,76 @@
+---
+# hello-devops.yml (Day 36): one answer to the hands-on task. Try your own first.
+# It installs hello-devops on the web servers and runs it as a systemd service.
+# The app's code comes from your hello-devops repo next to this folder.
+# Run it: ansible-playbook hello-devops.yml
+- name: Run hello-devops as a systemd service
+  hosts: web
+  become: true
+  vars:
+    app_dir: /opt/hello-devops
+    src_dir: "{{ playbook_dir }}/../hello-devops"
+  tasks:
+    - name: Install Python's venv support (the pip module needs packaging)
+      ansible.builtin.apt:
+        name:
+          - python3-venv
+          - python3-packaging
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Create a system user for the app (no login, no home folder)
+      ansible.builtin.user:
+        name: hello
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+
+    - name: Create the app folder
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Copy the app
+      ansible.builtin.copy:
+        src: "{{ src_dir }}/app.py"
+        dest: "{{ app_dir }}/app.py"
+        mode: "0644"
+      notify: Restart hello-devops
+
+    - name: Copy the list of Python packages
+      ansible.builtin.copy:
+        src: "{{ src_dir }}/requirements.txt"
+        dest: "{{ app_dir }}/requirements.txt"
+        mode: "0644"
+
+    - name: Install the packages into a virtual environment
+      ansible.builtin.pip:
+        requirements: "{{ app_dir }}/requirements.txt"
+        virtualenv: "{{ app_dir }}/venv"
+        virtualenv_command: python3 -m venv
+      notify: Restart hello-devops
+
+    - name: Install the systemd unit
+      ansible.builtin.copy:
+        src: hello-devops.service
+        dest: /etc/systemd/system/hello-devops.service
+        mode: "0644"
+      notify: Restart hello-devops
+
+    - name: Start hello-devops now and at every boot
+      ansible.builtin.systemd_service:
+        name: hello-devops
+        state: started
+        enabled: true
+        daemon_reload: true
+
+  handlers:
+    - name: Restart hello-devops
+      ansible.builtin.systemd_service:
+        name: hello-devops
+        state: restarted
+        daemon_reload: true
