@@ -149,8 +149,8 @@ rep(("d20", "sections", 0, "body"),
 rep(("d20", "sections", 2, "body"),
     "Here is the part that catches almost everyone. Every `if:` that does not contain a status function gets an "
     "invisible `success()` added to it.",
-    "Every `if:` that does not contain a status function gets an invisible `success()` added to it, and almost "
-    "everyone is caught by it.")
+    "Every `if:` that does not contain a status function gets an invisible `success()` added to it. This rule "
+    "catches almost everyone.")
 rep(("d20", "sections", 4, "body"),
     "Two details matter. The `inputs` context",
     "The `inputs` context")
