@@ -1,0 +1,68 @@
+# Extra read-only access for the ai-agent ServiceAccount (Day 66).
+#
+# Apply it AFTER policy/ai-agent-readonly.yaml. That file creates the ServiceAccount
+# hello:ai-agent and a Role in namespace hello: Pods, logs, events, Services,
+# ConfigMaps and workloads, read-only, with no Secrets and no pods/exec.
+#
+# This file adds the little a Kubernetes MCP server needs on top of that:
+#   - Pod metrics in hello, so a "top" tool works (needs metrics-server, Day 43).
+#   - Read-only Namespaces and Nodes for the whole cluster, so the agent can list
+#     namespaces and see why a Pod is Pending (node capacity, conditions, taints).
+#
+# It grants no Secrets, no pods/exec, no nodes/proxy and no write verb anywhere.
+# Every rule names its resources and verbs: no wildcards ("*").
+#
+# Apply:  kubectl apply -f policy/ai-agent-readonly.yaml -f ai/agents/rbac-readonly.yaml
+# Check:  kubectl auth can-i --list -n hello --as=system:serviceaccount:hello:ai-agent
+# Remove: kubectl delete -f ai/agents/rbac-readonly.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ai-agent-metrics
+  namespace: hello
+rules:
+  # CPU and memory use per Pod, as kubectl top pods shows it.
+  - apiGroups: [metrics.k8s.io]
+    resources: [pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-agent-metrics
+  namespace: hello
+subjects:
+  - kind: ServiceAccount
+    name: ai-agent
+    namespace: hello
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ai-agent-metrics
+---
+# Namespaces and Nodes are cluster-wide objects, so they need a ClusterRole.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ai-agent-cluster-read
+rules:
+  - apiGroups: [""]
+    resources: [namespaces, nodes]
+    verbs: [get, list, watch]
+  # CPU and memory use per node, as kubectl top nodes shows it.
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ai-agent-cluster-read
+subjects:
+  - kind: ServiceAccount
+    name: ai-agent
+    namespace: hello
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ai-agent-cluster-read

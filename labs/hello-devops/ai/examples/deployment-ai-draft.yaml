@@ -1,0 +1,37 @@
+# A Deployment for hello-devops as an AI assistant wrote it, unchanged (Day 65).
+# It is WRONG on purpose. Never apply it. Use it to practise the verify loop:
+#   kubeconform -strict -summary ai/examples/deployment-ai-draft.yaml
+#   kubectl apply --dry-run=server -f ai/examples/deployment-ai-draft.yaml
+# Then review what no tool can see. Compare with k8s/deployment.yaml, the tested version.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-devops
+  namespace: hello
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-devops
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      containers:
+        - name: web
+          image: hello-devops:latest
+          ports:
+            - containerPort: "8000"
+          env:
+            - name: REDIS_HOST
+              value: localhost
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            timeout: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi

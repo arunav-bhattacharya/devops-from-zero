@@ -23,7 +23,8 @@ reference: every file the lessons build, already checked. Use it to compare your
 | `logging/` | Days 55 and 56 (Elasticsearch, Kibana, Fluent Bit) |
 | `tracing/` | Day 57 (OpenTelemetry Collector, Jaeger) |
 | `dynatrace/` | Day 62 |
-| `policy/`, `security/` | Day 64 (and Day 67 for the AI agent policy) |
+| `policy/`, `security/` | Day 64 (and Day 66 for the AI agent policy and kubeconfig) |
+| `ai/` | Days 65 and 66 (AGENTS.md, review checklist, MCP config, read-only RBAC, AI review workflow) |
 
 Other lab folders in this repo: `labs/linux/` (Days 3 to 7), `labs/hello-jvm/` (Days 28 to 30),
 `labs/terraform-practice/` (Days 32 and 33).

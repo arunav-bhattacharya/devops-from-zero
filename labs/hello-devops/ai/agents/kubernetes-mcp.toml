@@ -1,0 +1,26 @@
+# Settings for the Kubernetes MCP server, containers/kubernetes-mcp-server (Day 66).
+# Since v0.0.68 it reads its settings from a TOML file like this one. Older guides
+# show flags such as --read-only; those flags no longer exist.
+#
+# Copy it to the path that .mcp.json names:
+#   mkdir -p ~/.config && cp ai/agents/kubernetes-mcp.toml ~/.config/hello-devops-k8s-mcp.toml
+#
+# Everything here is a best-effort guardrail: it hides tools and refuses some calls.
+# The real limit is the RBAC of the identity in KUBECONFIG, which .mcp.json sets to
+# ~/.kube/ai-agent.kubeconfig (security/agent-kubeconfig.sh writes that file).
+
+# Offer only tools that are marked read-only: nothing that creates, changes or deletes.
+read_only = true
+
+# Only the core tools: Pods, logs, events, namespaces, nodes, and get or list of any kind.
+# The "config" toolset is left out on purpose: it shows the kubeconfig to the model.
+toolsets = ["core"]
+
+# Keep every top-level setting above this point. In TOML, a key written below a
+# [[table]] header belongs to that table.
+
+# Refuse Secret calls inside the server as well, in case RBAC is ever widened by mistake.
+[[denied_resources]]
+group = ""
+version = "v1"
+kind = "Secret"
