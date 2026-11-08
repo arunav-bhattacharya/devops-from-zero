@@ -3,13 +3,13 @@
 <meta name="description" content="A hands-on DevOps course from zero: Linux, networking, Docker, GitHub Actions, Gradle, Terraform, Kubernetes, Argo CD, Prometheus, Grafana, ELK/EFK, OpenTelemetry, Dynatrace and DevSecOps.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&family=Big+Shoulders+Stencil+Display:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;1,400&family=Big+Shoulders+Stencil+Display:wght@700&display=swap">
 <script>try{var t=localStorage.getItem("dfz-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>/* Layout: sticky top bar, part/lesson rail on the left (drawer on phones), one reading column,
    an "on this page" rail on wide screens. Look: a calm engineering notebook. Near-white pages, thin
    rules, one teal accent for actions; orange only for things that need attention (due cards, a running
    step) and in diagrams. Headings in Instrument Sans at medium weights, sentence case; code and small
-   labels in JetBrains Mono; the stencil face is kept only for the outline numerals on the part covers. */
+   labels in SF Mono (the system monospace font on Apple devices); the stencil face is kept only for the outline numerals on the part covers. */
 :root {
   --bg: #f5f7f9;
   --panel: #ffffff;
@@ -32,7 +32,7 @@
   --f-display: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-stencil: "Big Shoulders Stencil Display", "Big Shoulders Display", "Arial Narrow", Arial, sans-serif;
   --f-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --f-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; /* SF Mono on Apple devices */
   --top: 58px;
   --side: 300px;
   --measure: 70ch;
