@@ -23,8 +23,16 @@
     <a href="#labs" data-nav="labs">Lab files</a>
   </nav>
   <span class="grow"></span>
+  <button class="searchbtn" id="searchBtn" aria-label="Search the course" title="Search the course (/ or Ctrl K)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="sb-t">Search</span><kbd>/</kbd></button>
   <button class="iconbtn" id="themeBtn" aria-label="Theme: system" title="Theme: system"></button>
 </header>
+<div class="sx" id="sx" hidden role="dialog" aria-modal="true" aria-label="Search the course">
+  <div class="sx-box">
+    <div class="sx-bar"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input id="sxIn" type="search" placeholder="Search lessons, terms, commands, videos, lab files…" autocomplete="off" spellcheck="false" aria-controls="sxRes"><kbd>Esc</kbd></div>
+    <div class="sx-res" id="sxRes" role="listbox" aria-label="Results"></div>
+    <div class="sx-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></div>
+  </div>
+</div>
 <div class="shell">
   <aside class="side" id="side" aria-label="Course contents"></aside>
   <div class="scrim" id="scrim" hidden></div>

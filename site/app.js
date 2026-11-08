@@ -170,8 +170,24 @@ const ICON = {
   team: '<svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><circle cx="7" cy="7" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="14" cy="8" r="2.1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 16.5c.6-2.8 2.4-4.2 4.5-4.2s3.9 1.4 4.5 4.2M12 12.6c2.3-.4 4.5.8 5.3 3.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
   chev: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   play: '<svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true"><path d="M3 2l7 4-7 4z" fill="currentColor"/></svg>',
+  vid: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1.5" y="3.5" width="9" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 7.2l4-2.4v6.4l-4-2.4z" fill="currentColor"/></svg>',
   warn: '<svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M10 2.8l7.8 13.7H2.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8v3.8M10 14.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
 };
+
+/* lessons with a narrated video get a small camera mark wherever they are listed */
+const hasVid = (id) => !!(L(id) && L(id).videos && L(id).videos.length);
+const vmark = (id) => (hasVid(id) ? `<span class="vmark" title="Has a video" aria-label="has a video">${ICON.vid}</span>` : "");
+
+/* sections (Foundations, Build and ship, ...) fold open and shut; a choice is remembered in this browser */
+let secOpen = {};
+try { secOpen = JSON.parse(localStorage.getItem("dfz-secs") || "{}") || {}; } catch { secOpen = {}; }
+const saveSecs = () => { try { localStorage.setItem("dfz-secs", JSON.stringify(secOpen)); } catch { /* storage blocked */ } };
+function curSec() {
+  const r = route(), nx = nextUp();
+  const part = L(r) ? L(r).part : /^p\d+$/.test(r) ? +r.slice(1) : nx ? L(nx).part : 0;
+  return secOf(part);
+}
+const isSecOpen = (i) => (i in secOpen ? !!secOpen[i] : i === curSec());
 
 /* ---------------- chrome: sidebar, badges, theme ---------------- */
 const side = $("#side"), scrim = $("#scrim"), menuBtn = $("#menuBtn");
@@ -184,14 +200,15 @@ function sideHTML() {
   let s = `<div>${link("home", "Today")}${nx ? `<a class="navlink" href="#${nx}">Up next: Day ${pad(L(nx).day)}</a>` : ""}${link("review", "Review", dc ? ` <span class="due">${dc}</span>` : "")}${link("plan", "Plan and pace")}${link("commands", "Command cheat sheet")}${link("glossary", "Glossary")}${link("library", "Library: links and videos")}${link("labs", "Lab files")}</div>`;
   const curPart = L(r) ? L(r).part : /^p\d+$/.test(r) ? +r.slice(1) : nx ? L(nx).part : 0;
   for (const p of C.parts) {
-    const si = secOf(p.part);
+    const si = secOf(p.part), sOpen = si < 0 || isSecOpen(si);
     if (si >= 0 && SECS[si].parts[0] === p.part) {
       const ls = secLessons(SECS[si]);
-      s += `<div class="sgrp"><span class="sgrp-n">${pad(si + 1)}</span><span class="sgrp-t">${esc(SECS[si].title)}</span><span class="sgrp-c tnum">${ls.filter(isDone).length}/${ls.length}</span></div>`;
+      s += `<button class="sgrp" data-act="sectog" data-s="${si}" aria-expanded="${sOpen}" title="${sOpen ? "Fold" : "Open"} this section"><span class="sgrp-n">${pad(si + 1)}</span><span class="sgrp-t">${esc(SECS[si].title)}</span><span class="sgrp-c tnum">${ls.filter(isDone).length}/${ls.length}</span><span class="sgrp-tg">${ICON.chev}</span></button>`;
     }
+    if (!sOpen) continue;
     const n = p.lessons.filter(isDone).length, open = sideOpen[p.part] ?? p.part === curPart;
-    s += `<div class="grp"><div class="grp-h"><button class="grp-tg" data-act="sidetog" data-p="${p.part}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} part ${p.part}">${ICON.chev}</button><a class="grp-a" href="#p${p.part}"><span class="grp-n">${p.part}</span><span class="grp-t">${esc(p.title)}</span></a><span class="grp-c tnum">${n}/${p.lessons.length}</span></div>`;
-    if (open) for (const id of p.lessons) s += `<a class="ls${r === id ? " on" : ""}" href="#${id}">${glyph(id)}<span class="d">${pad(L(id).day)}</span><span>${esc(L(id).title)}</span></a>`;
+    s += `<div class="grp"><div class="grp-h"><button class="grp-tg" data-act="sidetog" data-p="${p.part}" aria-expanded="${open}" aria-label="${open ? "Collapse" : "Expand"} part ${p.part}">${ICON.chev}</button><a class="grp-a" href="#p${p.part}"><span class="grp-n">${p.part}</span><span class="grp-t">${esc(p.title)}</span></a><span class="grp-c tnum">${p.lessons.some(hasVid) ? `<span class="vmark" title="Has videos" aria-label="has videos">${ICON.vid}</span> ` : ""}${n}/${p.lessons.length}</span></div>`;
+    if (open) for (const id of p.lessons) s += `<a class="ls${r === id ? " on" : ""}" href="#${id}">${glyph(id)}<span class="d">${pad(L(id).day)}</span><span>${esc(L(id).title)}${vmark(id)}</span></a>`;
     s += "</div>";
   }
   return s + `<p class="foot" id="sideFoot"></p>`;
@@ -280,7 +297,7 @@ function viewHome() {
   const job = (p) => {
     const n = p.lessons.filter(isDone).length;
     const s = n === p.lessons.length ? "passed" : p.lessons.includes(nx) ? "running" : "queued";
-    return `<div class="job"><a class="job-h" href="#p${p.part}"><span class="st ${s}">${GLYPH[s]}</span><span class="jt">${esc(p.tool)}</span><span class="jc tnum">${n}/${p.lessons.length}</span></a><ol>${p.lessons.map((id) => `<li><a href="#${id}" class="${id === nx ? "cur" : ""}">${glyph(id)}<span class="tt">${pad(L(id).day)} ${esc(L(id).title)}</span></a></li>`).join("")}</ol></div>`;
+    return `<div class="job"><a class="job-h" href="#p${p.part}"><span class="st ${s}">${GLYPH[s]}</span><span class="jt">${esc(p.tool)}</span><span class="jc tnum">${n}/${p.lessons.length}</span></a><ol>${p.lessons.map((id) => `<li><a href="#${id}" class="${id === nx ? "cur" : ""}">${glyph(id)}<span class="tt">${pad(L(id).day)} ${esc(L(id).title)}</span>${vmark(id)}</a></li>`).join("")}</ol></div>`;
   };
   const prow = (p) => {
     const n = p.lessons.filter(isDone).length;
@@ -288,11 +305,13 @@ function viewHome() {
     return `<a class="prow prow-art" href="#p${p.part}"><span class="pthumb" aria-hidden="true">${p.art || ""}</span><span class="pn">${p.part}</span><span><span class="pt">${esc(p.title)}</span><span class="pd">${days.length > 1 ? `Days ${days[0]} to ${days[days.length - 1]}` : `Day ${days[0]}`} · ${p.lessons.length} lessons${p.ready ? "" : " · being written"}</span></span><span class="pp"><span class="label tnum">${n}/${p.lessons.length} passed</span><span class="bar"><i style="width:${(100 * n) / p.lessons.length}%"></i></span></span></a>`;
   };
   const stageHead = (s, i) => {
-    const ls = secLessons(s), n = ls.filter(isDone).length;
-    return `<div class="stage-h"><span class="stage-n">${pad(i + 1)}</span><div><h3>${esc(s.title)}</h3>${s.blurb ? `<p>${esc(s.blurb)}</p>` : ""}</div><span class="label tnum">${secDays(s)} · ${n}/${ls.length}</span></div>`;
+    const ls = secLessons(s), n = ls.filter(isDone).length, o = isSecOpen(i), nv = ls.filter(hasVid).length;
+    return `<button class="stage-h" data-act="sectog" data-s="${i}" aria-expanded="${o}"><span class="stage-n">${pad(i + 1)}</span><span class="stage-tx"><span class="stage-t">${esc(s.title)}</span>${s.blurb ? `<span class="stage-b">${esc(s.blurb)}</span>` : ""}</span><span class="label tnum">${secDays(s)} · ${n}/${ls.length}${nv ? ` · ${ICON.vid} ${nv}` : ""}</span><span class="stage-tg">${ICON.chev}</span></button>`;
   };
-  const pipe = SECS.map((s, i) => `<div class="stage">${stageHead(s, i)}<div class="pipe">${s.parts.map((n) => job(partOf(n))).join("")}</div></div>`).join("");
-  const partsList = SECS.map((s, i) => `<div class="stage">${stageHead(s, i)}<div class="parts">${s.parts.map((n) => prow(partOf(n))).join("")}</div></div>`).join("");
+  const stage = (s, i, inner) => `<div class="stage${isSecOpen(i) ? "" : " shut"}">${stageHead(s, i)}${isSecOpen(i) ? inner : ""}</div>`;
+  const pipe = SECS.map((s, i) => stage(s, i, `<div class="pipe">${s.parts.map((n) => job(partOf(n))).join("")}</div>`)).join("");
+  const partsList = SECS.map((s, i) => stage(s, i, `<div class="parts">${s.parts.map((n) => prow(partOf(n))).join("")}</div>`)).join("");
+  const allBtns = `<span class="row" style="gap:6px"><button class="btn ghost sm" data-act="secall" data-v="1">Open all</button><button class="btn ghost sm" data-act="secall" data-v="0">Fold all</button></span>`;
 
   return `<div class="page">
   <section class="hero">
@@ -309,6 +328,7 @@ function viewHome() {
     <div class="stat"><span class="n tnum" style="font-size:34px;line-height:46px">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label"><a href="#plan">projected finish</a></span></div>
   </section>
   <section class="block"><div class="sec-h"><h2>Your run</h2><span class="label">${SECS.length} stages · each part a job · each lesson a step</span></div>
+    <div class="row" style="justify-content:space-between;gap:10px"><span class="muted" style="font-size:15px">${ICON.vid} marks a lesson with a narrated video. Click a section to open or fold it.</span>${allBtns}</div>
     ${pipe}</section>
   <section class="block"><div class="sec-h"><h2>How each day works</h2><span class="label">40 to 50 focused minutes</span></div>
     <ol class="day-plan">
@@ -328,7 +348,7 @@ const VTT = {};
 const vttURL = (v) => { if (!v.vtt) return ""; try { return VTT[v.slug] || (VTT[v.slug] = URL.createObjectURL(new Blob([v.vtt], { type: "text/vtt" }))); } catch { return ""; } };
 function videoHTML(v) {
   const cap = vttURL(v);
-  return `<figure class="vid"><video controls preload="none" playsinline poster="video/${v.slug}.jpg"><source src="video/${v.slug}.mp4" type="video/mp4">${cap ? `<track kind="captions" srclang="en" label="English" src="${cap}">` : ""}</video>
+  return `<figure class="vid" id="v-${v.slug}"><video controls preload="none" playsinline poster="video/${v.slug}.jpg"><source src="video/${v.slug}.mp4" type="video/mp4">${cap ? `<track kind="captions" srclang="en" label="English" src="${cap}">` : ""}</video>
     <figcaption><span class="vid-k">${ICON.play || ""}Video${v.dur ? ` · ${mmss(v.dur)}` : ""}</span>${v.title}</figcaption></figure>`;
 }
 
@@ -358,7 +378,7 @@ function viewLesson(id) {
     const st = QS["g-" + id] || (QS["g-" + id] = { ans: [null], shown: false });
     h += `<section class="card warm" id="warm"><span class="label">Warm-up · guess before you read</span><div id="quiz-g-${id}">${qHTML("g-" + id, l.guess, 0, st, true)}</div>${st.ans[0] == null ? `<span class="muted" style="font-size:15px">No score. Guessing first, even wrongly, helps the answer stick.</span>` : ""}</section>`;
   }
-  if (l.terms.length) h += `<section class="block"><span class="label">Words you'll meet</span><dl class="terms">${l.terms.map((t) => `<div><dt>${esc(t.term)}</dt><dd>${t.plain}</dd></div>`).join("")}</dl></section>`;
+  if (l.terms.length) h += `<section class="block" id="words"><span class="label">Words you'll meet</span><dl class="terms">${l.terms.map((t) => `<div><dt>${esc(t.term)}</dt><dd>${t.plain}</dd></div>`).join("")}</dl></section>`;
   l.sections.forEach((s, si) => {
     const sid = `s${si + 1}`; toc.push([sid, s.h]);
     let b = `<section class="lsec" id="${sid}"><h2><span class="n">${pad(si + 1)}</span><span>${esc(s.h)}</span></h2><div class="prose">${s.html}</div>`;
@@ -415,7 +435,7 @@ function viewPart(n) {
   const p = partOf(n);
   if (!p) return viewHome();
   const nDone = p.lessons.filter(isDone).length;
-  const list = p.lessons.map((id) => `<a class="prow" href="#${id}"><span class="pn">${pad(L(id).day)}</span><span><span class="pt" style="font-size:19px">${esc(L(id).title)}</span><span class="pd">${L(id).pending ? "being written" : `${L(id).minutes} min${P.scores[id] != null ? ` · check ${P.scores[id]}/3` : ""}`}</span></span><span class="pp" style="justify-items:end">${glyph(id)}</span></a>`).join("");
+  const list = p.lessons.map((id) => `<a class="prow" href="#${id}"><span class="pn">${pad(L(id).day)}</span><span><span class="pt" style="font-size:19px">${esc(L(id).title)}${vmark(id)}</span><span class="pd">${L(id).pending ? "being written" : `${L(id).minutes} min${P.scores[id] != null ? ` · check ${P.scores[id]}/3` : ""}`}</span></span><span class="pp" style="justify-items:end">${glyph(id)}</span></a>`).join("");
   let h = `<div class="page" style="max-width:960px">${p.art ? `<figure class="part-art">${p.art}</figure>` : ""}<header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${secOf(p.part) >= 0 ? `Section ${secOf(p.part) + 1} · ${esc(SECS[secOf(p.part)].title)} · ` : ""}${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
   if (!p.ready) return h + `<p class="muted">This part is still being written. It will appear here when it's ready.</p></div>`;
   if (p.resources && p.resources.length) h += `<section class="block"><div class="sec-h"><h2>Go deeper</h2><a class="label" href="#library">the full library</a></div><p class="muted" style="margin:0">Hand-picked for this part: official docs, the best free courses and videos, and the books people keep recommending.</p>${resList(p.resources)}</section>`;
@@ -562,7 +582,7 @@ function viewPlan() {
     const l = L(id), planned = addDays(st, k), done = isDone(id);
     const si = firstOf[id], head = si === undefined ? "" : `<tr class="sec-row"><td></td><td class="dt tnum">${pad(si + 1)}</td><td colspan="3"><b>${esc(SECS[si].title)}</b> <span class="dt">${secDays(SECS[si])}</span></td></tr>`;
     const when = done && P.log[id].at ? `passed ${fmt(ymd(new Date(P.log[id].at)), { month: "short", day: "numeric" })}` : planned < today() ? "behind" : "";
-    return `${head}<tr><td>${glyph(id)}</td><td class="dt tnum">D${pad(l.day)}</td><td><a href="#${id}">${esc(l.title)}</a></td><td class="dt">${fmt(planned)}</td><td class="dt">${when}</td></tr>`;
+    return `${head}<tr><td>${glyph(id)}</td><td class="dt tnum">D${pad(l.day)}</td><td><a href="#${id}">${esc(l.title)}</a>${vmark(id)}</td><td class="dt">${fmt(planned)}</td><td class="dt">${when}</td></tr>`;
   }).join("");
   const behind = C.order.filter((id, k) => !isDone(id) && addDays(st, k) < today()).length;
   return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">PLAN</span><span class="pp">one lesson a day</span></div><h1>Plan and pace</h1><p class="goal">One lesson a day takes ${C.order.length} days, about ${Math.round(C.order.length / 7)} weeks. Long lessons split well over two sittings, and short ones pair well on a weekend. The plan moves with you.</p></header>
@@ -646,7 +666,7 @@ function render(scroll = true) {
   codeN = 0;
   let html;
   if (/^d\d\d$/.test(r) && L(r)) html = viewLesson(r);
-  else if (/^p\d$/.test(r) && partOf(+r.slice(1))) html = viewPart(+r.slice(1));
+  else if (/^p\d+$/.test(r) && partOf(+r.slice(1))) html = viewPart(+r.slice(1));
   else if (r === "review") html = viewReview();
   else if (r === "commands") html = viewCommands();
   else if (r === "glossary") html = viewGlossary();
@@ -661,6 +681,10 @@ function render(scroll = true) {
   const l = L(r);
   document.title = l ? `Day ${pad(l.day)}: ${l.title} · DevOps from Zero` : "DevOps from Zero";
   if (l && !l.pending) { watchToc(); mountAi(); }
+  if (jumpTo) {
+    const el = document.getElementById(jumpTo); jumpTo = null;
+    if (el) { if (el.tagName === "DETAILS") el.open = true; el.scrollIntoView({ block: "start" }); el.classList.add("hit"); setTimeout(() => el.classList.remove("hit"), 1600); }
+  }
 }
 let tocIO = null;
 function watchToc() {
@@ -673,6 +697,111 @@ function watchToc() {
   }, { rootMargin: "-80px 0px -65% 0px" });
   links.forEach((a) => { const el = document.getElementById(a.dataset.to); if (el) tocIO.observe(el); });
 }
+
+/* ---------------- search: one box for lessons, sections, terms, commands, videos, lab files and links ---------------- */
+const sx = $("#sx"), sxIn = $("#sxIn"), sxRes = $("#sxRes"), searchBtn = $("#searchBtn");
+let SX = null, sxHits = [], sxAct = 0, jumpTo = null;
+const strip = (h) => String(h || "").replace(/<[^>]+>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+function sxIndex() {
+  const out = [], seen = new Set();
+  const link = (r, sub) => { if (!r.url || seen.has(r.url)) return; seen.add(r.url); out.push({ k: r.kind === "watch" ? "Video link" : "Link", t: strip(r.title), sub, x: strip(r.why || ""), url: r.url, w: 3 }); };
+  for (const p of C.parts) {
+    out.push({ k: "Part", t: `Part ${p.part}: ${strip(p.title)}`, x: strip(p.intro), go: "p" + p.part, w: 9 });
+    for (const r of p.resources || []) link(r, `Part ${p.part}`);
+  }
+  for (const id of C.order) {
+    const l = L(id);
+    if (!l || l.pending) continue;
+    const day = `Day ${pad(l.day)}`, where = `${day} · ${strip(l.title)}`;
+    out.push({ k: "Lesson", t: `${day}: ${strip(l.title)}`, x: strip(l.goal), go: id, w: 10 });
+    l.sections.forEach((s, i) => { out.push({ k: "Section", t: strip(s.h), sub: where, x: strip(s.html), go: id, to: "s" + (i + 1), w: 6 }); for (const r of s.refs || []) link(r, where); });
+    for (const t of l.terms || []) out.push({ k: "Term", t: strip(t.term), sub: where, x: strip(t.plain), go: id, to: "words", w: 8 });
+    for (const c of l.commands || []) out.push({ k: "Command", t: c.cmd, sub: where, x: strip(c.what), go: id, to: "cmds", w: 7, mono: true });
+    for (const v of l.videos || []) out.push({ k: "Video", t: strip(v.title), sub: where, x: "", go: id, to: "v-" + v.slug, w: 9 });
+  }
+  for (const f of C.labs) out.push({ k: "Lab file", t: f.path, sub: `Day ${pad(f.day)}`, x: strip(f.html).slice(0, 6000), lab: f, w: 5, mono: true });
+  for (const o of out) { o.T = o.t.toLowerCase(); o.X = o.x.toLowerCase(); o.S = (o.sub || "").toLowerCase(); }
+  return out;
+}
+function sxSearch(q) {
+  const ql = q.trim().toLowerCase(), words = ql.split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const hits = [];
+  for (const o of SX) {
+    let score = 0, ok = true;
+    for (const w of words) {
+      const ti = o.T.indexOf(w);
+      if (ti >= 0) score += o.w * (ti === 0 ? 4 : 3);
+      else if (o.X.includes(w)) score += o.w * 0.6;
+      else if (o.S.includes(w)) score += 1;
+      else { ok = false; break; }
+    }
+    if (!ok) continue;
+    if (o.T === ql) score += 60; else if (o.T.includes(ql)) score += 20;
+    hits.push([score, o]);
+  }
+  return hits.sort((a, b) => b[0] - a[0]).slice(0, 60).map((h) => h[1]);
+}
+const reEsc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function hiText(t, words) {
+  let h = esc(t);
+  if (!words.length) return h;
+  const re = new RegExp(`(${words.map((w) => reEsc(esc(w))).join("|")})`, "gi");
+  return h.replace(re, "<mark>$1</mark>");
+}
+function snippet(o, words) {
+  if (!o.x) return "";
+  const lx = o.X, i = Math.max(0, ...words.map((w) => lx.indexOf(w)).filter((n) => n >= 0).slice(0, 1));
+  let a = Math.max(0, i - 50); const b = Math.min(o.x.length, i + 110);
+  if (a > 0) { const sp = o.x.indexOf(" ", a); if (sp > 0 && sp < i) a = sp + 1; }
+  return (a > 0 ? "… " : "") + hiText(o.x.slice(a, b), words) + (b < o.x.length ? " …" : "");
+}
+function sxDraw() {
+  const q = sxIn.value.trim(), words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!q) {
+    sxRes.innerHTML = `<p class="sx-empty">Search every lesson, section, term, command, video, lab file and link. Try <button class="linkbtn" data-sxq="grep">grep</button>, <button class="linkbtn" data-sxq="rollback">rollback</button>, <button class="linkbtn" data-sxq="port 8000">port 8000</button> or <button class="linkbtn" data-sxq="rate">rate</button>.</p>`;
+    sxIn.removeAttribute("aria-activedescendant"); return;
+  }
+  if (!sxHits.length) { sxRes.innerHTML = `<p class="sx-empty">Nothing matches “${esc(q)}”. Try fewer or shorter words.</p>`; return; }
+  sxRes.innerHTML = `<p class="sx-count">${sxHits.length === 60 ? "Top 60" : sxHits.length} results</p>` + sxHits.map((o, i) => {
+    const inner = `<span class="sx-k">${o.k}</span><span class="sx-main"><span class="sx-t${o.mono ? " mono" : ""}">${hiText(o.t, words)}</span>${o.sub ? `<span class="sx-sub">${esc(o.sub)}</span>` : ""}${o.x ? `<span class="sx-x">${snippet(o, words)}</span>` : ""}</span>`;
+    return o.url ? `<a class="sx-r${i === sxAct ? " on" : ""}" id="sxr${i}" role="option" aria-selected="${i === sxAct}" href="${esc(o.url)}" target="_blank" rel="noopener" data-i="${i}">${inner}</a>`
+      : `<button class="sx-r${i === sxAct ? " on" : ""}" id="sxr${i}" role="option" aria-selected="${i === sxAct}" data-act="sxgo" data-i="${i}">${inner}</button>`;
+  }).join("");
+  sxIn.setAttribute("aria-activedescendant", "sxr" + sxAct);
+}
+function sxUpdate() { sxHits = sxSearch(sxIn.value); sxAct = 0; sxDraw(); sxRes.scrollTop = 0; }
+function openSx() {
+  if (!SX) SX = sxIndex();
+  sx.hidden = false; document.body.classList.add("sx-on");
+  sxIn.focus(); sxIn.select(); sxUpdate();
+}
+function closeSx() { sx.hidden = true; document.body.classList.remove("sx-on"); }
+function sxGo(i) {
+  const o = sxHits[i];
+  if (!o) return;
+  if (o.url) { const a = $("#sxr" + i); if (a) a.click(); closeSx(); return; }
+  closeSx();
+  if (o.lab) { labProj = o.lab.proj; labSel = o.lab.path; if (route() === "labs") render(); else location.hash = "labs"; return; }
+  jumpTo = o.to || null;
+  if (route() === o.go) render(); else location.hash = o.go;
+}
+searchBtn.addEventListener("click", openSx);
+sx.addEventListener("click", (e) => {
+  const q = e.target.closest("[data-sxq]");
+  if (q) { sxIn.value = q.dataset.sxq; sxUpdate(); sxIn.focus(); return; }
+  if (e.target === sx) closeSx();
+  if (e.target.closest("a.sx-r")) closeSx();
+});
+sxIn.addEventListener("input", sxUpdate);
+sxIn.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { e.preventDefault(); closeSx(); searchBtn.focus(); }
+  else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault(); if (!sxHits.length) return;
+    sxAct = (sxAct + (e.key === "ArrowDown" ? 1 : sxHits.length - 1)) % sxHits.length; sxDraw();
+    const el = $("#sxr" + sxAct); if (el) el.scrollIntoView({ block: "nearest" });
+  } else if (e.key === "Enter") { e.preventDefault(); sxGo(sxAct); }
+});
 
 /* ---------------- events ---------------- */
 document.addEventListener("click", async (e) => {
@@ -734,6 +863,9 @@ document.addEventListener("click", async (e) => {
   else if (a === "lab") { labSel = b.dataset.p; render(false); }
   else if (a === "labp") { labProj = b.dataset.p; labSel = null; render(false); }
   else if (a === "libk") { libKind = b.dataset.k; render(false); }
+  else if (a === "sectog") { const i = +b.dataset.s; secOpen[i] = !isSecOpen(i); saveSecs(); if (b.closest("#side")) chrome(); else render(false); }
+  else if (a === "secall") { SECS.forEach((_, i) => { secOpen[i] = b.dataset.v === "1"; }); saveSecs(); render(false); }
+  else if (a === "sxgo") { sxGo(+b.dataset.i); }
   else if (a === "sidetog") { const n = +b.dataset.p, cur = b.getAttribute("aria-expanded") === "true"; sideOpen[n] = !cur; chrome(); }
   else if (a === "reset") {
     $("#resetRow").innerHTML = `<span>This clears every lesson, score and review card${ref ? " on all your devices" : ""}.</span><button class="btn sm" data-act="reset2">Yes, reset</button><button class="btn ghost sm" data-act="reset0">Keep my progress</button>`;
@@ -763,10 +895,12 @@ document.addEventListener("change", (e) => {
   if (t.dataset && t.dataset.act === "start" && /^\d{4}-\d\d-\d\d$/.test(t.value)) { P.start = t.value; P.startU = nowIso(); commit(); render(false); }
 });
 document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); openSx(); return; }
   if (e.key === "Escape") openSide(false);
   const tag = (e.target.tagName || "").toLowerCase();
   if (tag === "textarea" && (e.metaKey || e.ctrlKey) && e.key === "Enter" && e.target.id.startsWith("tq-")) { ask(route(), e.target.value); return; }
   if (tag === "input" || tag === "textarea") return;
+  if (e.key === "/" && sx.hidden) { e.preventDefault(); openSx(); return; }
   if (route() === "review" && review.active && review.i < review.queue.length) {
     if (e.key === " " || e.key === "Enter") { e.preventDefault(); review.flip = !review.flip; render(false); }
     else if (review.flip && ["1", "2", "3", "4"].includes(e.key)) rateNow(+e.key - 1);
