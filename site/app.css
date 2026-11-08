@@ -586,3 +586,10 @@ body.side-off .hero .sub { max-width: 76ch; }
 .lesson.toc-shut .toc .label { display: none; }
 .lesson.toc-shut .toc-h { justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--rule); border-radius: var(--r); background: var(--panel); color: var(--mute); }
 .lesson.toc-shut .toc-h:hover { border-color: var(--accent); color: var(--ink); }
+
+/* folded rails leave a margin: the content does not run to the edge of the screen */
+@media (min-width: 1100px) {
+  body.side-off main { padding-left: max(clamp(40px, 6vw, 112px), env(safe-area-inset-left, 0px)); padding-right: max(clamp(32px, 6vw, 112px), env(safe-area-inset-right, 0px)); }
+  body.side-off .lesson.toc-on.toc-shut { gap: 56px; }
+}
+@media (min-width: 1360px) { .lesson.toc-on.toc-shut { gap: 56px; } }
