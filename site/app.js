@@ -445,7 +445,7 @@ function viewLesson(id) {
   }
   h += `<section class="block" id="tutor" hidden></section>`;
   h += pager;
-  const tocHTML = `<nav class="toc" aria-label="On this page"><button class="toc-h" data-act="toctog" aria-expanded="${!tocShut}" title="Fold or open this list"><span class="label">On this page</span>${ICON.chev}</button><ol>${toc.map(([a, t]) => `<li><a href="#${id}" data-act="jump" data-to="${a}">${esc(t)}</a></li>`).join("")}</ol></nav>`;
+  const tocHTML = `<nav class="toc" aria-label="On this page"><button class="toc-h" data-act="toctog" aria-expanded="${!tocShut}" aria-label="${tocShut ? "Show On this page" : "Fold On this page"}" title="${tocShut ? "Show On this page" : "Fold On this page"}"><span class="label">On this page</span>${ICON.chev}</button><ol>${toc.map(([a, t]) => `<li><a href="#${id}" data-act="jump" data-to="${a}">${esc(t)}</a></li>`).join("")}</ol></nav>`;
   return `<div class="lesson toc-on${tocShut ? " toc-shut" : ""}"><article class="lmain">${h}</article>${tocHTML}</div>`;
 }
 
@@ -884,6 +884,7 @@ document.addEventListener("click", async (e) => {
   else if (a === "toctog") {
     tocShut = !tocShut; try { localStorage.setItem("dfz-toc", tocShut ? "shut" : "open"); } catch { /* blocked */ }
     const ls = b.closest(".lesson"); if (ls) ls.classList.toggle("toc-shut", tocShut); b.setAttribute("aria-expanded", String(!tocShut));
+    const lab = tocShut ? "Show On this page" : "Fold On this page"; b.setAttribute("aria-label", lab); b.title = lab;
   }
   else if (a === "sectog") { const i = +b.dataset.s; secOpen[i] = !isSecOpen(i); saveSecs(); if (b.closest("#side")) chrome(); else render(false); }
   else if (a === "secall") { SECS.forEach((_, i) => { secOpen[i] = b.dataset.v === "1"; }); saveSecs(); render(false); }

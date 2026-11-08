@@ -576,10 +576,7 @@ body.sx-on { overflow: hidden; }
 .toc-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 4px 0; background: none; border: 0; cursor: pointer; color: var(--faint); text-align: left; }
 .toc-h:hover, .toc-h:hover .label { color: var(--ink); }
 .toc-h svg { transition: transform 0.15s; flex: none; }
-.toc-h[aria-expanded="true"] svg { transform: rotate(90deg); }
 .lesson.toc-shut .toc ol { display: none; }
-@media (min-width: 1360px) { .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 150px; } }
-@media (min-width: 1100px) { body.side-off .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 150px; } }
 @media (prefers-reduced-motion: reduce) { .toc-h svg { transition: none; } }
 
 /* when the course rail or "On this page" is folded, the content grows into the room it frees */
@@ -589,6 +586,15 @@ body.side-off .lmain, .lesson.toc-shut .lmain { max-width: none; }
 body.side-off .lmain :is(.prose, .callout, .refs, .goal),
 .lesson.toc-shut .lmain :is(.prose, .callout, .refs, .goal) { max-width: none; }
 body.side-off .hero .sub { max-width: 76ch; }
+
+/* "On this page" points right while open (fold it to the side) and left when folded (bring it back) */
+.toc-h[aria-expanded="false"] svg { transform: rotate(180deg); }
+/* folded, it shrinks to one small button and the content takes the rest of the column */
+@media (min-width: 1360px) { .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 36px; gap: 16px; } }
+@media (min-width: 1100px) { body.side-off .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 36px; gap: 16px; } }
+.lesson.toc-shut .toc .label { display: none; }
+.lesson.toc-shut .toc-h { justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--rule); border-radius: var(--r); background: var(--panel); color: var(--mute); }
+.lesson.toc-shut .toc-h:hover { border-color: var(--accent); color: var(--ink); }
 /* Freight Notation plates (design/freight-notation.md): every color is a theme token */
 .cv { display: block; width: 100%; height: auto; }
 .cv path { fill: none; }
@@ -1095,7 +1101,7 @@ function viewLesson(id) {
   }
   h += `<section class="block" id="tutor" hidden></section>`;
   h += pager;
-  const tocHTML = `<nav class="toc" aria-label="On this page"><button class="toc-h" data-act="toctog" aria-expanded="${!tocShut}" title="Fold or open this list"><span class="label">On this page</span>${ICON.chev}</button><ol>${toc.map(([a, t]) => `<li><a href="#${id}" data-act="jump" data-to="${a}">${esc(t)}</a></li>`).join("")}</ol></nav>`;
+  const tocHTML = `<nav class="toc" aria-label="On this page"><button class="toc-h" data-act="toctog" aria-expanded="${!tocShut}" aria-label="${tocShut ? "Show On this page" : "Fold On this page"}" title="${tocShut ? "Show On this page" : "Fold On this page"}"><span class="label">On this page</span>${ICON.chev}</button><ol>${toc.map(([a, t]) => `<li><a href="#${id}" data-act="jump" data-to="${a}">${esc(t)}</a></li>`).join("")}</ol></nav>`;
   return `<div class="lesson toc-on${tocShut ? " toc-shut" : ""}"><article class="lmain">${h}</article>${tocHTML}</div>`;
 }
 
@@ -1534,6 +1540,7 @@ document.addEventListener("click", async (e) => {
   else if (a === "toctog") {
     tocShut = !tocShut; try { localStorage.setItem("dfz-toc", tocShut ? "shut" : "open"); } catch { /* blocked */ }
     const ls = b.closest(".lesson"); if (ls) ls.classList.toggle("toc-shut", tocShut); b.setAttribute("aria-expanded", String(!tocShut));
+    const lab = tocShut ? "Show On this page" : "Fold On this page"; b.setAttribute("aria-label", lab); b.title = lab;
   }
   else if (a === "sectog") { const i = +b.dataset.s; secOpen[i] = !isSecOpen(i); saveSecs(); if (b.closest("#side")) chrome(); else render(false); }
   else if (a === "secall") { SECS.forEach((_, i) => { secOpen[i] = b.dataset.v === "1"; }); saveSecs(); render(false); }
