@@ -581,6 +581,14 @@ body.sx-on { overflow: hidden; }
 @media (min-width: 1360px) { .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 150px; } }
 @media (min-width: 1100px) { body.side-off .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 150px; } }
 @media (prefers-reduced-motion: reduce) { .toc-h svg { transition: none; } }
+
+/* when the course rail or "On this page" is folded, the content grows into the room it frees */
+body.side-off .page { max-width: 1320px; }
+body.side-off .lesson, .lesson.toc-shut { max-width: 1400px; }
+body.side-off .lmain, .lesson.toc-shut .lmain { max-width: none; }
+body.side-off .lmain :is(.prose, .callout, .refs, .goal),
+.lesson.toc-shut .lmain :is(.prose, .callout, .refs, .goal) { max-width: none; }
+body.side-off .hero .sub { max-width: 76ch; }
 /* Freight Notation plates (design/freight-notation.md): every color is a theme token */
 .cv { display: block; width: 100%; height: auto; }
 .cv path { fill: none; }
