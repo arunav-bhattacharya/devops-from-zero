@@ -226,7 +226,25 @@ function chrome() {
   $$(".topnav a").forEach((a) => a.classList.toggle("on", a.dataset.nav === r || (r === "home" && a.dataset.nav === "home")));
 }
 function openSide(open) { side.classList.toggle("open", open); scrim.hidden = !open; menuBtn.setAttribute("aria-expanded", String(open)); }
-menuBtn.addEventListener("click", () => openSide(!side.classList.contains("open")));
+/* the menu button hides or shows the course rail on wide screens, and opens it as a drawer on narrow ones;
+   the "On this page" list folds too. Both choices are remembered in this browser. */
+let sideOff = false, tocShut = false;
+try { sideOff = localStorage.getItem("dfz-side") === "off"; tocShut = localStorage.getItem("dfz-toc") === "shut"; } catch { /* storage blocked */ }
+const wideScreen = () => window.matchMedia("(min-width: 1100px)").matches;
+function applySide() {
+  document.body.classList.toggle("side-off", sideOff);
+  if (wideScreen()) {
+    menuBtn.setAttribute("aria-expanded", String(!sideOff));
+    menuBtn.setAttribute("aria-label", sideOff ? "Show the course contents" : "Hide the course contents");
+    menuBtn.title = sideOff ? "Show the course contents" : "Hide the course contents";
+  } else { menuBtn.setAttribute("aria-label", "Open contents"); menuBtn.title = "Open contents"; }
+}
+applySide();
+window.matchMedia("(min-width: 1100px)").addEventListener("change", () => { openSide(false); applySide(); });
+menuBtn.addEventListener("click", () => {
+  if (wideScreen()) { sideOff = !sideOff; try { localStorage.setItem("dfz-side", sideOff ? "off" : "on"); } catch { /* blocked */ } applySide(); }
+  else openSide(!side.classList.contains("open"));
+});
 scrim.addEventListener("click", () => openSide(false));
 side.addEventListener("click", (e) => { if (e.target.closest("a")) openSide(false); });
 
@@ -427,8 +445,8 @@ function viewLesson(id) {
   }
   h += `<section class="block" id="tutor" hidden></section>`;
   h += pager;
-  const tocHTML = `<nav class="toc" aria-label="On this page"><span class="label">On this page</span><ol>${toc.map(([a, t]) => `<li><a href="#${id}" data-act="jump" data-to="${a}">${esc(t)}</a></li>`).join("")}</ol></nav>`;
-  return `<div class="lesson toc-on"><article class="lmain">${h}</article>${tocHTML}</div>`;
+  const tocHTML = `<nav class="toc" aria-label="On this page"><button class="toc-h" data-act="toctog" aria-expanded="${!tocShut}" title="Fold or open this list"><span class="label">On this page</span>${ICON.chev}</button><ol>${toc.map(([a, t]) => `<li><a href="#${id}" data-act="jump" data-to="${a}">${esc(t)}</a></li>`).join("")}</ol></nav>`;
+  return `<div class="lesson toc-on${tocShut ? " toc-shut" : ""}"><article class="lmain">${h}</article>${tocHTML}</div>`;
 }
 
 function viewPart(n) {
@@ -863,6 +881,10 @@ document.addEventListener("click", async (e) => {
   else if (a === "lab") { labSel = b.dataset.p; render(false); }
   else if (a === "labp") { labProj = b.dataset.p; labSel = null; render(false); }
   else if (a === "libk") { libKind = b.dataset.k; render(false); }
+  else if (a === "toctog") {
+    tocShut = !tocShut; try { localStorage.setItem("dfz-toc", tocShut ? "shut" : "open"); } catch { /* blocked */ }
+    const ls = b.closest(".lesson"); if (ls) ls.classList.toggle("toc-shut", tocShut); b.setAttribute("aria-expanded", String(!tocShut));
+  }
   else if (a === "sectog") { const i = +b.dataset.s; secOpen[i] = !isSecOpen(i); saveSecs(); if (b.closest("#side")) chrome(); else render(false); }
   else if (a === "secall") { SECS.forEach((_, i) => { secOpen[i] = b.dataset.v === "1"; }); saveSecs(); render(false); }
   else if (a === "sxgo") { sxGo(+b.dataset.i); }
