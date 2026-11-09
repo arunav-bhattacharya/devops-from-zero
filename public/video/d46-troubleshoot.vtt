@@ -1,0 +1,325 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.632
+When something breaks, the urge is to change three things, and hope.
+
+2
+00:00:06.833 --> 00:00:08.367
+Kubernetes punishes that.
+
+3
+00:00:08.367 --> 00:00:13.887
+Many parts react on their own, so a guess can change the evidence before you have read it.
+
+4
+00:00:14.100 --> 00:00:18.779
+A fixed order of checks is faster, even when you think you already know the answer.
+
+5
+00:00:19.000 --> 00:00:23.595
+Work from the bottom up, because each layer depends on the one below it.
+
+6
+00:00:23.595 --> 00:00:24.489
+First the Pod.
+
+7
+00:00:24.489 --> 00:00:27.297
+Is it scheduled, running, ready, restarting?
+
+8
+00:00:27.500 --> 00:00:28.569
+Then the Service.
+
+9
+00:00:28.569 --> 00:00:33.913
+Does it select those Pods, and does its targetPort match the port the app listens on?
+
+10
+00:00:34.133 --> 00:00:35.109
+Then the route.
+
+11
+00:00:35.109 --> 00:00:38.819
+Does the Gateway or Ingress send traffic to that Service?
+
+12
+00:00:39.033 --> 00:00:42.254
+The node sits under every Pod, yet it comes last.
+
+13
+00:00:42.254 --> 00:00:48.433
+A sick node shows up as many Pods failing at once, so a single broken Pod rarely points there.
+
+14
+00:00:49.267 --> 00:00:53.085
+For each layer, the commands are nearly always the same.
+
+15
+00:00:53.085 --> 00:00:56.085
+kubectl get, for STATUS, READY and RESTARTS.
+
+16
+00:00:56.300 --> 00:01:00.253
+kubectl describe, reading the Events at the bottom first.
+
+17
+00:01:00.467 --> 00:01:05.188
+kubectl logs, with --previous if the container restarted.
+
+18
+00:01:05.400 --> 00:01:08.610
+Then up a layer, to the Service and its endpoints.
+
+19
+00:01:08.610 --> 00:01:09.829
+And the node, last.
+
+20
+00:01:10.033 --> 00:01:12.468
+Start with a Pod that never starts.
+
+21
+00:01:12.468 --> 00:01:14.207
+kubectl get says Pending.
+
+22
+00:01:14.433 --> 00:01:17.217
+Pending means the scheduler found no node.
+
+23
+00:01:17.217 --> 00:01:21.657
+The container has not run yet, so kubectl logs has nothing to show.
+
+24
+00:01:21.867 --> 00:01:23.604
+The answer is in the Events.
+
+25
+00:01:23.604 --> 00:01:28.259
+Read the FailedScheduling event slowly, because it accounts for every node.
+
+26
+00:01:28.467 --> 00:01:30.844
+Zero of three nodes are available.
+
+27
+00:01:30.844 --> 00:01:34.341
+One is ruled out by a taint: kind's control plane.
+
+28
+00:01:34.341 --> 00:01:36.999
+And two lack free CPU for the request.
+
+29
+00:01:37.200 --> 00:01:40.359
+So the request is larger than any node's free room.
+
+30
+00:01:40.359 --> 00:01:43.891
+Lower the request, remove other workloads, or add a node.
+
+31
+00:01:44.700 --> 00:01:47.111
+Next, the lab's catalog service.
+
+32
+00:01:47.111 --> 00:01:50.879
+Its status is ErrImagePull, then ImagePullBackOff.
+
+33
+00:01:51.900 --> 00:01:55.300
+Again, the container never ran, so there are no logs.
+
+34
+00:01:55.300 --> 00:01:57.609
+Go to describe, and read the Events.
+
+35
+00:01:57.833 --> 00:02:02.843
+BackOff in a status only means the kubelet now waits longer between tries.
+
+36
+00:02:02.843 --> 00:02:04.332
+It is never the cause.
+
+37
+00:02:04.533 --> 00:02:06.556
+Look for the first error.
+
+38
+00:02:06.556 --> 00:02:10.520
+Failed to pull image hello-devops, version 1.0.1.
+
+39
+00:02:10.733 --> 00:02:13.855
+But the image loaded into kind is 1.0.0.
+
+40
+00:02:13.855 --> 00:02:23.376
+So check the name and the tag, the registry login for private images, and on kind, whether you ran kind load docker-image.
+
+41
+00:02:24.200 --> 00:02:25.064
+Now reports.
+
+42
+00:02:25.064 --> 00:02:29.525
+RESTARTS keeps going up, and the status says CrashLoopBackOff.
+
+43
+00:02:29.733 --> 00:02:35.009
+The container keeps exiting, and the kubelet waits longer before each restart.
+
+44
+00:02:35.009 --> 00:02:38.323
+10 seconds, then 20, then 40, up to five minutes.
+
+45
+00:02:38.533 --> 00:02:40.458
+CrashLoopBackOff is a symptom.
+
+46
+00:02:40.458 --> 00:02:43.923
+But this time the container ran, so there is evidence.
+
+47
+00:02:44.633 --> 00:02:46.147
+Read logs --previous.
+
+48
+00:02:46.147 --> 00:02:50.257
+That shows the container that crashed, not the fresh one.
+
+49
+00:02:50.467 --> 00:02:51.566
+Its log is empty.
+
+50
+00:02:51.566 --> 00:02:55.963
+The process was killed from outside, before it could print anything.
+
+51
+00:02:56.167 --> 00:02:59.256
+So read Last State in describe.
+
+52
+00:02:59.256 --> 00:03:01.049
+Reason, OOMKilled.
+
+53
+00:03:01.049 --> 00:03:02.544
+Exit code, 137.
+
+54
+00:03:02.767 --> 00:03:05.723
+The container went over its memory limit.
+
+55
+00:03:05.723 --> 00:03:08.391
+Its file sets the limit to only 40Mi.
+
+56
+00:03:09.200 --> 00:03:11.717
+The exit code narrows things down fast.
+
+57
+00:03:11.717 --> 00:03:14.170
+Zero, the process finished on purpose.
+
+58
+00:03:14.170 --> 00:03:16.687
+One, the app exited with its own error.
+
+59
+00:03:16.900 --> 00:03:22.151
+137, killed with SIGKILL, most often the out of memory killer.
+
+60
+00:03:22.151 --> 00:03:26.385
+143, stopped with SIGTERM, the polite stop signal.
+
+61
+00:03:27.100 --> 00:03:27.892
+Then search.
+
+62
+00:03:27.892 --> 00:03:30.005
+Both Pods are Running and ready.
+
+63
+00:03:30.005 --> 00:03:32.645
+Yet requests to the search Service fail.
+
+64
+00:03:32.867 --> 00:03:38.399
+Every Pod looks healthy, so move up a layer, to the Service, and ask for its endpoints.
+
+65
+00:03:38.600 --> 00:03:39.046
+Unset.
+
+66
+00:03:39.046 --> 00:03:43.285
+The Service matches no Pods, so it sends traffic nowhere.
+
+67
+00:03:43.500 --> 00:03:47.083
+Compare the Service's selector with the Pods' labels.
+
+68
+00:03:47.083 --> 00:03:49.652
+The selector asks for app: search-api.
+
+69
+00:03:49.652 --> 00:03:51.883
+The Pods are labeled app: search.
+
+70
+00:03:52.100 --> 00:03:53.267
+They do not match.
+
+71
+00:03:53.267 --> 00:03:58.129
+Fix the selector, and check that targetPort is the port the app listens on.
+
+72
+00:03:58.933 --> 00:03:59.817
+And the node?
+
+73
+00:03:59.817 --> 00:04:03.625
+Look there when many Pods fail at once, all on one node.
+
+74
+00:04:03.625 --> 00:04:07.977
+kubectl get nodes shows NotReady when a kubelet stops reporting.
+
+75
+00:04:08.200 --> 00:04:16.548
+Then kubectl describe node shows conditions such as MemoryPressure and DiskPressure, and lists the Pods on it with their requests.
+
+76
+00:04:17.367 --> 00:04:19.020
+One habit matters most.
+
+77
+00:04:19.020 --> 00:04:22.541
+Deleting the broken Pod throws away the evidence.
+
+78
+00:04:22.541 --> 00:04:28.075
+Events are kept for about an hour, so run describe and logs --previous first.
+
+79
+00:04:28.800 --> 00:04:33.317
+Debug from the bottom up: Pod, then Service, then route, then node.
+
+80
+00:04:33.317 --> 00:04:34.666
+Get, describe, logs.
+
+81
+00:04:34.666 --> 00:04:36.756
+And change one thing at a time.

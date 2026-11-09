@@ -1,0 +1,5 @@
+{
+ "d59": [{"slug": "d59-ambient", "title": "Istio ambient mode: ztunnel on every node, waypoints only where you need them", "after": 1, "file": "p15/d59_ambient.py", "scene": "D59Ambient", "poster_at": 160.0}],
+ "d64": [{"slug": "d64-access", "title": "Who may do what: authentication, RBAC and admission", "after": 4, "file": "p17/d64_access.py", "scene": "D64Access", "poster_at": 200.0}],
+ "d67": [{"slug": "d67-golden-path", "title": "The golden path: a paved road from template to cost report", "after": 5, "file": "p19/d67_golden_path.py", "scene": "D67GoldenPath", "poster_at": 220.0}]
+}

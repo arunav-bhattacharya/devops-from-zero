@@ -1,0 +1,5 @@
+{
+ "d28": [{"slug": "d28-gradle", "title": "How Gradle thinks: three phases, the task graph and UP-TO-DATE", "after": 3, "file": "p7/d28_gradle.py", "scene": "D28Gradle", "poster_at": 193.0}],
+ "d33": [{"slug": "d33-state", "title": "Terraform state: the address map, secrets, locking, drift, moved and import", "after": 6, "file": "p8/d33_state.py", "scene": "D33State", "poster_at": 207.0}],
+ "d53": [{"slug": "d53-panel", "title": "How a Grafana panel works: data source, query, step, series and variables", "after": 2, "file": "p13/d53_panel.py", "scene": "D53Panel", "poster_at": 148.0}]
+}

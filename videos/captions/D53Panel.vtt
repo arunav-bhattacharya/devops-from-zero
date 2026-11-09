@@ -1,0 +1,245 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.816
+Grafana is a web app for looking at data that lives somewhere else.
+
+2
+00:00:06.816 --> 00:00:10.107
+In the lab, Prometheus scrapes and stores the metrics.
+
+3
+00:00:10.267 --> 00:00:14.927
+Grafana asks Prometheus questions in PromQL, and draws the answers.
+
+4
+00:00:14.927 --> 00:00:19.309
+Its own small database holds dashboards, users and alert rules.
+
+5
+00:00:19.309 --> 00:00:21.465
+The numbers stay in Prometheus.
+
+6
+00:00:22.400 --> 00:00:25.600
+Each system Grafana can ask is a data source.
+
+7
+00:00:25.600 --> 00:00:32.995
+One Grafana can talk to many at once: Prometheus for metrics, Loki for logs, Tempo for traces, and more.
+
+8
+00:00:33.667 --> 00:00:36.662
+Here is what happens when you open a dashboard.
+
+9
+00:00:36.662 --> 00:00:40.741
+Your browser loads the dashboard's JSON from the Grafana server.
+
+10
+00:00:40.933 --> 00:00:45.139
+For each panel, the browser sends the panel's query to Grafana.
+
+11
+00:00:45.139 --> 00:00:47.476
+Grafana passes it on to Prometheus.
+
+12
+00:00:47.476 --> 00:00:51.215
+That is what access proxy means in the data source file.
+
+13
+00:00:51.400 --> 00:00:55.012
+Prometheus answers, and the browser draws the result.
+
+14
+00:00:55.200 --> 00:00:58.946
+So Grafana can't show anything Prometheus never scraped.
+
+15
+00:00:58.946 --> 00:01:02.424
+An empty graph is usually a scrape or query problem.
+
+16
+00:01:03.200 --> 00:01:07.803
+A panel is one box on a dashboard: a query, and a visualization.
+
+17
+00:01:07.803 --> 00:01:10.104
+This one is a time series graph.
+
+18
+00:01:10.267 --> 00:01:12.737
+A graph panel sends a range query.
+
+19
+00:01:12.737 --> 00:01:18.259
+Prometheus runs the same PromQL once for each point, at evenly spaced times.
+
+20
+00:01:18.400 --> 00:01:20.645
+The gap between points is the step.
+
+21
+00:01:20.645 --> 00:01:24.429
+Grafana picks it from the time range and the panel's width.
+
+22
+00:01:24.429 --> 00:01:27.828
+On the lab's 30 minute graph, the step is 15 seconds.
+
+23
+00:01:28.000 --> 00:01:32.295
+Stretch the range to 7 days, and the points are many minutes apart.
+
+24
+00:01:32.467 --> 00:01:35.007
+Say there are short spikes between the points.
+
+25
+00:01:35.007 --> 00:01:40.309
+A one minute window then looks at one minute out of every ten, and misses the spikes in between.
+
+26
+00:01:41.533 --> 00:01:43.888
+$__rate_interval grows with the step.
+
+27
+00:01:43.888 --> 00:01:50.251
+Grafana takes the larger of two values: the step plus one scrape interval, or four scrape intervals.
+
+28
+00:01:51.133 --> 00:01:54.596
+That only works if Grafana knows the scrape interval.
+
+29
+00:01:54.596 --> 00:02:01.259
+That is timeInterval 15s in the data source file, and it must match scrape_interval in prometheus.yml.
+
+30
+00:02:01.400 --> 00:02:05.652
+On the 30 minute graph, the range became one minute: four scrapes.
+
+31
+00:02:06.333 --> 00:02:11.801
+What comes back is a set of series: one per status, each a list of values over time.
+
+32
+00:02:12.000 --> 00:02:16.472
+Before any request has failed, the 500 series does not exist at all.
+
+33
+00:02:16.472 --> 00:02:18.840
+Here Redis was stopped near the end.
+
+34
+00:02:19.000 --> 00:02:21.481
+The panel draws each series as a line.
+
+35
+00:02:21.667 --> 00:02:29.673
+Write {{status}} in the legend field, and each line is named from its labels: 200, or 500.
+
+36
+00:02:29.867 --> 00:02:32.518
+Settings change only the display.
+
+37
+00:02:32.518 --> 00:02:41.997
+The unit turns 4.42 into 4.42 requests per second, and an override paints the 500 line red, whatever the palette says.
+
+38
+00:02:43.267 --> 00:02:47.246
+A dashboard variable is a dropdown at the top of the dashboard.
+
+39
+00:02:47.246 --> 00:02:50.341
+Its value goes into every query that mentions it.
+
+40
+00:02:50.533 --> 00:02:52.276
+job is a Query variable.
+
+41
+00:02:52.276 --> 00:02:56.415
+Grafana asks Prometheus for every value of the job label.
+
+42
+00:02:56.415 --> 00:02:58.739
+Today that is only hello-devops.
+
+43
+00:02:58.739 --> 00:03:02.805
+With 40 services, the same dashboard would serve all 40.
+
+44
+00:03:03.400 --> 00:03:04.724
+path depends on job.
+
+45
+00:03:04.724 --> 00:03:10.283
+It lists the paths of the chosen job, allows several at once, and has an All option.
+
+46
+00:03:10.467 --> 00:03:17.087
+With several values selected, Grafana inserts a regular expression, slash, pipe, slash healthz.
+
+47
+00:03:17.267 --> 00:03:21.072
+So queries must match with equals tilde, not with equals.
+
+48
+00:03:21.072 --> 00:03:24.277
+Forgetting this is the most common variable bug.
+
+49
+00:03:25.067 --> 00:03:28.362
+Underneath, every dashboard is a JSON document.
+
+50
+00:03:28.362 --> 00:03:32.568
+A uid, the variables, and the panels, each with its queries.
+
+51
+00:03:32.733 --> 00:03:34.818
+The uid is part of the URL.
+
+52
+00:03:34.818 --> 00:03:37.675
+Keep it fixed, and links never break.
+
+53
+00:03:37.867 --> 00:03:42.807
+If the JSON is the dashboard, keep it in git, and review changes like code.
+
+54
+00:03:42.807 --> 00:03:48.077
+Provisioning loads such files when Grafana starts, from its provisioning folder.
+
+55
+00:03:48.267 --> 00:03:55.351
+In the provider file, allowUiUpdates false makes the Save button refuse, because the file is the truth.
+
+56
+00:03:55.351 --> 00:03:59.821
+And Grafana checks the folder for changed files every 30 seconds.
+
+57
+00:04:00.600 --> 00:04:08.684
+So the everyday loop is: change the dashboard in the UI until you like it, export its JSON, and paste it over the file.
+
+58
+00:04:08.684 --> 00:04:10.858
+Commit, and open a pull request.
+
+59
+00:04:10.858 --> 00:04:13.847
+Grafana picks up the file within 30 seconds.
+
+60
+00:04:14.600 --> 00:04:16.907
+Grafana stores dashboards, not data.
+
+61
+00:04:16.907 --> 00:04:24.469
+Every panel sends its query through a data source, over the time range at a step, and draws the series that come back.

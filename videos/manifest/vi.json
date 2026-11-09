@@ -1,0 +1,5 @@
+{
+ "d42": [{"slug": "d42-config", "title": "Config outside the image: ConfigMaps, Secrets and what a running Pod sees", "after": 4, "file": "p10/d42_config.py", "scene": "D42Config", "poster_at": 131.0}],
+ "d43": [{"slug": "d43-health", "title": "Probes, requests and limits, and the HorizontalPodAutoscaler", "after": 4, "file": "p10/d43_health.py", "scene": "D43Health", "poster_at": 76.0}],
+ "d46": [{"slug": "d46-troubleshoot", "title": "Troubleshooting step by step: get, describe, logs, endpoints, node", "after": 3, "file": "p10/d46_troubleshoot.py", "scene": "D46Troubleshoot", "poster_at": 234.0}]
+}

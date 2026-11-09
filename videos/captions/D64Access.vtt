@@ -1,0 +1,345 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:07.274
+Every request to the Kubernetes API passes three gates, in order.
+
+2
+00:00:07.274 --> 00:00:11.567
+Only then is anything stored in etcd, the cluster's database.
+
+3
+00:00:11.800 --> 00:00:13.895
+Gate one is authentication.
+
+4
+00:00:13.895 --> 00:00:14.827
+Who are you?
+
+5
+00:00:14.827 --> 00:00:17.388
+A certificate or a token answers.
+
+6
+00:00:17.600 --> 00:00:19.838
+Gate two is authorization.
+
+7
+00:00:19.838 --> 00:00:21.216
+May you do this?
+
+8
+00:00:21.216 --> 00:00:22.335
+RBAC answers.
+
+9
+00:00:22.567 --> 00:00:24.217
+Gate three is admission.
+
+10
+00:00:24.217 --> 00:00:26.761
+Is this particular object acceptable?
+
+11
+00:00:27.667 --> 00:00:30.603
+Start with RBAC, role-based access control.
+
+12
+00:00:30.603 --> 00:00:33.539
+For every request, it answers one question.
+
+13
+00:00:33.539 --> 00:00:36.817
+May this identity do this verb on this resource?
+
+14
+00:00:37.033 --> 00:00:38.489
+It uses four objects.
+
+15
+00:00:38.489 --> 00:00:43.896
+A Role lists rules, such as get, list and watch on pods, inside one namespace.
+
+16
+00:00:43.896 --> 00:00:47.293
+A ClusterRole is the same, for the whole cluster.
+
+17
+00:00:47.500 --> 00:00:52.647
+A RoleBinding gives a Role, or a ClusterRole, to a subject in one namespace.
+
+18
+00:00:52.647 --> 00:00:57.049
+A ClusterRoleBinding gives a ClusterRole to a subject everywhere.
+
+19
+00:00:57.267 --> 00:01:01.354
+The subject is a user, a group, or a ServiceAccount.
+
+20
+00:01:01.354 --> 00:01:07.328
+A ServiceAccount is an identity for a program: a Pod, a CI job, an AI agent.
+
+21
+00:01:08.233 --> 00:01:10.420
+Here is a real one, from the lab.
+
+22
+00:01:10.420 --> 00:01:13.601
+A ServiceAccount called dev, in namespace hello.
+
+23
+00:01:13.833 --> 00:01:15.506
+A Role called pod-creator.
+
+24
+00:01:15.506 --> 00:01:19.946
+It may get, list, watch, create and delete Pods, and read their logs.
+
+25
+00:01:19.946 --> 00:01:21.555
+No rule mentions Secrets.
+
+26
+00:01:21.767 --> 00:01:25.848
+And a RoleBinding, dev-pod-creator, that gives the Role to dev.
+
+27
+00:01:26.767 --> 00:01:29.295
+Before you rely on a rule, test it.
+
+28
+00:01:29.295 --> 00:01:32.763
+kubectl auth can-i asks the API server directly.
+
+29
+00:01:32.763 --> 00:01:35.725
+The as flag acts as dev, for one request.
+
+30
+00:01:35.933 --> 00:01:38.064
+May dev get secrets?
+
+31
+00:01:38.064 --> 00:01:38.383
+No.
+
+32
+00:01:38.383 --> 00:01:40.513
+May dev create pods?
+
+33
+00:01:40.513 --> 00:01:40.939
+Yes.
+
+34
+00:01:40.939 --> 00:01:42.431
+It looks safe.
+
+35
+00:01:43.333 --> 00:01:45.593
+Now dev creates a Pod called peek.
+
+36
+00:01:45.593 --> 00:01:50.643
+It loads the db-password Secret into an environment variable, and prints it.
+
+37
+00:01:50.867 --> 00:01:52.710
+RBAC checks one thing.
+
+38
+00:01:52.710 --> 00:01:54.385
+May dev create Pods?
+
+39
+00:01:54.385 --> 00:01:54.721
+Yes.
+
+40
+00:01:54.721 --> 00:01:57.485
+So the Pod passes, and is stored.
+
+41
+00:01:57.700 --> 00:02:00.637
+Then the kubelet fetches the Secret for the Pod.
+
+42
+00:02:00.637 --> 00:02:02.961
+Nobody checks dev's rights to Secrets.
+
+43
+00:02:03.167 --> 00:02:08.059
+dev reads the Pod's log, and there is the password the Role was meant to protect.
+
+44
+00:02:08.267 --> 00:02:10.722
+So the real boundary is the namespace.
+
+45
+00:02:10.722 --> 00:02:14.211
+Anyone who may create Pods there can read its Secrets.
+
+46
+00:02:15.133 --> 00:02:17.482
+That is why least privilege matters.
+
+47
+00:02:17.482 --> 00:02:19.961
+Give each identity only what it needs.
+
+48
+00:02:19.961 --> 00:02:22.961
+The official good practices fit in four lines.
+
+49
+00:02:23.167 --> 00:02:27.385
+Bind inside a namespace, with a RoleBinding, whenever you can.
+
+50
+00:02:27.385 --> 00:02:28.474
+Avoid wildcards.
+
+51
+00:02:28.474 --> 00:02:33.917
+A star grants every resource type that exists today, and every type added later.
+
+52
+00:02:34.133 --> 00:02:36.691
+Do not use cluster-admin for daily work.
+
+53
+00:02:36.691 --> 00:02:44.237
+And know the rights that are bigger than they look: creating Pods, nodes proxy, and the verbs that change RBAC itself.
+
+54
+00:02:45.067 --> 00:02:50.919
+Say a CI job only needs to update the image of Deployments in namespace shop.
+
+55
+00:02:51.133 --> 00:02:52.306
+Not cluster-admin.
+
+56
+00:02:52.306 --> 00:02:56.736
+A Role in shop, with get and patch on deployments, and nothing more.
+
+57
+00:02:57.567 --> 00:02:59.595
+Two habits for ServiceAccounts.
+
+58
+00:02:59.595 --> 00:03:03.063
+Give each app its own, never the namespace's default.
+
+59
+00:03:03.267 --> 00:03:09.411
+And if the app never calls the Kubernetes API, set automountServiceAccountToken to false.
+
+60
+00:03:09.411 --> 00:03:12.517
+Then a broken-into Pod has no token to steal.
+
+61
+00:03:13.433 --> 00:03:14.712
+Now the third gate.
+
+62
+00:03:14.712 --> 00:03:17.942
+RBAC decides whether you may create Pods at all.
+
+63
+00:03:17.942 --> 00:03:21.240
+Admission decides whether this Pod is acceptable.
+
+64
+00:03:21.467 --> 00:03:29.601
+Admission controllers can change an object, called mutating, or reject it, called validating, before it is stored in etcd.
+
+65
+00:03:30.433 --> 00:03:34.188
+Kyverno runs your own rules at this gate, as a webhook.
+
+66
+00:03:34.188 --> 00:03:40.196
+The API server sends it each matching request, and waits for the answer: allow, or deny.
+
+67
+00:03:40.400 --> 00:03:46.657
+The lab's policy, disallow-latest-tag, denies any image tagged latest, in namespace hello.
+
+68
+00:03:46.867 --> 00:03:48.175
+Watch one request.
+
+69
+00:03:48.175 --> 00:03:52.320
+Someone runs a test Pod with the image nginx, tag latest.
+
+70
+00:03:52.533 --> 00:03:54.111
+Authentication passes.
+
+71
+00:03:54.111 --> 00:03:56.978
+RBAC says this identity may create Pods.
+
+72
+00:03:56.978 --> 00:04:00.276
+Then Kyverno checks the object, and says deny.
+
+73
+00:04:00.500 --> 00:04:04.126
+The request is rejected, with the policy's message.
+
+74
+00:04:04.126 --> 00:04:05.975
+Nothing is stored in etcd.
+
+75
+00:04:06.200 --> 00:04:09.560
+Try again with the image busybox, tag 1.37.
+
+76
+00:04:09.560 --> 00:04:13.232
+All three gates say yes, and the Pod is stored.
+
+77
+00:04:14.033 --> 00:04:19.957
+Kubernetes also has a built-in admission check for Pod hardening, Pod Security Admission.
+
+78
+00:04:19.957 --> 00:04:23.817
+It has three levels: privileged, baseline, and restricted.
+
+79
+00:04:24.033 --> 00:04:26.888
+You switch it on per namespace, with a label.
+
+80
+00:04:26.888 --> 00:04:32.089
+Enforce rejects, warn shows the user a warning, and audit writes to the audit log.
+
+81
+00:04:32.300 --> 00:04:34.808
+Roll out every new rule the same way.
+
+82
+00:04:34.808 --> 00:04:38.671
+Audit first, read the reports, fix what fails, then Deny.
+
+83
+00:04:39.400 --> 00:04:41.567
+Authentication asks who you are.
+
+84
+00:04:41.567 --> 00:04:43.329
+RBAC asks what you may do.
+
+85
+00:04:43.329 --> 00:04:46.647
+Admission asks whether this object is acceptable.
+
+86
+00:04:46.647 --> 00:04:49.560
+And every identity gets only what it needs.

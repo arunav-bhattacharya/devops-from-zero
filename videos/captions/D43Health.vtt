@@ -1,0 +1,305 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:07.336
+Kubernetes already restarts a container whenever its process exits.
+
+2
+00:00:07.567 --> 00:00:10.389
+But an app can stay up and still be useless.
+
+3
+00:00:10.389 --> 00:00:13.660
+Stuck, or running but unable to reach its database.
+
+4
+00:00:13.867 --> 00:00:18.991
+A probe is a small check that the kubelet runs on a timer.
+
+5
+00:00:18.991 --> 00:00:20.581
+Here, an HTTP GET.
+
+6
+00:00:20.581 --> 00:00:24.468
+Any status from 200 to 399 counts as a pass.
+
+7
+00:00:25.300 --> 00:00:26.684
+There are three probes.
+
+8
+00:00:26.684 --> 00:00:31.137
+Each asks a different question, and a failure leads to a different action.
+
+9
+00:00:31.367 --> 00:00:34.576
+The startup probe asks: have you finished starting?
+
+10
+00:00:34.576 --> 00:00:36.841
+Until it passes, the other two wait.
+
+11
+00:00:37.067 --> 00:00:40.734
+In the lab, it allows thirty failures, two seconds apart.
+
+12
+00:00:40.734 --> 00:00:43.565
+So the app gets up to sixty seconds to boot.
+
+13
+00:00:43.767 --> 00:00:48.979
+The moment the app answers, startup passes, and hands over to liveness and readiness.
+
+14
+00:00:49.200 --> 00:00:51.823
+The liveness probe asks: are you stuck?
+
+15
+00:00:51.823 --> 00:00:54.312
+It checks /healthz every ten seconds.
+
+16
+00:00:54.533 --> 00:00:59.540
+After three failures in a row, the kubelet kills the container and starts a new one.
+
+17
+00:00:59.540 --> 00:01:02.163
+In the lab, that takes about thirty seconds.
+
+18
+00:01:02.367 --> 00:01:06.271
+The readiness probe asks: can you take traffic right now?
+
+19
+00:01:06.271 --> 00:01:08.806
+It checks /readyz every five seconds.
+
+20
+00:01:08.806 --> 00:01:10.792
+And /readyz also pings Redis.
+
+21
+00:01:11.000 --> 00:01:16.824
+After two misses, the Pod gets no traffic from Services, within about ten seconds.
+
+22
+00:01:16.824 --> 00:01:18.032
+Nothing restarts.
+
+23
+00:01:18.833 --> 00:01:19.692
+Now the trap.
+
+24
+00:01:19.692 --> 00:01:25.439
+Never make the liveness probe depend on something outside the container, such as Redis.
+
+25
+00:01:25.667 --> 00:01:28.179
+Picture Redis going down for a minute.
+
+26
+00:01:28.179 --> 00:01:33.866
+Every Pod fails liveness at about the same time, and the kubelet restarts all of them.
+
+27
+00:01:33.866 --> 00:01:35.585
+Restarts cannot fix Redis.
+
+28
+00:01:35.800 --> 00:01:41.206
+Dependency checks belong in readiness, because failing it only pauses traffic.
+
+29
+00:01:41.206 --> 00:01:42.384
+Nothing restarts.
+
+30
+00:01:43.200 --> 00:01:48.090
+Each container can say how much CPU and memory it needs.
+
+31
+00:01:48.090 --> 00:01:52.195
+100m means 100 millicores, a tenth of one core.
+
+32
+00:01:52.195 --> 00:01:54.465
+128Mi means 128 mebibytes.
+
+33
+00:01:54.465 --> 00:01:58.395
+There are two numbers, a request and a limit.
+
+34
+00:01:58.600 --> 00:02:01.365
+A request is what the scheduler reserves.
+
+35
+00:02:01.365 --> 00:02:05.952
+It puts a Pod only on a node whose unreserved room fits the request.
+
+36
+00:02:06.167 --> 00:02:08.937
+This new Pod does not fit on the first node.
+
+37
+00:02:08.937 --> 00:02:10.575
+It does fit on the second.
+
+38
+00:02:10.800 --> 00:02:14.620
+If no node has room for the request, the Pod stays Pending.
+
+39
+00:02:14.620 --> 00:02:17.469
+The scheduler counts requests, not live use.
+
+40
+00:02:18.300 --> 00:02:20.961
+A limit is the most the container may use.
+
+41
+00:02:20.961 --> 00:02:25.268
+The Linux kernel enforces it while the container runs, with cgroups.
+
+42
+00:02:25.500 --> 00:02:29.063
+At the limit, the two resources behave very differently.
+
+43
+00:02:29.063 --> 00:02:30.844
+Too much CPU makes you slow.
+
+44
+00:02:30.844 --> 00:02:32.880
+Too much memory gets you killed.
+
+45
+00:02:33.100 --> 00:02:37.204
+The kernel enforces a CPU limit as a time budget.
+
+46
+00:02:37.204 --> 00:02:43.737
+With 200m, the container gets 20 milliseconds of CPU in every 100, then waits.
+
+47
+00:02:43.967 --> 00:02:46.660
+It waits even when other cores sit idle.
+
+48
+00:02:46.660 --> 00:02:47.940
+That is throttling.
+
+49
+00:02:47.940 --> 00:02:49.960
+It keeps running, only slower.
+
+50
+00:02:50.167 --> 00:02:53.413
+Memory cannot be taken back once a process holds it.
+
+51
+00:02:53.413 --> 00:02:58.095
+Between request and limit, a container may use whatever the node has spare.
+
+52
+00:02:58.300 --> 00:03:03.584
+Over the memory limit, the kernel's out of memory killer stops it.
+
+53
+00:03:03.584 --> 00:03:08.468
+Kubernetes shows OOMKilled, exit code 137: signal 9, SIGKILL.
+
+54
+00:03:09.300 --> 00:03:12.024
+The lab sets no CPU limit, on purpose.
+
+55
+00:03:12.024 --> 00:03:15.536
+For a web app like this one, rely on the request.
+
+56
+00:03:15.536 --> 00:03:17.256
+But always set requests.
+
+57
+00:03:18.067 --> 00:03:23.606
+A HorizontalPodAutoscaler changes the number of replicas of a Deployment for you.
+
+58
+00:03:23.606 --> 00:03:27.915
+It is one more control loop, and it runs every fifteen seconds.
+
+59
+00:03:28.133 --> 00:03:33.559
+It reads each Pod's CPU use, as a percentage of the Pod's CPU request.
+
+60
+00:03:33.767 --> 00:03:37.906
+The lab targets 70 percent of the 100m request.
+
+61
+00:03:37.906 --> 00:03:39.668
+That is 70m per Pod.
+
+62
+00:03:39.900 --> 00:03:43.119
+Say three Pods average 140m under load.
+
+63
+00:03:43.119 --> 00:03:45.183
+That is twice the target.
+
+64
+00:03:45.400 --> 00:03:51.206
+So it works out how many replicas would bring the average back to the target.
+
+65
+00:03:51.206 --> 00:03:53.694
+Ceil of three times 140, over 70.
+
+66
+00:03:53.694 --> 00:03:53.996
+Six.
+
+67
+00:03:54.200 --> 00:04:00.585
+Then it sets the Deployment's replica count, between minReplicas, three, and maxReplicas, six.
+
+68
+00:04:00.800 --> 00:04:04.070
+It scales up at once, but down slowly, on purpose.
+
+69
+00:04:04.070 --> 00:04:08.844
+By default it wants five minutes of lower numbers before it removes Pods.
+
+70
+00:04:08.844 --> 00:04:10.740
+The lab shortens that to two.
+
+71
+00:04:11.367 --> 00:04:13.881
+It needs metrics-server for the numbers.
+
+72
+00:04:13.881 --> 00:04:18.847
+And without a CPU request, it has no percentage to compute, so it does nothing.
+
+73
+00:04:19.667 --> 00:04:23.504
+Probes decide when to wait, restart, or stop traffic.
+
+74
+00:04:23.504 --> 00:04:25.893
+Requests decide where a Pod fits.
+
+75
+00:04:25.893 --> 00:04:29.658
+At the limit, CPU is throttled and memory is killed.
+
+76
+00:04:29.658 --> 00:04:32.771
+And the HPA adds Pods from the average CPU.

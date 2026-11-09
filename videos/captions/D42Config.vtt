@@ -1,0 +1,269 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:08.749
+Since Part 5, you have built one image, and changed how it behaves with environment variables.
+
+2
+00:00:08.749 --> 00:00:12.932
+The same image runs on your laptop, in staging and in production.
+
+3
+00:00:13.133 --> 00:00:14.889
+Only the settings differ.
+
+4
+00:00:15.100 --> 00:00:17.196
+That is the twelve-factor rule.
+
+5
+00:00:17.196 --> 00:00:19.359
+Store config in the environment.
+
+6
+00:00:20.167 --> 00:00:24.173
+In Kubernetes, most teams put those settings in a ConfigMap.
+
+7
+00:00:24.173 --> 00:00:28.713
+It is a small object, with a data section of keys and string values.
+
+8
+00:00:28.933 --> 00:00:30.798
+The Deployment only names it.
+
+9
+00:00:30.798 --> 00:00:36.328
+So the Deployment stays the same in every environment, and only the ConfigMap differs.
+
+10
+00:00:36.533 --> 00:00:38.451
+It holds at most one mebibyte.
+
+11
+00:00:38.451 --> 00:00:43.949
+And it is not secret at all: anyone who can read objects in the namespace can read it.
+
+12
+00:00:44.767 --> 00:00:48.741
+A Pod can use a ConfigMap in three ways, and you can mix them.
+
+13
+00:00:48.967 --> 00:00:54.399
+With env and configMapKeyRef, one key becomes one environment variable.
+
+14
+00:00:54.399 --> 00:00:56.617
+You can rename it on the way.
+
+15
+00:00:56.833 --> 00:01:03.709
+With envFrom and configMapRef, every key becomes an environment variable with the same name.
+
+16
+00:01:03.933 --> 00:01:09.145
+The lab uses this, so GREETING and REDIS_HOST arrive as env vars.
+
+17
+00:01:09.367 --> 00:01:11.026
+Or mount it as a volume.
+
+18
+00:01:11.026 --> 00:01:14.415
+Every key becomes a file, in a folder you choose.
+
+19
+00:01:14.633 --> 00:01:17.993
+Env vars suit short values your code reads at start.
+
+20
+00:01:17.993 --> 00:01:22.839
+Files suit whole config files, and anything your code may read again later.
+
+21
+00:01:23.667 --> 00:01:26.314
+The lesson's demo makes this visible.
+
+22
+00:01:26.314 --> 00:01:29.461
+A ConfigMap, demo-config, holds COLOR: blue.
+
+23
+00:01:29.667 --> 00:01:35.092
+A Pod reads that one value twice: as an env var, and as a file.
+
+24
+00:01:35.300 --> 00:01:37.990
+Every five seconds, it prints both.
+
+25
+00:01:37.990 --> 00:01:40.604
+env equals blue, file equals blue.
+
+26
+00:01:40.833 --> 00:01:43.955
+Now change the value in the ConfigMap to green.
+
+27
+00:01:44.167 --> 00:01:45.946
+A ConfigMap is only data.
+
+28
+00:01:45.946 --> 00:01:47.725
+No controller acts on it.
+
+29
+00:01:47.725 --> 00:01:50.501
+So changing it never restarts anything.
+
+30
+00:01:50.733 --> 00:01:53.226
+The kubelet reads it at two moments.
+
+31
+00:01:53.226 --> 00:01:56.549
+When it starts a container, to fill in env vars.
+
+32
+00:01:56.767 --> 00:02:00.144
+And on its regular sync, to refresh the mounted files.
+
+33
+00:02:01.167 --> 00:02:03.064
+For a while, nothing changes.
+
+34
+00:02:03.064 --> 00:02:08.689
+Then, on the kubelet's next sync, usually within a minute or so, the file shows green.
+
+35
+00:02:08.900 --> 00:02:10.886
+The env var never changes.
+
+36
+00:02:10.886 --> 00:02:14.247
+It was set once, when the container started.
+
+37
+00:02:14.467 --> 00:02:17.479
+A file mounted with subPath is never updated.
+
+38
+00:02:17.479 --> 00:02:21.695
+And even an updated file only helps if your app reads it again.
+
+39
+00:02:21.695 --> 00:02:24.172
+Most apps read config once, at start.
+
+40
+00:02:25.000 --> 00:02:30.635
+So hello-devops, which uses env vars, needs new Pods to see a new greeting.
+
+41
+00:02:30.635 --> 00:02:34.016
+The tool for that is kubectl rollout restart.
+
+42
+00:02:34.233 --> 00:02:38.229
+It writes the current time into an annotation in the Pod template.
+
+43
+00:02:39.233 --> 00:02:43.549
+The template changed, so the Deployment does a normal rolling update.
+
+44
+00:02:43.767 --> 00:02:46.205
+Every new Pod starts with the new values.
+
+45
+00:02:47.033 --> 00:02:54.693
+A Secret looks like a ConfigMap, but it is meant for sensitive values: passwords, API tokens, TLS keys.
+
+46
+00:02:54.693 --> 00:02:57.073
+Pods use it the same three ways.
+
+47
+00:02:57.300 --> 00:03:00.933
+Its values sit in data, encoded in base64.
+
+48
+00:03:01.167 --> 00:03:07.083
+Base64 is a way to write any bytes as plain letters, so binary keys fit in YAML.
+
+49
+00:03:07.300 --> 00:03:08.773
+It is not encryption.
+
+50
+00:03:08.773 --> 00:03:11.580
+Anyone can reverse it, with one command.
+
+51
+00:03:11.800 --> 00:03:15.645
+It is like a note in an envelope marked confidential.
+
+52
+00:03:15.645 --> 00:03:18.619
+Base64 is an envelope that is not sealed.
+
+53
+00:03:19.433 --> 00:03:23.280
+A Secret does get some protection that a ConfigMap does not.
+
+54
+00:03:23.500 --> 00:03:27.821
+It is sent only to nodes that need it, and kept in memory there.
+
+55
+00:03:27.821 --> 00:03:30.050
+describe shows sizes, not values.
+
+56
+00:03:30.050 --> 00:03:33.696
+And access rules can allow ConfigMaps but not Secrets.
+
+57
+00:03:33.900 --> 00:03:37.603
+But by default, Secrets are stored unencrypted in etcd.
+
+58
+00:03:37.603 --> 00:03:43.663
+And anyone who can create a Pod in a namespace can mount, and so read, every Secret in it.
+
+59
+00:03:44.467 --> 00:03:48.475
+So turn on encryption at rest, and limit who can read Secrets.
+
+60
+00:03:48.475 --> 00:03:52.096
+Limit who can create Pods, the step people often forget.
+
+61
+00:03:52.096 --> 00:03:54.876
+And give each container only what it needs.
+
+62
+00:03:55.100 --> 00:04:01.785
+A Secret manifest with real values never goes into git, where base64 is plain text forever.
+
+63
+00:04:01.785 --> 00:04:07.295
+External Secrets Operator, Sealed Secrets or SOPS keep the real values out.
+
+64
+00:04:08.100 --> 00:04:10.408
+Config lives outside the image.
+
+65
+00:04:10.408 --> 00:04:12.864
+Env vars are read once, at start.
+
+66
+00:04:12.864 --> 00:04:15.098
+Mounted files update in place.
+
+67
+00:04:15.098 --> 00:04:16.959
+And base64 hides nothing.

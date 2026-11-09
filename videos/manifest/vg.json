@@ -1,0 +1,5 @@
+{
+ "d01": [{"slug": "d01-map", "title": "The DevOps map: one change from your laptop to production and back", "after": 2, "file": "p0/d01_map.py", "scene": "D01Map", "poster_at": 246.0}],
+ "d06": [{"slug": "d06-perms-signals", "title": "Permission bits, processes, signals and systemd", "after": 5, "file": "p1/d06_perms_signals.py", "scene": "D06PermsSignals", "poster_at": 265.0}],
+ "d07": [{"slug": "d07-ssh-keys", "title": "How SSH keys work: authorized_keys, known_hosts and a signature", "after": 3, "file": "p1/d07_ssh_keys.py", "scene": "D07SshKeys", "poster_at": 163.0}]
+}

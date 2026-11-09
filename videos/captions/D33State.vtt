@@ -1,0 +1,305 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.809
+Terraform keeps a memory of what it made.
+
+2
+00:00:05.809 --> 00:00:09.071
+It is a JSON file called terraform.tfstate.
+
+3
+00:00:09.300 --> 00:00:10.757
+Its main job is a map.
+
+4
+00:00:10.757 --> 00:00:13.340
+On the left, an address from your code.
+
+5
+00:00:13.340 --> 00:00:16.851
+On the right, the real ID of the object it points to.
+
+6
+00:00:17.067 --> 00:00:22.129
+So docker_container.web is the container with this ID, over in Docker.
+
+7
+00:00:23.233 --> 00:00:26.071
+Why not just ask Docker which containers exist?
+
+8
+00:00:26.071 --> 00:00:29.391
+Because Docker cannot tell which ones this folder owns.
+
+9
+00:00:29.600 --> 00:00:33.788
+State is the list of what this folder owns, with the ID of each.
+
+10
+00:00:34.600 --> 00:00:38.404
+Open it with jq, and you find a few top-level keys.
+
+11
+00:00:38.633 --> 00:00:40.463
+version is the file format.
+
+12
+00:00:40.463 --> 00:00:43.988
+serial counts how many times this state was written.
+
+13
+00:00:43.988 --> 00:00:47.784
+lineage is an ID given when the state was first created.
+
+14
+00:00:48.000 --> 00:00:53.127
+And resources holds every resource, with every attribute the provider reported.
+
+15
+00:00:53.333 --> 00:00:55.580
+Those attributes include secrets.
+
+16
+00:00:55.800 --> 00:01:03.121
+In a test, a variable marked sensitive went into a container as REDIS_PASSWORD equals s3cret-123.
+
+17
+00:01:03.121 --> 00:01:06.064
+Plan and apply printed sensitive value.
+
+18
+00:01:06.064 --> 00:01:08.705
+terraform output printed sensitive.
+
+19
+00:01:08.933 --> 00:01:11.461
+But the state file held it in plain text.
+
+20
+00:01:11.461 --> 00:01:14.728
+Anyone who can read your state can read your secrets.
+
+21
+00:01:15.533 --> 00:01:18.014
+So treat the file like a password file.
+
+22
+00:01:18.014 --> 00:01:20.750
+Never commit it, and never edit it by hand.
+
+23
+00:01:20.750 --> 00:01:22.849
+Read it through commands instead.
+
+24
+00:01:23.667 --> 00:01:25.952
+By default, state is a local file.
+
+25
+00:01:25.952 --> 00:01:30.656
+That breaks as soon as a second person, or a pipeline, runs Terraform.
+
+26
+00:01:30.867 --> 00:01:35.567
+Two copies drift apart, and nothing stops two applies from running at once.
+
+27
+00:01:35.800 --> 00:01:38.553
+A backend decides where state is stored.
+
+28
+00:01:38.553 --> 00:01:42.064
+A remote backend keeps one copy that everyone uses.
+
+29
+00:01:42.267 --> 00:01:47.159
+Most backends also lock it, so only one run at a time can change the state.
+
+30
+00:01:48.267 --> 00:01:51.708
+Start an apply in one terminal, and a plan in another.
+
+31
+00:01:51.708 --> 00:01:55.149
+The second stops with: Error acquiring the state lock.
+
+32
+00:01:55.367 --> 00:02:02.975
+On S3, use_lockfile set to true keeps that small .tflock file next to the state, while a run holds the lock.
+
+33
+00:02:02.975 --> 00:02:06.708
+And bucket versioning lets you roll back a bad write.
+
+34
+00:02:07.533 --> 00:02:08.182
+Now drift.
+
+35
+00:02:08.182 --> 00:02:14.992
+Drift is any difference between the real world and Terraform's state, usually from a change made by hand.
+
+36
+00:02:15.200 --> 00:02:19.537
+Someone runs docker update by hand, and sets restart to always.
+
+37
+00:02:19.767 --> 00:02:24.504
+plan -refresh-only shows only the changes made outside Terraform.
+
+38
+00:02:24.504 --> 00:02:26.180
+It proposes no actions.
+
+39
+00:02:26.400 --> 00:02:30.314
+apply -refresh-only writes those changes into the state.
+
+40
+00:02:30.314 --> 00:02:32.131
+It changes no real object.
+
+41
+00:02:32.333 --> 00:02:35.413
+People expect that to make the change permanent.
+
+42
+00:02:35.413 --> 00:02:36.183
+It does not.
+
+43
+00:02:36.183 --> 00:02:40.609
+The code still says no, so the next normal plan wants to put no back.
+
+44
+00:02:41.433 --> 00:02:44.527
+So after drift, you decide which side is right.
+
+45
+00:02:44.527 --> 00:02:49.859
+If the code is right, run a normal apply, and Terraform undoes the manual change.
+
+46
+00:02:49.859 --> 00:02:53.677
+If reality is right, change the code to match, then apply.
+
+47
+00:02:54.500 --> 00:02:55.506
+Back to the map.
+
+48
+00:02:55.506 --> 00:03:01.980
+Your code has a container resource labelled web, and the state maps that address to the real container.
+
+49
+00:03:02.200 --> 00:03:04.532
+Rename the label, from web to site.
+
+50
+00:03:04.733 --> 00:03:08.393
+To Terraform, you deleted one resource and wrote a new one.
+
+51
+00:03:08.393 --> 00:03:14.347
+The plan wants to destroy the container, and build a new one, to change a name only you can see.
+
+52
+00:03:14.567 --> 00:03:16.524
+A moved block fixes that.
+
+53
+00:03:16.524 --> 00:03:20.596
+From docker_container.web, to docker_container.site.
+
+54
+00:03:21.400 --> 00:03:24.338
+Now the plan says web has moved to site.
+
+55
+00:03:24.338 --> 00:03:27.643
+Zero to add, zero to change, zero to destroy.
+
+56
+00:03:27.867 --> 00:03:30.875
+Apply, and the state uses the new address.
+
+57
+00:03:30.875 --> 00:03:32.595
+Same container, same ID.
+
+58
+00:03:33.400 --> 00:03:35.865
+Sometimes the real object comes first.
+
+59
+00:03:35.865 --> 00:03:39.562
+Someone started a container by hand, called state-legacy.
+
+60
+00:03:39.562 --> 00:03:41.313
+The state does not know it.
+
+61
+00:03:41.533 --> 00:03:43.293
+An import block adopts it.
+
+62
+00:03:43.293 --> 00:03:44.849
+It takes two arguments.
+
+63
+00:03:44.849 --> 00:03:47.015
+to is the address it should get.
+
+64
+00:03:47.233 --> 00:03:49.566
+id is the provider's ID for it.
+
+65
+00:03:49.566 --> 00:03:53.780
+For a Docker container, the full ID from docker inspect.
+
+66
+00:03:53.780 --> 00:03:55.360
+A name does not work.
+
+67
+00:03:55.567 --> 00:03:59.513
+You also write the matching resource block yourself, then plan.
+
+68
+00:03:59.513 --> 00:04:01.079
+Read that plan with care.
+
+69
+00:04:01.079 --> 00:04:06.467
+If your block differs from the real object, the plan imports it, and then replaces it.
+
+70
+00:04:06.700 --> 00:04:10.803
+So you adjust the code until the plan imports, and destroys nothing.
+
+71
+00:04:11.033 --> 00:04:15.182
+Apply, and the state gains a row, with the container's own ID.
+
+72
+00:04:15.182 --> 00:04:17.122
+Then delete the import block.
+
+73
+00:04:17.122 --> 00:04:18.861
+It has nothing left to do.
+
+74
+00:04:19.667 --> 00:04:24.461
+State maps each address to a real ID, and it holds secrets, so guard it.
+
+75
+00:04:24.461 --> 00:04:26.792
+Keep it in a locked remote backend.
+
+76
+00:04:26.792 --> 00:04:32.785
+And moved, import and refresh-only each fix one link, in a plan you read before you apply.

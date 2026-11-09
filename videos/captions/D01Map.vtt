@@ -1,0 +1,257 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.393
+Here is the older way of shipping software.
+
+2
+00:00:05.393 --> 00:00:06.959
+One team writes the code.
+
+3
+00:00:07.167 --> 00:00:12.507
+A separate operations team, called ops, installs it on servers and keeps it running.
+
+4
+00:00:12.733 --> 00:00:16.261
+When the app breaks at two in the morning, ops gets the call.
+
+5
+00:00:16.261 --> 00:00:18.805
+But only the developers understand the code.
+
+6
+00:00:19.033 --> 00:00:20.800
+Each side blames the other.
+
+7
+00:00:20.800 --> 00:00:24.465
+So releases get rare and huge, and everyone dreads them.
+
+8
+00:00:24.667 --> 00:00:26.279
+DevOps removes that split.
+
+9
+00:00:26.279 --> 00:00:30.248
+The people who build software also share the work of running it.
+
+10
+00:00:30.467 --> 00:00:31.751
+It has three parts.
+
+11
+00:00:31.751 --> 00:00:39.184
+A shared culture, practices like small changes and automated tests, and tools that make those practices cheap.
+
+12
+00:00:39.400 --> 00:00:47.151
+A team that installs Kubernetes but keeps the wall between dev and ops ends up with the same wall, plus Kubernetes.
+
+13
+00:00:48.067 --> 00:00:51.070
+Every change takes the same road to your users.
+
+14
+00:00:51.070 --> 00:00:53.499
+Engineers call that road the pipeline.
+
+15
+00:00:53.700 --> 00:00:57.329
+Take hello-devops, the tiny web app you create tomorrow.
+
+16
+00:00:57.329 --> 00:01:01.735
+You change its default greeting from "Hello, DevOps!" to "Hi there".
+
+17
+00:01:01.967 --> 00:01:03.151
+Step one is code.
+
+18
+00:01:03.151 --> 00:01:06.844
+You change code on your laptop, and commit it to git.
+
+19
+00:01:07.067 --> 00:01:08.107
+Step two, build.
+
+20
+00:01:08.107 --> 00:01:12.008
+A machine turns the source code into something that can run.
+
+21
+00:01:12.233 --> 00:01:13.354
+Step three, test.
+
+22
+00:01:13.354 --> 00:01:17.836
+Automated tests check that the change works, and broke nothing else.
+
+23
+00:01:18.067 --> 00:01:23.343
+And here, the test step fails at once, because one test still expects the old greeting.
+
+24
+00:01:23.567 --> 00:01:29.120
+You find out two minutes later, on your own branch, instead of from a user on Friday night.
+
+25
+00:01:29.333 --> 00:01:35.548
+Each step of the pipeline catches a different kind of mistake, as close as possible to where it was made.
+
+26
+00:01:35.767 --> 00:01:39.805
+Update that test, push again, and this time the change moves on.
+
+27
+00:01:40.433 --> 00:01:41.703
+Step four, package.
+
+28
+00:01:41.703 --> 00:01:48.788
+The app and everything it needs go into one bundle, a container image, so it runs the same on any machine.
+
+29
+00:01:49.000 --> 00:01:50.223
+Step five, release.
+
+30
+00:01:50.223 --> 00:01:55.435
+The package gets a version number, and goes to a shared store, called a registry.
+
+31
+00:01:55.667 --> 00:01:56.910
+Step six, deploy.
+
+32
+00:01:56.910 --> 00:02:00.715
+The new version replaces the old one on the servers.
+
+33
+00:02:00.933 --> 00:02:01.991
+Step seven, run.
+
+34
+00:02:01.991 --> 00:02:04.898
+Software on the servers keeps the app alive.
+
+35
+00:02:04.898 --> 00:02:09.721
+It restarts it if it crashes, and starts extra copies when traffic grows.
+
+36
+00:02:09.933 --> 00:02:13.238
+This is production, the real system your users use.
+
+37
+00:02:13.238 --> 00:02:16.155
+Merging your code was only the halfway point.
+
+38
+00:02:16.367 --> 00:02:17.797
+Step eight, observe.
+
+39
+00:02:17.797 --> 00:02:22.375
+Graphs, logs and alerts show how the app behaves for real users.
+
+40
+00:02:22.600 --> 00:02:23.818
+Step nine, feedback.
+
+41
+00:02:23.818 --> 00:02:27.776
+What you learn shapes the next change, and the loop starts again.
+
+42
+00:02:28.800 --> 00:02:30.920
+CI/CD covers steps two to six.
+
+43
+00:02:30.920 --> 00:02:37.634
+A machine builds and tests every small change, and keeps each one that passes ready to release.
+
+44
+00:02:37.634 --> 00:02:39.401
+You build both in Part 6.
+
+45
+00:02:40.233 --> 00:02:41.805
+Now, the course itself.
+
+46
+00:02:41.805 --> 00:02:45.153
+Each of its 20 parts owns one piece of that path.
+
+47
+00:02:45.367 --> 00:02:48.083
+Git, in Part 2, keeps every change.
+
+48
+00:02:48.600 --> 00:02:52.858
+GitHub Actions, in Part 6, tests and builds on every push.
+
+49
+00:02:52.858 --> 00:02:57.189
+Gradle, in Part 7, builds, tests and packages a Kotlin app.
+
+50
+00:02:57.700 --> 00:03:03.232
+Docker, in Part 5, packages the app into an image that runs the same everywhere.
+
+51
+00:03:03.733 --> 00:03:07.772
+And GitHub Actions also publishes the image on every push.
+
+52
+00:03:08.300 --> 00:03:13.853
+Kubernetes, in Part 10, runs the containers across a cluster, and keeps them healthy.
+
+53
+00:03:14.367 --> 00:03:19.664
+Argo CD, in Part 11, deploys by making the cluster match what git says.
+
+54
+00:03:20.167 --> 00:03:26.701
+Prometheus, Grafana, and the logs and traces of Parts 12 to 14 tell you how it behaves.
+
+55
+00:03:27.233 --> 00:03:30.783
+Terraform, in Part 8, creates the ground it runs on.
+
+56
+00:03:30.783 --> 00:03:33.924
+Ansible, in Part 9, sets up the servers on it.
+
+57
+00:03:34.133 --> 00:03:38.748
+DevSecOps, in Part 17, adds security checks at every step.
+
+58
+00:03:38.967 --> 00:03:42.994
+Underneath everything sit Linux and networking, Parts 1 and 3.
+
+59
+00:03:42.994 --> 00:03:47.151
+Every server and container runs Linux, and talks over a network.
+
+60
+00:03:47.367 --> 00:03:52.451
+Python scripts and AI assistants, Parts 4 and 18, help at every layer.
+
+61
+00:03:52.667 --> 00:03:54.551
+Do not try to memorize the list.
+
+62
+00:03:54.551 --> 00:04:00.147
+When a new tool appears, in this course or at work, come back here, and ask which step it owns.
+
+63
+00:04:00.367 --> 00:04:04.388
+One change flows from code to users, and comes back as feedback.
+
+64
+00:04:04.388 --> 00:04:07.655
+Each part of this course owns one step of that loop.
