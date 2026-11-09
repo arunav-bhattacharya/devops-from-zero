@@ -1,0 +1,289 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.668
+On Linux, every file and every process belongs to a user.
+
+2
+00:00:06.668 --> 00:00:10.009
+A process carries the ID of the user it runs as.
+
+3
+00:00:10.233 --> 00:00:16.171
+When the process opens a file, the kernel compares that user with the file's owner and permissions.
+
+4
+00:00:16.400 --> 00:00:21.527
+Only root, the superuser with user ID zero, skips almost every check.
+
+5
+00:00:22.333 --> 00:00:25.455
+To see a file's permissions, run ls -l.
+
+6
+00:00:25.667 --> 00:00:27.783
+Look at the first ten characters.
+
+7
+00:00:27.783 --> 00:00:32.784
+The first one is the type: a dash for a file, d for a directory, l for a link.
+
+8
+00:00:33.000 --> 00:00:35.273
+The next nine are three groups of three.
+
+9
+00:00:35.273 --> 00:00:40.501
+What the owner may do, what the group may do, and what everyone else, called others, may do.
+
+10
+00:00:40.733 --> 00:00:45.007
+Then come the links, the owner and group, the size, the time, and the name.
+
+11
+00:00:45.267 --> 00:00:50.746
+In each triplet, r is read, w is write, and x is execute, which means run.
+
+12
+00:00:50.746 --> 00:00:52.597
+A dash means not allowed.
+
+13
+00:00:52.800 --> 00:00:55.405
+Now change it with chmod 750.
+
+14
+00:00:55.405 --> 00:00:57.741
+Others get nothing at all.
+
+15
+00:00:57.967 --> 00:00:59.880
+Say user dev tries to run it.
+
+16
+00:00:59.880 --> 00:01:03.377
+For each check, the kernel picks exactly one triplet.
+
+17
+00:01:03.600 --> 00:01:05.668
+Owner, if you own the file.
+
+18
+00:01:05.668 --> 00:01:06.664
+dev does not.
+
+19
+00:01:06.867 --> 00:01:09.249
+Else group, if you are in its group.
+
+20
+00:01:09.249 --> 00:01:11.168
+dev is not in the group root.
+
+21
+00:01:11.400 --> 00:01:12.307
+Else, others.
+
+22
+00:01:12.307 --> 00:01:16.704
+So for dev, only the last three count, and they are all dashes.
+
+23
+00:01:16.933 --> 00:01:18.128
+Permission denied.
+
+24
+00:01:18.128 --> 00:01:22.707
+The first triplet that fits decides, even if a later one allows more.
+
+25
+00:01:23.533 --> 00:01:25.760
+chmod also takes numbers.
+
+26
+00:01:25.760 --> 00:01:28.787
+r is worth four, w two, and x one.
+
+27
+00:01:28.787 --> 00:01:30.657
+A dash is worth zero.
+
+28
+00:01:30.867 --> 00:01:33.403
+Add them up for each triplet.
+
+29
+00:01:33.403 --> 00:01:37.950
+rwx is seven, r-x is five, and three dashes is zero.
+
+30
+00:01:37.950 --> 00:01:40.487
+That is where 750 comes from.
+
+31
+00:01:40.700 --> 00:01:43.447
+You will see three all the time.
+
+32
+00:01:43.447 --> 00:01:50.057
+755 for scripts and folders, 644 for files, and 600, owner only, for secrets.
+
+33
+00:01:50.967 --> 00:01:53.066
+A program is a file on disk.
+
+34
+00:01:53.066 --> 00:01:59.513
+A process is one running copy of it, and the kernel gives each process an ID, its PID.
+
+35
+00:01:59.733 --> 00:02:03.201
+Here is nginx, from the lesson's container.
+
+36
+00:02:03.201 --> 00:02:06.829
+One master process runs as root, with PID 98.
+
+37
+00:02:07.033 --> 00:02:10.941
+It starts four workers, as the user www-data.
+
+38
+00:02:10.941 --> 00:02:14.068
+Their PPID, the parent's PID, is 98.
+
+39
+00:02:14.068 --> 00:02:16.760
+They are the master's children.
+
+40
+00:02:16.967 --> 00:02:20.771
+So the code that answers strangers cannot touch root's files.
+
+41
+00:02:21.700 --> 00:02:27.478
+To stop a process, you send it a signal, a short message the kernel delivers.
+
+42
+00:02:27.478 --> 00:02:28.604
+Meet worker.sh.
+
+43
+00:02:28.833 --> 00:02:32.851
+Every two seconds, it processes one job, and prints a line.
+
+44
+00:02:33.067 --> 00:02:34.686
+Run kill with its PID.
+
+45
+00:02:34.686 --> 00:02:39.544
+That sends SIGTERM, signal fifteen: a polite request to shut down.
+
+46
+00:02:39.767 --> 00:02:41.973
+worker.sh catches it with trap.
+
+47
+00:02:41.973 --> 00:02:47.311
+It finishes the job it is on, closes up, and exits cleanly, with code zero.
+
+48
+00:02:47.533 --> 00:02:48.936
+Start it again.
+
+49
+00:02:48.936 --> 00:02:51.088
+This time, run kill -9.
+
+50
+00:02:51.300 --> 00:02:53.497
+That sends SIGKILL, signal nine.
+
+51
+00:02:53.497 --> 00:02:56.519
+It cannot be caught, so the trap never runs.
+
+52
+00:02:56.733 --> 00:02:59.750
+The process ends at once, and no cleanup runs.
+
+53
+00:02:59.750 --> 00:03:02.571
+The log just stops, in the middle of a job.
+
+54
+00:03:03.600 --> 00:03:09.559
+When a signal ends a process, its exit code is 128 plus the signal number.
+
+55
+00:03:09.767 --> 00:03:18.243
+So 137 means SIGKILL, 143 means SIGTERM, and 130 means someone pressed Ctrl+C.
+
+56
+00:03:18.467 --> 00:03:20.472
+Containers get the same pair.
+
+57
+00:03:20.472 --> 00:03:24.965
+docker stop sends SIGTERM, waits ten seconds, then sends SIGKILL.
+
+58
+00:03:25.167 --> 00:03:28.993
+Kubernetes does the same, with a thirty second default.
+
+59
+00:03:28.993 --> 00:03:33.863
+So send SIGTERM first, and keep kill -9 for a process that ignores it.
+
+60
+00:03:34.767 --> 00:03:39.098
+Who starts the worker again after a reboot, or a crash at 3 am?
+
+61
+00:03:39.098 --> 00:03:42.055
+On almost every Linux server, systemd does.
+
+62
+00:03:42.267 --> 00:03:46.988
+It runs each service from a unit file, like this hello-worker.service.
+
+63
+00:03:47.200 --> 00:03:49.575
+ExecStart is the command to run.
+
+64
+00:03:49.575 --> 00:03:53.955
+User says to run it as the normal ubuntu user, not as root.
+
+65
+00:03:54.167 --> 00:03:59.421
+If the worker crashes, Restart=on-failure tells systemd to start it again.
+
+66
+00:03:59.633 --> 00:04:03.224
+WantedBy=multi-user.target means: start it at boot.
+
+67
+00:04:03.224 --> 00:04:06.111
+You switch that on with systemctl enable.
+
+68
+00:04:06.333 --> 00:04:11.823
+Everything the worker prints goes into systemd's journal, and journalctl reads it back.
+
+69
+00:04:12.033 --> 00:04:18.248
+And stopping the service sends SIGTERM to worker.sh first, so it can finish the job it is on.
+
+70
+00:04:18.467 --> 00:04:21.522
+Permission bits decide who may touch a file.
+
+71
+00:04:21.522 --> 00:04:24.370
+Signals ask, or force, a process to stop.
+
+72
+00:04:24.370 --> 00:04:27.148
+And systemd keeps your services running.
