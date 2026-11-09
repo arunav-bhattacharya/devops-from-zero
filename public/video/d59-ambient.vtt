@@ -1,0 +1,245 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.072
+On Day 58, every Pod got its own Envoy.
+
+2
+00:00:06.072 --> 00:00:08.666
+Istio calls that sidecar mode.
+
+3
+00:00:08.666 --> 00:00:12.384
+It is the original design, used since 2017.
+
+4
+00:00:12.600 --> 00:00:17.378
+Every call passes through two of them, the caller's and the receiver's.
+
+5
+00:00:17.378 --> 00:00:22.021
+Each proxy handles both L4 and L7, so every feature works everywhere.
+
+6
+00:00:22.233 --> 00:00:24.358
+But the cost grows with the mesh.
+
+7
+00:00:24.358 --> 00:00:27.900
+Each sidecar is sized for its own Pod's busiest moment.
+
+8
+00:00:28.133 --> 00:00:31.575
+Add Pods, and you add Envoys, one for every Pod.
+
+9
+00:00:31.800 --> 00:00:36.009
+And joining the mesh, or upgrading it, means restarting every Pod.
+
+10
+00:00:36.233 --> 00:00:39.983
+Ambient mode splits that work into two layers.
+
+11
+00:00:39.983 --> 00:00:45.036
+It became generally available in Istio 1.24, in November 2024.
+
+12
+00:00:45.267 --> 00:00:49.252
+The first layer is ztunnel, a small proxy written in Rust.
+
+13
+00:00:49.252 --> 00:00:52.000
+It runs once per node, not once per Pod.
+
+14
+00:00:52.233 --> 00:00:58.628
+When a Pod joins, the Istio CNI node agent writes redirect rules inside the Pod's network.
+
+15
+00:00:58.628 --> 00:01:02.465
+They send its traffic to the ztunnel on the same node.
+
+16
+00:01:02.667 --> 00:01:09.872
+ztunnel encrypts and authenticates the traffic of every Pod on its node, and enforces L4 rules.
+
+17
+00:01:09.872 --> 00:01:11.768
+But it never parses HTTP.
+
+18
+00:01:12.000 --> 00:01:16.444
+Each ztunnel holds certificates only for the Pods on its own node.
+
+19
+00:01:16.444 --> 00:01:18.733
+An app container never sees a key.
+
+20
+00:01:19.567 --> 00:01:22.825
+Follow one call, from client to hello-devops.
+
+21
+00:01:22.825 --> 00:01:25.721
+The client opens a plain TCP connection.
+
+22
+00:01:25.721 --> 00:01:27.821
+It has no idea a mesh exists.
+
+23
+00:01:28.033 --> 00:01:36.749
+ztunnel wraps the bytes in a tunnel called HBONE, short for HTTP-Based Overlay Network Environment.
+
+24
+00:01:36.749 --> 00:01:39.567
+It is mutual TLS, on port 15008.
+
+25
+00:01:39.800 --> 00:01:42.377
+ztunnel presents the client's certificate.
+
+26
+00:01:42.377 --> 00:01:46.427
+So the other side learns who is calling from the handshake itself.
+
+27
+00:01:46.633 --> 00:01:54.640
+The ztunnel on the other node checks its L4 policy, unwraps the tunnel, and delivers plain TCP to the app.
+
+28
+00:01:54.867 --> 00:01:56.711
+That is the cheap path.
+
+29
+00:01:56.711 --> 00:02:02.005
+Encryption, identity and L4 policy, with no HTTP parsing anywhere.
+
+30
+00:02:02.233 --> 00:02:04.143
+But some features need HTTP.
+
+31
+00:02:04.143 --> 00:02:09.393
+A canary split by weight, a match on a header, a rule about paths or methods.
+
+32
+00:02:09.600 --> 00:02:11.589
+For those, you add a waypoint.
+
+33
+00:02:11.589 --> 00:02:16.760
+It is a full Envoy that runs as its own Deployment, usually one per namespace.
+
+34
+00:02:16.967 --> 00:02:23.395
+Now ztunnel sends the bytes to the waypoint instead of straight to a Pod, still inside HBONE.
+
+35
+00:02:23.600 --> 00:02:25.397
+The waypoint parses HTTP.
+
+36
+00:02:25.397 --> 00:02:31.507
+It applies the route split and the AuthorizationPolicy, and picks a hello-devops Pod.
+
+37
+00:02:31.733 --> 00:02:37.607
+Then it opens a new HBONE tunnel, to the ztunnel on that Pod's node, which delivers it.
+
+38
+00:02:37.833 --> 00:02:42.018
+Most calls only need encryption and identity, which are cheap.
+
+39
+00:02:42.018 --> 00:02:45.932
+So you pay for HTTP parsing only where you add a waypoint.
+
+40
+00:02:46.933 --> 00:02:53.617
+Istio's page comparing the two modes quotes its latency tests, at p90 and p99.
+
+41
+00:02:53.833 --> 00:02:59.323
+With sidecars, 0.63 to 0.88 milliseconds per call.
+
+42
+00:02:59.533 --> 00:03:03.935
+With ztunnel alone, 0.16 to 0.20.
+
+43
+00:03:04.167 --> 00:03:08.909
+And through a waypoint, 0.40 to 0.50.
+
+44
+00:03:09.833 --> 00:03:14.442
+To use ambient mode, install Istio with the ambient profile.
+
+45
+00:03:14.442 --> 00:03:18.743
+It brings istiod, ztunnel, and the Istio CNI node agent.
+
+46
+00:03:18.967 --> 00:03:21.416
+Then decide how each namespace joins.
+
+47
+00:03:21.416 --> 00:03:24.726
+Say namespace hello-mesh already has Pods running.
+
+48
+00:03:24.726 --> 00:03:26.645
+Here it is, joining each way.
+
+49
+00:03:26.867 --> 00:03:31.802
+In sidecar mode you label the namespace istio-injection equals enabled.
+
+50
+00:03:31.802 --> 00:03:34.304
+Nothing happens to the running Pods.
+
+51
+00:03:34.533 --> 00:03:39.489
+Only Pods created after the label get a sidecar, so you restart your Deployments.
+
+52
+00:03:39.700 --> 00:03:44.980
+In ambient mode you label it istio.io/dataplane-mode equals ambient.
+
+53
+00:03:44.980 --> 00:03:48.396
+ztunnel takes over the running Pods at once.
+
+54
+00:03:48.600 --> 00:03:50.823
+No restart, no extra container.
+
+55
+00:03:50.823 --> 00:03:58.064
+The node agent adds redirect rules inside each running Pod's network, and the Pod spec never changes.
+
+56
+00:03:58.267 --> 00:04:07.361
+When that namespace needs HTTP features, one istioctl command deploys a waypoint, and sends the namespace's traffic through it.
+
+57
+00:04:07.567 --> 00:04:08.224
+One rule.
+
+58
+00:04:08.224 --> 00:04:11.072
+Never put both labels on one namespace.
+
+59
+00:04:11.072 --> 00:04:14.285
+If you do, sidecar mode wins for those Pods.
+
+60
+00:04:15.300 --> 00:04:18.531
+Sidecar mode puts an Envoy in every Pod.
+
+61
+00:04:18.531 --> 00:04:28.305
+Ambient mode puts one ztunnel on each node, for L4 and mutual TLS over HBONE, and adds a waypoint only where you need L7.

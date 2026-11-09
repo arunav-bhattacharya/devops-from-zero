@@ -1,0 +1,241 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.252
+List what hello-devops needs by now.
+
+2
+00:00:05.252 --> 00:00:11.844
+A Dockerfile, two workflows with pinned actions, Kubernetes YAML, and an Argo CD Application.
+
+3
+00:00:12.067 --> 00:00:15.631
+A ServiceMonitor, a dashboard, log shipping and tracing.
+
+4
+00:00:15.631 --> 00:00:17.859
+Policies, and a way to get secrets.
+
+5
+00:00:17.859 --> 00:00:20.215
+You learned all of it in this course.
+
+6
+00:00:20.433 --> 00:00:24.195
+Now picture 40 product teams, each building that alone.
+
+7
+00:00:24.433 --> 00:00:28.998
+They solve the same problems 40 times, in 40 slightly different ways.
+
+8
+00:00:28.998 --> 00:00:32.041
+And whoever is on call has to learn every one.
+
+9
+00:00:33.000 --> 00:00:36.862
+Most large companies answer this with platform engineering.
+
+10
+00:00:36.862 --> 00:00:46.027
+A platform team builds an internal developer platform: the self-service capabilities that product teams use to build, ship and run software.
+
+11
+00:00:46.233 --> 00:00:48.032
+Self-service is the centre.
+
+12
+00:00:48.032 --> 00:00:54.759
+A developer gets an environment, a database or a pipeline without filing a ticket and waiting a week.
+
+13
+00:00:54.967 --> 00:00:59.109
+A classic operations team does work for other teams, through tickets.
+
+14
+00:00:59.109 --> 00:01:03.791
+A platform team builds things, so that other teams can do the work themselves.
+
+15
+00:01:04.000 --> 00:01:08.329
+It runs the platform as a product, with developers as its customers.
+
+16
+00:01:08.329 --> 00:01:13.549
+It measures success by adoption and speed, never by the number of tools installed.
+
+17
+00:01:14.467 --> 00:01:20.251
+The platform's main product is the golden path, which some companies call the paved road.
+
+18
+00:01:20.251 --> 00:01:23.696
+It is a supported, ready-made way to do a common job.
+
+19
+00:01:23.900 --> 00:01:26.480
+The classic one is create a new service.
+
+20
+00:01:26.480 --> 00:01:28.415
+You fill in a name and a team.
+
+21
+00:01:28.633 --> 00:01:39.051
+You get a repository with a Dockerfile, CI, a release workflow, Kubernetes YAML, an Argo CD Application and a dashboard, already wired together.
+
+22
+00:01:39.267 --> 00:01:41.321
+Each path makes two promises.
+
+23
+00:01:41.321 --> 00:01:47.131
+Compliant: security and policy are built in, so the easy way is also the safe way.
+
+24
+00:01:47.333 --> 00:01:53.143
+Tested: the platform team keeps the template working, so a new service starts with current versions.
+
+25
+00:01:53.967 --> 00:01:57.498
+Developers find these paths through a developer portal.
+
+26
+00:01:57.498 --> 00:02:04.497
+Backstage is the best-known framework for building one, with a software catalog, templates, docs and plugins.
+
+27
+00:02:04.700 --> 00:02:07.087
+But Backstage is only the shop front.
+
+28
+00:02:07.087 --> 00:02:11.860
+The platform is the shop behind it: the templates, pipelines and clusters.
+
+29
+00:02:12.667 --> 00:02:14.902
+The guardrails come with the path.
+
+30
+00:02:14.902 --> 00:02:24.435
+A new service starts with pinned actions, a signed image with an SBOM, its own ServiceAccount, the Kyverno policies, and a dashboard with alerts.
+
+31
+00:02:24.667 --> 00:02:28.129
+Teams may still leave the path, when they have a good reason.
+
+32
+00:02:28.129 --> 00:02:33.917
+But the cluster enforces the same rules for everyone, so a team that leaves the path still meets them.
+
+33
+00:02:34.133 --> 00:02:37.405
+And if many teams leave the path, the path is wrong.
+
+34
+00:02:37.405 --> 00:02:40.803
+That is the most useful feedback a platform team gets.
+
+35
+00:02:41.833 --> 00:02:44.897
+One guardrail matters for money: the team label.
+
+36
+00:02:44.897 --> 00:02:52.364
+In the cloud, any engineer can spend money with one command, and the bill arrives a month later, with no names on it.
+
+37
+00:02:52.567 --> 00:02:58.531
+FinOps makes that cost visible, and shared between engineering, finance and the business.
+
+38
+00:02:58.531 --> 00:03:02.351
+It loops through three phases: inform, optimize, operate.
+
+39
+00:03:02.567 --> 00:03:04.795
+Everything starts with allocation.
+
+40
+00:03:04.795 --> 00:03:08.137
+Until a cost has an owner, every saving is a guess.
+
+41
+00:03:08.137 --> 00:03:11.611
+In Kubernetes, the owner is a label on each workload.
+
+42
+00:03:12.533 --> 00:03:20.797
+A cost tool gives each Pod a share of its node's price, based on the CPU and memory it requests, or uses if that is more.
+
+43
+00:03:20.797 --> 00:03:23.256
+Then it adds up the shares by label.
+
+44
+00:03:23.467 --> 00:03:27.350
+Capacity that nobody requested still appears on the bill.
+
+45
+00:03:27.350 --> 00:03:28.508
+It shows as idle.
+
+46
+00:03:28.508 --> 00:03:32.255
+Give that line an owner too, usually the platform team.
+
+47
+00:03:32.467 --> 00:03:37.838
+Then each team gets a report of what it used, while the money stays in a central budget.
+
+48
+00:03:37.838 --> 00:03:40.096
+That is showback, and it comes first.
+
+49
+00:03:40.300 --> 00:03:44.787
+Teams change what they run, once they see the numbers next to their own name.
+
+50
+00:03:45.700 --> 00:03:49.769
+Totals grow when the business grows, so a unit cost works better.
+
+51
+00:03:49.769 --> 00:03:54.652
+If traffic doubles and the bill grows by 40 percent, each request got cheaper.
+
+52
+00:03:54.867 --> 00:03:57.246
+hello-devops already has both inputs.
+
+53
+00:03:57.246 --> 00:04:01.941
+Prometheus counts its requests, and the team label says whose cost it is.
+
+54
+00:04:02.867 --> 00:04:03.948
+Put it together.
+
+55
+00:04:03.948 --> 00:04:07.464
+The template creates a repository with a team label.
+
+56
+00:04:07.464 --> 00:04:09.018
+CI and policy check it.
+
+57
+00:04:09.018 --> 00:04:12.534
+It runs on the cluster, which reserves its requests.
+
+58
+00:04:12.534 --> 00:04:15.103
+And showback shows the cost per owner.
+
+59
+00:04:15.333 --> 00:04:19.777
+Cost reports, and teams that leave the path, feed back into the template.
+
+60
+00:04:20.000 --> 00:04:29.500
+A platform team turns repeated work into a self-service golden path, with the guardrails built in, and a team label that gives every cost an owner.
