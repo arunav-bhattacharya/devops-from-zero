@@ -35,10 +35,10 @@ For each video in your task:
 
 ## Quality loop (do this for every video)
 
-1. Quick check: `cd /home/user/devops-from-zero/videos && nice -n 10 /home/user/videotools/manimenv/bin/manim -ql --disable_caching pN/<file>.py <Scene>`.
+1. Quick check: `cd /home/user/devops-from-zero/videos && nice -n 10 /home/user/videotools/manimenv/bin/manim -ql --disable_caching --media_dir media/<Scene> pN/<file>.py <Scene>` (your own media folder, so parallel renders never collide).
 2. Grab 8 frames across the video with ffmpeg and tile them into one contact sheet (`ffmpeg ... -vf tile=2x4`), then look at it with the Read tool. Fix any overlap, text running off the frame or within 0.3 units of its edge, text crossing a line or arrow, sizes too small to read (nothing under size 20), empty-looking frames, and animations that cancel each other (do not combine `FadeIn(x)` and `Indicate(x)` on the same object in one `play`; use `Succession`).
 3. Only when the frames look right, render the final with `render_hd.sh`. One final render at a time; the machine has 4 cores shared with other writers.
-4. After the final render, delete your scene's folders under `videos/media/videos/` to save disk space. Keep `public/video/<slug>.*`.
+4. After the final render, delete `videos/media/<Scene>/` to save disk space. Keep `public/video/<slug>.*`.
 
 ## Rules
 
@@ -46,3 +46,8 @@ For each video in your task:
 - Do not run git commit or push. The lead commits.
 - Do not download or install anything.
 - Report in under 120 words: videos made (slug, length), anything you could not do, and any place where the lesson text itself looked wrong.
+
+## Second batch notes (Nov 9)
+
+- 21 videos already exist (see `videos/manifest/*.json` and `public/video/`). Watch how they look by reading one or two scene files; do not repeat a topic an existing video already covers in the same lesson.
+- Caption times were fixed in `fg.py` (`_ts`). If you add pronunciations, prefer `SAY.extend([...])` inside your own scene file.
