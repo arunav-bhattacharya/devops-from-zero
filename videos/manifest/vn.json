@@ -1,12 +1,12 @@
 {
- "d30": [
+ "d23": [
   {
-   "slug": "d30-build-cache",
-   "title": "Skipping work you already did: the build cache and compile avoidance",
-   "after": 1,
-   "file": "p7/d30_build_cache.py",
-   "scene": "D30BuildCache",
-   "poster_at": 62.0
+   "slug": "d23-pull-request",
+   "title": "Why a green pull request can still break main",
+   "after": 0,
+   "file": "p6/d23_pull_request.py",
+   "scene": "D23PullRequest",
+   "poster_at": 114.0
   }
  ],
  "d25": [
@@ -19,14 +19,14 @@
    "poster_at": 92.0
   }
  ],
- "d23": [
+ "d26": [
   {
-   "slug": "d23-pull-request",
-   "title": "Why a green pull request can still break main",
-   "after": 0,
-   "file": "p6/d23_pull_request.py",
-   "scene": "D23PullRequest",
-   "poster_at": 114.0
+   "slug": "d26-workflow-logic",
+   "title": "Who fills in the blanks, and when: expressions, the shell and job outputs",
+   "after": 3,
+   "file": "p6/d26_workflow_logic.py",
+   "scene": "D26WorkflowLogic",
+   "poster_at": 150.0
   }
  ],
  "d29": [
@@ -39,14 +39,24 @@
    "poster_at": 110.0
   }
  ],
- "d26": [
+ "d30": [
   {
-   "slug": "d26-workflow-logic",
-   "title": "Who fills in the blanks, and when: expressions, the shell and job outputs",
-   "after": 3,
-   "file": "p6/d26_workflow_logic.py",
-   "scene": "D26WorkflowLogic",
-   "poster_at": 150.0
+   "slug": "d30-build-cache",
+   "title": "Skipping work you already did: the build cache and compile avoidance",
+   "after": 1,
+   "file": "p7/d30_build_cache.py",
+   "scene": "D30BuildCache",
+   "poster_at": 62.0
+  }
+ ],
+ "d45": [
+  {
+   "slug": "d45-packaging",
+   "title": "Helm fills in blanks, Kustomize patches a base",
+   "after": 5,
+   "file": "p10/d45_packaging.py",
+   "scene": "D45Packaging",
+   "poster_at": 108.0
   }
  ]
 }

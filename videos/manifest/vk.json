@@ -28,5 +28,15 @@
    "scene": "D65VerifyLoop",
    "poster_at": 150.0
   }
+ ],
+ "d60": [
+  {
+   "slug": "d60-choose-mesh",
+   "title": "Linkerd, Cilium or no mesh: where the proxy runs and what it costs",
+   "after": 6,
+   "file": "p15/d60_choose_mesh.py",
+   "scene": "D60ChooseMesh",
+   "poster_at": 205.0
+  }
  ]
 }
