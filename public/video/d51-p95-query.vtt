@@ -1,0 +1,217 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.084
+How long do requests to / take?
+
+2
+00:00:05.084 --> 00:00:07.468
+An average hides the slow ones.
+
+3
+00:00:07.468 --> 00:00:11.083
+So teams ask for a percentile, such as the p95.
+
+4
+00:00:11.300 --> 00:00:19.413
+A p95 of 200 milliseconds means 95% of requests took 200 milliseconds or less.
+
+5
+00:00:19.633 --> 00:00:23.967
+In PromQL, the p95 for hello-devops is this one line.
+
+6
+00:00:23.967 --> 00:00:25.193
+It looks scary.
+
+7
+00:00:25.193 --> 00:00:27.483
+Read it from the inside out.
+
+8
+00:00:27.700 --> 00:00:29.076
+There are five steps.
+
+9
+00:00:29.076 --> 00:00:31.959
+Each one takes the output of the one before.
+
+10
+00:00:32.167 --> 00:00:34.287
+Latency lives in a histogram.
+
+11
+00:00:34.287 --> 00:00:39.113
+Each bucket is a counter, and its le label is a limit, in seconds.
+
+12
+00:00:39.333 --> 00:00:42.660
+The selector picks every bucket series for path /.
+
+13
+00:00:42.660 --> 00:00:45.853
+One series per bucket, so one column per series.
+
+14
+00:00:46.067 --> 00:00:52.324
+Every 15 seconds, each scrape adds one row: every counter's total since the process started.
+
+15
+00:00:52.533 --> 00:00:55.255
+Step two, the range in square brackets.
+
+16
+00:00:55.255 --> 00:00:58.604
+[5m] keeps every sample from the last 5 minutes.
+
+17
+00:00:58.604 --> 00:01:02.303
+At a 15 second scrape, that is 20 samples per series.
+
+18
+00:01:02.533 --> 00:01:05.753
+Make the range too short, and it fails quietly.
+
+19
+00:01:05.753 --> 00:01:09.657
+[10s] holds only one sample, and rate needs at least two.
+
+20
+00:01:09.657 --> 00:01:12.397
+The series just drops out of the result.
+
+21
+00:01:12.397 --> 00:01:13.013
+No error.
+
+22
+00:01:13.233 --> 00:01:15.743
+So use at least 4 times the scrape interval.
+
+23
+00:01:15.743 --> 00:01:18.537
+Then a failed scrape still leaves enough samples.
+
+24
+00:01:18.767 --> 00:01:19.825
+Step three, rate.
+
+25
+00:01:19.825 --> 00:01:26.545
+Roughly, it subtracts the first sample in the window from the last, and divides by the seconds between them.
+
+26
+00:01:26.767 --> 00:01:29.032
+Each column collapses to one number.
+
+27
+00:01:29.032 --> 00:01:33.500
+Each bucket now reads: requests per second that took this long or less.
+
+28
+00:01:33.700 --> 00:01:37.060
+Say 100 requests a second arrive.
+
+29
+00:01:37.060 --> 00:01:43.271
+80 of them finished within 0.01 seconds, and 97 within 0.025.
+
+30
+00:01:43.500 --> 00:01:45.069
+Step four, sum by le.
+
+31
+00:01:45.069 --> 00:01:51.193
+It adds up paths and instances, bucket by bucket, and keeps le, the bucket limits.
+
+32
+00:01:51.400 --> 00:01:56.505
+Drop le, and the result is empty, because the last step needs those limits.
+
+33
+00:01:56.733 --> 00:02:01.022
+This is also why you never average percentiles from several servers.
+
+34
+00:02:01.022 --> 00:02:04.555
+Sum the buckets first, then compute the percentile once.
+
+35
+00:02:05.367 --> 00:02:09.004
+Step five, histogram_quantile, with 0.95.
+
+36
+00:02:09.004 --> 00:02:11.311
+Draw each bucket as a bar.
+
+37
+00:02:11.533 --> 00:02:13.954
+95% of 100 is 95.
+
+38
+00:02:13.954 --> 00:02:16.091
+Draw that line.
+
+39
+00:02:16.300 --> 00:02:20.989
+The 0.01 bucket holds 80, below the line.
+
+40
+00:02:20.989 --> 00:02:25.107
+The 0.025 bucket holds 97, above it.
+
+41
+00:02:25.107 --> 00:02:32.427
+So the 95th request is somewhere between 0.01 and 0.025 seconds.
+
+42
+00:02:32.633 --> 00:02:36.085
+That bucket holds 17 requests, 97 minus 80.
+
+43
+00:02:36.085 --> 00:02:39.537
+Prometheus does not know their exact times.
+
+44
+00:02:39.767 --> 00:02:42.931
+So it assumes they are spread evenly across the bucket.
+
+45
+00:02:43.133 --> 00:02:46.980
+The 95th request is the 15th of those 17.
+
+46
+00:02:47.200 --> 00:02:56.216
+So the answer is 0.01, plus 15 seventeenths of the bucket's 0.015 second width.
+
+47
+00:02:56.216 --> 00:02:58.499
+About 0.023 seconds.
+
+48
+00:02:59.400 --> 00:03:01.623
+So the answer is always an estimate.
+
+49
+00:03:01.623 --> 00:03:03.723
+Both of these happened in the lab.
+
+50
+00:03:03.933 --> 00:03:09.521
+Prometheus's own query API answered in a few milliseconds.
+
+51
+00:03:09.521 --> 00:03:17.131
+But its first bucket is 0 to 0.1 seconds, so the p95 came out at exactly 0.095.
+
+52
+00:03:17.333 --> 00:03:27.217
+During a Redis outage, hello-devops's p95 read 6.12 seconds: somewhere in the 5 to 7.5 second bucket.
+
+53
+00:03:27.433 --> 00:03:31.003
+So choose bucket limits around the latencies you care about.
+
+54
+00:03:31.833 --> 00:03:40.203
+A p95 query, inside out: select the buckets, take a range, rate, sum by le, then estimate the quantile.

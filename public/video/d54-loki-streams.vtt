@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.960
+So far you have read logs with docker compose logs.
+
+2
+00:00:05.960 --> 00:00:09.412
+That works on one machine, while the containers exist.
+
+3
+00:00:09.633 --> 00:00:12.526
+Remove a container, and its logs go with it.
+
+4
+00:00:12.526 --> 00:00:15.748
+With ten servers, you would search in ten places.
+
+5
+00:00:16.567 --> 00:00:21.800
+Loki is Grafana Labs' log store: one place for the logs of every container.
+
+6
+00:00:22.033 --> 00:00:24.461
+Loki does not scrape like Prometheus.
+
+7
+00:00:24.461 --> 00:00:28.332
+A log is a stream of events, with no current value to read.
+
+8
+00:00:28.332 --> 00:00:31.349
+So a collector sends the lines as they appear.
+
+9
+00:00:31.349 --> 00:00:33.580
+In the lab, that is Grafana Alloy.
+
+10
+00:00:33.800 --> 00:00:38.692
+Alloy gives each line a few labels, such as service web, and the container name.
+
+11
+00:00:38.900 --> 00:00:42.434
+All lines with the same labels form one log stream.
+
+12
+00:00:42.434 --> 00:00:43.820
+Here, three streams.
+
+13
+00:00:44.633 --> 00:00:46.152
+Here is the main idea.
+
+14
+00:00:46.152 --> 00:00:48.153
+Loki indexes only the labels.
+
+15
+00:00:48.153 --> 00:00:53.123
+The text of each line is compressed into chunks, and not indexed at all.
+
+16
+00:00:53.333 --> 00:00:56.146
+Elasticsearch indexes every word instead.
+
+17
+00:00:56.146 --> 00:01:01.840
+That costs more disk and memory, and in return finds a word across all logs faster.
+
+18
+00:01:01.840 --> 00:01:03.487
+Loki stays cheap to run.
+
+19
+00:01:04.200 --> 00:01:08.013
+A LogQL query starts with a stream selector in braces.
+
+20
+00:01:08.013 --> 00:01:12.391
+Loki adds a service_name label by itself, copied from service.
+
+21
+00:01:12.391 --> 00:01:14.439
+So this picks the web stream.
+
+22
+00:01:14.667 --> 00:01:16.629
+The labels picked one stream.
+
+23
+00:01:16.629 --> 00:01:18.456
+Only its text gets scanned.
+
+24
+00:01:20.367 --> 00:01:23.381
+Inside that stream, the lines are plain text.
+
+25
+00:01:23.381 --> 00:01:25.927
+The query's pipeline scans just these.
+
+26
+00:01:26.133 --> 00:01:27.884
+Step one, a line filter.
+
+27
+00:01:27.884 --> 00:01:31.822
+!= "/healthz" drops every line that contains /healthz.
+
+28
+00:01:31.822 --> 00:01:33.791
+The health checks are gone.
+
+29
+00:01:34.700 --> 00:01:36.119
+Step two, | json.
+
+30
+00:01:36.119 --> 00:01:44.548
+It parses each JSON line, so method, path, status and duration_ms become labels, for this query only.
+
+31
+00:01:44.767 --> 00:01:49.831
+Step three, a filter on a field: status greater than or equal to 500.
+
+32
+00:01:49.831 --> 00:01:52.033
+Only the failed requests stay.
+
+33
+00:01:52.867 --> 00:01:57.310
+Step four, line_format, rewrites each line from its fields.
+
+34
+00:01:57.310 --> 00:02:00.398
+Now each one reads GET slash, arrow, 500.
+
+35
+00:02:00.398 --> 00:02:01.377
+Easy to scan.
+
+36
+00:02:01.600 --> 00:02:03.832
+Put line filters before the parser.
+
+37
+00:02:03.832 --> 00:02:10.275
+A plain text filter is the cheapest step, and every line it drops is a line the parser never touches.
+
+38
+00:02:11.200 --> 00:02:13.622
+One last rule, and it matters most.
+
+39
+00:02:13.622 --> 00:02:15.629
+Here is the web stream again.
+
+40
+00:02:15.833 --> 00:02:18.563
+Every new label value makes a new stream.
+
+41
+00:02:18.563 --> 00:02:23.356
+Put a user ID in a label, and one stream becomes thousands of tiny ones.
+
+42
+00:02:23.567 --> 00:02:27.307
+Loki slows down, and fills its index with tiny chunks.
+
+43
+00:02:28.733 --> 00:02:33.092
+So keep labels few: service, environment, cluster, container.
+
+44
+00:02:33.092 --> 00:02:36.521
+Never a request ID, a user ID, or an IP address.
+
+45
+00:02:36.521 --> 00:02:40.593
+Keep those in the line itself, where a filter finds them.
+
+46
+00:02:41.400 --> 00:02:46.180
+In Loki, labels pick the streams, and a pipeline scans just their text.
+
+47
+00:02:46.180 --> 00:02:49.008
+Keep labels few, and the text stays cheap.

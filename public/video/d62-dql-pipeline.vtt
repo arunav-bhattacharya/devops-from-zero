@@ -1,0 +1,193 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:08.531
+If you think in SQL, you write SELECT first, and the database picks the order it really runs in.
+
+2
+00:00:08.733 --> 00:00:14.224
+DQL, the Dynatrace Query Language, reads top to bottom, in the order it runs.
+
+3
+00:00:14.224 --> 00:00:16.149
+That is the biggest change.
+
+4
+00:00:16.967 --> 00:00:20.505
+Grail is the store behind everything in Dynatrace.
+
+5
+00:00:20.505 --> 00:00:27.369
+It keeps logs, spans, events, problems and metrics side by side, and you read all of it with DQL.
+
+6
+00:00:27.600 --> 00:00:30.919
+A DQL query is a pipeline, like a shell pipeline.
+
+7
+00:00:30.919 --> 00:00:33.290
+The first command produces records.
+
+8
+00:00:33.290 --> 00:00:38.777
+Each pipe hands them to the next command, which filters, reshapes or counts them.
+
+9
+00:00:39.600 --> 00:00:41.534
+Start with the data command.
+
+10
+00:00:41.534 --> 00:00:44.366
+It builds a small table inside the query.
+
+11
+00:00:44.366 --> 00:00:46.990
+Six records, with path, status and ms.
+
+12
+00:00:46.990 --> 00:00:50.720
+Grail scans nothing, so everyone gets the same result.
+
+13
+00:00:51.333 --> 00:00:52.938
+Add a filter on a new line.
+
+14
+00:00:52.938 --> 00:00:57.811
+Records flow down the pipe, and filter keeps the ones where the condition is true.
+
+15
+00:00:58.033 --> 00:01:01.455
+Only two records have a status of 500 or more.
+
+16
+00:01:01.455 --> 00:01:03.017
+The others stop here.
+
+17
+00:01:03.233 --> 00:01:04.859
+Note the operators.
+
+18
+00:01:04.859 --> 00:01:06.741
+Equality in DQL is ==.
+
+19
+00:01:06.741 --> 00:01:11.360
+A single = gives a field a name, as you will see next.
+
+20
+00:01:12.167 --> 00:01:14.563
+Now replace the filter with summarize.
+
+21
+00:01:14.563 --> 00:01:18.473
+It groups the records by path, and computes one row per group.
+
+22
+00:01:18.700 --> 00:01:20.823
+Four records share the path /.
+
+23
+00:01:20.823 --> 00:01:23.300
+One each have /healthz and /readyz.
+
+24
+00:01:23.500 --> 00:01:31.016
+The four records of / fold into one row: 4 requests, 1 error, and an average of 100 milliseconds.
+
+25
+00:01:31.233 --> 00:01:34.161
+Each result gets a name with a single =.
+
+26
+00:01:34.161 --> 00:01:36.431
+And the by list sits in braces.
+
+27
+00:01:37.033 --> 00:01:38.706
+Add a computed field.
+
+28
+00:01:38.706 --> 00:01:45.239
+fieldsAdd keeps every column, and adds one: errors times 100, divided by requests.
+
+29
+00:01:45.467 --> 00:01:48.099
+Then sort by the name you gave it.
+
+30
+00:01:48.099 --> 00:01:53.907
+The worst path comes first: /readyz at 100 percent, / at 25, /healthz at 0.
+
+31
+00:01:55.633 --> 00:01:56.619
+Order matters.
+
+32
+00:01:56.619 --> 00:02:00.348
+A command only sees what the one before it passed on.
+
+33
+00:02:00.348 --> 00:02:03.867
+After summarize, only the summarized fields exist.
+
+34
+00:02:04.067 --> 00:02:05.227
+So filter first.
+
+35
+00:02:05.227 --> 00:02:08.924
+And watch out: several SQL habits do not even fail.
+
+36
+00:02:08.924 --> 00:02:13.708
+They quietly return zero rows, and zero rows looks like no errors.
+
+37
+00:02:14.433 --> 00:02:18.246
+Now put fetch logs, from minus one hour, where data was.
+
+38
+00:02:18.246 --> 00:02:20.697
+The same commands work on real logs.
+
+39
+00:02:20.900 --> 00:02:22.603
+Only the first line changed.
+
+40
+00:02:22.603 --> 00:02:26.375
+The commands below it do not care where the records came from.
+
+41
+00:02:26.600 --> 00:02:29.336
+Grail charges queries by the data they scan.
+
+42
+00:02:29.336 --> 00:02:31.947
+And the scan happens in the first command.
+
+43
+00:02:32.167 --> 00:02:34.422
+One hour of logs is a small scan.
+
+44
+00:02:34.422 --> 00:02:39.753
+from minus thirty days, over all logs, costs real money on a paid environment.
+
+45
+00:02:39.967 --> 00:02:44.931
+So a narrow time window at the start matters more than anything later in the pipe.
+
+46
+00:02:44.931 --> 00:02:47.959
+Use the shortest window that answers the question.
+
+47
+00:02:48.767 --> 00:02:50.348
+Read DQL top to bottom.
+
+48
+00:02:50.348 --> 00:02:57.569
+The first command fetches, each pipe passes the records on, and a short time window keeps the scan small.

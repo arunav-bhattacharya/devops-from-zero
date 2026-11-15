@@ -1,0 +1,205 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:07.229
+hello-devops answers requests all day, and a few of them always fail.
+
+2
+00:00:07.433 --> 00:00:10.503
+So at 3 a.m., how many failures are too many?
+
+3
+00:00:10.503 --> 00:00:12.481
+When should a person wake up?
+
+4
+00:00:13.100 --> 00:00:16.627
+First, decide what good means, seen from the user's side.
+
+5
+00:00:16.833 --> 00:00:20.888
+A good event is a response to / that is not 5xx.
+
+6
+00:00:20.888 --> 00:00:23.844
+A valid event is any response to /.
+
+7
+00:00:24.067 --> 00:00:29.343
+A 404 for a mistyped URL is the user's mistake, so it does not count.
+
+8
+00:00:29.567 --> 00:00:35.547
+Good events over valid events: that ratio is the SLI, the service level indicator.
+
+9
+00:00:36.967 --> 00:00:47.000
+An SLO is a target for that ratio over a time window: 99.9% of requests to / succeed, over the last 30 days.
+
+10
+00:00:47.233 --> 00:00:57.459
+The rest is the error budget, the failure the SLO still allows: 100% minus 99.9%, so 0.1%.
+
+11
+00:00:58.267 --> 00:01:01.815
+Say hello-devops gets 200,000 requests a day.
+
+12
+00:01:02.033 --> 00:01:06.691
+Thirty days hold 6 million requests, and 6,000 of them may fail.
+
+13
+00:01:06.900 --> 00:01:11.621
+If everything fails at once, that is 43.2 minutes of full outage.
+
+14
+00:01:11.833 --> 00:01:15.097
+Now one bad deploy breaks everything for 20 minutes.
+
+15
+00:01:15.097 --> 00:01:17.607
+That alone spends almost half the month.
+
+16
+00:01:18.433 --> 00:01:22.106
+The budget gives developers and operators the same number.
+
+17
+00:01:22.106 --> 00:01:25.081
+While budget is left, you ship at normal speed.
+
+18
+00:01:25.300 --> 00:01:29.787
+When it is spent, you pause risky releases until reliability is back.
+
+19
+00:01:31.000 --> 00:01:35.188
+But at 3 a.m., the question is how fast the budget is going.
+
+20
+00:01:35.400 --> 00:01:39.908
+That is the burn rate: the current error ratio, divided by the budget.
+
+21
+00:01:40.133 --> 00:01:43.276
+Draw the budget over the 30 days, full at the top.
+
+22
+00:01:43.500 --> 00:01:47.557
+If 0.1% of requests fail, that is burn rate 1.
+
+23
+00:01:47.557 --> 00:01:50.468
+The budget lasts exactly 30 days.
+
+24
+00:01:50.733 --> 00:01:53.444
+At 0.6%, the burn rate is 6.
+
+25
+00:01:53.444 --> 00:01:56.251
+The budget is gone in 5 days.
+
+26
+00:01:56.467 --> 00:01:59.520
+At 1.44%, the burn rate is 14.4.
+
+27
+00:01:59.520 --> 00:02:02.859
+The budget is gone in about 2 days.
+
+28
+00:02:05.267 --> 00:02:06.860
+Why the odd 14.4?
+
+29
+00:02:06.860 --> 00:02:08.266
+Work backwards.
+
+30
+00:02:08.266 --> 00:02:14.545
+At burn rate 1, the budget is spread over all 720 hours of 30 days.
+
+31
+00:02:14.767 --> 00:02:19.760
+Page once a single hour has spent 2% of the budget.
+
+32
+00:02:19.760 --> 00:02:23.676
+2% of 720 hours is 14.4 hours of budget.
+
+33
+00:02:23.900 --> 00:02:27.875
+Spend that in one hour, and that is burn rate 14.4.
+
+34
+00:02:28.133 --> 00:02:31.624
+These numbers come from Google's SRE Workbook.
+
+35
+00:02:31.624 --> 00:02:35.266
+Page at 14.4 over one hour, or 6 over six hours.
+
+36
+00:02:35.266 --> 00:02:37.391
+Ticket at 1 over three days.
+
+37
+00:02:38.300 --> 00:02:40.788
+Sort every alert into three groups.
+
+38
+00:02:40.788 --> 00:02:44.130
+Page: users hurt now, and a human must act now.
+
+39
+00:02:44.130 --> 00:02:46.547
+Ticket: a human, in working hours.
+
+40
+00:02:46.547 --> 00:02:48.823
+Everything else: dashboard only.
+
+41
+00:02:49.033 --> 00:02:53.276
+A bad hour: 2% of requests fail for 60 minutes.
+
+42
+00:02:53.276 --> 00:02:55.532
+Burn rate 20, above 14.4.
+
+43
+00:02:55.733 --> 00:02:57.041
+So it pages.
+
+44
+00:02:57.267 --> 00:02:59.738
+A slow leak: 0.3% fail all week.
+
+45
+00:02:59.738 --> 00:03:02.672
+Burn rate 3: the budget lasts 10 days.
+
+46
+00:03:02.672 --> 00:03:07.228
+Nobody needs to wake up, but someone must fix it this week.
+
+47
+00:03:07.433 --> 00:03:15.205
+A server at 90% CPU that answers every request in 50 ms is simply doing its job.
+
+48
+00:03:16.333 --> 00:03:21.767
+CPU, memory, single restarts: these are causes, and many never hurt anyone.
+
+49
+00:03:21.767 --> 00:03:23.579
+They go on the dashboard.
+
+50
+00:03:23.800 --> 00:03:29.481
+Page on causes, and people learn that pages are noise, and ignore the real one too.
+
+51
+00:03:29.700 --> 00:03:35.893
+An SLO turns raw requests into a budget, and the burn rate decides who gets woken up.

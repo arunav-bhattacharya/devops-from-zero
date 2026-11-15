@@ -9,6 +9,26 @@
    "poster_at": 214.0
   }
  ],
+ "d51": [
+  {
+   "slug": "d51-p95-query",
+   "title": "A p95 latency query, inside out: select, range, rate, sum by le, quantile",
+   "after": 5,
+   "file": "p12/d51_quantile.py",
+   "scene": "D51Quantile",
+   "poster_at": 175.0
+  }
+ ],
+ "d52": [
+  {
+   "slug": "d52-alert-path",
+   "title": "From alert rule to receiver: pending, firing, grouping, inhibition and routing",
+   "after": 1,
+   "file": "p12/d52_alert_path.py",
+   "scene": "D52AlertPath",
+   "poster_at": 177.0
+  }
+ ],
  "d54": [
   {
    "slug": "d54-loki-streams",
