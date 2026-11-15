@@ -1,6 +1,6 @@
 # Course videos brief (DevOps, from zero)
 
-The learner asked for narrated videos and animations that explain the key concepts of the key chapters, in the same style and audio quality as their other course (ai-engineer-from-zero): a 3Blue1Brown look (black stage, Manim palette, outlined boxes that draw on, smooth motion), a calm teacher voice (Kokoro `af_heart`), and visuals that move in step with what is said. High resolution: every video is rendered at 1920x1080, 30 fps.
+The learner asked for narrated videos and animations that explain the key concepts of the key chapters, in the same style and audio quality as their other course (ai-engineer-from-zero): a 3Blue1Brown look (black stage, Manim palette, outlined boxes that draw on, smooth motion), a calm teacher voice (Kokoro `af_heart`), and visuals that move in step with what is said. High resolution: videos up to Day 67 batch two were rendered at 1920x1080; every new video is rendered at 2560x1440, 30 fps.
 
 ## Tools (already installed; do not reinstall)
 
@@ -60,3 +60,4 @@ For each video in your task:
 - Pick the one concept in the lesson that is hardest to get from text and gains most from motion (a flow, a loop, a before/after, an order of steps). Use the lesson's own diagram caption and worked example as a guide.
 - When you finish a video (final render done, media folder deleted, manifest updated), move on to the next one. Do not wait for review.
 - Build intuition, not a summary. Open with the problem (what goes wrong without this, ideally with hello-devops), then show the mechanism step by step (which part talks to which, in what order, what changes), then show why it is built that way. Keep one main picture that grows across the video rather than many unrelated slides. Ask the question a beginner would ask ("but how does it know?") and answer it on screen.
+- Resolution (Nov 15): `render_hd.sh` now renders 2560x1440 (1440p). Every video of this batch must be final-rendered at 1440p. If you rendered a final before this change, render it again.
