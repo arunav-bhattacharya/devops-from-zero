@@ -144,7 +144,7 @@ class D56EfkNode(VoiceScene):
         rec = VGroup(lifted, lab, f1)
         self.steps("The finished record goes to Elasticsearch, outside the cluster.",
                    (0.8, Indicate(es[1][0], color=GREEN_M), GrowArrow(a5)), (1.2, travel(a5, GREEN_M, 1.2)))
-        kq = M("kubernetes.namespace_name: hello", 20, GREEN_M).next_to(es, DOWN, buff=0.25)
+        kq = M("kubernetes.namespace_name: hello", 20, GREEN_M).next_to(es, DOWN, buff=0.25).align_to(es, RIGHT)
         self.beat("In Kibana, those fields become the filters you use every day. Show me only namespace hello.",
                   FadeIn(kq, shift=0.1 * UP), Indicate(f1[1], color=YELLOW_M), run_time=2.0)
         big = T("1000 nodes asking the API adds real load: use_kubelet asks the local kubelet", 22, GREY_B).move_to([0, 3.35, 0])
