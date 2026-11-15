@@ -1,0 +1,62 @@
+{
+ "d19": [
+  {
+   "slug": "d19-pid1",
+   "title": "What runs when a container starts: CMD, ENTRYPOINT and PID 1",
+   "after": 4,
+   "file": "p5/d19_pid1.py",
+   "scene": "D19Pid1",
+   "poster_at": 137.0
+  }
+ ],
+ "d21": [
+  {
+   "slug": "d21-compose-up",
+   "title": "From compose.yaml to a running stack: running is not ready",
+   "after": 2,
+   "file": "p5/d21_compose_up.py",
+   "scene": "D21ComposeUp",
+   "poster_at": 135.0
+  }
+ ],
+ "d22": [
+  {
+   "slug": "d22-multistage",
+   "title": "Build with tools, ship without them: multi-stage and non-root",
+   "after": 0,
+   "file": "p5/d22_multistage.py",
+   "scene": "D22Multistage",
+   "poster_at": 120.0
+  }
+ ],
+ "d27": [
+  {
+   "slug": "d27-release",
+   "title": "From a git tag to an image: a short-lived token and a human gate",
+   "after": 2,
+   "file": "p6/d27_release.py",
+   "scene": "D27Release",
+   "poster_at": 123.5
+  }
+ ],
+ "d02": [
+  {
+   "slug": "d02-path",
+   "title": "How your shell finds a command: PATH, Homebrew and the venv",
+   "after": 1,
+   "file": "p0/d02_path.py",
+   "scene": "D02Path",
+   "poster_at": 116.0
+  }
+ ],
+ "d68": [
+  {
+   "slug": "d68-capstone",
+   "title": "Done means the check passes: acceptance checks for your capstone",
+   "after": 2,
+   "file": "p19/d68_capstone.py",
+   "scene": "D68Capstone",
+   "poster_at": 134.0
+  }
+ ]
+}

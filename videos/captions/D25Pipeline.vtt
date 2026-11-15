@@ -1,11 +1,11 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:05.886
+00:00:02.700 --> 00:00:05.853
 On Day 24, ci.yml ran the tests once.
 
 2
-00:00:05.886 --> 00:00:08.272
+00:00:05.853 --> 00:00:08.239
 That was the whole pipeline.
 
 3
@@ -17,273 +17,273 @@ A real pipeline checks more.
 And it has to be quick, because people wait for it before they merge.
 
 5
-00:00:14.600 --> 00:00:16.123
+00:00:14.667 --> 00:00:16.189
 So the rule is simple.
 
 6
-00:00:16.123 --> 00:00:19.029
+00:00:16.189 --> 00:00:19.096
 Cheap checks go first, and slow ones last.
 
 7
-00:00:19.200 --> 00:00:21.343
+00:00:19.300 --> 00:00:21.443
 Lint, with ruff, takes seconds.
 
 8
-00:00:21.343 --> 00:00:22.173
+00:00:21.443 --> 00:00:22.273
 Then pytest.
 
 9
-00:00:22.173 --> 00:00:25.492
+00:00:22.273 --> 00:00:25.592
 Then the Docker image build, the slowest of all.
 
 10
-00:00:25.667 --> 00:00:28.196
+00:00:25.800 --> 00:00:28.330
 The lab splits the work into three jobs.
 
 11
-00:00:28.196 --> 00:00:33.445
+00:00:28.330 --> 00:00:33.579
 Each job runs on its own runner, and shows up on the pull request as its own check.
 
 12
-00:00:33.600 --> 00:00:35.806
+00:00:33.800 --> 00:00:36.006
 Jobs run in parallel by default.
 
 13
-00:00:35.806 --> 00:00:37.667
+00:00:36.006 --> 00:00:37.867
 Nothing waits for anything.
 
 14
-00:00:37.800 --> 00:00:41.136
+00:00:38.067 --> 00:00:41.403
 Your app should work on Python 3.13 and 3.14.
 
 15
-00:00:41.136 --> 00:00:46.325
+00:00:41.403 --> 00:00:46.592
 A matrix runs one job definition several times, with different values.
 
 16
-00:00:46.467 --> 00:00:48.633
+00:00:46.800 --> 00:00:48.966
 So one test job becomes two.
 
 17
-00:00:48.633 --> 00:00:52.965
+00:00:48.966 --> 00:00:53.299
 They show up as two checks, test (3.13) and test (3.14).
 
 18
-00:00:53.133 --> 00:00:56.056
+00:00:53.500 --> 00:00:56.423
 The build job says needs, lint and test.
 
 19
-00:00:56.056 --> 00:00:57.006
+00:00:56.423 --> 00:00:57.372
 Now it waits.
 
 20
-00:00:57.006 --> 00:01:00.001
+00:00:57.372 --> 00:01:00.368
 It starts only after all of them succeed.
 
 21
-00:01:01.200 --> 00:01:03.336
+00:01:01.600 --> 00:01:03.736
 Open a pull request, and watch.
 
 22
-00:01:03.336 --> 00:01:06.436
+00:01:03.736 --> 00:01:06.836
 Lint and both tests start at the same moment.
 
 23
-00:01:06.436 --> 00:01:08.089
+00:01:06.836 --> 00:01:08.489
 Lint is done in seconds.
 
 24
-00:01:08.667 --> 00:01:11.907
+00:01:09.100 --> 00:01:12.340
 Then the tests pass, and only then does build start.
 
 25
-00:01:11.907 --> 00:01:14.461
+00:01:12.340 --> 00:01:14.895
 When it passes too, every check is green.
 
 26
-00:01:14.600 --> 00:01:17.391
+00:01:15.100 --> 00:01:17.891
 But green only helps if red stops the merge.
 
 27
-00:01:17.391 --> 00:01:20.309
+00:01:17.891 --> 00:01:20.809
 On GitHub you get that with a ruleset on main.
 
 28
-00:01:20.467 --> 00:01:23.083
+00:01:21.033 --> 00:01:23.650
 It lists the check names that must pass.
 
 29
-00:01:23.083 --> 00:01:24.064
+00:01:23.650 --> 00:01:24.631
 Here, all four.
 
 30
-00:01:24.200 --> 00:01:30.417
+00:01:24.833 --> 00:01:31.050
 When you click merge, GitHub compares the checks on the pull request's newest commit with that list.
 
 31
-00:01:30.417 --> 00:01:32.344
+00:01:31.050 --> 00:01:32.977
 Every name is there, and green.
 
 32
-00:01:32.344 --> 00:01:33.649
+00:01:32.977 --> 00:01:34.283
 The merge is allowed.
 
 33
-00:01:34.600 --> 00:01:40.431
+00:01:35.300 --> 00:01:41.131
 Now a teammate's pull request adds import json to app.py, and never uses it.
 
 34
-00:01:40.600 --> 00:01:43.354
+00:01:41.333 --> 00:01:44.087
 Lint finds it in seconds, and turns red.
 
 35
-00:01:43.354 --> 00:01:46.245
+00:01:44.087 --> 00:01:46.979
 Ruff exits with code 1, so the step fails.
 
 36
-00:01:46.400 --> 00:01:47.729
+00:01:47.200 --> 00:01:48.529
 Both tests still pass.
 
 37
-00:01:47.729 --> 00:01:50.991
+00:01:48.529 --> 00:01:51.791
 But build is skipped, because one of its needs failed.
 
 38
-00:01:50.991 --> 00:01:54.676
+00:01:51.791 --> 00:01:55.476
 You hear about the problem without waiting for the slow part.
 
 39
-00:01:54.867 --> 00:01:56.879
+00:01:55.700 --> 00:01:57.712
 The ruleset sees lint failed.
 
 40
-00:01:56.879 --> 00:01:58.336
+00:01:57.712 --> 00:01:59.169
 The merge is blocked.
 
 41
-00:01:58.533 --> 00:01:59.584
+00:01:59.400 --> 00:02:00.451
 Here is a trap.
 
 42
-00:01:59.584 --> 00:02:02.387
+00:02:00.451 --> 00:02:03.253
 What if the ruleset required only build?
 
 43
-00:02:02.533 --> 00:02:06.488
+00:02:03.467 --> 00:02:07.422
 A job that was skipped because its needs failed counts as passed.
 
 44
-00:02:06.488 --> 00:02:08.861
+00:02:07.422 --> 00:02:09.795
 So the broken pull request could merge.
 
 45
-00:02:09.000 --> 00:02:13.359
+00:02:10.000 --> 00:02:14.359
 That is why you require the lint and test checks too, and not only build.
 
 46
-00:02:14.733 --> 00:02:16.790
+00:02:15.767 --> 00:02:17.823
 One more thing keeps CI quick.
 
 47
-00:02:16.790 --> 00:02:19.327
+00:02:17.823 --> 00:02:20.360
 Every job starts on an empty machine.
 
 48
-00:02:19.327 --> 00:02:23.372
+00:02:20.360 --> 00:02:24.405
 So pip install downloads every package again, on every run.
 
 49
-00:02:23.533 --> 00:02:27.399
+00:02:24.633 --> 00:02:28.499
 A cache saves files from one run, and restores them in the next.
 
 50
-00:02:27.399 --> 00:02:29.755
+00:02:28.499 --> 00:02:30.855
 Each entry is stored under a cache key.
 
 51
-00:02:29.933 --> 00:02:39.156
+00:02:31.067 --> 00:02:40.289
 With cache: pip, setup-python builds the key from the runner's OS and CPU, the Python version, and a hash of your requirements files.
 
 52
-00:02:39.333 --> 00:02:42.985
+00:02:40.500 --> 00:02:44.152
 On the first run, the store of saved caches is empty.
 
 53
-00:02:42.985 --> 00:02:44.019
+00:02:44.152 --> 00:02:45.185
 No key matches.
 
 54
-00:02:44.019 --> 00:02:45.052
+00:02:45.185 --> 00:02:46.219
 That is a miss.
 
 55
-00:02:45.052 --> 00:02:49.600
+00:02:46.219 --> 00:02:50.767
 The log says pip cache is not found, and pip downloads everything.
 
 56
-00:02:49.800 --> 00:02:53.049
+00:02:51.000 --> 00:02:54.249
 A job that missed saves a new entry when it finishes.
 
 57
-00:02:53.200 --> 00:02:55.343
+00:02:54.467 --> 00:02:56.610
 Next run, the same key exists.
 
 58
-00:02:55.343 --> 00:02:56.272
+00:02:56.610 --> 00:02:57.539
 An exact hit.
 
 59
-00:02:56.272 --> 00:03:00.559
+00:02:57.539 --> 00:03:01.825
 The files come back, and pip has almost nothing to download.
 
 60
-00:03:00.733 --> 00:03:03.161
+00:03:02.033 --> 00:03:04.461
 Now you change requirements.txt.
 
 61
-00:03:03.161 --> 00:03:06.271
+00:03:04.461 --> 00:03:07.571
 Its hash changes, so the key changes too.
 
 62
-00:03:06.271 --> 00:03:07.409
+00:03:07.571 --> 00:03:08.709
 No exact match.
 
 63
-00:03:07.600 --> 00:03:10.265
+00:03:08.933 --> 00:03:11.598
 But a key with the same start is there.
 
 64
-00:03:10.265 --> 00:03:12.520
+00:03:11.598 --> 00:03:13.853
 Same OS, same Python, older hash.
 
 65
-00:03:12.520 --> 00:03:14.023
+00:03:13.853 --> 00:03:15.356
 That is a partial hit.
 
 66
-00:03:14.023 --> 00:03:18.464
+00:03:15.356 --> 00:03:19.797
 Those older files come back, and pip downloads only what changed.
 
 67
-00:03:18.600 --> 00:03:21.743
+00:03:20.000 --> 00:03:23.143
 GitHub deletes caches nobody used for seven days.
 
 68
-00:03:21.743 --> 00:03:24.885
+00:03:23.143 --> 00:03:26.285
 So treat the cache as a speed-up that can vanish.
 
 69
-00:03:25.800 --> 00:03:28.763
+00:03:27.200 --> 00:03:30.163
 Cheap checks first, and build waits with needs.
 
 70
-00:03:28.763 --> 00:03:31.538
+00:03:30.163 --> 00:03:32.938
 A matrix gives one check per Python version.
 
 71
-00:03:31.538 --> 00:03:34.123
+00:03:32.938 --> 00:03:35.523
 The ruleset requires every check by name.
 
 72
-00:03:34.123 --> 00:03:36.771
+00:03:35.523 --> 00:03:38.171
 And the cache key decides what comes back.

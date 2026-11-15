@@ -8,5 +8,25 @@
    "scene": "D39PodStart",
    "poster_at": 188.0
   }
+ ],
+ "d44": [
+  {
+   "slug": "d44-gateway",
+   "title": "Gateway API: objects that program a proxy, and a 90/10 canary",
+   "after": 4,
+   "file": "p10/d44_gateway.py",
+   "scene": "D44Gateway",
+   "poster_at": 220.0
+  }
+ ],
+ "d65": [
+  {
+   "slug": "d65-verify-loop",
+   "title": "The verify loop: tools check the AI draft, you review the intent",
+   "after": 2,
+   "file": "p18/d65_verify_loop.py",
+   "scene": "D65VerifyLoop",
+   "poster_at": 150.0
+  }
  ]
 }

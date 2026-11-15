@@ -18,7 +18,7 @@ ST = {"ran": ("ran", GOLD_M), "cache": ("FROM-CACHE", TEAL_M), "utd": ("UP-TO-DA
 
 def task(name):
     r = RoundedRectangle(corner_radius=0.1, width=2.75, height=0.62, stroke_color=GREY_B, stroke_width=2.5).set_fill(BLACK, 1)
-    return VGroup(r, M(name, 20).move_to(r))
+    return VGroup(r, M(name, 20).move_to(r).set_z_index(2))
 
 
 class D30BuildCache(VoiceScene):
@@ -179,7 +179,7 @@ class D30BuildCache(VoiceScene):
                    (0.8, travel(cross, GOLD_M, 0.8)), (1.0, *set_marks({("app", "compileKotlin"): "ran"})))
         self.beat("So a change behind a stable public API does not ripple through the build. One more reason to split code into projects.",
                   FadeOut(abi), Indicate(labs, color=YELLOW_M), run_time=2.4)
-        self.play(FadeOut(VGroup(*self.mobjects)), run_time=0.7)
+        self.play(FadeOut(Group(*self.mobjects)), run_time=0.7)
 
         # ---- recap: four ways
         rcp = VGroup(T("up-to-date check: same folder, nothing changed", 28, GREEN_M),

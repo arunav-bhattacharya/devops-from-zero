@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:08.278
+A dashboard helps only while someone is looking at it, and at 3 a.m., nobody is.
+
+2
+00:00:08.278 --> 00:00:11.259
+So Prometheus checks the conditions itself.
+
+3
+00:00:11.933 --> 00:00:16.313
+An alerting rule is a PromQL query with a name, like HelloDown.
+
+4
+00:00:16.467 --> 00:00:21.316
+The comparison filters, so the query returns something only when a scrape fails.
+
+5
+00:00:21.467 --> 00:00:24.944
+Prometheus runs it every 15 seconds in the lab.
+
+6
+00:00:24.944 --> 00:00:28.200
+Every series it returns is one active alert.
+
+7
+00:00:28.400 --> 00:00:32.716
+An alert moves through three states: inactive, pending, firing.
+
+8
+00:00:33.467 --> 00:00:34.748
+Two checks pass.
+
+9
+00:00:34.748 --> 00:00:36.509
+The alert is inactive.
+
+10
+00:00:36.667 --> 00:00:38.007
+Then a scrape fails.
+
+11
+00:00:38.007 --> 00:00:39.414
+The alert is pending.
+
+12
+00:00:39.414 --> 00:00:42.831
+for: 1m means it must stay true for a whole minute.
+
+13
+00:00:43.000 --> 00:00:47.551
+If one check is false, it goes back to inactive, and the wait starts again.
+
+14
+00:00:47.733 --> 00:00:51.900
+So for: filters out blips, like one slow scrape during a deploy.
+
+15
+00:00:52.067 --> 00:00:53.828
+Now the scrapes keep failing.
+
+16
+00:00:53.828 --> 00:00:57.776
+Pending again, and after a whole minute of true checks, it fires.
+
+17
+00:00:58.867 --> 00:01:02.315
+But Prometheus only decides that an alert fires.
+
+18
+00:01:02.315 --> 00:01:04.255
+It sends no message itself.
+
+19
+00:01:04.255 --> 00:01:07.057
+It hands firing alerts to Alertmanager.
+
+20
+00:01:07.200 --> 00:01:14.153
+One broken database can trip dozens of rules at once, and each firing alert is re-sent about once a minute.
+
+21
+00:01:14.153 --> 00:01:16.557
+Straight to a phone, that is a flood.
+
+22
+00:01:16.733 --> 00:01:18.670
+So Alertmanager groups them.
+
+23
+00:01:18.670 --> 00:01:22.889
+Alerts with the same group_by labels become one notification.
+
+24
+00:01:22.889 --> 00:01:26.140
+Fifty pods failing give one message, not fifty.
+
+25
+00:01:26.333 --> 00:01:30.372
+Then each group walks down a tree of routes, matched on labels.
+
+26
+00:01:30.372 --> 00:01:34.987
+In the lab, severity page goes to pager, and everything else to tickets.
+
+27
+00:01:35.133 --> 00:01:38.490
+Inhibition: while one alert fires, it mutes others.
+
+28
+00:01:38.490 --> 00:01:43.360
+The lab mutes ticket alerts for a job while a page fires for the same job.
+
+29
+00:01:43.533 --> 00:01:48.806
+Silences are temporary mutes you add at run time, with amtool or in the UI.
+
+30
+00:01:48.806 --> 00:01:51.056
+They are not in the config file.
+
+31
+00:01:51.933 --> 00:01:53.209
+Now a real outage.
+
+32
+00:01:53.209 --> 00:01:56.896
+Stop Redis, and every request to hello-devops fails.
+
+33
+00:01:57.067 --> 00:02:03.580
+Soon both error budget alerts are pending: the fast burn, a page, and the slow burn, a ticket.
+
+34
+00:02:03.733 --> 00:02:05.681
+Two minutes later, both fire.
+
+35
+00:02:07.267 --> 00:02:11.604
+Alertmanager waits 10 seconds, the group_wait, for more alerts.
+
+36
+00:02:11.800 --> 00:02:12.918
+Then inhibition.
+
+37
+00:02:12.918 --> 00:02:18.576
+The page fires for the job hello-devops, so the ticket for the same job is muted.
+
+38
+00:02:19.133 --> 00:02:23.729
+The page walks down the tree to the pager, and the webhook prints one line.
+
+39
+00:02:23.729 --> 00:02:25.077
+Only the page arrived.
+
+40
+00:02:25.267 --> 00:02:28.644
+You are working on it, so you silence the page for an hour.
+
+41
+00:02:28.800 --> 00:02:33.777
+Fix Redis, then expire the silence, so you will hear when the alert resolves.
+
+42
+00:02:33.933 --> 00:02:36.631
+The long windows still hold the outage.
+
+43
+00:02:36.631 --> 00:02:40.091
+About 25 minutes after the fix, the page resolved.
+
+44
+00:02:40.267 --> 00:02:44.683
+In the same second, Alertmanager released the ticket it had been muting.
+
+45
+00:02:44.683 --> 00:02:46.829
+The outage really did spend budget.
+
+46
+00:02:48.333 --> 00:02:51.047
+Prometheus decides that an alert fires.
+
+47
+00:02:51.047 --> 00:02:53.829
+Alertmanager decides who hears about it.

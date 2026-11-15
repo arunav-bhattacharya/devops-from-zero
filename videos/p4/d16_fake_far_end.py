@@ -78,10 +78,11 @@ class D16FakeFarEnd(VoiceScene):
 
         ok = back("200 + JSON", GREEN_M)
         path_back = [gh.get_left(), ret.get_center(), ses.get_center(), code.get_right()]
-        rs = code_chip("raise_for_status()", GREEN_M).next_to(code, DOWN, buff=0.3)
-        js = code_chip(".json()", GREEN_M).next_to(rs, DOWN, buff=0.15)
+        rs = code_chip("raise_for_status()", GREEN_M)
+        js = code_chip(".json()", GREEN_M)
+        VGroup(rs, js).arrange(RIGHT, buff=0.3).move_to([-3.6, 0.35, 0])
         self.steps("GitHub answers. Call raise_for_status first: a 404 or a 500 is not an exception in requests until you ask for one. Then read the body with .json().",
-                   (0.6, FadeIn(ok, shift=UP * 0.1)), (1.4, self.run_dot(path_back, GREEN_M, 1.4)), (1.0, FadeIn(rs)), (2.4, Wait(2.4)), (0.8, FadeIn(js)))
+                   (0.6, FadeIn(ok, shift=UP * 0.1), FadeOut(to)), (1.4, self.run_dot(path_back, GREEN_M, 1.4)), (1.0, FadeIn(rs)), (2.4, Wait(2.4)), (0.8, FadeIn(js)))
 
         # retries
         self.play(FadeOut(VGroup(ok, rs, js)), run_time=0.4)
@@ -105,8 +106,8 @@ class D16FakeFarEnd(VoiceScene):
                   FadeIn(gm, shift=UP * 0.1), run_time=1.8)
 
         # 2. tests: fake the far end
-        self.play(FadeOut(VGroup(bad, lst, gm, to)), run_time=0.4)
-        hard = T("a 502 on purpose?", 26, YELLOW_M).move_to([0, -0.6, 0])
+        self.play(FadeOut(VGroup(bad, lst, gm)), run_time=0.4)
+        hard = T("a 502 on purpose?", 26, YELLOW_M).move_to([-2.6, -0.6, 0])
         self.beat("So how do you test the 502 case? You cannot make GitHub fail on purpose. And tests that call the real service are slow, flaky, and need secrets in CI.",
                   FadeIn(hard), Succession(Wait(2.8), Wiggle(gh)), run_time=4.0)
         resp = RoundedRectangle(corner_radius=0.14, width=3.0, height=2.3, stroke_color=GREEN_M, stroke_width=3).set_fill(tint(GREEN_M, 0.12), opacity=1).move_to([4.85, Y - 0.55, 0])
@@ -126,7 +127,7 @@ class D16FakeFarEnd(VoiceScene):
                    (0.6, self.run_dot([rl, ret.get_center()], RED_M, 0.6)), (0.6, self.run_dot([ret.get_center(), rl], YELLOW_M, 0.6)),
                    (0.4, Indicate(q[1], color=GREEN_M)), (1.0, self.run_dot([rl, ret.get_center(), ses.get_center(), code.get_right()], GREEN_M, 1.0)),
                    (0.6, FadeIn(ok3)), (1.2, Wait(1.2)), (0.6, FadeIn(b0)))
-        ce = code_chip("ConnectionError", RED_M, 20).next_to(wall, UP, buff=0.15).shift(DOWN * 0.0)
+        ce = code_chip("ConnectionError", RED_M, 20).move_to([1.75, -1.0, 0])
         self.steps("A request to any URL you did not register raises ConnectionError. So a test cannot reach the internet by accident.",
                    (1.2, self.run_dot([code.get_right(), ses.get_center(), ret.get_center(), wall.get_center() + UP * 0.0], RED_M, 1.2)),
                    (0.6, FadeIn(ce, shift=DOWN * 0.1)))
@@ -134,8 +135,8 @@ class D16FakeFarEnd(VoiceScene):
 
         # 3. AWS the same way: boto3 and moto
         Y2 = -2.0
-        rep = mbox("aws-report", TEAL_M, size=24, w=2.1, h=0.8).move_to([-5.4, Y2, 0])
-        cli = box("boto3 client", BLUE_M, w=2.3, h=0.8, size=24).move_to([-2.2, Y2, 0])
+        rep = mbox("aws-report", TEAL_M, size=24, w=2.1, h=0.8).move_to([-5.6, Y2, 0])
+        cli = box("boto3 client", BLUE_M, w=2.4, h=0.8, size=24).move_to([-3.05, Y2, 0])
         aws = mbox("AWS", GOLD_M, size=26, w=2.0, h=0.8).move_to([4.85, Y2, 0])
         b1 = edge_arrow(rep, cli)
         b2 = Arrow(cli.get_right(), aws.get_left(), buff=0.12, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.05)
@@ -144,10 +145,10 @@ class D16FakeFarEnd(VoiceScene):
         self.steps("AWS works the same way. boto3 turns each method call into an HTTPS request to an AWS API, signed with your credentials.",
                    (1.2, FadeIn(rep), GrowArrow(b1), FadeIn(cli)), (1.0, GrowArrow(b2), FadeIn(aws), Create(wall2), FadeIn(sg)),
                    (1.4, self.run_dot([rep.get_right(), cli.get_center(), aws.get_left()], YELLOW_M, 1.4)))
-        mo = RoundedRectangle(corner_radius=0.14, width=3.0, height=1.2, stroke_color=GREEN_M, stroke_width=3).set_fill(tint(GREEN_M, 0.12), opacity=1).move_to([0.2, Y2, 0])
+        mo = RoundedRectangle(corner_radius=0.14, width=3.0, height=1.2, stroke_color=GREEN_M, stroke_width=3).set_fill(tint(GREEN_M, 0.12), opacity=1).move_to([0.05, Y2, 0])
         mot = VGroup(M("moto", 24, GREEN_M), T("fake AWS in memory", 20, GREY_B)).arrange(DOWN, buff=0.12).move_to(mo)
         self.steps("Inside mock_aws, moto catches each request just before it would be sent, and answers it from an in-memory fake AWS. That fake starts empty for each test.",
-                   (1.0, aws.animate.set_opacity(0.15)), (1.0, FadeIn(mo), FadeIn(mot)), (1.2, self.run_dot([rep.get_right(), cli.get_center(), mo.get_left()], YELLOW_M, 1.2)),
+                   (1.0, aws.animate.set_opacity(0.15), FadeOut(sg)), (1.0, FadeIn(mo), FadeIn(mot)), (1.2, self.run_dot([rep.get_right(), cli.get_center(), mo.get_left()], YELLOW_M, 1.2)),
                    (1.0, self.run_dot([mo.get_left(), cli.get_center(), rep.get_right()], GREEN_M, 1.0)))
         early = box("client made at import", RED_M, w=3.2, h=0.7, size=22).move_to([-1.6, -3.35, 0])
         leak = Arrow(early.get_right(), aws.get_corner(DL) + RIGHT * 0.3, buff=0.12, stroke_width=3, color=RED_M, max_tip_length_to_length_ratio=0.08)
@@ -155,7 +156,7 @@ class D16FakeFarEnd(VoiceScene):
                    (1.6, Wait(1.6)), (1.0, FadeIn(early)), (1.0, Wait(1.0)), (0.8, GrowArrow(leak), aws.animate.set_opacity(1)),
                    (1.2, self.run_dot([early.get_right(), aws.get_corner(DL) + RIGHT * 0.3], RED_M, 1.2)))
         self.play(FadeOut(VGroup(early, leak)), aws.animate.set_opacity(0.15), run_time=0.5)
-        iam = T("does not check IAM permissions by default", 22, YELLOW_M).move_to([0.2, -3.3, 0])
+        iam = T("does not check IAM permissions by default", 22, YELLOW_M).move_to([0.05, -3.3, 0])
         self.beat("And moto is a model of AWS, not AWS. It does not check IAM permissions unless you ask. So run a new check once against a real account, before you trust it.",
                   FadeIn(iam, shift=UP * 0.1), Succession(Wait(3.2), aws.animate.set_opacity(1)), run_time=4.2)
 

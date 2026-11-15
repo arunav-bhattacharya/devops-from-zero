@@ -1,0 +1,32 @@
+{
+ "d15": [
+  {
+   "slug": "d15-script-io",
+   "title": "What a script takes in, and what it hands back",
+   "after": 5,
+   "file": "p4/d15_script_io.py",
+   "scene": "D15ScriptIo",
+   "poster_at": 163.0
+  }
+ ],
+ "d16": [
+  {
+   "slug": "d16-fake-far-end",
+   "title": "The same code talks to the real service in a run and to a fake one in a test",
+   "after": 5,
+   "file": "p4/d16_fake_far_end.py",
+   "scene": "D16FakeFarEnd",
+   "poster_at": 200.0
+  }
+ ],
+ "d20": [
+  {
+   "slug": "d20-networks",
+   "title": "How containers find each other by name, and where their data lives",
+   "after": 4,
+   "file": "p5/d20_networks.py",
+   "scene": "D20Networks",
+   "poster_at": 216.0
+  }
+ ]
+}

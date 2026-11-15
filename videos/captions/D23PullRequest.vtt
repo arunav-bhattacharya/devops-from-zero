@@ -1,0 +1,205 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.754
+Day 9 left you with a clean branch on your laptop.
+
+2
+00:00:05.754 --> 00:00:08.687
+You could merge it into main yourself, and push.
+
+3
+00:00:08.900 --> 00:00:12.130
+Then nobody else reads the change before it lands.
+
+4
+00:00:12.130 --> 00:00:14.908
+And no test runs on it, unless you ran one.
+
+5
+00:00:15.733 --> 00:00:17.500
+A pull request fixes both.
+
+6
+00:00:17.500 --> 00:00:21.848
+It is a page on GitHub that asks to merge your branch into main.
+
+7
+00:00:22.067 --> 00:00:24.011
+Teammates review the diff there.
+
+8
+00:00:24.011 --> 00:00:28.629
+And checks run on it: automatic tests that show a green tick or a red cross.
+
+9
+00:00:28.833 --> 00:00:31.422
+But what exactly do the checks test?
+
+10
+00:00:31.422 --> 00:00:33.148
+Your branch, as it sits?
+
+11
+00:00:33.148 --> 00:00:33.867
+Not quite.
+
+12
+00:00:34.700 --> 00:00:38.163
+Two teammates start from the same main, on the same morning.
+
+13
+00:00:38.367 --> 00:00:42.363
+Teammate A renames a function, count_visit, to record_visit.
+
+14
+00:00:42.363 --> 00:00:44.161
+Its one caller changes too.
+
+15
+00:00:44.367 --> 00:00:48.898
+Teammate B adds a new endpoint, /hello/<name>, and a test for it.
+
+16
+00:00:48.898 --> 00:00:52.593
+It calls count_visit, which was correct that morning.
+
+17
+00:00:52.800 --> 00:00:54.427
+A opens pull request 12.
+
+18
+00:00:54.427 --> 00:00:55.987
+Here is the first fact.
+
+19
+00:00:55.987 --> 00:01:01.140
+GitHub builds a temporary merge commit, of the branch into the current main.
+
+20
+00:01:01.367 --> 00:01:03.390
+CI tests that combination.
+
+21
+00:01:03.390 --> 00:01:06.658
+Your branch, plus main as it is right now.
+
+22
+00:01:06.658 --> 00:01:07.125
+Green.
+
+23
+00:01:07.333 --> 00:01:09.334
+B opens pull request 13.
+
+24
+00:01:09.334 --> 00:01:12.836
+Same thing: B's branch plus the same main.
+
+25
+00:01:12.836 --> 00:01:13.753
+Also green.
+
+26
+00:01:13.967 --> 00:01:15.997
+A's pull request merges first.
+
+27
+00:01:15.997 --> 00:01:20.465
+Main moves on, to a new commit where count_visit no longer exists.
+
+28
+00:01:20.667 --> 00:01:22.018
+Now the second fact.
+
+29
+00:01:22.018 --> 00:01:26.408
+CI starts only when something happens to the pull request itself.
+
+30
+00:01:26.408 --> 00:01:29.583
+It is opened, gets new commits, or is reopened.
+
+31
+00:01:29.800 --> 00:01:33.903
+A new commit on main is not an event on B's pull request.
+
+32
+00:01:33.903 --> 00:01:35.199
+So nothing reruns.
+
+33
+00:01:35.199 --> 00:01:37.863
+Its green tick still says main at m1.
+
+34
+00:01:38.067 --> 00:01:39.176
+So B merges too.
+
+35
+00:01:39.176 --> 00:01:44.309
+Git reports no conflict, because the two branches changed different lines.
+
+36
+00:01:44.533 --> 00:01:46.413
+Then the tests run on main.
+
+37
+00:01:46.413 --> 00:01:50.310
+The new endpoint calls a function that no longer exists.
+
+38
+00:01:50.310 --> 00:01:51.145
+Main is red.
+
+39
+00:01:51.367 --> 00:01:53.202
+This is a semantic conflict.
+
+40
+00:01:53.202 --> 00:01:56.415
+The text merged cleanly, and the meaning did not.
+
+41
+00:01:56.633 --> 00:01:59.226
+Two green pull requests, one broken main.
+
+42
+00:01:59.226 --> 00:02:00.871
+What would have caught it?
+
+43
+00:02:02.100 --> 00:02:03.926
+Rewind to before B merged.
+
+44
+00:02:03.926 --> 00:02:09.964
+A ruleset option, Require branches to be up to date before merging, changes the story.
+
+45
+00:02:10.167 --> 00:02:12.257
+B's branch is behind main now.
+
+46
+00:02:12.257 --> 00:02:15.812
+So pull request 13 must take in the new main first.
+
+47
+00:02:15.812 --> 00:02:18.251
+The Update branch button does that.
+
+48
+00:02:18.467 --> 00:02:24.831
+That is a new commit on the pull request, so CI runs again, on B's branch plus the new main.
+
+49
+00:02:25.033 --> 00:02:28.808
+The test fails on the pull request, instead of on main.
+
+50
+00:02:28.808 --> 00:02:29.975
+Main stays green.
+
+51
+00:02:30.900 --> 00:02:39.056
+So remember: a pull request's checks test your branch merged into main, as main was the last time the pull request changed.

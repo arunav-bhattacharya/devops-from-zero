@@ -20,8 +20,9 @@ def card(i, msg, extra, color=GREY_B):
     t = M(msg, 20)
     head = VGroup(M(f"doc {i}", 20, GREY_B), M(extra, 20, color)).arrange(RIGHT, buff=0.3)
     inner = VGroup(head, t).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
-    r = RoundedRectangle(corner_radius=0.1, width=5.6, height=inner.height + 0.32, stroke_color=GREY_B, stroke_width=2).set_fill(tint(GREY_B, 0.06), 1)
+    r = RoundedRectangle(corner_radius=0.1, width=6.5, height=inner.height + 0.32, stroke_color=GREY_B, stroke_width=2).set_fill(tint(GREY_B, 0.06), 1)
     inner.move_to(r).align_to(r, LEFT).shift(RIGHT * 0.2)
+    inner.set_z_index(2)
     return VGroup(r, inner)
 
 
@@ -59,7 +60,7 @@ class D55Index(VoiceScene):
                   FadeIn(road[3], shift=UP * 0.1), run_time=2.4)
         self.beat("In the lab, hello-devops prints one event per line to stdout.",
                   FadeIn(road[0]), FadeIn(subs[0]), run_time=1.8)
-        line = M('{"level":"INFO","path":"/","status":200,"duration_ms":8}', 20, TEAL_M).move_to([0, 0.6, 0])
+        line = M('{"level":"INFO",...,"path":"/","status":200,"duration_ms":8}', 20, TEAL_M).move_to([0, 0.6, 0])
         self.beat("The access log is structured: one JSON object per line, with named fields.",
                   FadeIn(line, shift=UP * 0.1), run_time=2.0)
         self.beat("The Docker engine sees every line first. Its fluentd logging driver sends each one to Fluent Bit, on port 24224.",
@@ -72,13 +73,13 @@ class D55Index(VoiceScene):
         self.play(FadeOut(fields), run_time=0.5)
 
         # ---- 3. grep reads everything, every time
-        self.play(Indicate(road[3], color=PURPLE_M, scale_factor=1.06), subs.animate.set_opacity(0.4), run_time=0.8)
+        self.play(Indicate(road[3], color=PURPLE_M, scale_factor=1.06), FadeOut(subs), run_time=0.8)
         docs = VGroup(card(1, "Payment FAILED for order 42: card declined", "ERROR", RED_M),
                       card(2, "Payment accepted for order 43", "INFO", GREEN_M),
-                      card(3, "Cart 7 is slow to load", "WARN", GOLD_M)).arrange(DOWN, buff=0.25).move_to([-3.7, -0.8, 0])
+                      card(3, "Cart 7 is slow to load", "WARN", GOLD_M)).arrange(DOWN, buff=0.25).move_to([-3.5, -0.8, 0])
         self.beat("Inside Elasticsearch, each log event is one JSON document. Here are three.",
                   LaggedStart(*[FadeIn(d, shift=RIGHT * 0.15) for d in docs], lag_ratio=0.3), run_time=2.6)
-        scan = Line([-6.4, 0, 0], [-1.0, 0, 0], stroke_width=4, color=YELLOW_M).move_to(docs[0].get_top() + DOWN * 0.05)
+        scan = Line([-6.65, 0, 0], [-0.35, 0, 0], stroke_width=4, color=YELLOW_M).move_to(docs[0].get_top() + DOWN * 0.05)
         gl = T("grep: read every line, on every search", 24, YELLOW_M).move_to([3.4, -0.2, 0])
         self.beat("With grep, every search reads every line again. Fine for one file, far too slow for a week of logs from fifty pods.",
                   FadeIn(gl), Succession(FadeIn(scan, run_time=0.2), scan.animate(run_time=2.4, rate_func=linear).move_to(docs[2].get_bottom() + UP * 0.05),
@@ -87,14 +88,16 @@ class D55Index(VoiceScene):
         self.play(FadeOut(gl), run_time=0.4)
 
         # ---- 4. the analyzer and the inverted index
-        once = T("Elasticsearch reads each document once, when it arrives", 24, PURPLE_M).move_to([3.4, 1.3, 0])
+        once = T("read once, when it arrives", 26, PURPLE_M).move_to([3.4, 1.3, 0])
         self.beat("Elasticsearch does the reading once, when a document arrives.",
                   FadeIn(once), run_time=1.6)
         toks1 = VGroup(*[chip(t, PURPLE_M, 20, mono=True) for t, _ in TOKENS[:7]])
         toks1.arrange_in_grid(rows=2, buff=(0.18, 0.2)).move_to([3.4, 0.0, 0])
         msg1 = docs[0][1][1]
-        self.beat("A part called the analyzer splits each text field into words, called tokens, and lowercases them. Payment FAILED becomes payment, failed, and so on.",
-                  Indicate(msg1, color=PURPLE_M, scale_factor=1.03), Succession(Wait(1.6), TransformFromCopy(msg1, toks1, run_time=2.0)), run_time=7.2)
+        self.beat("A part called the analyzer splits each text field into words, called tokens, and lowercases them.",
+                  docs[0][0].animate.set_stroke(PURPLE_M, width=4), run_time=1.2)
+        self.beat("Payment FAILED becomes payment, failed, and so on.",
+                  LaggedStart(*[FadeIn(t, shift=RIGHT * 0.4) for t in toks1], lag_ratio=0.2), run_time=2.6)
 
         # the index: token -> documents
         rows = VGroup()
@@ -110,17 +113,17 @@ class D55Index(VoiceScene):
                      T("token", 22, GREY_B).move_to([3.75, 1.2, 0], aligned_edge=LEFT), T("in docs", 22, GREY_B).move_to([5.5, 1.2, 0], aligned_edge=LEFT))
         ttl = T("the inverted index", 26, PURPLE_M).move_to([3.4, 1.75, 0])
         self.beat("Then, for every token, it records which documents contain it. That list is called an inverted index.",
-                  FadeOut(once), FadeIn(ttl), FadeIn(hdr),
-                  *[ReplacementTransform(toks1[i], rows[i][0]) for i in range(7)],
+                  FadeOut(once), FadeIn(ttl), FadeIn(hdr), docs[0][0].animate.set_stroke(GREY_B, width=2),
+                  *[AnimationGroup(FadeOut(toks1[i][0]), ReplacementTransform(toks1[i][1], rows[i][0])) for i in range(7)],
                   Succession(Wait(2.0), LaggedStart(*[FadeIn(rows[i][1]) for i in range(7)], lag_ratio=0.2)), run_time=5.0)
         msg2 = docs[1][1][1]
         self.beat("The second document adds its own tokens, and its number to the rows it shares.",
-                  Indicate(msg2, color=PURPLE_M, scale_factor=1.03), FadeIn(rows[7]), FadeIn(rows[8]),
+                  FadeIn(rows[7]), FadeIn(rows[8]),
                   *[Indicate(rows[i][1], color=WHITE) for i in (0, 2, 3)], run_time=3.6)
 
         # ---- 5. searches
         def query(text, color=YELLOW_M):
-            return VGroup(T("search:", 22, GREY_B), M(text, 22, color)).arrange(RIGHT, buff=0.2).move_to([3.4, -2.25, 0])
+            return VGroup(T("search:", 22, GREY_B), M(text, 22, color)).arrange(RIGHT, buff=0.2).move_to([2.6, -2.25, 0])
 
         def light_docs(ids, color=YELLOW_M):
             return [docs[i - 1][0].animate.set_stroke(color, width=4) for i in ids]
@@ -144,16 +147,15 @@ class D55Index(VoiceScene):
         self.play(FadeOut(zero), FadeOut(q1), run_time=0.4)
 
         # the dotted error name stays one token
-        err = fit(M("redis.exceptions.ConnectionError: ... service not known", 20, RED_M), 6.0).move_to([3.4, 0.4, 0])
-        etok = VGroup(chip("redis.exceptions.connectionerror", PURPLE_M, 20, mono=True), chip("service", PURPLE_M, 20, mono=True),
-                      chip("not", PURPLE_M, 20, mono=True), chip("known", PURPLE_M, 20, mono=True)).arrange(RIGHT, buff=0.15).move_to([0, -3.2, 0])
+        err = VGroup(M("redis.exceptions.ConnectionError: ...", 20, RED_M), M("... service not known", 20, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([3.4, 0.7, 0])
+        etok = VGroup(chip("redis.exceptions.connectionerror", PURPLE_M, 20, mono=True),
+                      VGroup(chip("service", PURPLE_M, 20, mono=True), chip("not", PURPLE_M, 20, mono=True), chip("known", PURPLE_M, 20, mono=True)).arrange(RIGHT, buff=0.15)).arrange(DOWN, buff=0.2)
         self.play(FadeOut(VGroup(rows, hdr, ttl)), docs.animate.shift(UP * 0.35), run_time=0.6)
         self.beat("The second surprise. When Redis is down, a traceback line holds redis.exceptions.ConnectionError.",
                   FadeIn(err, shift=UP * 0.1), run_time=1.8)
-        etok.move_to([3.4, -1.0, 0])
-        fit(etok, 5.9)
+        etok.move_to([3.4, -0.75, 0])
         self.beat("Dots between letters do not split words. So the whole name stays one token.",
-                  TransformFromCopy(err, etok), run_time=2.4)
+                  FadeIn(etok[0], shift=DOWN * 0.2), Succession(Wait(1.2), FadeIn(etok[1], shift=DOWN * 0.2)), run_time=2.4)
         q4 = query("ConnectionError", RED_M)
         z4 = VGroup(T("0 hits", 24, RED_M), tick(False, 0.14)).arrange(RIGHT, buff=0.2).next_to(q4, RIGHT, buff=0.4)
         self.beat("Search ConnectionError, and you get zero hits. It is only part of a token.",
@@ -161,13 +163,13 @@ class D55Index(VoiceScene):
         q5 = query('"service not known"', GREEN_M)
         ok5 = VGroup(T("found", 24, GREEN_M), tick(True, 0.16)).arrange(RIGHT, buff=0.2).next_to(q5, RIGHT, buff=0.4)
         self.beat("Search the phrase service not known, from the same error, and you find it at once.",
-                  Transform(q4, q5), Transform(z4, ok5), Indicate(etok[1:], color=GREEN_M, scale_factor=1.06), run_time=3.0)
+                  Transform(q4, q5), Transform(z4, ok5), Indicate(etok[1], color=GREEN_M, scale_factor=1.06), run_time=3.0)
         self.play(FadeOut(VGroup(err, etok, q4, z4)), run_time=0.5)
 
         # keyword fields stay whole
         kw = VGroup(T("level is a keyword field: stored whole", 24, GOLD_M), chip("ERROR", GOLD_M, 22, mono=True)).arrange(DOWN, buff=0.3).move_to([3.4, 0.4, 0])
         self.beat("Not every field is split. A keyword field, such as level, is stored whole, capitals and all, for exact filters and counting.",
-                  FadeIn(kw[0]), Succession(Wait(1.4), TransformFromCopy(docs[0][1][0][1], kw[1])), run_time=4.8)
+                  FadeIn(kw[0]), Succession(Wait(1.4), FadeIn(kw[1], shift=RIGHT * 0.2)), Succession(Wait(2.4), Indicate(docs[0][1][0][1], color=GOLD_M)), run_time=4.8)
         q6 = query("level: error", RED_M)
         z6 = VGroup(T("0 hits", 24, RED_M), tick(False, 0.14)).arrange(RIGHT, buff=0.2).next_to(q6, RIGHT, buff=0.4)
         self.beat("The stored value is ERROR, in capitals. So a term query for error, in lower case, finds nothing.",
@@ -175,8 +177,8 @@ class D55Index(VoiceScene):
         self.play(FadeOut(VGroup(kw, q6, z6)), run_time=0.5)
 
         # ---- recap
-        rec = VGroup(T("each line is read once, when it arrives,", 26), T("into an index of whole tokens", 26, PURPLE_M),
-                     T("so search for words that were really stored", 26, YELLOW_M)).arrange(DOWN, buff=0.25).move_to([3.3, -0.4, 0])
+        rec = VGroup(T("each line is read once, when it arrives,", 24), T("into an index of whole tokens", 24, PURPLE_M),
+                     T("so search for words that were really stored", 24, YELLOW_M)).arrange(DOWN, buff=0.25).move_to([3.4, -0.4, 0])
         self.beat("Elasticsearch reads each log line once, when it arrives, and builds an index of whole tokens. So search for words that were really stored, and check the tokens before you trust an empty result.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rec], lag_ratio=0.6), run_time=8.0)
         self.wait(1.2)

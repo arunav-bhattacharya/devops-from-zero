@@ -68,7 +68,7 @@ class D49Budget(VoiceScene):
         bad = VGroup(Dot(radius=0.09, color=GREY_B), M("404", 20, GREY_B)).arrange(UP, buff=0.12)
         bad.move_to([-3.0, 0.62, 0])
         side = ArcBetweenPoints([-0.6, 0.4, 0], [1.0, 1.6, 0], angle=-PI / 3)
-        nc = T("a mistyped URL: not counted", 22, GREY_B).move_to([2.9, 1.65, 0])
+        nc = T("a mistyped URL: not counted", 22, GREY_B).move_to([1.45, 1.82, 0], aligned_edge=LEFT)
         self.beat("A 404 for a mistyped URL is the user's mistake, so it does not count.",
                   Succession(bad.animate(run_time=1.0, rate_func=linear).move_to([-0.6, 0.62, 0]),
                              MoveAlongPath(bad, side.shift(UP * 0.22), run_time=1.0), FadeIn(nc, run_time=0.5)), run_time=3.0)
@@ -224,10 +224,11 @@ class D49Budget(VoiceScene):
                   FadeIn(cB, shift=DOWN * 0.15), Succession(Wait(2.6), FadeIn(mB)), Succession(Wait(5.6), AnimationGroup(FadeOut(mB), cB.animate.scale(0.85).move_to(bins[1].get_top() + UP * 1.05), FadeOut(subs[1]))), run_time=7.0)
         cC = case("CPU at 90%, answers in 50 ms", GREY_B)
         cD = case("one pod restart", GREY_B)
-        self.beat("A server at 90% CPU that answers every request in 50 ms is simply doing its job. CPU, memory, single restarts: these are causes, and many never hurt anyone.",
-                  FadeIn(cC, shift=DOWN * 0.15),
-                  Succession(Wait(4.0), AnimationGroup(cC.animate.scale(0.85).move_to(bins[2].get_top() + UP * 1.05), FadeOut(subs[2])),
-                             FadeIn(cD, shift=DOWN * 0.15), Wait(0.6), cD.animate(run_time=1.0).scale(0.85).move_to(bins[2].get_top() + UP * 1.75)), run_time=8.0)
+        self.beat("A server at 90% CPU that answers every request in 50 ms is simply doing its job.",
+                  FadeIn(cC, shift=DOWN * 0.15), run_time=1.6)
+        self.play(cC.animate.scale(0.85).move_to(bins[2].get_top() + UP * 1.05), FadeOut(subs[2]), FadeIn(cD, shift=DOWN * 0.15), run_time=0.9)
+        self.beat("CPU, memory, single restarts: these are causes, and many never hurt anyone. They go on the dashboard.",
+                  cD.animate.scale(0.85).move_to(bins[2].get_top() + UP * 1.75), run_time=1.6)
         fat = T("page on causes, and people learn to ignore the pager", 26, YELLOW_M).move_to([0, 1.6, 0])
         self.beat("Page on causes, and people learn that pages are noise, and ignore the real one too.",
                   FadeIn(fat, shift=DOWN * 0.1), run_time=2.2)
@@ -235,5 +236,5 @@ class D49Budget(VoiceScene):
         # ---- recap
         rec = VGroup(T("An SLO turns raw requests into a budget,", 30), T("and the burn rate decides who gets woken up.", 30, YELLOW_M)).arrange(DOWN, buff=0.2).move_to([0, 1.4, 0])
         self.beat("An SLO turns raw requests into a budget, and the burn rate decides who gets woken up.",
-                  FadeOut(fat), FadeIn(rec, shift=UP * 0.1), Indicate(bins[0], color=RED_M, scale_factor=1.05), run_time=3.0)
+                  FadeOut(fat), FadeIn(rec, shift=UP * 0.1), Circumscribe(bins[0], color=RED_M), run_time=3.0)
         self.wait(1.2)

@@ -54,13 +54,13 @@ class D27Release(VoiceScene):
         self.play(travel(a1, YELLOW_M, 0.7), run_time=0.7)
 
         # ---- 2. the gate
-        gate = sbox("environment: production", GOLD_M, w=2.75, h=0.62, size=20).move_to([LXc, -0.15, 0])
+        gate = sbox("environment: production", GOLD_M, w=3.1, h=0.62, size=20).move_to([LXc, -0.15, 0])
         a2 = Arrow(trig.get_bottom(), gate.get_top(), buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.25)
         rule = T("required reviewers", 22, GOLD_M).next_to(gate, DOWN, buff=0.2)
         self.beat("Without a gate, every tag you push ships at once, even one you pushed by mistake. So the job names an environment: production.",
                   Succession(Wait(3.4), AnimationGroup(GrowArrow(a2), FadeIn(gate))), run_time=5.0)
         self.beat("Before the job starts, GitHub checks the environment's rules. Here, a required reviewer.",
-                  FadeIn(rule, shift=UP * 0.1), Indicate(gate, color=GOLD_M), run_time=2.4)
+                  FadeIn(rule, shift=UP * 0.1), Indicate(gate[1], color=GOLD_M), run_time=2.4)
         wait = T("waiting...", 22, GREY_B).next_to(rule, DOWN, buff=0.2)
         self.beat("The run stops and waits. It can wait up to thirty days for a person to say yes.",
                   FadeIn(wait), Succession(Wait(1.2), Indicate(wait, color=GREY_B, scale_factor=1.05), Indicate(wait, color=GREY_B, scale_factor=1.05)), run_time=3.2)
@@ -71,12 +71,12 @@ class D27Release(VoiceScene):
         # ---- 3. the job and its token
         job = RoundedRectangle(corner_radius=0.18, width=6.0, height=5.6, stroke_color=GREY_B, stroke_width=2.5).set_fill(BLACK, 1).move_to([0.75, 0.15, 0])
         job_t = T("job: image, on a fresh runner", 24, GREY_B).next_to(job.get_corner(UL), DR, buff=0.18)
-        a3 = Arrow(gate.get_right(), [job.get_left()[0], gate.get_center()[1], 0], buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.25)
+        a3 = Arrow(gate.get_right(), [job.get_left()[0], gate.get_center()[1], 0], buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.18)
         self.beat("Now the job starts, on a fresh machine.", GrowArrow(a3), Create(job), FadeIn(job_t), run_time=1.6)
         tok = chip("GITHUB_TOKEN", GREEN_M, 22, mono=True).move_to([2.35, 1.75, 0])
         life = VGroup(Line([-1.85, -2.05, 0], [3.35, -2.05, 0], stroke_width=4, color=GREEN_M),
                       T("job starts", 20, GREY_B).move_to([-1.3, -2.4, 0]), T("job ends: token expires", 20, GREY_B).move_to([2.2, -2.4, 0]))
-        life_l = T("token lifetime (6 hours at most)", 20, GREEN_M).move_to([0.75, -1.7, 0])
+        life_l = T("token lifetime (6 hours at most)", 20, GREEN_M).move_to([0.75, -1.75, 0])
         self.steps("Every job gets a token without asking: the GITHUB_TOKEN. GitHub creates it when the job starts, and it expires when the job ends.",
                    (1.0, GrowFromCenter(tok)), (2.2, Wait(2.2)), (1.6, Create(life[0]), FadeIn(life[1]), FadeIn(life_l)), (0.8, FadeIn(life[2])))
         scope = T("only this repository", 20, GREY_B).next_to(tok, DOWN, buff=0.15)
@@ -104,18 +104,18 @@ class D27Release(VoiceScene):
         def on(i, c=YELLOW_M):
             return stp[i][0].animate.set_stroke(c, 3.5).set_fill(tint(c, 0.2), 1)
 
-        self.beat("Checkout fetches the code at the tag. QEMU, an emulator, lets this amd64 runner build arm64 steps too.",
-                  on(0), Succession(Wait(2.2), AnimationGroup(on(0, GREEN_M), on(1))), run_time=3.2)
-        self.beat("The login step logs in to ghcr.io with the job's own GITHUB_TOKEN. No password is stored anywhere.",
-                  on(1, GREEN_M), on(2), Succession(Wait(1.6), Indicate(tok, color=GREEN_M)), run_time=3.0)
+        self.steps("Checkout fetches the code at the tag. QEMU, an emulator, lets this amd64 runner build arm64 steps too.",
+                   (0.8, on(0)), (1.6, Wait(1.6)), (0.8, on(0, GREEN_M), on(1)))
+        self.steps("The login step logs in to ghcr.io with the job's own GITHUB_TOKEN. No password is stored anywhere.",
+                   (0.8, on(1, GREEN_M), on(2)), (0.8, Wait(0.8)), (1.0, Indicate(tok, color=GREEN_M)))
         meta = VGroup(*[chip(t, BLUE_M, 20, mono=True) for t in ("1.2.0", "sha-9f2c1e7", "latest")]).arrange(DOWN, buff=0.12)
-        ghcr = RoundedRectangle(corner_radius=0.15, width=2.2, height=3.4, stroke_color=BLUE_M, stroke_width=3).set_fill(tint(BLUE_M, 0.06), 1).move_to([5.55, 0.15, 0])
+        ghcr = RoundedRectangle(corner_radius=0.15, width=2.2, height=4.0, stroke_color=BLUE_M, stroke_width=3).set_fill(tint(BLUE_M, 0.06), 1).move_to([5.55, -0.05, 0])
         ghcr_t = M("ghcr.io", 22, BLUE_M).next_to(ghcr.get_top(), DOWN, buff=0.2)
         meta.next_to(ghcr_t, DOWN, buff=0.3)
         self.steps("The metadata step turns the git tag into image tags: 1.2.0, sha plus the short commit, and latest.",
                    (0.8, on(2, GREEN_M), on(3)), (0.8, Create(ghcr), FadeIn(ghcr_t)),
                    (2.4, LaggedStart(*[FadeIn(m, shift=LEFT * 0.15) for m in meta], lag_ratio=0.5)))
-        plat = T("amd64 + arm64", 22, GREY_B).next_to(meta, DOWN, buff=0.3)
+        plat = T("amd64 + arm64", 20, GREY_B).next_to(meta, DOWN, buff=0.3)
         push = Arrow(stp[4].get_right(), [ghcr.get_left()[0], stp[4].get_center()[1], 0], buff=0.1, stroke_width=3, color=BLUE_M, max_tip_length_to_length_ratio=0.08)
         self.steps("Then build and push makes the image for both CPU types, and pushes them under one multi-platform tag.",
                    (0.8, on(3, GREEN_M), on(4)), (1.4, Wait(1.4)), (1.0, GrowArrow(push)), (1.0, travel(push, BLUE_M, 1.0)), (0.6, FadeIn(plat)), (0.4, on(4, GREEN_M)))
@@ -129,9 +129,9 @@ class D27Release(VoiceScene):
 
         # ---- 5. pin third-party actions
         self.play(FadeOut(VGroup(perms, scope)), run_time=0.4)
-        lab = T("someone else's code", 22, YELLOW_M).move_to([2.3, 1.0, 0])
-        cl = Line([1.1, -0.2, 0], [3.5, -0.2, 0], stroke_width=2, color=GREY_B)
-        cms = VGroup(Dot([1.4, -0.2, 0], color=GREY_B), Dot([2.3, -0.2, 0], color=GREEN_M), Dot([3.2, -0.2, 0], color=RED_M).set_opacity(0))
+        lab = T("someone else's code", 20, YELLOW_M).move_to([2.25, 1.0, 0])
+        cl = Line([1.0, -0.2, 0], [3.55, -0.2, 0], stroke_width=2, color=GREY_B)
+        cms = VGroup(Dot([2.33, -0.2, 0], color=GREY_B), Dot([1.6, -0.2, 0], color=GREEN_M), Dot([3.05, -0.2, 0], color=RED_M).set_opacity(0))
         good_l = M("81c6f93d", 20, GREEN_M).next_to(cms[1], DOWN, buff=0.15)
         v4 = chip("v4", YELLOW_M, 20, mono=True).next_to(cms[1], UP, buff=0.35)
         v4a = Arrow(v4.get_bottom(), cms[1].get_center(), buff=0.08, stroke_width=2.5, color=YELLOW_M, max_tip_length_to_length_ratio=0.3)
@@ -143,7 +143,7 @@ class D27Release(VoiceScene):
         self.steps("Whoever controls the action's repository can move it. In March 2025 that really happened: the tags of a popular action were moved to a malicious commit, which printed CI secrets into the logs.",
                    (2.6, Wait(2.6)), (0.6, cms[2].animate.set_opacity(1), FadeIn(bad_l)),
                    (1.2, Transform(v4, v4b), Transform(v4a, v4ba)))
-        pin = M("@81c6f93d # v4.7.0", 20, GREEN_M).move_to([2.3, -1.4, 0])
+        pin = M("@81c6f93d # v4.7.0", 20, GREEN_M).move_to([2.2, -1.33, 0])
         pin_b = SurroundingRectangle(cms[1], color=GREEN_M, buff=0.12, corner_radius=0.08)
         self.beat("A full commit SHA cannot be moved. So release.yml pins every third-party action to one, with the version in a comment. Dependabot moves the pins for you.",
                   Succession(Wait(1.2), AnimationGroup(Create(pin_b), FadeIn(pin, shift=UP * 0.1))), run_time=4.6)
@@ -156,6 +156,6 @@ class D27Release(VoiceScene):
 
         # ---- 7. recap
         self.beat("A tag starts the run. A person opens the gate. The job gets a short-lived token with only the rights it needs, and pinned actions use it to push one image.",
-                  Indicate(tag, color=YELLOW_M), Succession(Wait(1.6), Indicate(gate, color=GREEN_M)), Succession(Wait(3.0), Indicate(tok, color=GREEN_M)),
+                  Indicate(tag, color=YELLOW_M), Succession(Wait(1.6), Indicate(wait, color=GREEN_M)), Succession(Wait(3.0), Indicate(tok, color=GREEN_M)),
                   Succession(Wait(6.0), Indicate(ghcr_t, color=BLUE_M)), run_time=7.6)
         self.wait(1.0)

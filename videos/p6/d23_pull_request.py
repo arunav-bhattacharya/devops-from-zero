@@ -120,7 +120,7 @@ class D23PullRequest(VoiceScene):
         # ---- 3. A merges first
         m2 = commit(TEAL_M).move_to([-1.0, MY, 0])
         m2e = VGroup(edge(m1, m2), edge(a1, m2, TEAL_M))
-        m2l = M("m2", 22, TEAL_M).next_to(m2, DOWN, buff=0.2)
+        m2l = M("m2", 22, TEAL_M).move_to(m2.get_center() + np.array([0.42, 0.36, 0]))
         self.steps("A's pull request merges first. Main moves on, to a new commit where count_visit no longer exists.",
                    (0.8, FadeOut(tm), FadeOut(tme), FadeOut(tm13), FadeOut(tme13)), (1.4, Create(m2e), GrowFromCenter(m2), FadeIn(m2l)),
                    (1.0, FadeOut(VGroup(c12, t12, at12))))
@@ -135,8 +135,8 @@ class D23PullRequest(VoiceScene):
         # ---- 4. B merges: main breaks
         m3 = commit(GOLD_M).move_to([0.5, MY, 0])
         m3e = VGroup(edge(m2, m3), edge(b1, m3, GOLD_M))
-        m3l = M("m3", 22, GOLD_M).next_to(m3, DOWN, buff=0.2)
-        noc = T("no conflict: different lines", 22, GREEN_M).move_to([-0.3, 0.75, 0])
+        m3l = M("m3", 22, GOLD_M).move_to(m3.get_center() + np.array([0.42, -0.36, 0]))
+        noc = T("no conflict: different lines", 22, GREEN_M).move_to([-0.3, 0.95, 0])
         self.beat("So B merges too. Git reports no conflict, because the two branches changed different lines.",
                   FadeOut(stale), FadeOut(VGroup(ev, evl)), Create(m3e), GrowFromCenter(m3), FadeIn(m3l), c13.animate.set_opacity(0.35),
                   t13.animate.set_opacity(0.35), at13.animate.set_opacity(0.35), FadeIn(noc), run_time=2.4)
@@ -159,7 +159,7 @@ class D23PullRequest(VoiceScene):
         rule = chip("Require branches to be up to date before merging", YELLOW_M, 22).move_to([0, 3.25, 0])
         self.beat("Rewind to before B merged. A ruleset option, Require branches to be up to date before merging, changes the story.",
                   FadeIn(rule, shift=DOWN * 0.1), run_time=2.2)
-        behind = T("behind main", 22, YELLOW_M).move_to(t13).shift(LEFT * 0.75)
+        behind = T("behind main", 22, YELLOW_M).move_to(t13).shift(LEFT * 1.15)
         self.steps("B's branch is behind main now. So pull request 13 must take in the new main first. The Update branch button does that.",
                    (1.2, FadeOut(t13), FadeIn(behind)), (2.0, Wait(2.0)),
                    (1.4, Indicate(m2, color=YELLOW_M)))
@@ -177,7 +177,7 @@ class D23PullRequest(VoiceScene):
         # ---- 6. recap
         rc = VGroup(T("a pull request's checks test your branch merged into main,", 30, WHITE),
                     T("as main was the last time the pull request changed", 30, YELLOW_M)).arrange(DOWN, buff=0.3)
-        self.play(FadeOut(VGroup(*self.mobjects)), run_time=0.7)
+        self.play(FadeOut(Group(*self.mobjects)), run_time=0.7)
         self.beat("So remember: a pull request's checks test your branch merged into main, as main was the last time the pull request changed.",
                   FadeIn(rc, shift=UP * 0.1), run_time=2.4)
         self.wait(1.0)

@@ -94,7 +94,7 @@ class D44Gateway(VoiceScene):
         self.beat("The older API for this is Ingress. It was small on purpose. Hosts, paths and TLS. Everything else went into annotations, which each controller defined its own way.",
                   FadeIn(ing), Succession(Wait(3.2), FadeIn(ann, shift=0.1 * DOWN)), run_time=4.4)
         fz = chip("frozen", RED_M, 22).next_to(ing, RIGHT, buff=0.3)
-        ret = T("ingress-nginx retired March 24, 2026", 22, RED_M).next_to(fz, RIGHT, buff=0.3)
+        ret = T("ingress-nginx retired March 24, 2026", 22, RED_M).move_to([XG, 1.85, 0])
         self.beat("The Ingress API is now frozen. And ingress-nginx, the most popular controller, was retired on March 24, 2026. The newer API is the Gateway API.",
                   FadeOut(ann), FadeIn(fz), Succession(Wait(1.6), FadeIn(ret)), run_time=3.2)
         self.play(FadeOut(VGroup(ing, fz, ret)), run_time=0.5)
@@ -135,7 +135,7 @@ class D44Gateway(VoiceScene):
         self.steps("A request now goes from curl, to Envoy, to hello-devops. Look where the controller is. It never handles a request. It only watches objects and writes settings.",
                    (1.8, ride(rpath, YELLOW_M, 1.8)), (0.4, self.count(dev, 1)), (1.6, ride(rpath, YELLOW_M, 1.6)), (0.4, self.count(dev, 2)),
                    (1.0, Indicate(ctl[1], color=GREY_B)))
-        pfl = T("on kind: port-forward", 20, GREY_B).next_to(a1, DOWN, buff=0.15)
+        pfl = T("on kind: port-forward", 20, GREY_B).next_to(cli, DOWN, buff=0.2)
         self.beat("On kind there is no cloud, so the proxy's Service never gets a real address. The routing still works. You reach Envoy with port-forward.",
                   FadeIn(pfl), FadeOut(made), run_time=1.6)
 
@@ -173,7 +173,7 @@ class D44Gateway(VoiceScene):
         win = T("the more specific match wins", 24, GOLD_M).move_to(q)
         self.steps("The most specific match wins. A header match is more specific than a path alone. So this request always goes to the canary. You never order rules by hand.",
                    (0.8, Transform(q, win), rules[1].animate.set_opacity(0.4)),
-                   (1.2, hpkt.animate.move_to([XG, PY + 0.75, 0]).scale(0.85)),
+                   (1.2, hpkt.animate.move_to([XG - 2.2, PY + 0.55, 0]).scale(0.85)),
                    (1.4, ride(p_can, GOLD_M, 1.4), FadeOut(hpkt)), (0.4, self.count(can, 5)))
         self.play(FadeOut(q), rules[1].animate.set_opacity(1), run_time=0.5)
         z = M("0", 24, GOLD_M).move_to(w10)

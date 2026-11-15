@@ -44,18 +44,20 @@ class D56EfkNode(VoiceScene):
         nl = M("node: devops-worker", 20, GREY_B).next_to(node, UP, buff=0.1).align_to(node, LEFT)
         app = bx([M("hello-devops", 22), T("container web", 20, GREY_B)], TEAL_M, [-5.15, 1.75, 0])
         rt = bx([M("containerd", 22), T("the runtime", 20, GREY_B)], GREY_B, [-5.15, -0.6, 0])
-        self.beat("On Day 55, Docker handed each log line straight to Fluent Bit. Kubernetes works differently. Here is one node, with hello-devops running on it.",
-                  Create(node), FadeIn(nl), FadeIn(app, shift=0.1 * DOWN), run_time=2.2)
+        es = bx([T("Elasticsearch", 24, GREEN_M), T("outside the cluster", 20, GREY_B)], GREEN_M, [4.65, -0.6, 0], w=3.4)
+        self.beat("On Day 55, Docker handed each log line straight to Fluent Bit. Kubernetes works differently. Here is one node, with hello-devops running on it, and Elasticsearch outside the cluster.",
+                  Create(node), FadeIn(nl), FadeIn(app, shift=0.1 * DOWN), Succession(Wait(3.0), FadeIn(es)), run_time=4.0)
         a1 = ar(app.get_bottom(), rt.get_top())
         a1l = M("stdout", 20, GREY_B).next_to(a1, LEFT, buff=0.12)
         self.beat("The app just prints to stdout. The container runtime on the node catches every line.",
                   FadeIn(rt), GrowArrow(a1), FadeIn(a1l), run_time=1.6)
         fold = bx([M("/var/log/containers", 20, BLUE_M), M("one file per container", 20, GREY_B)], BLUE_M, [-1.25, 1.75, 0], w=3.4)
         a2 = ar(rt.get_right(), fold.get_left() + DOWN * 0.15)
-        fname = VGroup(M("hello-devops-7c9f8b6d5-x2x4k", 20, TEAL_M), M("_", 20, GREY_B), M("hello", 20, YELLOW_M), M("_", 20, GREY_B),
-                       M("web", 20, GOLD_M), M("-<container id>.log", 20, GREY_B)).arrange(RIGHT, buff=0.04).move_to([-0.6, BOT + 0.3, 0])
-        fparts = VGroup(T("pod", 20, TEAL_M).next_to(fname[0], DOWN, buff=0.15), T("namespace", 20, YELLOW_M).next_to(fname[2], DOWN, buff=0.15),
-                        T("container", 20, GOLD_M).next_to(fname[4], DOWN, buff=0.15).shift(RIGHT * 0.25))
+        fname = M("hello-devops-7c9f8b6d5-x2x4k_hello_web-<container id>.log", 20, GREY_B,
+                  t2c={"[0:28]": TEAL_M, "[29:34]": YELLOW_M, "[35:38]": GOLD_M}).move_to([-0.6, BOT + 0.3, 0])
+        fparts = VGroup(T("pod", 20, TEAL_M).next_to(VGroup(*fname[0:28]), DOWN, buff=0.15),
+                        T("namespace", 20, YELLOW_M).next_to(VGroup(*fname[29:34]), DOWN, buff=0.15),
+                        T("container", 20, GOLD_M).next_to(VGroup(*fname[35:38]), DOWN, buff=0.15).shift(RIGHT * 0.3))
         self.steps("It writes each container's output to a file. The kubelet links those files into one folder, and the file name says who wrote it: the pod, the namespace, and the container.",
                    (1.2, GrowArrow(a2), FadeIn(fold)), (2.2, Wait(2.2)), (1.0, FadeIn(fname)),
                    (1.6, LaggedStart(*[FadeIn(p, shift=0.1 * UP) for p in fparts], lag_ratio=0.5)))
@@ -110,7 +112,7 @@ class D56EfkNode(VoiceScene):
         joined = M('{"level":"INFO","path":"/","status":200}', 20).move_to([3.3, BOT - 0.25, 0])
         onel = T("one record", 20, GREEN_M).next_to(joined, DOWN, buff=0.12)
         self.beat("In the lab test, a line split into a P and an F part came out as one record.",
-                  ReplacementTransform(VGroup(p1[1].copy(), p2[1].copy()), joined), p1.animate.set_opacity(0.3), p2.animate.set_opacity(0.3),
+                  FadeTransform(VGroup(p1[1].copy(), p2[1].copy()), joined), p1.animate.set_opacity(0.3), p2.animate.set_opacity(0.3),
                   Succession(Wait(1.6), FadeIn(onel)), run_time=2.6)
         bm = T("db: where it stopped", 20, BLUE_M).move_to(fb[1][1])
         fbl = fb[1][1].copy()
@@ -130,7 +132,7 @@ class D56EfkNode(VoiceScene):
         cache = T("labels cached", 20, BLUE_M).move_to(fbl)
         lab = M("labels: app: hello-devops", 20, BLUE_M).next_to(f1, UP, buff=0.14).align_to(f1, LEFT)
         self.steps("For the labels, it asks the Kubernetes API about the pod, then keeps the answer in a cache, so it does not ask again for every line.",
-                   (1.0, GrowArrow(a4)), (1.0, travel(a4, BLUE_M, 1.0)), (0.8, FadeIn(lab, shift=0.1 * DOWN)), (2.0, Wait(2.0)), (0.6, Transform(fb[1][1], cache)))
+                   (1.0, FadeIn(api), GrowArrow(a4)), (1.0, travel(a4, BLUE_M, 1.0)), (0.8, FadeIn(lab, shift=0.1 * DOWN)), (2.0, Wait(2.0)), (0.6, Transform(fb[1][1], cache)))
 
         # merge_log
         lifted = VGroup(M("level: INFO", 20), M("path: /", 20), M("status: 200", 20)).arrange(DOWN, aligned_edge=LEFT, buff=0.14).move_to([-4.9, BOT, 0])
@@ -138,11 +140,10 @@ class D56EfkNode(VoiceScene):
                    (1.6, ReplacementTransform(joined, lifted)), (2.4, Wait(2.4)), (0.8, Indicate(lifted, color=WHITE)))
 
         # ship it
-        es = bx([T("Elasticsearch", 24, GREEN_M), T("outside the cluster", 20, GREY_B)], GREEN_M, [4.65, -0.6, 0], w=3.4)
         a5 = ar(fb.get_right() + DOWN * 0.1, es.get_left() + DOWN * 0.1, GREEN_M)
         rec = VGroup(lifted, lab, f1)
         self.steps("The finished record goes to Elasticsearch, outside the cluster.",
-                   (0.8, FadeIn(es), GrowArrow(a5)), (1.2, travel(a5, GREEN_M, 1.2)))
+                   (0.8, Indicate(es[1][0], color=GREEN_M), GrowArrow(a5)), (1.2, travel(a5, GREEN_M, 1.2)))
         kq = M("kubernetes.namespace_name: hello", 20, GREEN_M).next_to(es, DOWN, buff=0.25)
         self.beat("In Kibana, those fields become the filters you use every day. Show me only namespace hello.",
                   FadeIn(kq, shift=0.1 * UP), Indicate(f1[1], color=YELLOW_M), run_time=2.0)

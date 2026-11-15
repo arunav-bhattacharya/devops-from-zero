@@ -128,7 +128,7 @@ class D03ShellLine(VoiceScene):
         LX = -1.6
         chips4 = VGroup(wchip("echo", BLUE_M), wchip("*.log", YELLOW_M)).arrange(RIGHT, buff=0.45).move_to([LX, 1.1, 0])
         self.beat("The shell splits the line, as before. But it sees a pattern.",
-                  FadeIn(chips4), Indicate(chips4[1], color=YELLOW_M), run_time=1.6)
+                  Succession(FadeIn(chips4, run_time=0.7), Indicate(chips4[1], color=YELLOW_M, run_time=0.8)), run_time=1.6)
         scan = SurroundingRectangle(fl[0], color=YELLOW_M, buff=0.06, stroke_width=2)
         self.steps("Before the program starts, the shell reads the folder, and keeps the names that fit.",
                    (0.6, Create(scan)), *[(0.28, scan.animate.move_to(fl[i]).stretch_to_fit_width(fl[i].width + 0.12)) for i in range(1, 7)],

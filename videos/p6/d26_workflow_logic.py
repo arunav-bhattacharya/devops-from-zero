@@ -21,7 +21,7 @@ def lane(y0, y1, color, name):
     r = Rectangle(width=13.5, height=y1 - y0, stroke_width=0).set_fill(tint(color, 0.07), 1).move_to([0, (y0 + y1) / 2, 0])
     top = Line([-6.75, y1, 0], [6.75, y1, 0], stroke_width=1.5, color=tint(color, 0.6))
     lab = T(name, 22, color).move_to([-5.55, (y0 + y1) / 2, 0])
-    return VGroup(r, top, lab)
+    return VGroup(r, top, lab).set_z_index(-1)
 
 
 class D26WorkflowLogic(VoiceScene):
@@ -115,14 +115,14 @@ class D26WorkflowLogic(VoiceScene):
         self.play(FadeOut(VGroup(jif, have, nope, hl, nl, err, q, rn, sh)), run_time=0.7)
 
         # ---- passing values: step output, job output, needs
-        JY, JH, JW = -0.75, 4.0, 5.2
+        JY, JH, JW = -0.75, 4.0, 5.6
         jv = RoundedRectangle(corner_radius=0.15, width=JW, height=JH, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.07), 1).move_to([-3.45, JY, 0])
         jb = RoundedRectangle(corner_radius=0.15, width=JW, height=JH, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.07), 1).move_to([3.45, JY, 0])
         jvl = M("job: version", 22, TEAL_M).move_to([-3.45, 1.0, 0])
         jbl = M("job: build   needs: version", 22, TEAL_M).move_to([3.45, 1.0, 0])
         ghl = gh[2]
         self.beat("Now the other problem: passing a value along. Each step runs in a new shell. Each job runs on a new machine.",
-                  ghl.animate.move_to([0, 2.9, 0]).set_opacity(1), Create(jv), FadeIn(jvl), Create(jb), FadeIn(jbl), run_time=2.4)
+                  ghl.animate.move_to([0, 3.3, 0]).set_opacity(1), Create(jv), FadeIn(jvl), Create(jb), FadeIn(jbl), run_time=2.4)
         s1 = VGroup(M('echo "version=1.4.0"', 20), M('>> "$GITHUB_OUTPUT"', 20)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         s1[1].shift(RIGHT * 0.4)
         s1.move_to([-3.45, 0.05, 0])
@@ -139,11 +139,11 @@ class D26WorkflowLogic(VoiceScene):
                    (1.2, Indicate(f, color=GOLD_M)), (1.4, TransformFromCopy(line, so)))
         # job output up to GitHub
         jo = M("job outputs: version", 20, TEAL_M).move_to([-3.45, -2.35, 0])
-        up = Arrow(jv.get_top() + RIGHT * 1.6, [-1.85, 2.45, 0], buff=0.05, stroke_width=3, color=YELLOW_M, max_tip_length_to_length_ratio=0.12)
-        val = chip("version = 1.4.0", YELLOW_M, 20, mono=True).move_to([0, 2.15, 0])
+        up = Arrow(jv.get_top() + RIGHT * 1.6, [-1.85, 2.4, 0], buff=0.05, stroke_width=3, color=YELLOW_M, max_tip_length_to_length_ratio=0.12)
+        val = chip("version = 1.4.0", YELLOW_M, 20, mono=True).move_to([0, 2.65, 0])
         self.steps("Between jobs you need one more hop, because jobs share nothing. The job's outputs block names the value. When the job ends, the runner sends it to GitHub.",
                    (2.2, Wait(2.2)), (1.0, FadeIn(jo)), (1.0, GrowArrow(up)), (1.0, travel(up, YELLOW_M, 1.0)), (0.8, FadeIn(val, shift=RIGHT * 0.2)))
-        dn = Arrow([1.85, 2.45, 0], jb.get_top() + LEFT * 1.6, buff=0.05, stroke_width=3, color=YELLOW_M, max_tip_length_to_length_ratio=0.12)
+        dn = Arrow([1.85, 2.4, 0], jb.get_top() + LEFT * 1.6, buff=0.05, stroke_width=3, color=YELLOW_M, max_tip_length_to_length_ratio=0.12)
         no = chip("needs.version.outputs.version", TEAL_M, 20, mono=True).move_to([3.45, 0.2, 0])
         bs = M('echo "Building $VERSION"', 20).move_to([3.45, -0.8, 0])
         self.steps("GitHub hands it to every job that needs this one. That job reads it as needs.version.outputs.version.",
@@ -151,12 +151,12 @@ class D26WorkflowLogic(VoiceScene):
         warn2 = T("never write a secret here: everyone who can read the run sees it", 24, RED_M).move_to([0, -3.3, 0])
         self.beat("Outputs are always strings. And never write a secret into these files. Everyone who can read the run can see them.",
                   FadeIn(warn2, shift=UP * 0.1), run_time=2.0)
-        self.play(FadeOut(VGroup(*self.mobjects)), run_time=0.7)
+        self.play(FadeOut(Group(*self.mobjects)), run_time=0.7)
 
         # ---- recap
         rc = VGroup(T("1. GitHub and the runner paste in expressions", 30, BLUE_M),
                     T("2. then the shell runs the finished text", 30, GOLD_M),
-                    T("values travel: file, step output, job output, needs", 30, TEAL_M)).arrange(DOWN, buff=0.45)
+                    T("3. values travel: file, step output, job output, needs", 30, TEAL_M)).arrange(DOWN, buff=0.45)
         self.beat("Expressions are pasted in first, then the shell runs the finished text. And a value travels from a file, to a step output, to a job output, and through needs.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.15) for r in rc], lag_ratio=0.5), run_time=5.0)
         self.wait(1.0)

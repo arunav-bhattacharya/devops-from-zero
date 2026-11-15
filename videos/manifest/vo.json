@@ -8,5 +8,55 @@
    "scene": "D32Loops",
    "poster_at": 150.0
   }
+ ],
+ "d34": [
+  {
+   "slug": "d34-modules",
+   "title": "One module, two calls, and a folder per environment",
+   "after": 0,
+   "file": "p8/d34_modules.py",
+   "scene": "D34Modules",
+   "poster_at": 100.0
+  }
+ ],
+ "d37": [
+  {
+   "slug": "d37-precedence",
+   "title": "Which value wins: Ansible variable precedence, then one template per host",
+   "after": 0,
+   "file": "p9/d37_precedence.py",
+   "scene": "D37Precedence",
+   "poster_at": 66.0
+  }
+ ],
+ "d04": [
+  {
+   "slug": "d04-grep-find",
+   "title": "grep picks lines, find picks files: options, a regex shape, and -exec",
+   "after": 1,
+   "file": "p1/d04_grep_find.py",
+   "scene": "D04GrepFind",
+   "poster_at": 122.0
+  }
+ ],
+ "d35": [
+  {
+   "slug": "d35-ci-oidc",
+   "title": "Terraform in CI with no stored keys: checks, plan, approval and the OIDC token swap",
+   "after": 3,
+   "file": "p8/d35_ci_oidc.py",
+   "scene": "D35CiOidc",
+   "poster_at": 146.0
+  }
+ ],
+ "d61": [
+  {
+   "slug": "d61-davis",
+   "title": "From four alerts to one problem: OneAgent, Smartscape and the Davis walk",
+   "after": 4,
+   "file": "p16/d61_davis.py",
+   "scene": "D61Davis",
+   "poster_at": 138.0
+  }
  ]
 }

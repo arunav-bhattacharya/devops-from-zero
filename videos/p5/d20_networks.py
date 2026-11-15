@@ -90,7 +90,7 @@ class D20Networks(VoiceScene):
         ipw = M("172.17.0.4", 20, GREY_B).next_to(cw, LEFT, buff=0.15).shift(DOWN * 0.05)
         ipr = M("172.17.0.5", 20, GREY_B).next_to(cr, LEFT, buff=0.15).shift(DOWN * 0.05)
         self.beat("Start a container without the network flag, and it joins this default network, called bridge. It gets an address such as 172.17.0.5.",
-                  FadeIn(ipw), Succession(Wait(2.4), AnimationGroup(FadeIn(ipr), Indicate(ipr, color=WHITE))), run_time=3.4)
+                  FadeIn(ipw), Succession(Wait(2.4), FadeIn(ipr, run_time=0.5), Indicate(ipr, color=WHITE, run_time=0.5)), run_time=3.4)
 
         ask = M("ping redis", 22, WHITE).next_to(web, DOWN, buff=0.35)
         bad = M("bad address 'redis'", 22, RED_M).next_to(ask, DOWN, buff=0.2)

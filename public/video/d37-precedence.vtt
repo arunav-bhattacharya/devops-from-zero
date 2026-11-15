@@ -1,0 +1,169 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.775
+Two web servers run the same playbook.
+
+2
+00:00:04.775 --> 00:00:08.708
+Each needs a greeting, and the two should be allowed to differ a little.
+
+3
+00:00:08.933 --> 00:00:11.763
+But a variable can be set in many places.
+
+4
+00:00:11.763 --> 00:00:13.419
+The docs list 22 levels.
+
+5
+00:00:13.419 --> 00:00:17.145
+In practice you need seven, from weakest to strongest.
+
+6
+00:00:17.767 --> 00:00:19.122
+Start at the bottom.
+
+7
+00:00:19.122 --> 00:00:22.172
+The role's defaults file says: Hello, DevOps!
+
+8
+00:00:22.172 --> 00:00:26.171
+That is only the author's suggestion, so it is the weakest.
+
+9
+00:00:26.400 --> 00:00:27.927
+Next, the inventory.
+
+10
+00:00:27.927 --> 00:00:35.181
+The file group_vars/web/vars.yml sets the greeting for the whole web group: Hello from Ansible.
+
+11
+00:00:35.400 --> 00:00:38.402
+It sits higher, so it wins on both servers.
+
+12
+00:00:38.402 --> 00:00:40.288
+The default is still there.
+
+13
+00:00:40.288 --> 00:00:41.265
+It just loses.
+
+14
+00:00:41.467 --> 00:00:46.689
+Now host_vars/web2.yml gives web2, the canary, its own text.
+
+15
+00:00:46.689 --> 00:00:48.691
+A host beats its group.
+
+16
+00:00:48.900 --> 00:00:52.661
+It names only web2, so web1 keeps the group's value.
+
+17
+00:00:52.867 --> 00:00:55.977
+What you type for one run beats everything.
+
+18
+00:00:55.977 --> 00:01:00.027
+Add -e with Hi from -e, and both hosts print Hi from -e.
+
+19
+00:01:00.233 --> 00:01:02.158
+But only for that one command.
+
+20
+00:01:02.158 --> 00:01:05.751
+Run again without it, and the inventory values are back.
+
+21
+00:01:05.967 --> 00:01:08.066
+So how do you know which one won?
+
+22
+00:01:08.066 --> 00:01:10.611
+Ansible never asks you, and never warns.
+
+23
+00:01:10.611 --> 00:01:13.347
+It picks the winner by this list, silently.
+
+24
+00:01:13.567 --> 00:01:15.844
+So you ask each host what it sees.
+
+25
+00:01:15.844 --> 00:01:19.529
+The debug module prints a variable after all the rules.
+
+26
+00:01:19.529 --> 00:01:22.141
+Here, exactly the two values on screen.
+
+27
+00:01:22.767 --> 00:01:24.754
+One level breaks the pattern.
+
+28
+00:01:24.754 --> 00:01:29.756
+Role vars, in the role's vars folder, sit above group_vars and host_vars.
+
+29
+00:01:29.967 --> 00:01:33.749
+Put the greeting there by mistake, and it beats the whole inventory.
+
+30
+00:01:33.967 --> 00:01:36.119
+Now change host_vars for web2.
+
+31
+00:01:36.119 --> 00:01:39.420
+Nothing happens, and Ansible gives no warning.
+
+32
+00:01:39.633 --> 00:01:46.552
+So defaults is for every setting a user may want to change, and vars is for the role's own fixed details.
+
+33
+00:01:47.767 --> 00:01:49.937
+Where does the winning value go?
+
+34
+00:01:49.937 --> 00:01:51.428
+Often into a template.
+
+35
+00:01:51.428 --> 00:01:54.955
+The template module reads a Jinja2 file on your Mac.
+
+36
+00:01:55.167 --> 00:01:57.570
+Double curly braces print a value.
+
+37
+00:01:57.570 --> 00:01:58.913
+Here, the greeting.
+
+38
+00:01:59.133 --> 00:02:05.305
+It fills the file in for each host, with that host's values, and copies the result to the server.
+
+39
+00:02:05.533 --> 00:02:07.029
+One file, two results.
+
+40
+00:02:07.029 --> 00:02:11.925
+Templates render on the control node, so the servers do not need Jinja2.
+
+41
+00:02:12.833 --> 00:02:20.664
+Put knobs in role defaults, shared values in group_vars, exceptions in host_vars, and one-off overrides in -e.
+
+42
+00:02:20.664 --> 00:02:24.793
+Set each value in one place, and ask Ansible what it sees.

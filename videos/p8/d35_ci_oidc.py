@@ -47,7 +47,7 @@ class D35CiOidc(VoiceScene):
 
         # 2. the pipeline
         names = (("pull request", GREY_B), ("checks", TEAL_M), ("plan", BLUE_M), ("approve", GOLD_M), ("apply", GREEN_M))
-        row = VGroup(*[box(n, c, w=2.2, h=0.72, size=24) for n, c in names]).arrange(RIGHT, buff=0.45).move_to([0, 3.0, 0])
+        row = VGroup(*[box(n, c, w=2.0, h=0.72, size=24) for n, c in names]).arrange(RIGHT, buff=0.6).move_to([0, 3.0, 0])
         rarr = VGroup(*[edge_arrow(row[i], row[i + 1]) for i in range(4)])
         self.beat("The lab's pipeline stores no key. It runs when anything under infra changes, in three jobs.",
                   FadeIn(row[0]), run_time=1.4)
@@ -63,9 +63,10 @@ class D35CiOidc(VoiceScene):
         self.beat("plan runs on pull requests, once the checks pass. It logs in to AWS, runs terraform plan, and puts the plan on the run's summary page for reviewers.",
                   GrowArrow(rarr[1]), FadeIn(row[2]), Succession(Wait(2.4), FadeIn(pd, shift=DOWN * 0.1)), run_time=4.2)
         ad = VGroup(T("after a merge to main", 22, GREY_B), T("waits in production", 22, GOLD_M), T("for a reviewer", 22, GOLD_M)).arrange(DOWN, buff=0.1).next_to(row[3], DOWN, buff=0.35)
+        self.play(FadeOut(pd), run_time=0.4)
         self.beat("apply runs after a merge to main. It waits in the production environment until a required reviewer approves. Then it plans and applies.",
                   GrowArrow(rarr[2]), FadeIn(row[3]), FadeIn(ad, shift=DOWN * 0.1), Succession(Wait(3.6), AnimationGroup(GrowArrow(rarr[3]), FadeIn(row[4]))), run_time=5.0)
-        self.play(FadeOut(pd), FadeOut(ad), run_time=0.5)
+        self.play(FadeOut(ad), run_time=0.5)
         q = T("two jobs log in to AWS. How, with no key?", 30, YELLOW_M).move_to([0, 0.6, 0])
         self.beat("So two jobs log in to AWS. How, with no key?",
                   FadeIn(q, shift=UP * 0.1), Indicate(row[2], color=BLUE_M), Indicate(row[4], color=GREEN_M), run_time=2.0)
@@ -76,7 +77,7 @@ class D35CiOidc(VoiceScene):
         gh = tbox("GitHub", "signs tokens", GREY_B, w=2.7, h=1.0).move_to([-5.0, -1.0, 0])
         aws = RoundedRectangle(corner_radius=0.15, width=4.2, height=4.15, stroke_color=GOLD_M, stroke_width=2.5).set_fill(tint(GOLD_M, 0.05), 1).move_to([4.55, -0.4, 0])
         awsl = T("AWS", 26, GOLD_M).next_to(aws, UP, buff=0.12).align_to(aws, LEFT)
-        prov = tbox("OIDC provider", "checks GitHub's signature, aud", PURPLE_M, w=3.9).move_to([4.55, 0.95, 0])
+        prov = tbox("OIDC provider", "checks the signature and aud", PURPLE_M, w=3.9).move_to([4.55, 0.95, 0])
         trust = tbox("role trust policy", "checks sub, exactly", PURPLE_M, w=3.9).move_to([4.55, -0.35, 0])
         perm = tbox("role permissions", "only buckets hello-devops-*", GREEN_M, w=3.9).move_to([4.55, -1.65, 0])
         jg = Arrow(job.get_bottom(), gh.get_top(), buff=0.12, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.15)
@@ -103,11 +104,11 @@ class D35CiOidc(VoiceScene):
         bad = M("sub: repo:you/other-repo:pull_request", 20, RED_M).move_to(claims[1], aligned_edge=LEFT)
         err = M("Not authorized to perform sts:AssumeRoleWithWebIdentity", 20, RED_M).move_to([0.6, -3.35, 0])
         good = claims[1].copy()
-        self.beat("If the sub names any other repo, the login fails with: Not authorized to perform sts:AssumeRoleWithWebIdentity. So check the sub first.",
-                  Transform(claims[1], bad), trust[0].animate.set_stroke(RED_M), Succession(Wait(2.0), FadeIn(err, shift=UP * 0.1)), run_time=3.6)
+        self.steps("If the sub names any other repo, the login fails with: Not authorized to perform sts:AssumeRoleWithWebIdentity. So check the sub first.",
+                   (0.6, FadeOut(claims[1]), FadeIn(bad), trust[0].animate.set_stroke(RED_M)), (1.4, Wait(1.4)), (0.8, FadeIn(err, shift=UP * 0.1)))
         ok2 = tick(True, 0.18).next_to(trust, LEFT, buff=0.15)
         self.beat("With the right sub, it passes.",
-                  Transform(claims[1], good), trust[0].animate.set_stroke(PURPLE_M), FadeOut(err), Create(ok2), run_time=1.6)
+                  FadeOut(bad), FadeIn(claims[1]), trust[0].animate.set_stroke(PURPLE_M), FadeOut(err), Create(ok2), run_time=1.6)
         cred = chip("short-lived credentials", GREEN_M, 22).move_to([0.0, 0.9, 0])
         self.steps("Then AWS hands back short-lived credentials for that role. No key was stored anywhere.",
                    (0.6, FadeOut(tok)), (0.6, FadeIn(cred, shift=LEFT * 0.2)), (1.4, cred.animate.move_to([-1.6, 1.55, 0])))

@@ -54,7 +54,7 @@ class D61Davis(VoiceScene):
         self.beat("It loads a small code module into supported processes. The module records each request as it passes through. Nobody changed the code.",
                   LaggedStart(*[Indicate(s, color=GOLD_M, scale_factor=1.05) for s in svc], lag_ratio=0.2), run_time=3.2)
         calls = VGroup(*[edge_arrow(svc[i], svc[i + 1], GREY_B) for i in range(3)])
-        hdr = M("trace header", 20, GOLD_M).next_to(calls[0], UP, buff=0.15)
+        hdr = M("trace header", 20, GOLD_M).move_to([calls[0].get_center()[0], Y + 0.68, 0])
         qmap = T("but how does it know who calls whom?", 28, YELLOW_M).move_to([0, 2.7, 0])
         self.beat("But how does it know who calls whom?", FadeIn(qmap, shift=DOWN * 0.1), run_time=1.4)
         self.steps("The module in the caller adds a trace header to each outgoing request. The module in the receiver reads it. So both ends of the call are linked.",
@@ -76,7 +76,7 @@ class D61Davis(VoiceScene):
         sym = VGroup(*[chip(t, RED_M, 20).next_to(svc[i], DOWN, buff=0.3) for i, t in ((0, "slow"), (1, "slow, errors"), (2, "errors"))])
         self.beat("At 10:02, three services leave their baselines. Davis sees the same symptoms as events.",
                   *[svc[i][0].animate.set_stroke(RED_M) for i in range(3)], LaggedStart(*[FadeIn(s, shift=UP * 0.1) for s in sym], lag_ratio=0.3), run_time=2.6)
-        walker = RoundedRectangle(corner_radius=0.18, width=2.75, height=1.15, color=YELLOW_M, stroke_width=4).move_to(svc[0])
+        walker = RoundedRectangle(corner_radius=0.18, width=2.56, height=1.0, color=YELLOW_M, stroke_width=4).move_to(svc[0])
         self.beat("Then it walks. It starts at the affected entity, web, and follows the links to what web depends on.",
                   Create(walker), run_time=1.8)
         self.steps("At each one it asks: are you unhealthy too? checkout is. So Davis keeps going down.",

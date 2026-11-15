@@ -1,0 +1,225 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.452
+You have a list of three names: alpha, bravo and charlie.
+
+2
+00:00:06.452 --> 00:00:08.559
+You want one file for each name.
+
+3
+00:00:08.767 --> 00:00:16.268
+To make several copies of a resource, you need a meta-argument, an argument Terraform itself reads on any resource.
+
+4
+00:00:16.268 --> 00:00:18.551
+There are two: count, and for_each.
+
+5
+00:00:18.767 --> 00:00:20.071
+count takes a number.
+
+6
+00:00:20.071 --> 00:00:22.492
+Here, the length of the list, so three.
+
+7
+00:00:22.700 --> 00:00:28.723
+It makes three copies, and count.index tells each copy its number: zero, one and two.
+
+8
+00:00:28.933 --> 00:00:31.601
+Copy zero reads the name in place zero.
+
+9
+00:00:31.601 --> 00:00:35.773
+So the files say hello alpha, hello bravo, and hello charlie.
+
+10
+00:00:36.000 --> 00:00:40.444
+But how does Terraform tell these copies apart, from one run to the next?
+
+11
+00:00:40.667 --> 00:00:41.804
+By its address.
+
+12
+00:00:41.804 --> 00:00:45.140
+The first file is local_file.by_count, zero.
+
+13
+00:00:45.140 --> 00:00:47.641
+A copy's address is its identity.
+
+14
+00:00:47.867 --> 00:00:50.001
+With count, the address is a number.
+
+15
+00:00:50.001 --> 00:00:53.853
+It says where the copy sits in the list, not which name it holds.
+
+16
+00:00:54.467 --> 00:00:57.771
+Now delete alpha from the list, and run plan.
+
+17
+00:00:57.771 --> 00:01:00.489
+You might expect only one file to go.
+
+18
+00:01:00.489 --> 00:01:00.929
+Watch.
+
+19
+00:01:01.133 --> 00:01:04.006
+Every name after alpha moves up one place.
+
+20
+00:01:04.006 --> 00:01:07.632
+Bravo is now in place zero, and charlie in place one.
+
+21
+00:01:08.433 --> 00:01:10.991
+Terraform compares address by address.
+
+22
+00:01:10.991 --> 00:01:12.808
+Copy zero said hello alpha.
+
+23
+00:01:12.808 --> 00:01:14.692
+Now it must say hello bravo.
+
+24
+00:01:14.692 --> 00:01:18.124
+The content changed, and that forces a replacement.
+
+25
+00:01:18.333 --> 00:01:20.260
+The same happens to copy one.
+
+26
+00:01:20.260 --> 00:01:23.915
+It said hello bravo, and now it must say hello charlie.
+
+27
+00:01:24.133 --> 00:01:25.986
+And copy two is out of range.
+
+28
+00:01:25.986 --> 00:01:29.245
+There is no place two any more, so it is destroyed.
+
+29
+00:01:29.467 --> 00:01:32.503
+You removed one name, and three files were touched.
+
+30
+00:01:33.233 --> 00:01:36.312
+Put alpha back, and try the same thing with for_each.
+
+31
+00:01:36.533 --> 00:01:39.218
+for_each takes a map, or a set of strings.
+
+32
+00:01:39.218 --> 00:01:42.413
+A plain list is rejected, so you wrap it in toset.
+
+33
+00:01:42.633 --> 00:01:47.300
+Each key becomes one copy, and the key is in the address.
+
+34
+00:01:47.300 --> 00:01:49.428
+local_file.by_each, alpha.
+
+35
+00:01:49.428 --> 00:01:49.920
+Bravo.
+
+36
+00:01:49.920 --> 00:01:50.575
+Charlie.
+
+37
+00:01:50.800 --> 00:01:53.900
+Here, the identity is the name, not a position.
+
+38
+00:01:54.133 --> 00:01:55.697
+Delete alpha again.
+
+39
+00:01:55.900 --> 00:01:58.488
+The count row shifts, just like before.
+
+40
+00:01:58.488 --> 00:02:01.076
+Two copies replaced, and one destroyed.
+
+41
+00:02:01.300 --> 00:02:05.334
+In the for_each row, the key alpha is not in the set any more.
+
+42
+00:02:05.334 --> 00:02:07.351
+So only that copy is destroyed.
+
+43
+00:02:07.567 --> 00:02:11.981
+Bravo and charlie keep their names, so their addresses did not change.
+
+44
+00:02:11.981 --> 00:02:13.873
+They stay exactly as they are.
+
+45
+00:02:14.500 --> 00:02:18.653
+The real plan says: 2 to add, 0 to change, 4 to destroy.
+
+46
+00:02:18.653 --> 00:02:21.916
+A replace counts as one destroy and one add.
+
+47
+00:02:22.133 --> 00:02:26.108
+Three of the four destroys come from count, for one removed name.
+
+48
+00:02:26.333 --> 00:02:28.166
+Files are cheap to replace.
+
+49
+00:02:28.166 --> 00:02:31.424
+Containers with data, or cloud servers, are not.
+
+50
+00:02:32.333 --> 00:02:34.309
+The docs give simple advice.
+
+51
+00:02:34.309 --> 00:02:38.683
+Use count for nearly identical copies, or as an on-off switch.
+
+52
+00:02:38.900 --> 00:02:42.619
+Use for_each when each copy has its own name or settings.
+
+53
+00:02:42.833 --> 00:02:44.598
+One limit applies to both.
+
+54
+00:02:44.598 --> 00:02:52.063
+The plan lists every copy by its address, so Terraform must know the count or the keys before anything exists.
+
+55
+00:02:52.267 --> 00:02:56.944
+So remember: count copies are known by position, and positions shift.
+
+56
+00:02:56.944 --> 00:03:01.283
+for_each copies are known by name, so only the removed one goes.

@@ -11,7 +11,7 @@ def tint(c, k=0.14):
 
 
 def stage_box(cx, title, color):
-    r = RoundedRectangle(corner_radius=0.18, width=5.9, height=5.0, stroke_color=color, stroke_width=3).set_fill(BLACK, 1).move_to([cx, 0.1, 0])
+    r = RoundedRectangle(corner_radius=0.18, width=5.9, height=5.0, stroke_color=color, stroke_width=3).set_fill(BLACK, 0).move_to([cx, 0.1, 0])
     t = T(title, 26, color).next_to(r.get_corner(UL), DR, buff=0.2)
     return VGroup(r, t)
 
@@ -24,7 +24,7 @@ def base_bar(cx):
 
 
 def venv_box(cx):
-    r = RoundedRectangle(corner_radius=0.12, width=5.2, height=1.75, stroke_color=GOLD_M, stroke_width=3).set_fill(tint(GOLD_M, 0.1), 1).move_to([cx, -0.3, 0])
+    r = RoundedRectangle(corner_radius=0.12, width=5.2, height=1.85, stroke_color=GOLD_M, stroke_width=3).set_fill(tint(GOLD_M, 0.1), 1).move_to([cx, -0.25, 0])
     t = M("/venv", 22, GOLD_M).next_to(r.get_corner(UL), DR, buff=0.14)
     return VGroup(r, t)
 
@@ -33,8 +33,8 @@ def pkgs(vb):
     names = ["flask", "gunicorn", "redis", "prometheus-client"]
     cs = VGroup(*[chip(n, TEAL_M, 20, mono=True) for n in names])
     row1 = VGroup(cs[0], cs[1], cs[2]).arrange(RIGHT, buff=0.15)
-    row1.move_to(vb[0]).shift(UP * 0.05 + LEFT * 0.35)
-    cs[3].next_to(row1, DOWN, buff=0.12).align_to(row1, LEFT)
+    row1.move_to(vb[0]).shift(UP * 0.17 + LEFT * 0.35)
+    cs[3].next_to(row1, DOWN, buff=0.1).align_to(row1, LEFT)
     return cs
 
 
@@ -115,10 +115,10 @@ class D22Multistage(VoiceScene):
         the_img = T("this becomes the image", 24, BLUE_M).next_to(fb[0], DOWN, buff=0.25)
         self.beat("Only the last stage becomes the image. The build stage stays behind, in the build cache, on the machine that built it.",
                   Succession(Wait(0.4), FadeIn(the_img, shift=UP * 0.1), fb[0].animate.set_stroke(width=5)),
-                  Succession(Wait(2.4), AnimationGroup(VGroup(sb, bl, vb, pk).animate.set_opacity(0.3), FadeIn(cache, shift=UP * 0.1))), run_time=4.6)
+                  Succession(Wait(2.4), AnimationGroup(VGroup(sb, bl, pl, vb, pk).animate.set_opacity(0.3), FadeIn(cache, shift=UP * 0.1))), run_time=4.6)
 
         # ---- 3. run as a normal user
-        self.play(FadeOut(VGroup(sb, bl, vb, pk, cache)), run_time=0.5)
+        self.play(FadeOut(VGroup(sb, bl, pl, vb, pk, cache)), run_time=0.5)
         user = chip("runs as: root, user ID 0", RED_M, 24).move_to([LX, 0.6, 0])
         self.beat("Next, the user. A container runs as root, user ID 0, unless the image says otherwise.",
                   FadeIn(user, shift=RIGHT * 0.15), run_time=1.6)

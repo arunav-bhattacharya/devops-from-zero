@@ -1,0 +1,197 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:08.884
+PayFlow, the made-up payments company, wants its checkout API to keep running when things break.
+
+2
+00:00:09.067 --> 00:00:11.082
+Things fail at every size.
+
+3
+00:00:11.082 --> 00:00:12.323
+One server dies.
+
+4
+00:00:12.467 --> 00:00:14.137
+So run two copies.
+
+5
+00:00:14.333 --> 00:00:17.011
+But both copies sit in one data center.
+
+6
+00:00:17.011 --> 00:00:20.512
+If it loses power or floods, both go down together.
+
+7
+00:00:20.667 --> 00:00:24.128
+So run copies in two or more availability zones.
+
+8
+00:00:24.128 --> 00:00:31.987
+AWS describes a zone as one or more separate data centers, with their own power, networking and connectivity.
+
+9
+00:00:32.133 --> 00:00:34.790
+The zones are linked by fast private fiber.
+
+10
+00:00:34.790 --> 00:00:40.104
+Close enough for fast traffic between them, and far enough apart not to fail together.
+
+11
+00:00:40.267 --> 00:00:46.039
+The zones sit inside a region, a geographic area, such as eu-central-1 in Frankfurt.
+
+12
+00:00:46.039 --> 00:00:50.712
+For most apps, two or three zones in one region is the right amount.
+
+13
+00:00:50.867 --> 00:00:52.444
+Now the network.
+
+14
+00:00:52.444 --> 00:00:57.767
+A VPC is your own private network inside the provider.
+
+15
+00:00:57.767 --> 00:01:01.809
+You give it a private block, 10.0.0.0/16.
+
+16
+00:01:02.000 --> 00:01:05.381
+Then you split it into subnets, smaller blocks.
+
+17
+00:01:05.381 --> 00:01:08.618
+In AWS each subnet lives in exactly one zone.
+
+18
+00:01:08.618 --> 00:01:11.855
+So an app in two zones needs subnets in both.
+
+19
+00:01:12.000 --> 00:01:16.264
+AWS keeps 5 addresses in every subnet.
+
+20
+00:01:16.264 --> 00:01:21.763
+So a /24 gives you 251 usable addresses, not 256.
+
+21
+00:01:21.933 --> 00:01:23.650
+So which ones are public?
+
+22
+00:01:23.650 --> 00:01:25.298
+Not because of the name.
+
+23
+00:01:25.298 --> 00:01:26.945
+The route table decides.
+
+24
+00:01:27.133 --> 00:01:30.684
+Every route table has a local route.
+
+25
+00:01:30.684 --> 00:01:37.984
+10.0.0.0/16 goes to local, so all subnets in the VPC can reach each other.
+
+26
+00:01:38.133 --> 00:01:49.681
+A public subnet adds 0.0.0.0/0, the default route that means every address, to an internet gateway, the VPC's front door.
+
+27
+00:01:49.867 --> 00:01:52.594
+So the load balancer goes here, in both zones.
+
+28
+00:01:52.594 --> 00:01:56.152
+It can have a public address, and the internet can reach it.
+
+29
+00:01:56.333 --> 00:02:01.975
+A private subnet sends 0.0.0.0/0 to a NAT gateway instead.
+
+30
+00:02:01.975 --> 00:02:06.352
+Each zone gets its own, in its public subnet.
+
+31
+00:02:06.533 --> 00:02:09.655
+The app and the database go in the private subnets.
+
+32
+00:02:09.800 --> 00:02:13.720
+Their machines can reach out, for example to download packages.
+
+33
+00:02:13.720 --> 00:02:17.515
+The NAT gateway sends them out, under its own public address.
+
+34
+00:02:17.667 --> 00:02:21.117
+But nobody outside can start a connection to them.
+
+35
+00:02:21.117 --> 00:02:22.843
+Only replies get back in.
+
+36
+00:02:23.000 --> 00:02:31.441
+So the request goes to the load balancer, and the load balancer forwards it to the app.
+
+37
+00:02:31.441 --> 00:02:34.255
+That follows the local route.
+
+38
+00:02:34.255 --> 00:02:42.113
+10.0.0.0/16 is more specific than 0.0.0.0/0, so the traffic stays inside the VPC.
+
+39
+00:02:42.267 --> 00:02:45.996
+Even a wrong firewall rule cannot expose the app directly.
+
+40
+00:02:45.996 --> 00:02:49.853
+It has no public address, and no route in from the internet.
+
+41
+00:02:50.000 --> 00:02:51.799
+Now zone a loses power.
+
+42
+00:02:51.933 --> 00:02:53.350
+Zone b keeps working.
+
+43
+00:02:53.350 --> 00:03:02.123
+It has its own load balancer, its own app, and its own NAT gateway, because each private subnet routes to the NAT in its own zone.
+
+44
+00:03:02.267 --> 00:03:07.841
+One shared NAT gateway would be cheaper, and many teams accept that for test environments.
+
+45
+00:03:08.000 --> 00:03:09.239
+And watch the bill.
+
+46
+00:03:09.239 --> 00:03:14.520
+The load balancer and the two NAT gateways bill every hour, even with no traffic.
+
+47
+00:03:14.667 --> 00:03:17.788
+So that is the list you delete first, after a test.
+
+48
+00:03:17.933 --> 00:03:19.692
+Spread copies across zones.
+
+49
+00:03:19.692 --> 00:03:24.773
+And remember, the route table, not the name, makes a subnet public or private.

@@ -1,0 +1,29 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.084
+How long do requests to / take?
+
+2
+00:00:05.084 --> 00:00:07.468
+An average hides the slow ones.
+
+3
+00:00:07.468 --> 00:00:11.083
+So teams ask for a percentile, such as the p95.
+
+4
+00:00:11.333 --> 00:00:19.446
+A p95 of 200 milliseconds means 95% of requests took 200 milliseconds or less.
+
+5
+00:00:19.599 --> 00:00:23.933
+In PromQL, the p95 for hello-devops is this one line.
+
+6
+00:00:23.933 --> 00:00:25.159
+It looks scary.
+
+7
+00:00:25.159 --> 00:00:27.449
+Read it from the inside out.

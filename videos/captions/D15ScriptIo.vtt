@@ -1,0 +1,177 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.325
+A CI job runs your script on every push.
+
+2
+00:00:05.325 --> 00:00:08.409
+It cannot read the messages your script prints.
+
+3
+00:00:08.633 --> 00:00:11.272
+It looks at one number, the exit code.
+
+4
+00:00:11.272 --> 00:00:14.258
+So do systemd, cron, and Kubernetes probes.
+
+5
+00:00:14.258 --> 00:00:18.147
+They decide success or failure from the exit code alone.
+
+6
+00:00:18.867 --> 00:00:20.686
+So picture the script as a box.
+
+7
+00:00:20.686 --> 00:00:24.149
+Things come in on the left, and results leave on the right.
+
+8
+00:00:24.367 --> 00:00:29.472
+Inputs come from three places: arguments, environment variables, and files.
+
+9
+00:00:29.700 --> 00:00:35.659
+And results leave on three separate channels: stdout, stderr, and the exit code.
+
+10
+00:00:35.867 --> 00:00:39.979
+argparse turns the words of the command line into named values.
+
+11
+00:00:39.979 --> 00:00:42.003
+Like the limit, max error rate.
+
+12
+00:00:42.233 --> 00:00:45.909
+The same setting can also come from an environment variable.
+
+13
+00:00:46.133 --> 00:00:47.426
+So which one wins?
+
+14
+00:00:47.426 --> 00:00:51.303
+argparse uses a default only when the flag is missing.
+
+15
+00:00:51.303 --> 00:00:56.329
+So a flag beats the variable, and the variable beats the built-in 1.0.
+
+16
+00:00:57.033 --> 00:01:01.328
+The file is the access log, with 238 requests in it.
+
+17
+00:01:01.533 --> 00:01:03.523
+Run it with no limit given.
+
+18
+00:01:03.523 --> 00:01:05.365
+The default is 1 percent.
+
+19
+00:01:05.567 --> 00:01:09.931
+It counts 11 server errors out of 238 requests.
+
+20
+00:01:09.931 --> 00:01:11.788
+That is 4.6 percent.
+
+21
+00:01:12.000 --> 00:01:16.188
+The report goes to stdout, the only stream a pipe passes on.
+
+22
+00:01:16.400 --> 00:01:20.652
+The reason it failed goes to stderr, in one line for people.
+
+23
+00:01:20.867 --> 00:01:25.548
+And 4.6 is above the 1 percent limit, so the exit code is 1.
+
+24
+00:01:25.548 --> 00:01:27.187
+The CI job turns red.
+
+25
+00:01:27.187 --> 00:01:29.761
+You wrote no extra code for that.
+
+26
+00:01:29.967 --> 00:01:34.511
+Raise the limit to 5 with the flag, and the same log passes.
+
+27
+00:01:34.511 --> 00:01:35.420
+Exit code 0.
+
+28
+00:01:35.633 --> 00:01:41.863
+With format json, stdout holds only JSON, because every message went to stderr.
+
+29
+00:01:41.863 --> 00:01:45.332
+So you can pipe it into jq, with no cleanup.
+
+30
+00:01:46.033 --> 00:01:48.793
+Every script in the lab keeps one contract.
+
+31
+00:01:48.793 --> 00:01:50.077
+Zero means all good.
+
+32
+00:01:50.077 --> 00:01:52.388
+One means the check found a problem.
+
+33
+00:01:52.388 --> 00:01:55.084
+Two means the script could not do its job.
+
+34
+00:01:55.300 --> 00:01:57.483
+Give it a file that is not there.
+
+35
+00:01:57.483 --> 00:02:02.972
+The script catches FileNotFoundError by name, prints one clear line, and returns 2.
+
+36
+00:02:03.200 --> 00:02:08.305
+Now a caller can tell the error rate is too high apart from the log file is missing.
+
+37
+00:02:09.033 --> 00:02:10.814
+Here is the mistake to avoid.
+
+38
+00:02:10.814 --> 00:02:13.761
+Wrap the whole script in except Exception, pass.
+
+39
+00:02:13.967 --> 00:02:16.603
+Now a crash becomes a silent success.
+
+40
+00:02:16.603 --> 00:02:20.807
+The script exits 0, CI goes green, and nothing was checked.
+
+41
+00:02:21.033 --> 00:02:23.444
+Catch the errors you expect, by name.
+
+42
+00:02:23.444 --> 00:02:30.220
+Say on stderr what went wrong, return a non-zero code, and let everything else crash with its traceback.
+
+43
+00:02:30.933 --> 00:02:37.372
+So: the report goes to stdout, the reasons go to stderr, and the verdict is the exit code.
+
+44
+00:02:37.372 --> 00:02:40.376
+That number is the whole interface for CI.

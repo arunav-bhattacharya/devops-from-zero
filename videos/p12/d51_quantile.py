@@ -7,7 +7,8 @@ SAY.extend([
     (r"\brate\(\)", "rate"),
 ])
 
-QUERY = 'histogram_quantile(0.95, sum by (le) (rate(hello_request_duration_seconds_bucket{path="/"}[5m])))'
+Q1 = 'histogram_quantile(0.95, sum by (le) ('
+Q2 = 'rate(hello_request_duration_seconds_bucket{path="/"}[5m])))'
 LES = ["0.005", "0.01", "0.025", "0.05"]
 NOW = [36000, 72000, 87300, 90000]          # each bucket's total at "now"
 STEP = [600, 1200, 1455, 1500]              # growth per 15 s scrape: 40, 80, 97, 100 per second
@@ -36,7 +37,10 @@ class D51Quantile(VoiceScene):
         self.title_card("A p95 latency query, inside out", "select, range, rate, sum by le, then the quantile")
 
         # ---- 0. the question
-        q = M(QUERY, 20, GREY_B).move_to([0, 3.4, 0])
+        q1, q2 = M(Q1, 20, GREY_B), M(Q2, 20, GREY_B)
+        q = VGroup(q1, q2).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
+        q2.shift(RIGHT * 2 * M("x" * 40, 20).width / 40)
+        q.move_to([0, 3.25, 0])
         p95 = VGroup(T("p95 = 200 ms", 34, YELLOW_M), T("95% of requests took 200 ms or less", 28, GREY_B)).arrange(DOWN, buff=0.3).move_to([0, 0.6, 0])
         self.beat("How long do requests to / take? An average hides the slow ones. So teams ask for a percentile, such as the p95.",
                   FadeIn(p95[0], shift=UP * 0.1), run_time=2.0)
@@ -57,12 +61,13 @@ class D51Quantile(VoiceScene):
             return steps[i][0].animate.set_stroke(width=6 if on else 3)
 
         def qpart(i, color):
-            return part(q, QUERY, pieces[i]).animate.set_color(color)
+            line, full = (q1, Q1) if i >= 3 else (q2, Q2)
+            return part(line, full, pieces[i]).animate.set_color(color)
 
         # ---- 1. selector: one series per bucket
         heads = VGroup(*[M(f'le="{v}"', 20, BLUE_M).move_to([x, 2.15, 0]) for v, x in zip(LES, CX)])
         dots = M("...", 22, GREY_B).move_to([6.35, 2.15, 0])
-        hist = T("each bucket is a counter: requests that took this long or less", 24, GREY_B).move_to([2.2, 2.75, 0])
+        hist = T("each bucket is a counter: requests that took this long or less", 24, GREY_B).move_to([2.2, 2.6, 0])
         self.beat("Latency lives in a histogram. Each bucket is a counter, and its le label is a limit, in seconds.",
                   light(0), qpart(0, BLUE_M), LaggedStart(*[FadeIn(h, shift=DOWN * 0.1) for h in heads], lag_ratio=0.2), FadeIn(dots), run_time=3.0)
         self.beat("The selector picks every bucket series for path /. One series per bucket, so one column per series.",
@@ -129,7 +134,7 @@ class D51Quantile(VoiceScene):
         self.beat("Step five, histogram_quantile, with 0.95. Draw each bucket as a bar.",
                   light(3, False), light(4), qpart(4, PURPLE_M), Create(base),
                   *[ReplacementTransform(rrow[i], bars[i]) for i in range(4)], heads.animate.move_to([heads.get_x(), B0 - 0.3, 0]), run_time=3.0)
-        vals = VGroup(*[M(str(r), 22, WHITE).next_to(b, LEFT, buff=0.12).align_to(b, UP) for r, b in zip(RATES, bars)])
+        vals = VGroup(*[M(str(r), 22, WHITE).move_to(b.get_top() + DOWN * 0.32) for r, b in zip(RATES, bars)])
         line95 = DashedLine([-2.0, B0 + 95 * SC, 0], [6.4, B0 + 95 * SC, 0], dash_length=0.1, stroke_width=2.5, color=YELLOW_M)
         l95 = T("95% of 100 = 95", 24, YELLOW_M).move_to([-0.9, B0 + 95 * SC + 0.45, 0])
         self.add(vals)

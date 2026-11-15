@@ -1,0 +1,193 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.697
+The Day 19 image has one stage.
+
+2
+00:00:04.697 --> 00:00:07.919
+So everything used to build the app ships with it.
+
+3
+00:00:08.133 --> 00:00:12.511
+pip is there, and so is anything a compiler step would leave behind.
+
+4
+00:00:12.511 --> 00:00:14.120
+And the app runs as root.
+
+5
+00:00:14.333 --> 00:00:16.136
+None of it helps at run time.
+
+6
+00:00:16.136 --> 00:00:24.715
+But all of it needs patching, all of it shows up in scan reports, and an attacker who gets into the container can use those tools as well.
+
+7
+00:00:25.533 --> 00:00:27.607
+A multi-stage build fixes that.
+
+8
+00:00:27.607 --> 00:00:33.760
+One Dockerfile holds several FROM lines, and each one starts a new stage, from a clean base.
+
+9
+00:00:33.967 --> 00:00:36.217
+The first stage is called build.
+
+10
+00:00:36.217 --> 00:00:42.407
+It makes a virtual environment in /venv: one folder that holds a set of Python packages.
+
+11
+00:00:42.633 --> 00:00:44.943
+It installs the requirements into it.
+
+12
+00:00:44.943 --> 00:00:49.687
+Then it removes pip from it, because pip is only needed to install packages.
+
+13
+00:00:49.900 --> 00:00:54.323
+The final stage starts again, from a fresh python:3.14-slim.
+
+14
+00:00:54.323 --> 00:00:57.124
+Nothing from the build stage is in it.
+
+15
+00:00:57.333 --> 00:00:59.941
+It removes the base image's own pip too.
+
+16
+00:00:59.941 --> 00:01:01.571
+The app does not need it.
+
+17
+00:01:01.800 --> 00:01:03.205
+Now the key line.
+
+18
+00:01:03.205 --> 00:01:10.645
+COPY --from=build copies one thing across: the /venv folder, with every package inside it.
+
+19
+00:01:10.867 --> 00:01:12.550
+Then it copies app.py.
+
+20
+00:01:12.550 --> 00:01:19.435
+And it puts /venv/bin first on the PATH, so the gunicorn in the venv is the one that runs.
+
+21
+00:01:19.667 --> 00:01:21.992
+Only the last stage becomes the image.
+
+22
+00:01:21.992 --> 00:01:26.827
+The build stage stays behind, in the build cache, on the machine that built it.
+
+23
+00:01:27.533 --> 00:01:28.747
+Next, the user.
+
+24
+00:01:28.747 --> 00:01:34.331
+A container runs as root, user ID 0, unless the image says otherwise.
+
+25
+00:01:34.533 --> 00:01:36.473
+Namespaces fence the process in.
+
+26
+00:01:36.473 --> 00:01:38.958
+But it is still root, on a shared kernel.
+
+27
+00:01:38.958 --> 00:01:43.321
+If an attacker breaks out through a bug, they arrive with root's rights.
+
+28
+00:01:43.533 --> 00:01:45.001
+Two lines fix it.
+
+29
+00:01:45.001 --> 00:01:50.526
+useradd creates a normal user, with ID 10001 and no home folder.
+
+30
+00:01:50.526 --> 00:01:54.497
+USER 10001 makes the running container use it.
+
+31
+00:01:54.700 --> 00:01:56.917
+Write the number, not the name.
+
+32
+00:01:56.917 --> 00:02:04.783
+10001 is plainly not zero, so Kubernetes can check that it runs as non-root, without looking inside the image.
+
+33
+00:02:05.000 --> 00:02:07.706
+The files you copied in still belong to root.
+
+34
+00:02:07.706 --> 00:02:11.013
+So the app can read its own code, but cannot change it.
+
+35
+00:02:11.013 --> 00:02:13.297
+Neither can anyone who breaks into it.
+
+36
+00:02:14.100 --> 00:02:15.987
+Now check what changed.
+
+37
+00:02:15.987 --> 00:02:19.596
+The app runs as user 10001, and pip is gone.
+
+38
+00:02:19.800 --> 00:02:23.988
+For this small Python app, the size barely moves.
+
+39
+00:02:23.988 --> 00:02:27.835
+The content went from 51.8 megabytes to 49.6.
+
+40
+00:02:28.067 --> 00:02:30.081
+The bigger gain is in the scan.
+
+41
+00:02:30.081 --> 00:02:34.433
+Five HIGH findings sat in libraries that pip carries inside itself.
+
+42
+00:02:34.433 --> 00:02:36.577
+When pip left, they left with it.
+
+43
+00:02:37.300 --> 00:02:40.576
+For a Kotlin service the difference is large.
+
+44
+00:02:40.576 --> 00:02:43.415
+The build stage holds a JDK and Gradle.
+
+45
+00:02:43.415 --> 00:02:47.347
+The final stage needs only a Java runtime and the jar.
+
+46
+00:02:48.067 --> 00:02:50.641
+Build with the tools in one stage.
+
+47
+00:02:50.641 --> 00:02:52.686
+Copy across only what runs.
+
+48
+00:02:52.686 --> 00:02:55.639
+And ship the last stage, as user 10001.

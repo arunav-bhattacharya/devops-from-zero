@@ -133,7 +133,7 @@ class D29Dependencies(VoiceScene):
         fast = T("upgrade it, and app does not recompile", 26, GREEN_M).move_to([0, -3.3, 0])
         self.beat("It also saves build time. When you upgrade an implementation dependency, the projects that use yours do not recompile.",
                   Indicate(ct, color=GREEN_M), FadeIn(fast, shift=UP * 0.1), run_time=2.4)
-        self.play(FadeOut(VGroup(*self.mobjects)), run_time=0.7)
+        self.play(FadeOut(Group(*self.mobjects)), run_time=0.7)
 
         # ---- recap
         rc = VGroup(T("transitive dependencies come along with every library", 30, PURPLE_M),

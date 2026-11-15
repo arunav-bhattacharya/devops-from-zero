@@ -141,7 +141,7 @@ class D34Modules(VoiceScene):
                   run_time=None)
         site = box("modules/site", GOLD_M, w=3.0, h=0.85, size=26).move_to([0, 2.4, 0])
         ed = card([("envs/dev", BLUE_M), ('name = "site-dev"', WHITE), ("port = 8201", WHITE)], BLUE_M, size=20, w=3.4).move_to([-3.6, -0.1, 0])
-        ep = card([("envs/prod", RED_M), ("port = 8202", WHITE), ('message = "Hello from prod"', WHITE)], RED_M, size=20, w=3.4).move_to([3.6, -0.1, 0])
+        ep = card([("envs/prod", RED_M), ("port = 8202", WHITE), ('message = "Hello from prod"', WHITE)], RED_M, size=20, w=4.4).move_to([3.6, -0.1, 0])
         ad = edge_arrow(ed, site, BLUE_M); ap = edge_arrow(ep, site, RED_M)
         self.beat("Each one is a short root. A provider, and one call to the shared module. Only the arguments differ.",
                   FadeIn(site), FadeIn(ed), FadeIn(ep), Succession(Wait(1.0), AnimationGroup(GrowArrow(ad), GrowArrow(ap))), run_time=3.0)

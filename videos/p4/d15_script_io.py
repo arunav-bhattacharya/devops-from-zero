@@ -46,11 +46,11 @@ class D15ScriptIo(VoiceScene):
         self.play(FadeOut(VGroup(ci, ca, num, back, who)), run_time=0.5)
 
         # 1. the box: three ins, three outs
-        core_r = RoundedRectangle(corner_radius=0.15, width=2.9, height=2.6, stroke_color=WHITE, stroke_width=3).set_fill(BLACK, opacity=1).move_to([0, 0.2, 0])
+        core_r = RoundedRectangle(corner_radius=0.15, width=3.2, height=2.6, stroke_color=WHITE, stroke_width=3).set_fill(BLACK, opacity=0).move_to([0, 0.2, 0])
         core_t = VGroup(M("logsum.py", 26), M("main(argv) -> int", 20, GREY_B)).arrange(DOWN, buff=0.2).move_to(core_r.get_center() + UP * 0.45)
         lim = M("limit 1.0%", 22, YELLOW_M).move_to(core_r.get_center() + DOWN * 0.6)
         self.beat("So picture the script as a box. Things come in on the left, and results leave on the right.",
-                  Transform(sc, VGroup(core_r, core_t)), run_time=1.6)
+                  ReplacementTransform(sc, VGroup(core_r, core_t)), run_time=1.6)
         core = sc
         Ys = (1.9, 0.2, -1.5)
         ins = VGroup(port("arguments", BLUE_M), port("environment", TEAL_M), port("file", GOLD_M)).move_to([-4.75, 0, 0])
@@ -86,7 +86,7 @@ class D15ScriptIo(VoiceScene):
         # 3. run 1: above the limit
         cmd = M("$ uv run scripts/logsum.py access access.log", 22, GREY_B).move_to([0, 3.3, 0])
         self.beat("Run it with no limit given. The default is 1 percent.",
-                  FadeIn(cmd), FadeIn(lim), Indicate(lim, color=YELLOW_M), run_time=1.8)
+                  FadeIn(cmd), Succession(FadeIn(lim), Indicate(lim, color=YELLOW_M)), run_time=1.8)
         rep = M("238 requests ... 5xx 11 ... error rate 4.6%", 20, WHITE).move_to([0, -2.6, 0])
         err = M("logsum: ERROR error rate 4.6% is above the limit of 1.0%", 20, RED_M).move_to([0, -3.15, 0])
         fit(err, 12.8)
@@ -108,11 +108,13 @@ class D15ScriptIo(VoiceScene):
         self.steps("Raise the limit to 5 with the flag, and the same log passes. Exit code 0.",
                    (0.8, Transform(cmd, cmd2), FadeOut(err), FadeOut(rep)), (0.6, travel(ia[0], BLUE_M, 0.6)), (0.6, Transform(lim, lim5)),
                    (0.8, travel(oa[2], YELLOW_M, 0.8)), (0.6, Transform(ec, ec0)))
-        jq = mbox("jq", GREEN_M, size=26, w=1.2, h=0.62).next_to(outs[0], UP, buff=0.35)
+        jq = mbox("jq", GREEN_M, size=26, w=1.2, h=0.6).next_to(outs[0], UP, buff=0.2)
+        cmd4 = M("$ uv run scripts/logsum.py access access.log --format json --max-error-rate 5 | jq", 22, GREY_B).move_to(cmd)
+        fit(cmd4, 12.8)
         jqa = Arrow(outs[0].get_top(), jq.get_bottom(), buff=0.06, stroke_width=3, color=GREEN_M, max_tip_length_to_length_ratio=0.3)
         js = M('{"2xx":181,"3xx":16,"4xx":30,"5xx":11}', 20, GREEN_M).move_to([0, -2.6, 0])
         self.steps("With format json, stdout holds only JSON, because every message went to stderr. So you can pipe it into jq, with no cleanup.",
-                   (1.2, FadeIn(jq), GrowArrow(jqa)), (0.8, travel(oa[0], WHITE, 0.8)), (0.6, travel(jqa, GREEN_M, 0.6)), (0.8, FadeIn(js, shift=UP * 0.1)))
+                   (1.2, FadeIn(jq), GrowArrow(jqa), Transform(cmd, cmd4)), (0.8, travel(oa[0], WHITE, 0.8)), (0.6, travel(jqa, GREEN_M, 0.6)), (0.8, FadeIn(js, shift=UP * 0.1)))
         self.play(FadeOut(VGroup(jq, jqa, js)), run_time=0.5)
 
         # 5. the contract: 0, 1, 2
@@ -134,10 +136,11 @@ class D15ScriptIo(VoiceScene):
 
         # 6. the mistake
         self.play(FadeOut(VGroup(con, nf)), run_time=0.5)
-        bad = M("except Exception: pass", 26, RED_M).move_to(core_r.get_center() + DOWN * 0.6)
+        bad = VGroup(M("except Exception:", 22, RED_M), M("pass", 22, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+        bad[1].shift(RIGHT * 0.5)
+        bad.move_to(core_r.get_center() + DOWN * 0.6)
         self.beat("Here is the mistake to avoid. Wrap the whole script in except Exception, pass.",
                   FadeOut(lim), FadeIn(bad), run_time=1.6)
-        fit(bad, 2.6)
         e0 = M("0", 36, GREEN_M).move_to(ec)
         grn = T("CI goes green, and nothing was checked", 26, RED_M).move_to([0, -2.75, 0])
         self.steps("Now a crash becomes a silent success. The script exits 0, CI goes green, and nothing was checked.",

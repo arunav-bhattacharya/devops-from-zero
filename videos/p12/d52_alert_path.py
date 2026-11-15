@@ -28,7 +28,7 @@ def panel(w, h, color, c, a=0.06, sw=2.5):
 
 
 def stage(label, color=PURPLE_M):
-    b = box(label, color, w=5.3, h=0.62, size=22)
+    b = box(label, color, w=5.45, h=0.62, size=22)
     b[1].align_to(b[0], LEFT).shift(RIGHT * 0.22)
     return b
 
@@ -62,6 +62,8 @@ class D52AlertPath(VoiceScene):
                   FadeIn(rule[1], shift=RIGHT * 0.1), run_time=2.0)
         self.beat("Prometheus runs it every 15 seconds in the lab. Every series it returns is one active alert.",
                   Indicate(rule[1], color=WHITE, scale_factor=1.03), run_time=2.0)
+        self.beat("Its label, severity page, is added to the alert. Alertmanager will route on it.",
+                  FadeIn(rule[3:], shift=RIGHT * 0.1), run_time=1.6)
 
         # states and a timeline of evaluations
         sts = VGroup(box("inactive", GREY_B, w=1.75, h=0.6, size=22), box("pending", GOLD_M, w=1.75, h=0.6, size=22), box("firing", RED_M, w=1.75, h=0.6, size=22))
@@ -87,7 +89,7 @@ class D52AlertPath(VoiceScene):
         self.beat("Two checks pass. The alert is inactive.",
                   FadeIn(res[0], scale=0.5), Succession(Wait(1.0), FadeIn(res[1], scale=0.5)), run_time=2.0)
         self.beat("Then a scrape fails. The alert is pending. for: 1m means it must stay true for a whole minute.",
-                  FadeIn(res[2], scale=0.5), at(1), Succession(Wait(1.6), FadeIn(res[3], scale=0.5)), Succession(Wait(3.6), Indicate(rule[2], color=YELLOW_M)), run_time=5.4)
+                  FadeIn(res[2], scale=0.5), at(1), Succession(Wait(1.6), FadeIn(res[3], scale=0.5)), Succession(Wait(3.6), FadeIn(rule[2], shift=RIGHT * 0.1)), run_time=5.4)
         self.beat("If one check is false, it goes back to inactive, and the wait starts again.",
                   FadeIn(res[4], scale=0.5), at(0), run_time=1.6)
         blip = T("for: filters out blips", 22, YELLOW_M).move_to([-3.45, TY + 0.85, 0])
@@ -103,7 +105,8 @@ class D52AlertPath(VoiceScene):
         aml = T("Alertmanager", 28, PURPLE_M).move_to(am.get_corner(UL) + RIGHT * 1.4 + DOWN * 0.38)
         hand = Arrow([-0.25, 0.9, 0], [0.55, 0.9, 0], buff=0, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.3)
         self.beat("But Prometheus only decides that an alert fires. It sends no message itself. It hands firing alerts to Alertmanager.",
-                  FadeIn(am), FadeIn(aml), GrowArrow(hand), Succession(Wait(3.6), travel(hand, RED_M, 0.8)), run_time=5.0)
+                  FadeIn(am), FadeIn(aml), GrowArrow(hand), run_time=3.0)
+        self.play(travel(hand, RED_M, 0.8), run_time=0.9)
         flood = VGroup(*[Dot(radius=0.07, color=RED_M) for _ in range(24)])
         for i, d in enumerate(flood):
             d.move_to([1.3 + (i % 8) * 0.4, 2.6 - (i // 8) * 0.3, 0])
@@ -116,7 +119,7 @@ class D52AlertPath(VoiceScene):
         ro = stage("route by labels").move_to([3.6, -0.85, 0])
         pg = mbox("pager", RED_M, w=2.1, h=0.62, size=22).move_to([2.35, -2.0, 0])
         tkt = mbox("tickets", GOLD_M, w=2.1, h=0.62, size=22).move_to([4.85, -2.0, 0])
-        SLA, SLB = 3.95, 5.35  # where the two alert chips rest inside a stage
+        SLA, SLB = 4.3, 5.62  # where the two alert chips rest inside a stage
         a1 = Arrow(g.get_bottom(), ih.get_top(), buff=0.06, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.3)
         a2 = Arrow(ih.get_bottom(), ro.get_top(), buff=0.06, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.3)
         a3 = Arrow(ro.get_bottom() + LEFT * 0.6, pg.get_top(), buff=0.06, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.3)
@@ -152,18 +155,18 @@ class D52AlertPath(VoiceScene):
         wait = M("group_wait: 10s", 20, PURPLE_M).move_to([3.6, 2.45, 0])
         self.beat("Alertmanager waits 10 seconds, the group_wait, for more alerts.",
                   FadeIn(wait), run_time=1.8)
+        self.play(ef.animate.move_to([SLA, ih.get_y(), 0]), es.animate.move_to([SLB, ih.get_y(), 0]), run_time=1.0)
+        mu = T("muted", 22, GOLD_M).next_to(es, UP, buff=0.1)
         self.beat("Then inhibition. The page fires for the job hello-devops, so the ticket for the same job is muted.",
-                  ef.animate.move_to([SLA, ih.get_y(), 0]), es.animate.move_to([SLB, ih.get_y(), 0]), Succession(Wait(3.0), es.animate.set_opacity(0.25)), run_time=5.0)
-        mu = T("muted", 22, GOLD_M).next_to(es, UP, buff=0.12)
-        self.play(FadeIn(mu), run_time=0.4)
-        hook = panel(12.9, 0.85, GREY_B, [0, -3.15, 0], 0.05, 2)
-        out = M("[pager] FIRING HelloErrorBudgetFastBurn ... 4.52% of hello-devops requests fail (fast burn)", 20, RED_M).move_to(hook)
+                  Succession(Wait(3.0), AnimationGroup(es.animate.set_opacity(0.25), FadeIn(mu))), run_time=4.4)
+        hook = panel(9.0, 0.95, GREY_B, [0, -3.15, 0], 0.05, 2)
+        out = M("[pager] FIRING HelloErrorBudgetFastBurn job=hello-devops ...", 20, RED_M).move_to(hook)
         self.beat("The page walks down the tree to the pager, and the webhook prints one line. Only the page arrived.",
                   Succession(ef.animate(run_time=1.0).move_to([SLA, ro.get_y(), 0]), ef.animate(run_time=1.0).move_to(pg), FadeOut(ef, run_time=0.3)),
                   Succession(Wait(2.4), AnimationGroup(FadeIn(hook), FadeIn(out, shift=UP * 0.1)), Indicate(pg, color=RED_M)), run_time=5.4)
 
         # silence while working, then resolve
-        sil2 = chip("silence: alertname=HelloErrorBudgetFastBurn  1h", GREY_B, 20, mono=True).move_to([-3.45, -1.75, 0])
+        sil2 = chip("silence: the page, for 1 hour", GREY_B, 24).move_to([-3.45, -1.75, 0])
         self.beat("You are working on it, so you silence the page for an hour.",
                   FadeIn(sil2, shift=UP * 0.1), run_time=2.4)
         cmd2 = M("$ docker compose start redis", 22, GREEN_M).move_to(cmd)
@@ -171,12 +174,14 @@ class D52AlertPath(VoiceScene):
                   Transform(cmd, cmd2), Succession(Wait(2.6), FadeOut(sil2)), run_time=4.0)
         self.beat("The long windows still hold the outage. About 25 minutes after the fix, the page resolved.",
                   Succession(Wait(2.4), AnimationGroup(Transform(pend[0], chip("resolved", GREEN_M, 20).move_to(pend[0])),
-                                                       Transform(out, M("[pager] RESOLVED HelloErrorBudgetFastBurn ... 0.6003% of hello-devops requests fail (fast burn)", 20, GREEN_M).move_to(hook)))), run_time=6.0)
-        out2 = M("[tickets] FIRING HelloErrorBudgetSlowBurn ... 0.6171% of hello-devops requests fail (slow burn)", 20, GOLD_M)
+                                                       Transform(out, M("[pager] RESOLVED HelloErrorBudgetFastBurn job=hello-devops ...", 20, GREEN_M).move_to(hook)))), run_time=6.0)
+        out2 = M("[tickets] FIRING HelloErrorBudgetSlowBurn job=hello-devops ...", 20, GOLD_M)
+        out2.move_to(hook.get_center() + DOWN * 0.2).align_to(out, LEFT)
+        self.play(es.animate.set_opacity(1), FadeOut(mu), run_time=0.4)
         self.beat("In the same second, Alertmanager released the ticket it had been muting. The outage really did spend budget.",
-                  es.animate.set_opacity(1), FadeOut(mu), Succession(Wait(1.2), es.animate(run_time=1.0).move_to([SLB, ro.get_y(), 0]), es.animate(run_time=1.0).move_to(tkt), FadeOut(es, run_time=0.3)),
-                  Succession(Wait(3.6), AnimationGroup(out.animate.shift(UP * 0.2).scale(0.9), FadeIn(out2.scale(0.9).move_to(hook.get_center() + DOWN * 0.22), shift=UP * 0.1))),
-                  run_time=5.6)
+                  Succession(es.animate(run_time=1.0).move_to([SLB, ro.get_y(), 0]), es.animate(run_time=1.0).move_to(tkt), FadeOut(es, run_time=0.3)),
+                  Succession(Wait(2.4), AnimationGroup(out.animate.shift(UP * 0.2), FadeIn(out2, shift=UP * 0.1))),
+                  run_time=5.0)
         self.wait(0.6)
 
         # ---- recap

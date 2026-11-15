@@ -593,3 +593,5 @@ body.side-off .hero .sub { max-width: 76ch; }
   body.side-off .lesson.toc-on.toc-shut { gap: 56px; }
 }
 @media (min-width: 1360px) { .lesson.toc-on.toc-shut { gap: 56px; } }
+
+.vid-off{margin:8px 0 0;font-size:.92rem;color:var(--mute)}

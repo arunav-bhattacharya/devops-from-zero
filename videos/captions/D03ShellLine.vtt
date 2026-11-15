@@ -1,0 +1,201 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.105
+People say the command line for three different things.
+
+2
+00:00:06.105 --> 00:00:07.760
+The terminal is the window.
+
+3
+00:00:07.933 --> 00:00:10.474
+The shell is the program running inside it.
+
+4
+00:00:10.474 --> 00:00:13.664
+It reads the line you type, and starts other programs.
+
+5
+00:00:13.800 --> 00:00:17.621
+And a command is usually a program file on disk.
+
+6
+00:00:17.621 --> 00:00:19.771
+ls is the file /usr/bin/ls.
+
+7
+00:00:19.771 --> 00:00:23.911
+The shell finds it by searching the folders in PATH.
+
+8
+00:00:24.667 --> 00:00:28.056
+Here is what happens between Enter and the program.
+
+9
+00:00:28.056 --> 00:00:29.053
+Take this line.
+
+10
+00:00:29.200 --> 00:00:32.547
+Before any program starts, the shell takes it apart.
+
+11
+00:00:32.547 --> 00:00:35.187
+It splits the line on spaces, into words.
+
+12
+00:00:35.333 --> 00:00:37.900
+The first word is the program to run.
+
+13
+00:00:38.067 --> 00:00:43.065
+Every other word becomes an argument: a plain string handed to that program.
+
+14
+00:00:43.200 --> 00:00:47.831
+You know this shape from Kotlin: fun main, with args, an array of strings.
+
+15
+00:00:47.831 --> 00:00:52.024
+The shell builds args, and the program decides what each one means.
+
+16
+00:00:52.200 --> 00:00:57.218
+By habit, arguments that start with a dash are options, also called flags.
+
+17
+00:00:57.218 --> 00:00:59.659
+The last one is a folder to work on.
+
+18
+00:01:00.933 --> 00:01:06.307
+Because spaces split words, a file name with a space in it causes trouble.
+
+19
+00:01:06.307 --> 00:01:11.827
+ls my notes.txt asks for two files, my and notes.txt, and prints two errors.
+
+20
+00:01:12.000 --> 00:01:14.404
+Quote the name, and it stays one word.
+
+21
+00:01:14.404 --> 00:01:18.136
+Better still, keep spaces out of the file names you create.
+
+22
+00:01:18.867 --> 00:01:21.367
+Now a wildcard, also called a glob.
+
+23
+00:01:21.367 --> 00:01:23.866
+In the lab, type echo star dot log.
+
+24
+00:01:23.866 --> 00:01:26.652
+The star matches any run of characters.
+
+25
+00:01:26.800 --> 00:01:29.230
+The shell splits the line, as before.
+
+26
+00:01:29.230 --> 00:01:30.675
+But it sees a pattern.
+
+27
+00:01:30.867 --> 00:01:35.865
+Before the program starts, the shell reads the folder, and keeps the names that fit.
+
+28
+00:01:36.000 --> 00:01:39.100
+Then it puts them, sorted, in place of the pattern.
+
+29
+00:01:39.267 --> 00:01:42.482
+The program never sees the pattern, only the names.
+
+30
+00:01:42.482 --> 00:01:45.445
+And echo just prints the arguments it receives.
+
+31
+00:01:45.600 --> 00:01:47.363
+That makes echo a good preview.
+
+32
+00:01:47.363 --> 00:01:51.971
+Put it in front of a risky command, and it prints the line the program would get.
+
+33
+00:01:52.667 --> 00:01:54.399
+Quotes switch globbing off.
+
+34
+00:01:54.399 --> 00:01:58.120
+echo, with star dot log in quotes, prints the star itself.
+
+35
+00:01:58.267 --> 00:02:00.070
+And when nothing matches?
+
+36
+00:02:00.070 --> 00:02:02.018
+Here bash and zsh disagree.
+
+37
+00:02:02.018 --> 00:02:07.140
+In bash, the pattern passes on unchanged, so echo prints star dot text.
+
+38
+00:02:07.333 --> 00:02:10.201
+In zsh, the shell refuses to run the line.
+
+39
+00:02:10.201 --> 00:02:15.048
+You will see the zsh way on your Mac, and the bash way on every server.
+
+40
+00:02:15.733 --> 00:02:17.918
+Now the most common mistake.
+
+41
+00:02:17.918 --> 00:02:19.947
+One stray space is enough.
+
+42
+00:02:19.947 --> 00:02:22.132
+Say you type rm -r old logs.
+
+43
+00:02:22.267 --> 00:02:24.510
+The shell splits on that space.
+
+44
+00:02:24.510 --> 00:02:27.187
+So rm gets two folders, old and logs.
+
+45
+00:02:27.333 --> 00:02:28.549
+It deletes both.
+
+46
+00:02:28.549 --> 00:02:32.957
+rm has no trash and no undo, and nothing brings them back.
+
+47
+00:02:33.133 --> 00:02:38.943
+So before any delete, run pwd, preview the line with echo, and read it once more.
+
+48
+00:02:39.667 --> 00:02:43.707
+So the shell rewrites your line before the program starts.
+
+49
+00:02:43.707 --> 00:02:48.931
+It splits on spaces, expands the wildcards, and only then runs the program.
+
+50
+00:02:48.931 --> 00:02:50.951
+rm only ever sees file names.

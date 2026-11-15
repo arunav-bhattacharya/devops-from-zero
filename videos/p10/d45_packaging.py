@@ -16,6 +16,7 @@ def card(lines, color, title=None, size=20, w=None, pad=0.35):
     r = RoundedRectangle(corner_radius=0.12, width=w or g.width + 2 * pad, height=g.height + 2 * pad, stroke_color=color, stroke_width=3)
     r.set_fill(tint(color, 0.1), 1)
     g.move_to(r).align_to(r, LEFT).shift(RIGHT * pad)
+    g.set_z_index(2)
     out = VGroup(r, g)
     if title:
         out.add(T(title, 22, color).next_to(r, UP, buff=0.15).align_to(r, LEFT))
@@ -72,10 +73,10 @@ class D45Packaging(VoiceScene):
         self.play(FadeOut(VGroup(src, files, n, cps, diffs, cl, pdb, fix, old, q)), run_time=0.7)
 
         # ---- 1. two roads to the same place
-        helm = box("Helm: fill in blanks", BLUE_M, w=4.0, h=0.95, size=28).move_to([-4.1, 1.7, 0])
-        kus = box("Kustomize: patch a base", TEAL_M, w=4.0, h=0.95, size=28).move_to([-4.1, -1.7, 0])
-        yml = box("plain Kubernetes YAML", WHITE, w=3.6, h=0.95, size=28).move_to([1.15, 0, 0])
-        api = box("API server", GREY_B, w=2.2, h=0.95, size=28).move_to([5.25, 0, 0])
+        helm = box("Helm: fill in blanks", BLUE_M, h=0.95, size=28).move_to([-4.1, 1.7, 0])
+        kus = box("Kustomize: patch a base", TEAL_M, h=0.95, size=28).move_to([-4.1, -1.7, 0])
+        yml = box("plain Kubernetes YAML", WHITE, h=0.95, size=28).move_to([0.8, 0, 0])
+        api = box("API server", GREY_B, h=0.95, size=28).move_to([5.3, 0, 0])
         r1, r2, r3 = edge_arrow(helm, yml), edge_arrow(kus, yml), edge_arrow(yml, api)
         self.beat("There are two popular answers, and they come from opposite directions.",
                   FadeIn(helm, shift=RIGHT * 0.2), FadeIn(kus, shift=RIGHT * 0.2), run_time=1.6)
@@ -108,18 +109,18 @@ class D45Packaging(VoiceScene):
             return M(t, size, color).move_to([CX[col], RY[row], 0])
 
         head = VGroup(T("layer", 22, GREY_B).move_to([CX[0], RY["head"], 0]), cell("replicaCount", 1, "head", GREY_B), cell("greeting", 2, "head", GREY_B))
-        hline = Line([-4.7, RY["head"] - 0.3, 0], [4.85, RY["head"] - 0.3, 0], stroke_width=1.5, color=GREY_D)
+        hline = Line([-4.5, RY["head"] - 0.3, 0], [4.85, RY["head"] - 0.3, 0], stroke_width=1.5, color=GREY_D)
         r_def = VGroup(cell("values.yaml", 0, "def", BLUE_M), cell("2", 1, "def"), cell('"Hello from Helm!"', 2, "def"))
         self.beat("The chart's values.yaml holds the default settings. Two replicas. Hello from Helm.",
                   FadeIn(head), Create(hline), LaggedStart(*[FadeIn(c, shift=UP * 0.1) for c in r_def], lag_ratio=0.3), run_time=2.4)
         r_f = VGroup(cell("-f kind-values.yaml", 0, "f", TEAL_M), cell('"Hello from Helm on kind!"', 2, "f"))
         self.beat("Your own values file goes on top, with -f. The lab's kind-values.yaml changes only the greeting.",
                   LaggedStart(*[FadeIn(c, shift=DOWN * 0.1) for c in r_f], lag_ratio=0.3), run_time=1.8)
-        up = Arrow([5.35, RY["def"] - 0.2, 0], [5.35, RY["set"] + 0.2, 0], buff=0, stroke_width=3, color=YELLOW_M, max_tip_length_to_length_ratio=0.15)
+        up = Arrow([-5.35, RY["def"] - 0.2, 0], [-5.35, RY["set"] + 0.2, 0], buff=0, stroke_width=3, color=YELLOW_M, max_tip_length_to_length_ratio=0.15)
         upl = T("later wins", 22, YELLOW_M).next_to(up, UP, buff=0.12)
         self.beat("Layers stack in order. When two layers set the same key, the later one wins.",
                   GrowArrow(up), FadeIn(upl), r_def[2].animate.set_opacity(0.3), run_time=1.6)
-        rline = Line([-4.7, RY["res"] + 0.38, 0], [4.85, RY["res"] + 0.38, 0], stroke_width=1.5, color=GREY_D)
+        rline = Line([-4.5, RY["res"] + 0.38, 0], [4.85, RY["res"] + 0.38, 0], stroke_width=1.5, color=GREY_D)
         res = VGroup(T("result", 22, YELLOW_M).move_to([CX[0], RY["res"], 0]), cell("2", 1, "res", YELLOW_M), cell('"Hello from Helm on kind!"', 2, "res", YELLOW_M))
         self.beat("So the result is two replicas, and Hello from Helm on kind.",
                   Create(rline), FadeIn(res[0]), TransformFromCopy(r_def[1], res[1]), TransformFromCopy(r_f[1], res[2]), run_time=2.0)

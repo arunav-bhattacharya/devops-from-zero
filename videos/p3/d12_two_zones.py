@@ -16,8 +16,8 @@ def mini(label, color, w=1.7, h=0.5, size=22):
 
 
 def server(color=TEAL_M):
-    r = RoundedRectangle(corner_radius=0.08, width=1.0, height=0.7, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.2), opacity=1)
-    ls = VGroup(*[Line(LEFT * 0.3, RIGHT * 0.3, stroke_width=2, color=color).shift(UP * dy) for dy in (0.12, -0.08)])
+    r = RoundedRectangle(corner_radius=0.1, width=1.5, height=1.0, stroke_color=color, stroke_width=3.5).set_fill(tint(color, 0.2), opacity=1)
+    ls = VGroup(*[Line(LEFT * 0.45, RIGHT * 0.45, stroke_width=3, color=color).shift(UP * dy) for dy in (0.18, -0.12)])
     return VGroup(r, ls.move_to(r))
 
 
@@ -50,14 +50,15 @@ class D12TwoZones(VoiceScene):
         self.beat("PayFlow, the made-up payments company, wants its checkout API to keep running when things break.",
                   GrowFromCenter(s1), FadeIn(lab), run_time=1.8)
         x1 = tick(False, 0.3).move_to(s1)
-        self.beat("Things fail at every size. One server dies.", s1.animate.set_opacity(0.3), Create(x1), run_time=1.4)
+        self.beat("Things fail at every size. One server dies.", s1.animate.set_stroke(RED_M), Create(x1), run_time=1.4)
         s2 = server().move_to([1.0, 0.3, 0])
-        self.beat("So run two copies.", FadeOut(x1), s1.animate.set_opacity(1).move_to([-1.0, 0.3, 0]), GrowFromCenter(s2),
-                  lab.animate.move_to([0, -0.4, 0]), run_time=1.2)
-        dc = RoundedRectangle(corner_radius=0.15, width=4.0, height=2.0, stroke_color=GREY_B, stroke_width=2).move_to([0, 0.15, 0])
+        lab.generate_target(); lab.target.move_to([0, -0.75, 0])
+        self.beat("So run two copies.", FadeOut(x1), s1.animate.set_stroke(TEAL_M).move_to([-1.0, 0.3, 0]), GrowFromCenter(s2),
+                  MoveToTarget(lab), run_time=1.2)
+        dc = RoundedRectangle(corner_radius=0.15, width=4.6, height=2.6, stroke_color=GREY_B, stroke_width=2).move_to([0, 0.15, 0])
         dcl = T("one data center", 22, GREY_B).next_to(dc, UP, buff=0.15)
         self.beat("But both copies sit in one data center. If it loses power or floods, both go down together.",
-                  Create(dc), FadeIn(dcl), Succession(Wait(2.4), AnimationGroup(dc.animate.set_stroke(RED_M), s1.animate.set_opacity(0.3), s2.animate.set_opacity(0.3))),
+                  Create(dc), FadeIn(dcl), Succession(Wait(2.4), AnimationGroup(dc.animate.set_stroke(RED_M), s1.animate.set_stroke(RED_M), s2.animate.set_stroke(RED_M))),
                   run_time=3.6)
 
         # 2. availability zones and a region
@@ -65,10 +66,10 @@ class D12TwoZones(VoiceScene):
                         .move_to([x, -0.82, 0]) for x in AX])
         azl = VGroup(*[T(f"AZ {n}", 24, GREY_B).move_to([x, -2.85, 0]) for n, x in zip("ab", AX)])
         self.steps("So run copies in two or more availability zones. AWS describes a zone as one or more separate data centers, with their own power, networking and connectivity.",
-                   (0.6, FadeOut(dc), FadeOut(dcl), FadeOut(lab), s1.animate.set_opacity(1), s2.animate.set_opacity(1)),
-                   (1.6, Create(cols), FadeIn(azl), s1.animate.move_to([AX[0], -0.5, 0]), s2.animate.move_to([AX[1], -0.5, 0])))
+                   (0.6, FadeOut(dc), FadeOut(dcl), FadeOut(lab), s1.animate.set_stroke(TEAL_M), s2.animate.set_stroke(TEAL_M)),
+                   (1.6, Create(cols), FadeIn(azl), s1.animate.set_stroke(TEAL_M).move_to([AX[0], -0.5, 0]), s2.animate.set_stroke(TEAL_M).move_to([AX[1], -0.5, 0])))
         fib = DoubleArrow(s1.get_right() + RIGHT * 0.15, s2.get_left() + LEFT * 0.15, buff=0, stroke_width=3, color=BLUE_M, tip_length=0.18)
-        fl = T("fast private fiber", 22, BLUE_M).next_to(fib, UP, buff=0.15).shift(RIGHT * 1.6)
+        fl = T("fast private fiber", 24, BLUE_M).move_to([0, 2.0, 0])
         self.beat("The zones are linked by fast private fiber. Close enough for fast traffic between them, and far enough apart not to fail together.",
                   GrowFromCenter(fib), FadeIn(fl), Succession(Wait(1.5), travel(Line(fib.get_start(), fib.get_end()), BLUE_M, 1.0)), run_time=3.6)
         reg = RoundedRectangle(corner_radius=0.2, width=13.2, height=6.5, stroke_color=WHITE, stroke_width=2).move_to([0, -0.4, 0])
@@ -155,15 +156,16 @@ class D12TwoZones(VoiceScene):
 
         # 6. what bills while idle
         bill = chip("bills every hour, even idle", GOLD_M, 22).move_to([3.7, 3.3, 0])
+        hl = VGroup(*[SurroundingRectangle(m, color=GOLD_M, buff=0.07, corner_radius=0.12, stroke_width=4) for m in (*lbs, *nats)])
         self.beat("And watch the bill. The load balancer and the two NAT gateways bill every hour, even with no traffic.",
                   cols[0].animate.set_stroke(GREY_B), A.animate.set_opacity(1), azl[0].animate.set_color(GREY_B),
-                  Succession(Wait(1.6), AnimationGroup(FadeIn(bill, shift=DOWN * 0.1), *[m[0].animate.set_stroke(GOLD_M, 4) for m in (*lbs, *nats)])), run_time=3.4)
+                  Succession(Wait(1.6), AnimationGroup(FadeIn(bill, shift=DOWN * 0.1), *[Create(h) for h in hl])), run_time=3.4)
         self.beat("So that is the list you delete first, after a test.",
-                  *[Wiggle(m) for m in (*lbs, *nats)], run_time=1.6)
+                  *[Wiggle(VGroup(m, h)) for m, h in zip((*lbs, *nats), hl)], run_time=1.6)
 
         # 7. recap
         rc = T("spread copies across zones; the route table makes a subnet public or private", 24, WHITE)
-        fit(rc, 12.4).move_to([0, -3.4, 0])
+        fit(rc, 12.4).move_to([0, 3.3, 0])
         self.beat("Spread copies across zones. And remember, the route table, not the name, makes a subnet public or private.",
-                  FadeOut(VGroup(reg, rl)), FadeIn(rc, shift=UP * 0.1), run_time=2.4)
+                  FadeOut(VGroup(net, bill, hl)), FadeIn(rc, shift=DOWN * 0.1), run_time=2.4)
         self.wait(1.2)

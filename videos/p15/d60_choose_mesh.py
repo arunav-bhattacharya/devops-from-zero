@@ -59,7 +59,8 @@ class D60ChooseMesh(VoiceScene):
                   Indicate(pods[3], color=YELLOW_M), Indicate(pods[12], color=YELLOW_M), run_time=1.8)
 
         # ---------- 2. Linkerd: a sidecar in every Pod
-        sides = VGroup(*[side().move_to(p.get_center() + RIGHT * 0.42) for p in pods])
+        mk = lambda: VGroup(*[side().move_to(p.get_center() + RIGHT * 0.42) for p in pods])
+        sides = mk()
         h2 = self.head("Linkerd: a small proxy in every Pod", GOLD_M)
         self.beat("Linkerd puts a sidecar in every Pod. Its proxy is linkerd2-proxy, a micro-proxy written in Rust. Linkerd does not use Envoy.",
                   Transform(h, h2), LaggedStart(*[GrowFromCenter(s) for s in sides], lag_ratio=0.03), run_time=3.0)
@@ -106,14 +107,15 @@ class D60ChooseMesh(VoiceScene):
         # ---------- 4. what a sidecar mesh costs
         self.play(FadeOut(VGroup(wire, enc, note, beta, ebpf, envs)), run_time=0.5)
         h4 = self.head("what a sidecar per Pod costs", RED_M)
+        sides2 = mk()
         self.beat("Now the bill. Go back to one sidecar per Pod, and measure one proxy, as the lab does.",
-                  Transform(h, h4), LaggedStart(*[GrowFromCenter(s) for s in sides], lag_ratio=0.02), run_time=2.4)
+                  Transform(h, h4), LaggedStart(*[GrowFromCenter(s) for s in sides2], lag_ratio=0.02), run_time=2.4)
         lat = VGroup(T("one Envoy hop: about +0.6 ms median", 24, WHITE), T("two hops on every call", 22, GREY_B)).arrange(DOWN, buff=0.15).move_to([-3.45, -2.75, 0])
         self.beat("In the worked example, one Envoy hop added about 0.6 ms to the median call. A sidecar mesh puts two such hops on every call.",
                   FadeIn(lat[0], shift=0.1 * UP), Succession(Wait(3.2), FadeIn(lat[1])), run_time=4.0)
         memt = M("24 Pods x 64 MB", 26, WHITE).move_to([3.45, -2.45, 0])
         self.beat("An idle Envoy held about 64 MB of memory. You pay that for every Pod.",
-                  FadeIn(memt), LaggedStart(*[Indicate(s, color=RED_M, scale_factor=1.4) for s in sides], lag_ratio=0.02), run_time=2.6)
+                  FadeIn(memt), LaggedStart(*[Indicate(s, color=RED_M, scale_factor=1.4) for s in sides2], lag_ratio=0.02), run_time=2.6)
         mem = M("= 1536 MB", 30, RED_M).move_to([3.45, -3.1, 0])
         self.beat("Twenty four times sixty four. About 1.5 gigabytes of proxies, before they carry any traffic.",
                   Write(mem), run_time=1.6)
@@ -130,7 +132,7 @@ class D60ChooseMesh(VoiceScene):
                        chip("one Gateway: TLS at the edge", GREEN_M, 22), chip("OpenTelemetry, Prometheus", GREEN_M, 22))
         tools.arrange_in_grid(2, 2, buff=(0.4, 0.3)).move_to([0, -2.85, 0])
         self.beat("For a handful of services owned by one team, I would not start with a mesh. Tools you already know cover most of the list.",
-                  Transform(h, h5), LaggedStart(*[ShrinkToCenter(s) for s in sides], lag_ratio=0.02), run_time=2.4)
+                  Transform(h, h5), LaggedStart(*[ShrinkToCenter(s) for s in sides2], lag_ratio=0.02), run_time=2.4)
         self.beat("NetworkPolicy decides who may talk to whom. A shared client library sets timeouts and retries. One Gateway handles TLS at the edge. And OpenTelemetry and Prometheus give you per call metrics and traces.",
                   LaggedStart(*[FadeIn(t, shift=0.1 * UP) for t in tools], lag_ratio=0.8), run_time=8.0)
         yet = T("the answer for this product: no mesh yet", 28, GREEN_M).move_to([0, 3.3, 0])
@@ -146,17 +148,21 @@ class D60ChooseMesh(VoiceScene):
         ladder = VGroup(*[chip(t, YELLOW_M, 22) for t in ("1 observe", "2 mTLS, permissive", "3 mTLS, strict", "4 authorization", "5 traffic policies")])
         ladder.arrange(RIGHT, buff=0.22).move_to([0, -2.6, 0])
         fit(ladder, 13.2)
-        frame = SurroundingRectangle(VGroup(*ns, *sides[0:4]), buff=0.18, color=YELLOW_M, stroke_width=2.5, corner_radius=0.1)
+        sides3 = mk()[0:4]
+        frame = SurroundingRectangle(VGroup(*ns, *sides3), buff=0.18, color=YELLOW_M, stroke_width=2.5, corner_radius=0.1)
         fl = T("one namespace", 20, YELLOW_M).next_to(frame, UP, buff=0.08)
         for l in ladder:
-            l.set_opacity(0.25)
+            l[0].set_stroke(opacity=0.3).set_fill(opacity=0.05); l[1].set_opacity(0.3)
+
+        def lit(c, rt=0.6):
+            return AnimationGroup(c[0].animate.set_stroke(opacity=1).set_fill(opacity=0.18), c[1].animate.set_opacity(1), run_time=rt)
         self.steps("Then go one namespace at a time. First, mesh it, and only watch the golden metrics. You will find calls nobody knew about.",
-                   (1.0, Create(frame), FadeIn(fl), FadeIn(ladder)), (0.8, *[GrowFromCenter(s) for s in sides[0:4]]),
-                   (0.6, ladder[0].animate.set_opacity(1)))
+                   (1.0, Create(frame), FadeIn(fl), FadeIn(ladder)), (0.8, *[GrowFromCenter(s) for s in sides3]),
+                   (0.6, lit(ladder[0])))
         self.beat("Next, mutual TLS in permissive mode, so meshed callers encrypt and everyone else still works. Then strict, once every caller is meshed.",
-                  Succession(ladder[1].animate(run_time=0.6).set_opacity(1), Wait(2.8), ladder[2].animate(run_time=0.6).set_opacity(1)), run_time=4.0)
+                  Succession(lit(ladder[1]), Wait(2.8), lit(ladder[2])), run_time=4.0)
         self.beat("Then authorization policies, starting with sensitive data. And traffic policies, retries, timeouts and canaries, last.",
-                  Succession(ladder[3].animate(run_time=0.6).set_opacity(1), Wait(2.0), ladder[4].animate(run_time=0.6).set_opacity(1)), run_time=3.2)
+                  Succession(lit(ladder[3]), Wait(2.0), lit(ladder[4])), run_time=3.2)
 
         # ---------- 7. recap
         rc = T("decide first; then switch it on one layer at a time", 28).move_to([0, -3.4, 0])

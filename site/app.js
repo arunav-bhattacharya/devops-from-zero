@@ -364,9 +364,20 @@ function viewHome() {
 const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, "0")}`;
 const VTT = {};
 const vttURL = (v) => { if (!v.vtt) return ""; try { return VTT[v.slug] || (VTT[v.slug] = URL.createObjectURL(new Blob([v.vtt], { type: "text/vtt" }))); } catch { return ""; } };
+// claude.ai holds only some video files; the rest play from the full site, and if that is blocked too, link to it
+const FULL_SITE = "https://devops-from-zero.ai-arunav.workers.dev";
+document.addEventListener("error", (e) => {
+  const s = e.target;
+  if (!s || s.tagName !== "SOURCE") return;
+  if (s.nextElementSibling && s.nextElementSibling.tagName === "SOURCE") return; // the browser tries the next source
+  const fig = s.closest("figure.vid");
+  if (!fig || fig.querySelector(".vid-off")) return;
+  fig.querySelector("video").insertAdjacentHTML("afterend", `<p class="vid-off">This video does not play here. <a href="${FULL_SITE}/#${location.hash.slice(1)}" target="_blank" rel="noopener">Watch it on the full site</a>.</p>`);
+}, true);
+
 function videoHTML(v) {
   const cap = vttURL(v);
-  return `<figure class="vid" id="v-${v.slug}"><video controls preload="none" playsinline poster="video/${v.slug}.jpg"><source src="video/${v.slug}.mp4" type="video/mp4">${cap ? `<track kind="captions" srclang="en" label="English" src="${cap}">` : ""}</video>
+  return `<figure class="vid" id="v-${v.slug}"><video controls preload="none" playsinline poster="video/${v.slug}.jpg"><source src="video/${v.slug}.mp4" type="video/mp4"><source src="${FULL_SITE}/video/${v.slug}.mp4" type="video/mp4">${cap ? `<track kind="captions" srclang="en" label="English" src="${cap}">` : ""}</video>
     <figcaption><span class="vid-k">${ICON.play || ""}Video${v.dur ? ` · ${mmss(v.dur)}` : ""}</span>${v.title}</figcaption></figure>`;
 }
 

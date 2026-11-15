@@ -116,7 +116,7 @@ class D68Capstone(VoiceScene):
         summ = M("1 passed, 8 failed, 2 skipped", 22).next_to(dots, DOWN, buff=0.2).align_to(lines, LEFT)
         self.beat("The script turns 11 of the 14 stages into checks like that. Each line prints PASS, FAIL or SKIP. SKIP means a tool or an address is missing.",
                   FadeOut(q), Create(term), Write(cmd), Succession(Wait(2.6), LaggedStart(*[FadeIn(l, shift=RIGHT * 0.1) for l in lines], lag_ratio=0.3)), run_time=6.8)
-        ex1 = T("exits with 1 if anything failed", 20, GREY_B).next_to(summ, RIGHT, buff=0.4)
+        ex1 = T("exits with 1 if anything failed", 20, GREY_B).next_to(summ, DOWN, buff=0.15).align_to(summ, LEFT)
         self.beat("It ends with a count, and exits with 1 if anything failed. So the same file could run in CI later.",
                   FadeIn(dots), FadeIn(summ), Succession(Wait(2.0), FadeIn(ex1)), run_time=3.6)
         self.beat("Run it early, and almost everything fails. That is normal. Read the output as your to-do list, in order.",
@@ -131,7 +131,7 @@ class D68Capstone(VoiceScene):
 
         commit = chip("git commit", TEAL_M, 20, mono=True).move_to([4.9, -2.75, 0])
         self.steps("Finish a stage, and run the script again. When its line turns green, commit. Now you can always go back to the last green point.",
-                   (1.0, mark(5, GREEN_M), Indicate(rows[5], color=GREEN_M)), (1.2, Wait(1.2)),
+                   (1.0, mark(5, GREEN_M)), (1.2, Wait(1.2)),
                    (0.8, flip(0, "PASS", "Deployment hello-devops is rolled out")), (1.6, Wait(1.6)), (0.6, FadeIn(commit, shift=UP * 0.1)))
         self.steps("Then the next stage. GitOps passes, and you commit again.",
                    (0.8, mark(6, GREEN_M)), (0.8, flip(2, "PASS", "Argo CD: Synced/Healthy")), (0.8, Indicate(commit, color=TEAL_M)))
@@ -149,13 +149,13 @@ class D68Capstone(VoiceScene):
                   Create(ar), Succession(Wait(3.0), AnimationGroup(flip(1, "PASS", "App reports version 1.2.0"), mark(5, GREEN_M), FadeOut(pf), FadeOut(ar))), run_time=5.0)
         rule = T("run it after every stage, and read every line", 24, YELLOW_M).move_to([1.95, -2.75, 0])
         self.beat("So run it after every stage, and read every line, not only the newest one. You run the whole test suite for the same reason, not only the newest test.",
-                  FadeIn(rule, shift=UP * 0.1), run_time=2.0)
+                  FadeOut(commit), FadeIn(rule, shift=UP * 0.1), run_time=2.0)
 
         # ---- 7. why not test at the end
-        self.play(FadeOut(rule), FadeOut(commit), run_time=0.4)
+        self.play(FadeOut(rule), run_time=0.4)
         late = T("test only at the end: five broken things at once", 24, RED_M).move_to([1.95, -2.75, 0])
         self.steps("Compare the other way. Build all fourteen stages first, and test at the end. Now five things are broken at once, and you cannot tell which one causes the others.",
-                   (3.0, Wait(3.0)), (1.2, LaggedStart(*[flip(i, "FAIL", L[i][1] if i != 0 else "Deployment hello-devops is not ready") for i in (0, 1, 2)], lag_ratio=0.3),
+                   (3.0, Wait(3.0)), (1.2, LaggedStart(*[flip(i, "FAIL", {0: "Deployment hello-devops is not ready", 1: "App at localhost:8081: no answer", 2: L[2][1]}[i]) for i in (0, 1, 2)], lag_ratio=0.3),
                                       *[mark(i, RED_M) for i in (5, 6, 7)], FadeIn(late, shift=UP * 0.1)))
         self.play(*[flip(i, "PASS", t) for i, t in ((0, "Deployment hello-devops is rolled out"), (1, "App reports version 1.2.0"), (2, "Argo CD: Synced/Healthy"))],
                   mark(5, GREEN_M), mark(6, GREEN_M), mark(7, GREY_B), FadeOut(late), run_time=0.8)

@@ -1,0 +1,165 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.774
+On Day 55, Docker handed each log line straight to Fluent Bit.
+
+2
+00:00:06.774 --> 00:00:08.665
+Kubernetes works differently.
+
+3
+00:00:08.665 --> 00:00:14.465
+Here is one node, with hello-devops running on it, and Elasticsearch outside the cluster.
+
+4
+00:00:14.600 --> 00:00:16.610
+The app just prints to stdout.
+
+5
+00:00:16.610 --> 00:00:20.160
+The container runtime on the node catches every line.
+
+6
+00:00:20.333 --> 00:00:23.125
+It writes each container's output to a file.
+
+7
+00:00:23.125 --> 00:00:31.120
+The kubelet links those files into one folder, and the file name says who wrote it: the pod, the namespace, and the container.
+
+8
+00:00:31.667 --> 00:00:34.753
+Each line in that file is wrapped by the runtime.
+
+9
+00:00:34.753 --> 00:00:38.784
+A timestamp, the stream, a flag, and then the app's own message.
+
+10
+00:00:38.933 --> 00:00:45.233
+The flag is F for a full line, or P for a partial one, when the runtime splits a very long line.
+
+11
+00:00:45.800 --> 00:00:50.024
+So the job is: read every file in that folder, on every node.
+
+12
+00:00:50.024 --> 00:00:52.101
+A DaemonSet does exactly that.
+
+13
+00:00:52.101 --> 00:00:54.801
+It runs one copy of a pod on each node.
+
+14
+00:00:55.000 --> 00:01:01.622
+A hostPath volume shows the node's own /var/log folder inside the Fluent Bit container.
+
+15
+00:01:01.622 --> 00:01:03.525
+So it can read the files.
+
+16
+00:01:03.667 --> 00:01:06.990
+Your kind cluster has three nodes, so three copies.
+
+17
+00:01:06.990 --> 00:01:11.552
+Add a node, and Kubernetes starts another Fluent Bit there, by itself.
+
+18
+00:01:12.133 --> 00:01:14.817
+Why not a log sidecar in every app pod?
+
+19
+00:01:14.817 --> 00:01:15.436
+It works.
+
+20
+00:01:15.436 --> 00:01:22.799
+But forty app pods would mean forty shippers, each with its own memory and config, instead of one per node.
+
+21
+00:01:23.333 --> 00:01:27.346
+The tail input follows each file, the way tail -f does.
+
+22
+00:01:27.346 --> 00:01:35.080
+With the multiline parser set to docker and cri, it unwraps this format, and joins P pieces back together.
+
+23
+00:01:35.267 --> 00:01:40.607
+In the lab test, a line split into a P and an F part came out as one record.
+
+24
+00:01:40.800 --> 00:01:44.112
+A small database stores how far each file was read.
+
+25
+00:01:44.112 --> 00:01:47.555
+So a restarted Fluent Bit continues where it stopped.
+
+26
+00:01:48.333 --> 00:01:51.591
+But a bare log line does not say which pod wrote it.
+
+27
+00:01:51.591 --> 00:01:54.597
+How would anyone find it later, among thousands?
+
+28
+00:01:54.733 --> 00:01:56.755
+The kubernetes filter adds that.
+
+29
+00:01:56.755 --> 00:02:01.808
+The pod name, the namespace and the container come from the file name, for free.
+
+30
+00:02:02.000 --> 00:02:10.732
+For the labels, it asks the Kubernetes API about the pod, then keeps the answer in a cache, so it does not ask again for every line.
+
+31
+00:02:10.867 --> 00:02:14.126
+Then merge_log checks whether the message is JSON.
+
+32
+00:02:14.126 --> 00:02:16.603
+If it is, its keys become real fields.
+
+33
+00:02:16.603 --> 00:02:21.361
+And keep_log off drops the original string, so you do not store it twice.
+
+34
+00:02:21.533 --> 00:02:25.401
+The finished record goes to Elasticsearch, outside the cluster.
+
+35
+00:02:25.600 --> 00:02:29.643
+In Kibana, those fields become the filters you use every day.
+
+36
+00:02:29.643 --> 00:02:31.565
+Show me only namespace hello.
+
+37
+00:02:31.733 --> 00:02:33.427
+One warning about scale.
+
+38
+00:02:33.427 --> 00:02:38.016
+A thousand nodes asking the API server about pods adds real load.
+
+39
+00:02:38.016 --> 00:02:42.463
+The filter's use_kubelet option asks the local kubelet instead.
+
+40
+00:02:43.133 --> 00:02:45.544
+Every node runs its own Fluent Bit.
+
+41
+00:02:45.544 --> 00:02:54.155
+It tails the node's container log files, adds labels from the Kubernetes API, and ships to Elasticsearch outside the cluster.

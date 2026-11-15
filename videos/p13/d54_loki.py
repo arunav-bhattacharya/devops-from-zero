@@ -47,9 +47,9 @@ class D54Loki(VoiceScene):
 
         # ---- 2. containers -> Alloy -> Loki, with streams
         svc = [("web", TEAL_M), ("prometheus", RED_M), ("grafana", GOLD_M)]
-        conts = VGroup(*[box(n, c, w=2.3, h=0.7, size=24) for n, c in svc]).arrange(DOWN, buff=0.55).move_to([-5.55, 0.0, 0])
-        alloy = box("Alloy", PURPLE_M, w=1.7, h=0.8, size=26).move_to([-3.25, 0.0, 0])
-        loki = panel(8.2, 4.3, BLUE_M, [2.4, -0.1, 0], 0.04, 2)
+        conts = VGroup(*[box(n, c, w=2.0, h=0.7, size=24) for n, c in svc]).arrange(DOWN, buff=0.55).move_to([-5.75, 0.0, 0])
+        alloy = box("Alloy", PURPLE_M, w=1.6, h=0.8, size=26).move_to([-3.6, 0.0, 0])
+        loki = panel(7.8, 4.3, BLUE_M, [2.55, -0.1, 0], 0.04, 2)
         lokil = T("Loki", 28, BLUE_M).next_to(loki, UP, buff=0.15).align_to(loki, LEFT)
         ca = VGroup(*[Arrow(c.get_right(), alloy.get_left(), buff=0.08, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.15) for c in conts])
         push = Arrow(alloy.get_right(), [loki.get_left()[0], 0, 0], buff=0.08, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.25)
@@ -60,30 +60,30 @@ class D54Loki(VoiceScene):
                   Succession(Wait(5.0), AnimationGroup(FadeIn(alloy), *[GrowArrow(a) for a in ca])), Succession(Wait(7.0), AnimationGroup(GrowArrow(push), FadeIn(pl))), run_time=9.6)
 
         # streams: one lane per label set
-        LX0 = -1.35
+        LX0 = -1.05
         lanes = VGroup()
         labs = VGroup()
         ys = [1.1, 0.0, -1.1]
         for (n, c), y in zip(svc, ys):
             lab = M(f'{{service="{n}"}}', 20, c).move_to([LX0, y, 0], aligned_edge=LEFT)
             labs.add(lab)
-            lanes.add(Line([LX0 + 2.9, y, 0], [6.25, y, 0], stroke_width=1.5, color=GREY_D))
+            lanes.add(Line([LX0 + 3.55, y, 0], [6.25, y, 0], stroke_width=1.5, color=GREY_D))
         self.beat("Alloy gives each line a few labels, such as service web, and the container name.",
                   LaggedStart(*[FadeIn(l, shift=RIGHT * 0.1) for l in labs], lag_ratio=0.3), run_time=2.6)
-        ms = [marks(9, LX0 + 3.1, y, c) for (n, c), y in zip(svc, ys)]
+        ms = [marks(9, LX0 + 3.75, y, c) for (n, c), y in zip(svc, ys)]
         self.beat("All lines with the same labels form one log stream. Here, three streams.",
                   *[Create(l) for l in lanes], *[LaggedStart(*[FadeIn(m, shift=RIGHT * 0.2) for m in mm], lag_ratio=0.15) for mm in ms],
                   *[travel(a, c, 1.2) for a, (n, c) in zip(ca, svc)], run_time=4.0)
 
         # only the labels are indexed; the text goes into chunks
-        idx = panel(2.6, 1.1, BLUE_M, [4.95, 1.45, 0], 0.12, 2)
-        self.play(*[l.animate.shift(DOWN * 0.45) for l in labs], *[l.animate.shift(DOWN * 0.45) for l in lanes], *[m.animate.shift(DOWN * 0.45) for m in ms], run_time=0.6)
+        idx = panel(2.6, 1.1, BLUE_M, [5.0, 1.3, 0], 0.12, 2)
+        self.play(*[l.animate.shift(DOWN * 0.55) for l in labs], *[l.animate.shift(DOWN * 0.55) for l in lanes], *[m.animate.shift(DOWN * 0.55) for m in ms], run_time=0.6)
         idxl = VGroup(T("index:", 22, BLUE_M), T("3 label sets", 22, WHITE)).arrange(DOWN, buff=0.08).move_to(idx)
         chunks = VGroup(*[SurroundingRectangle(m, buff=0.06, stroke_color=GREY_B, stroke_width=1.5) for m in ms])
-        cl = T("text: compressed into chunks, not indexed", 22, GREY_B).move_to([2.4, -2.0, 0])
+        cl = T("text: compressed into chunks, not indexed", 22, GREY_B).move_to([2.55, -2.65, 0])
         self.beat("Here is the main idea. Loki indexes only the labels. The text of each line is compressed into chunks, and not indexed at all.",
                   FadeIn(idx), FadeIn(idxl), Indicate(labs, color=BLUE_M, scale_factor=1.03), Succession(Wait(3.6), AnimationGroup(Create(chunks), FadeIn(cl))), run_time=6.6)
-        es = T("Elasticsearch indexes every word: more disk and memory, faster word search", 22, PURPLE_M).move_to([0.0, -3.1, 0])
+        es = T("Elasticsearch indexes every word: more disk and memory, faster word search", 22, PURPLE_M).move_to([0.0, -3.2, 0])
         self.beat("Elasticsearch indexes every word instead. That costs more disk and memory, and in return finds a word across all logs faster. Loki stays cheap to run.",
                   FadeIn(es, shift=UP * 0.1), run_time=2.6)
         self.play(FadeOut(es), FadeOut(cl), run_time=0.5)
@@ -98,7 +98,7 @@ class D54Loki(VoiceScene):
 
         # zoom into the web stream
         self.play(FadeOut(VGroup(conts, alloy, ca, push, pl, idx, idxl, labs[1:], lanes, *ms[1:], chunks[1:])), run_time=0.7)
-        sbox = panel(7.2, 3.9, TEAL_M, [2.25, -0.55, 0], 0.05, 2)
+        sbox = panel(8.0, 3.9, TEAL_M, [2.4, -0.55, 0], 0.05, 2)
         rows = VGroup(*[M(t, 20) for t, _, _ in LINES]).arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to(sbox)
         self.play(ReplacementTransform(VGroup(ms[0], chunks[0]), sbox), labs[0].animate.move_to(sbox.get_corner(UL) + UP * 0.3, aligned_edge=LEFT),
                   loki.animate.set_opacity(0.0), lokil.animate.set_opacity(0.0), run_time=1.0)
@@ -109,7 +109,7 @@ class D54Loki(VoiceScene):
         steps = VGroup(M('!= "/healthz"', 22, GOLD_M), M("| json", 22, GOLD_M), M("| status >= 500", 22, GOLD_M), M('| line_format', 22, GOLD_M))
         steps.arrange(DOWN, aligned_edge=LEFT, buff=0.55).move_to([-4.6, -0.5, 0]).align_to([-6.3, 0, 0], LEFT)
         head = T("pipeline", 24, GOLD_M).next_to(steps, UP, buff=0.45).align_to(steps, LEFT)
-        sa = VGroup(*[Arrow(steps[i].get_bottom(), steps[i + 1].get_top(), buff=0.08, stroke_width=2, color=GREY_B, max_tip_length_to_length_ratio=0.3).align_to(steps[i], LEFT).shift(RIGHT * 0.25) for i in range(3)])
+        sa = VGroup(*[Arrow([-6.05, steps[i].get_bottom()[1], 0], [-6.05, steps[i + 1].get_top()[1], 0], buff=0.08, stroke_width=2, color=GREY_B, max_tip_length_to_length_ratio=0.3) for i in range(3)])
         hz = [i for i, (_, p, _) in enumerate(LINES) if p == "/healthz"]
         self.beat('Step one, a line filter. != "/healthz" drops every line that contains /healthz. The health checks are gone.',
                   FadeIn(head), FadeIn(steps[0], shift=RIGHT * 0.1), q.animate.become(M('{service_name="web"} != "/healthz"', 24, YELLOW_M).move_to([0, 3.3, 0])),
@@ -135,7 +135,7 @@ class D54Loki(VoiceScene):
         fails = VGroup(*[tbl[k] for k in bad])
         self.play(fails.animate.arrange(DOWN, buff=0.35).move_to(sbox), run_time=0.6)
         outs = VGroup(*[M("GET / -> 500", 26, RED_M) for _ in bad]).arrange(DOWN, buff=0.45).move_to(sbox)
-        lf = M('| line_format "{{.method}} {{.path}} -> {{.status}}"', 20, GOLD_M).move_to([2.25, 1.85, 0])
+        lf = M('| line_format "{{.method}} {{.path}} -> {{.status}}"', 20, GOLD_M).move_to([2.25, 2.55, 0])
         self.beat("Step four, line_format, rewrites each line from its fields. Now each one reads GET slash, arrow, 500. Easy to scan.",
                   GrowArrow(sa[2]), FadeIn(steps[3], shift=RIGHT * 0.1), FadeIn(lf), Succession(Wait(2.6), *[ReplacementTransform(fails[k], outs[k], run_time=0.6) for k in range(len(bad))]), run_time=5.4)
         cheap = VGroup(T("cheapest first:", 22, GREY_B), T("line filter before the parser", 22, YELLOW_M)).arrange(DOWN, buff=0.08, aligned_edge=LEFT).next_to(steps, DOWN, buff=0.4).align_to(steps, LEFT)
@@ -144,32 +144,32 @@ class D54Loki(VoiceScene):
         self.play(FadeOut(VGroup(steps, sa, head, cheap, outs, lf, q, sbox, labs[0])), run_time=0.7)
 
         # ---- 4. cardinality: a label with endless values
-        loki2 = panel(8.2, 4.3, BLUE_M, [2.4, -0.1, 0], 0.04, 2)
-        idx2 = panel(2.6, 1.1, BLUE_M, [4.95, 1.45, 0], 0.12, 2)
+        loki2 = panel(7.8, 4.3, BLUE_M, [2.55, -0.1, 0], 0.04, 2)
+        idx2 = panel(2.6, 1.1, BLUE_M, [5.0, 1.3, 0], 0.12, 2)
         il2 = VGroup(T("index:", 22, BLUE_M), T("1 label set", 22, WHITE)).arrange(DOWN, buff=0.08).move_to(idx2)
         one = M('{service="web"}', 20, TEAL_M).move_to([LX0, 0.0, 0], aligned_edge=LEFT)
-        onem = marks(9, LX0 + 3.1, 0.0, TEAL_M)
+        onem = marks(9, LX0 + 3.75, 0.0, TEAL_M)
         self.beat("One last rule, and it matters most. Here is the web stream again.",
                   FadeIn(loki2), FadeIn(idx2), FadeIn(il2), FadeIn(one), FadeIn(onem), run_time=2.0)
-        stack = VGroup(*[M(f'user_id="{1000 + 7 * k}"', 20, TEAL_M) for k in range(8)]).arrange(DOWN, buff=0.12, aligned_edge=LEFT).move_to([LX0, -0.6, 0], aligned_edge=LEFT)
+        stack = VGroup(*[M(f'user_id="{1000 + 7 * k}"', 20, TEAL_M) for k in range(8)]).arrange(DOWN, buff=0.12, aligned_edge=LEFT).move_to([LX0, -0.25, 0], aligned_edge=LEFT)
         dotsv = M("...", 22, TEAL_M).next_to(stack, DOWN, buff=0.08).align_to(stack, LEFT)
-        tiny = VGroup(*[marks(1, LX0 + 3.1 + (k % 3) * 0.34, s.get_y(), TEAL_M) for k, s in enumerate(stack)])
+        tiny = VGroup(*[marks(1, LX0 + 3.75 + (k % 3) * 0.34, s.get_y(), TEAL_M) for k, s in enumerate(stack)])
         il3 = VGroup(T("index:", 22, BLUE_M), T("thousands of sets", 22, RED_M)).arrange(DOWN, buff=0.08).move_to(idx2)
         self.beat("Every new label value makes a new stream. Put a user ID in a label, and one stream becomes thousands of tiny ones.",
                   Succession(Wait(2.6), AnimationGroup(ReplacementTransform(one, stack), FadeIn(dotsv), ReplacementTransform(onem, tiny), Transform(il2, il3))), run_time=6.0)
         slow = T("Loki slows down, and fills its index with tiny chunks", 22, RED_M).move_to([2.4, -2.75, 0])
         self.beat("Loki slows down, and fills its index with tiny chunks.",
-                  FadeIn(slow, shift=UP * 0.1), Indicate(idx2, color=RED_M, scale_factor=1.06), run_time=2.4)
+                  FadeIn(slow, shift=UP * 0.1), Circumscribe(idx2, color=RED_M), run_time=2.4)
         self.play(FadeOut(VGroup(stack, dotsv, tiny, slow)), run_time=0.6)
 
-        good_l = VGroup(T("good labels:", 24, GREEN_M), M("service  environment  cluster  container", 20, GREEN_M)).arrange(RIGHT, buff=0.3)
-        bad_l = VGroup(T("bad labels:", 24, RED_M), M("request ID  user ID  IP address", 20, RED_M)).arrange(RIGHT, buff=0.3)
-        filt = VGroup(T("IDs stay in the line:", 24, GREY_B), M('|= "req-42"', 22, YELLOW_M)).arrange(RIGHT, buff=0.3)
-        rules = VGroup(good_l, bad_l, filt).arrange(DOWN, aligned_edge=LEFT, buff=0.45).move_to([2.4, -0.4, 0])
+        good_l = VGroup(T("good labels", 26, GREEN_M), M("service, environment, cluster, container", 22, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
+        bad_l = VGroup(T("bad labels", 26, RED_M), M("request ID, user ID, IP address", 22, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
+        filt = VGroup(T("IDs stay in the line, where a filter finds them", 26, GREY_B), M('|= "req-42"', 22, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
+        rules = VGroup(good_l, bad_l, filt).arrange(DOWN, aligned_edge=LEFT, buff=0.45).move_to([0, -0.1, 0])
+        self.play(FadeOut(VGroup(loki2, idx2, il2)), run_time=0.6)
         self.beat("So keep labels few: service, environment, cluster, container. Never a request ID, a user ID, or an IP address. Keep those in the line itself, where a filter finds them.",
-                  Transform(il2, VGroup(T("index:", 22, BLUE_M), T("a few label sets", 22, WHITE)).arrange(DOWN, buff=0.08).move_to(idx2)),
                   FadeIn(good_l, shift=UP * 0.1), Succession(Wait(4.4), FadeIn(bad_l, shift=UP * 0.1)), Succession(Wait(7.4), FadeIn(filt, shift=UP * 0.1)), run_time=10.0)
-        self.play(FadeOut(VGroup(rules, loki2, idx2, il2)), run_time=0.6)
+        self.play(FadeOut(rules), run_time=0.6)
 
         # ---- recap
         rec = VGroup(T("Labels pick the streams.", 32, BLUE_M), T("A pipeline scans just their text.", 32, GOLD_M),

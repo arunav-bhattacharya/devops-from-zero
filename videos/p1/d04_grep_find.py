@@ -109,16 +109,20 @@ class D04GrepFind(VoiceScene):
         # 4. options answer questions
         cmd_c = M("$ grep -c 7f3a9c checkout.log", 24, YELLOW_M).move_to(cmd, aligned_edge=LEFT)
         five = M("5", 36, TEAL_M).move_to(out)
+        self.play(FadeOut(cmd), FadeIn(cmd_c), run_time=0.5)
         self.beat("Each option changes one part of that, and answers one question. How many? -c counts the matching lines.",
-                  Transform(cmd, cmd_c), Succession(Wait(2.4), AnimationGroup(FadeOut(got), FadeIn(five, scale=1.4))), run_time=3.6)
+                  Succession(Wait(2.4), AnimationGroup(FadeOut(got), FadeIn(five, scale=1.4))), run_time=3.6)
+        cmd = cmd_c
         cmd_v = M("$ grep -v 7f3a9c checkout.log", 24, YELLOW_M).move_to(cmd, aligned_edge=LEFT)
         rest = VGroup()
         for k, i in enumerate((0, 3, 5)):
             rest.add(lines[i].copy().set_opacity(1).move_to([0, slots[k], 0]).align_to(out, LEFT).shift(RIGHT * 0.15))
+        self.play(FadeOut(cmd), FadeIn(cmd_v), run_time=0.5)
         self.beat("What is left without it? -v inverts the match. Now grep prints only the lines it skipped before.",
-                  Transform(cmd, cmd_v), FadeOut(five),
+                  FadeOut(five),
                   *[lines[i].animate.set_opacity(1 if i not in HIT else 0.35) for i in range(8)],
                   Succession(Wait(1.6), LaggedStart(*[TransformFromCopy(lines[i], r) for i, r in zip((0, 3, 5), rest)], lag_ratio=0.3)), run_time=3.4)
+        cmd = cmd_v
 
         # 5. regex: a shape, tried at every position
         self.play(FadeOut(rest), *[l.animate.set_opacity(1) for l in lines], run_time=0.5)
@@ -132,9 +136,10 @@ class D04GrepFind(VoiceScene):
         self.beat("But they share a shape: digits, then ms. A regular expression is a pattern that describes a shape.",
                   Indicate(durs, color=GOLD_M, scale_factor=1.15), run_time=2.0)
         cmd_r = M("$ grep -o -E '[0-9]+ms' checkout.log", 24, YELLOW_M).move_to(cmd, aligned_edge=LEFT)
-        self.beat("Square brackets with 0 to 9 match any one digit. Plus means one or more of it. Then the letters m s.",
-                  Transform(cmd, cmd_r), Succession(Wait(0.8), Indicate(cmd[10:15], color=GOLD_M, scale_factor=1.3), Indicate(cmd[15], color=GOLD_M, scale_factor=1.6),
-                                                     Indicate(cmd[16:18], color=GOLD_M, scale_factor=1.3)), run_time=4.2)
+        self.steps("Square brackets with 0 to 9 match any one digit. Plus means one or more of it. Then the letters m s.",
+                   (0.8, FadeOut(cmd), FadeIn(cmd_r)), (1.2, Indicate(cmd_r[10:15], color=GOLD_M, scale_factor=1.3)),
+                   (1.0, Indicate(cmd_r[15], color=GOLD_M, scale_factor=1.6)), (1.0, Indicate(cmd_r[16:18], color=GOLD_M, scale_factor=1.3)))
+        cmd = cmd_r
 
         # zoom on one line
         L = lines[5]
@@ -163,12 +168,15 @@ class D04GrepFind(VoiceScene):
                   Indicate(cmd[7:9], color=YELLOW_M, scale_factor=1.4), run_time=2.4)
         cmd_w = M("$ grep 'WARN|ERROR' checkout.log", 24, YELLOW_M).move_to(cmd, aligned_edge=LEFT)
         none = T("nothing found", 28, RED_M).move_to(out)
+        self.play(FadeOut(ex), FadeOut(cmd), FadeIn(cmd_w), run_time=0.5)
         self.beat("The same trap catches the bar. grep with WARN bar ERROR, and no -E, looks for that exact text, bar included. It finds nothing.",
-                  FadeOut(ex), Transform(cmd, cmd_w), Succession(Wait(2.4), FadeIn(none)), run_time=3.6)
+                  Succession(Wait(2.4), FadeIn(none)), run_time=3.6)
+        cmd = cmd_w
         cmd_we = M("$ grep -E 'WARN|ERROR' checkout.log", 24, YELLOW_M).move_to(cmd, aligned_edge=LEFT)
         we = VGroup(*[lines[i].copy().move_to([0, slots[k], 0]).align_to(out, LEFT).shift(RIGHT * 0.15) for k, i in enumerate((4, 6))])
-        self.beat("With -E, the bar means or, and both lines come back.",
-                  Transform(cmd, cmd_we), FadeOut(none), Succession(Wait(1.0), LaggedStart(*[TransformFromCopy(lines[i], w) for i, w in zip((4, 6), we)], lag_ratio=0.3)), run_time=2.6)
+        self.steps("With -E, the bar means or, and both lines come back.",
+                   (0.6, FadeOut(cmd), FadeIn(cmd_we), FadeOut(none)), (1.4, LaggedStart(*[TransformFromCopy(lines[i], w) for i, w in zip((4, 6), we)], lag_ratio=0.3)))
+        cmd = cmd_we
         self.play(FadeOut(VGroup(top, flab, lines, cmd, out, we, durs)), run_time=0.6)
 
         # 6. find: picks files, never opens them
@@ -189,7 +197,7 @@ class D04GrepFind(VoiceScene):
         fcmd = M("$ find logs -name '*.log' -exec grep -l 7f3a9c {} +", 24, YELLOW_M).move_to([0, -3.3, 0])
         self.beat("find walks down through every folder under a starting point, and tests each file it meets.",
                   Write(fcmd[:21]), run_time=2.0)
-        walker = Dot(radius=0.09, color=YELLOW_M).move_to(root.get_bottom() + DOWN * 0.05)
+        walker = Dot(radius=0.09, color=YELLOW_M).move_to([-4.6, ys[0] + 0.35, 0])
         marks = VGroup()
         self.add(walker)
         path_anims = []
@@ -205,12 +213,12 @@ class D04GrepFind(VoiceScene):
         self.beat("It never opens a file. It only looks at what it knows about each one: the name, the type, the size, and the age.",
                   FadeIn(note, shift=DOWN * 0.1), run_time=2.0)
 
-        gb = mbox("grep -l 7f3a9c", GOLD_M, w=3.0, h=0.8, size=24).move_to([1.2, 0.9, 0])
+        gb = mbox("grep -l 7f3a9c", GOLD_M, w=3.0, h=0.8, size=24).move_to([1.6, 0.9, 0])
         passed = VGroup(*[fi[k] for k in range(4)])
-        fa = VGroup(*[Arrow(fi[k][1].get_right() + RIGHT * 0.55, gb.get_left(), buff=0.12, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.1) for k in range(4)])
+        fa = VGroup(*[Arrow(fi[k][1].get_right() + RIGHT * 0.8, gb.get_left(), buff=0.12, stroke_width=2.5, color=GREY_B, max_tip_length_to_length_ratio=0.1) for k in range(4)])
         self.beat("Then -exec hands the list of paths to grep.",
                   Write(fcmd[21:]), FadeIn(gb), LaggedStart(*[GrowArrow(a) for a in fa], lag_ratio=0.15), run_time=2.4)
-        res = VGroup(*[M(f"logs/{names[k]}", 22, TEAL_M) for k in range(4)]).arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to([5.0, 0.9, 0])
+        res = VGroup(*[M(f"logs/{names[k]}", 22, TEAL_M) for k in range(4)]).arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to([5.2, 0.9, 0])
         ra = Arrow(gb.get_right(), res.get_left(), buff=0.15, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.15)
         self.beat("grep reads every line of them, and -l prints only the names of files that match. All four. Four services touched this request.",
                   LaggedStart(*[travel(a, YELLOW_M, 0.7) for a in fa], lag_ratio=0.2), Succession(Wait(1.8), AnimationGroup(GrowArrow(ra), LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in res], lag_ratio=0.2))), run_time=4.4)

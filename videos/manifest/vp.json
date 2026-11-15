@@ -1,0 +1,32 @@
+{
+ "d49": [
+  {
+   "slug": "d49-error-budget",
+   "title": "From SLO to error budget to burn rate: who gets woken up",
+   "after": 4,
+   "file": "p12/d49_budget.py",
+   "scene": "D49Budget",
+   "poster_at": 214.0
+  }
+ ],
+ "d54": [
+  {
+   "slug": "d54-loki-streams",
+   "title": "How Loki finds a log line: labels pick the stream, a pipeline scans the text",
+   "after": 3,
+   "file": "p13/d54_loki.py",
+   "scene": "D54Loki",
+   "poster_at": 124.0
+  }
+ ],
+ "d55": [
+  {
+   "slug": "d55-inverted-index",
+   "title": "How Elasticsearch finds a log line: one road for every log, and an index of every word",
+   "after": 2,
+   "file": "p14/d55_index.py",
+   "scene": "D55Index",
+   "poster_at": 128.6
+  }
+ ]
+}

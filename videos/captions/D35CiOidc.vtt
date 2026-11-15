@@ -1,0 +1,185 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:08.723
+One way to let a pipeline into AWS is an access key, saved as a GitHub secret.
+
+2
+00:00:08.933 --> 00:00:11.428
+That key works until someone deletes it.
+
+3
+00:00:11.428 --> 00:00:14.109
+So if it leaks, it stays useful for months.
+
+4
+00:00:14.933 --> 00:00:17.175
+The lab's pipeline stores no key.
+
+5
+00:00:17.175 --> 00:00:21.048
+It runs when anything under infra changes, in three jobs.
+
+6
+00:00:21.267 --> 00:00:25.817
+checks runs on every pull request and push, with no cloud login.
+
+7
+00:00:25.817 --> 00:00:30.581
+Formatting, tflint, a trivy scan, validate, and the module's tests.
+
+8
+00:00:30.800 --> 00:00:32.790
+The cheap checks run first.
+
+9
+00:00:32.790 --> 00:00:37.064
+So a formatting slip fails before anything logs in to AWS.
+
+10
+00:00:37.767 --> 00:00:41.284
+plan runs on pull requests, once the checks pass.
+
+11
+00:00:41.284 --> 00:00:48.319
+It logs in to AWS, runs terraform plan, and puts the plan on the run's summary page for reviewers.
+
+12
+00:00:48.933 --> 00:00:51.093
+apply runs after a merge to main.
+
+13
+00:00:51.093 --> 00:00:55.935
+It waits in the production environment until a required reviewer approves.
+
+14
+00:00:55.935 --> 00:00:57.636
+Then it plans and applies.
+
+15
+00:00:58.367 --> 00:01:00.826
+So two jobs log in to AWS.
+
+16
+00:01:00.826 --> 00:01:02.433
+How, with no key?
+
+17
+00:01:03.133 --> 00:01:03.603
+OIDC.
+
+18
+00:01:03.603 --> 00:01:07.264
+First, the job asks GitHub for a token.
+
+19
+00:01:07.467 --> 00:01:09.776
+GitHub signs a short-lived token.
+
+20
+00:01:09.776 --> 00:01:15.096
+It holds claims: named fields, such as the repo and branch the job runs for.
+
+21
+00:01:15.300 --> 00:01:18.037
+The job hands the token to AWS.
+
+22
+00:01:18.267 --> 00:01:21.423
+But how does AWS know the token is real?
+
+23
+00:01:21.423 --> 00:01:22.922
+AWS never sees you.
+
+24
+00:01:22.922 --> 00:01:25.604
+It only trusts GitHub's signature.
+
+25
+00:01:25.833 --> 00:01:35.068
+An OIDC provider for token.actions.githubusercontent.com lets AWS check that signature.
+
+26
+00:01:35.068 --> 00:01:40.588
+And the token's aud claim must be sts.amazonaws.com.
+
+27
+00:01:40.800 --> 00:01:44.174
+Next, the role's trust policy checks the sub claim.
+
+28
+00:01:44.174 --> 00:01:47.946
+It names your repo and the context, such as pull_request.
+
+29
+00:01:47.946 --> 00:01:51.188
+It has to match exactly, character for character.
+
+30
+00:01:51.400 --> 00:01:59.823
+If the sub names any other repo, the login fails with: Not authorized to perform sts:AssumeRoleWithWebIdentity.
+
+31
+00:01:59.823 --> 00:02:01.568
+So check the sub first.
+
+32
+00:02:01.800 --> 00:02:03.705
+With the right sub, it passes.
+
+33
+00:02:03.933 --> 00:02:07.902
+Then AWS hands back short-lived credentials for that role.
+
+34
+00:02:07.902 --> 00:02:09.749
+No key was stored anywhere.
+
+35
+00:02:10.367 --> 00:02:13.473
+Now terraform plan runs with those credentials.
+
+36
+00:02:13.473 --> 00:02:14.927
+And the role is small.
+
+37
+00:02:14.927 --> 00:02:19.091
+It may manage only buckets whose names start with hello-devops.
+
+38
+00:02:19.300 --> 00:02:20.777
+It cannot change IAM.
+
+39
+00:02:20.777 --> 00:02:24.576
+So a pull request cannot give the pipeline more power.
+
+40
+00:02:24.576 --> 00:02:27.320
+You apply IAM changes from your laptop.
+
+41
+00:02:27.533 --> 00:02:30.707
+The apply job does the same swap after approval.
+
+42
+00:02:30.707 --> 00:02:37.253
+Its token's sub names the context environment production, and the trust policy must allow that too.
+
+43
+00:02:38.767 --> 00:02:40.115
+Cheap checks first.
+
+44
+00:02:40.115 --> 00:02:43.236
+Plan on pull requests, apply after approval.
+
+45
+00:02:43.236 --> 00:02:47.634
+Each AWS job swaps a signed token for short-lived credentials.
+
+46
+00:02:47.634 --> 00:02:51.465
+The trust policy checks who, and the role limits what.

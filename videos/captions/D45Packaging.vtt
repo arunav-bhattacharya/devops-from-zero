@@ -1,0 +1,261 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.087
+hello-devops now has more than ten YAML files.
+
+2
+00:00:06.087 --> 00:00:08.784
+Now run it for dev, staging and prod.
+
+3
+00:00:08.933 --> 00:00:12.179
+The easy way is to copy the folder three times.
+
+4
+00:00:12.179 --> 00:00:16.392
+Each copy gets its own image tag, replica count and greeting.
+
+5
+00:00:16.533 --> 00:00:19.100
+Prod also wants a disruption budget.
+
+6
+00:00:19.267 --> 00:00:21.175
+Then the copies drift apart.
+
+7
+00:00:21.175 --> 00:00:24.379
+Someone fixes a probe in prod, and forgets dev.
+
+8
+00:00:24.533 --> 00:00:28.423
+Six months later, nobody knows which differences are on purpose.
+
+9
+00:00:29.333 --> 00:00:33.436
+There are two popular answers, and they come from opposite directions.
+
+10
+00:00:33.600 --> 00:00:34.801
+Helm is templating.
+
+11
+00:00:34.801 --> 00:00:39.544
+Write the YAML once, with blanks, and fill the blanks for each environment.
+
+12
+00:00:39.733 --> 00:00:41.302
+Kustomize is patching.
+
+13
+00:00:41.302 --> 00:00:48.216
+Keep plain, valid YAML as a base, and describe each environment as a small set of changes on top.
+
+14
+00:00:48.400 --> 00:00:51.873
+Either way, the result is ordinary Kubernetes YAML.
+
+15
+00:00:51.873 --> 00:00:55.005
+The API server never knows which tool made it.
+
+16
+00:00:55.800 --> 00:00:56.888
+Start with Helm.
+
+17
+00:00:56.888 --> 00:00:58.792
+A package is called a chart.
+
+18
+00:00:58.792 --> 00:01:01.580
+Its templates are YAML with placeholders.
+
+19
+00:01:01.733 --> 00:01:03.467
+Each placeholder is a blank.
+
+20
+00:01:03.467 --> 00:01:06.192
+This one reads replicaCount from the values.
+
+21
+00:01:06.192 --> 00:01:09.412
+This one reads the greeting, and wraps it in quotes.
+
+22
+00:01:09.600 --> 00:01:13.638
+The chart's values.yaml holds the default settings.
+
+23
+00:01:13.638 --> 00:01:14.668
+Two replicas.
+
+24
+00:01:14.668 --> 00:01:15.935
+Hello from Helm.
+
+25
+00:01:16.133 --> 00:01:19.176
+Your own values file goes on top, with -f.
+
+26
+00:01:19.176 --> 00:01:23.016
+The lab's kind-values.yaml changes only the greeting.
+
+27
+00:01:23.200 --> 00:01:24.606
+Layers stack in order.
+
+28
+00:01:24.606 --> 00:01:27.992
+When two layers set the same key, the later one wins.
+
+29
+00:01:28.133 --> 00:01:32.065
+So the result is two replicas, and Hello from Helm on kind.
+
+30
+00:01:32.200 --> 00:01:37.645
+helm template fills every blank and prints the final YAML, without touching the cluster.
+
+31
+00:01:37.645 --> 00:01:39.253
+Render before you install.
+
+32
+00:01:39.400 --> 00:01:44.377
+helm install applies it, and records revision 1 of a release named hello.
+
+33
+00:01:44.533 --> 00:01:48.217
+Later you run helm upgrade, with just one new setting.
+
+34
+00:01:48.217 --> 00:01:49.923
+Set replicaCount to four.
+
+35
+00:01:50.067 --> 00:01:51.358
+Here is the surprise.
+
+36
+00:01:51.358 --> 00:01:58.243
+When you pass any values on an upgrade, Helm starts from the chart's defaults plus only the values you pass now.
+
+37
+00:01:58.243 --> 00:02:01.009
+The file you gave at install time is dropped.
+
+38
+00:02:01.200 --> 00:02:05.043
+Revision 2 has four replicas, and the old greeting is back.
+
+39
+00:02:05.043 --> 00:02:08.040
+That surprises nearly everyone the first time.
+
+40
+00:02:08.200 --> 00:02:12.623
+So keep your settings in a values file, and pass it with -f every time.
+
+41
+00:02:13.533 --> 00:02:14.634
+Now Kustomize.
+
+42
+00:02:14.634 --> 00:02:16.600
+It is built into kubectl.
+
+43
+00:02:16.600 --> 00:02:21.553
+The base is your plain k8s folder, the files you already apply.
+
+44
+00:02:21.733 --> 00:02:25.729
+Every file stays as it is, and you can still read and apply it.
+
+45
+00:02:25.867 --> 00:02:29.834
+An overlay is another folder, with its own kustomization file.
+
+46
+00:02:29.834 --> 00:02:32.394
+It points at the base and lists changes.
+
+47
+00:02:32.394 --> 00:02:35.337
+Think of a sheet of tracing paper laid on top.
+
+48
+00:02:35.533 --> 00:02:40.241
+The prod overlay moves every object into the namespace hello-prod.
+
+49
+00:02:40.241 --> 00:02:41.810
+It sets four replicas.
+
+50
+00:02:41.810 --> 00:02:44.449
+It switches the Service to ClusterIP.
+
+51
+00:02:44.600 --> 00:02:49.129
+And it adds one file that only prod has, a PodDisruptionBudget.
+
+52
+00:02:49.267 --> 00:02:52.174
+kubectl kustomize prints the result.
+
+53
+00:02:52.174 --> 00:02:53.547
+Plain YAML again.
+
+54
+00:02:53.733 --> 00:02:57.013
+Lift the sheet off, and the base is untouched.
+
+55
+00:02:57.013 --> 00:02:58.653
+Nothing in k8s changed.
+
+56
+00:02:58.800 --> 00:03:01.362
+Lay down the dev sheet instead.
+
+57
+00:03:01.362 --> 00:03:06.237
+Namespace hello-dev, one replica, and a newer image, 1.1.0.
+
+58
+00:03:06.400 --> 00:03:08.388
+One base, two small overlays.
+
+59
+00:03:08.388 --> 00:03:12.365
+Applied, they run side by side, each in its own namespace.
+
+60
+00:03:14.067 --> 00:03:14.735
+Which one?
+
+61
+00:03:14.735 --> 00:03:17.876
+Most third-party software ships as Helm charts.
+
+62
+00:03:17.876 --> 00:03:25.628
+For your own app with a few differences per environment, either works, and Kustomize keeps every file as plain YAML.
+
+63
+00:03:25.800 --> 00:03:27.309
+Helm fills in blanks.
+
+64
+00:03:27.309 --> 00:03:29.105
+Kustomize patches a base.
+
+65
+00:03:29.105 --> 00:03:31.836
+The cluster only ever sees plain YAML.

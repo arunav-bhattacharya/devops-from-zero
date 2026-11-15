@@ -9,7 +9,7 @@ SAY.extend([
 ])
 
 DATA = [("/", 200, 12), ("/", 200, 18), ("/", 200, 20), ("/", 500, 350), ("/healthz", 200, 2), ("/readyz", 503, 1001)]
-COLX = [1.0, 2.35, 3.6, 4.85, 6.0]
+COLX = [0.8, 2.05, 3.2, 4.4, 5.75]
 HY, RY0, RS = 2.35, 1.8, 0.47
 QX = -6.35
 
@@ -107,13 +107,12 @@ class D62Dql(VoiceScene):
         self.play(FadeOut(nm), run_time=0.4)
 
         # ---- 6. fieldsAdd and sort
-        fa = ql("| fieldsAdd error_pct = errors * 100.0 / requests", 0.2, GOLD_M)
-        fit(fa, 6.1).move_to([QX, 0.2, 0], aligned_edge=LEFT)
+        fa = VGroup(ql("| fieldsAdd error_pct =", 0.2, GOLD_M), ql("    errors * 100.0 / requests", -0.2, GOLD_M))
         hd3 = header(["path", "requests", "errors", "avg_ms", "error_pct"])
         pct = VGroup(*[cell(v, COLX[4], RY0 - i * RS, YELLOW_M) for i, v in enumerate((25, 0, 100))])
         self.beat("Add a computed field. fieldsAdd keeps every column, and adds one: errors times 100, divided by requests.",
                   FadeIn(fa, shift=DOWN * 0.1), Transform(hd2, hd3), Succession(Wait(3.0), LaggedStart(*[FadeIn(p, shift=LEFT * 0.1) for p in pct], lag_ratio=0.3)), run_time=5.4)
-        so = ql("| sort error_pct desc", -0.2, GOLD_M)
+        so = ql("| sort error_pct desc", -0.6, GOLD_M)
         order = [2, 0, 1]
         self.beat("Then sort by the name you gave it. The worst path comes first: /readyz at 100 percent, / at 25, /healthz at 0.",
                   FadeIn(so, shift=DOWN * 0.1),
@@ -125,8 +124,8 @@ class D62Dql(VoiceScene):
 
         # ---- 7. order matters
         self.play(FadeOut(tail), run_time=0.4)
-        late = ql("| filter status >= 500", -0.6, RED_M)
-        gone = T("after summarize, status no longer exists", 24, RED_M).move_to([3.5, -0.6, 0])
+        late = ql("| filter status >= 500", -1.0, RED_M)
+        gone = T("after summarize, status no longer exists", 24, RED_M).move_to([3.5, -0.9, 0])
         self.beat("Order matters. A command only sees what the one before it passed on. After summarize, only the summarized fields exist.",
                   FadeIn(late, shift=DOWN * 0.1), Succession(Wait(3.6), FadeIn(gone)), Indicate(hd2, color=RED_M, scale_factor=1.03), run_time=5.4)
         first = T("so filter first", 24, GREEN_M).next_to(gone, DOWN, buff=0.25)
@@ -157,8 +156,8 @@ class D62Dql(VoiceScene):
         self.play(FadeOut(VGroup(sack1, sack2, l1, l2, short, hd2, sep)), run_time=0.6)
 
         # ---- recap
-        rec = VGroup(T("the first command fetches,", 30, TEAL_M), T("each pipe passes records on,", 30, GOLD_M), T("a short window keeps the scan small", 30, YELLOW_M)).arrange(DOWN, buff=0.3)
-        rec.move_to([3.4, 0.6, 0])
+        rec = VGroup(T("the first command fetches,", 28, TEAL_M), T("each pipe passes records on,", 28, GOLD_M), T("a short window keeps the scan small", 28, YELLOW_M)).arrange(DOWN, buff=0.3)
+        rec.move_to([3.3, 0.6, 0])
         self.beat("Read DQL top to bottom. The first command fetches, each pipe passes the records on, and a short time window keeps the scan small.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rec], lag_ratio=0.6), run_time=6.0)
         self.wait(1.2)

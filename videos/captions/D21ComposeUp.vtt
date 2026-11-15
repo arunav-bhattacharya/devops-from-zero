@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.402
+On Day 20 you wired up hello-devops and Redis by hand.
+
+2
+00:00:06.402 --> 00:00:11.887
+A network, a volume, and two long docker run commands, typed in the right order.
+
+3
+00:00:12.100 --> 00:00:13.400
+That is imperative.
+
+4
+00:00:13.400 --> 00:00:15.178
+You tell Docker each step.
+
+5
+00:00:15.178 --> 00:00:18.051
+It works, and nobody wants to do it twice.
+
+6
+00:00:18.867 --> 00:00:21.015
+Docker Compose is declarative.
+
+7
+00:00:21.015 --> 00:00:25.024
+You describe the finished app in one file, compose.yaml.
+
+8
+00:00:25.233 --> 00:00:32.406
+It has one entry per service: one for web, built from your Dockerfile, and one for Redis, from a ready-made image.
+
+9
+00:00:32.406 --> 00:00:34.356
+And it declares a named volume.
+
+10
+00:00:34.567 --> 00:00:36.688
+Then you run docker compose up.
+
+11
+00:00:36.688 --> 00:00:38.399
+Compose is only a client.
+
+12
+00:00:38.399 --> 00:00:44.763
+It turns the file into the same requests to Docker Engine that your docker run commands made.
+
+13
+00:00:46.567 --> 00:00:48.037
+It works out the steps.
+
+14
+00:00:48.037 --> 00:00:53.215
+First the things the containers need: the volume, and a network for this project.
+
+15
+00:00:53.433 --> 00:00:58.155
+Every name starts with the project, and the project is named after the folder.
+
+16
+00:00:58.767 --> 00:01:03.036
+Then the Redis container, with the volume mounted at slash data.
+
+17
+00:01:03.036 --> 00:01:08.039
+The -1 is a counter, because Compose can run several copies of one service.
+
+18
+00:01:08.267 --> 00:01:09.248
+Now the catch.
+
+19
+00:01:09.248 --> 00:01:12.611
+depends_on makes Compose start Redis before web.
+
+20
+00:01:12.833 --> 00:01:17.165
+In its short form, it only waits until the Redis container is running.
+
+21
+00:01:17.165 --> 00:01:21.807
+But a database can need several more seconds before it accepts connections.
+
+22
+00:01:22.033 --> 00:01:24.259
+Running is not the same as ready.
+
+23
+00:01:24.467 --> 00:01:26.581
+A healthcheck closes that gap.
+
+24
+00:01:26.581 --> 00:01:31.091
+It is a command Docker runs inside the container, on a schedule.
+
+25
+00:01:31.091 --> 00:01:33.980
+Here, redis-cli ping, every five seconds.
+
+26
+00:01:34.200 --> 00:01:36.216
+Exit code zero means healthy.
+
+27
+00:01:36.216 --> 00:01:39.205
+Until a check passes, Redis shows starting.
+
+28
+00:01:39.433 --> 00:01:43.771
+In the lesson's run, Redis showed healthy after 5.8 seconds.
+
+29
+00:01:44.000 --> 00:01:50.131
+The long form of depends_on, with condition service_healthy, waits for exactly that.
+
+30
+00:01:50.131 --> 00:01:53.635
+Only now does Compose start web, at 6.0 seconds.
+
+31
+00:01:54.267 --> 00:01:59.567
+Every service is on the project network, so service names work as DNS names.
+
+32
+00:01:59.567 --> 00:02:01.939
+Web finds Redis by the name redis.
+
+33
+00:02:02.167 --> 00:02:04.984
+Only port 8000 is published to your Mac.
+
+34
+00:02:04.984 --> 00:02:08.857
+Redis has no ports entry, because only web talks to it.
+
+35
+00:02:10.167 --> 00:02:13.050
+But how does Compose know what is already there?
+
+36
+00:02:13.050 --> 00:02:18.756
+It labels every container with its project, its service, and a hash of that service's settings.
+
+37
+00:02:18.967 --> 00:02:22.195
+Say you change one setting of web, and run up again.
+
+38
+00:02:22.400 --> 00:02:25.141
+Compose compares the labels with the file.
+
+39
+00:02:25.141 --> 00:02:27.425
+Redis matches, so it keeps running.
+
+40
+00:02:27.425 --> 00:02:28.991
+Web's hash is different.
+
+41
+00:02:29.200 --> 00:02:31.255
+So only web is recreated.
+
+42
+00:02:31.867 --> 00:02:35.713
+docker compose down removes the containers, and the network.
+
+43
+00:02:35.933 --> 00:02:37.419
+It keeps named volumes.
+
+44
+00:02:37.419 --> 00:02:41.877
+So the next up finds your Redis data, and the visit count carries on.
+
+45
+00:02:42.100 --> 00:02:47.312
+docker compose down -v also deletes the volumes, and your data with them.
+
+46
+00:02:47.933 --> 00:02:50.258
+compose.yaml describes the whole app.
+
+47
+00:02:50.258 --> 00:02:57.483
+docker compose up makes the steps, in the right order, and with a healthcheck it waits for ready, not just running.

@@ -552,7 +552,7 @@
       "lang": "console"
      },
      {
-      "say": "That run is trimmed to six of the eleven lines; the others fail the same way, because kind is not running yet. Work down the list, run the script after each stage, and commit whenever a line turns green. Stop the container with `docker rm -f capstone`."
+      "say": "That run is trimmed to six of the eleven lines. Four of the other five fail because kind is not running yet, and one more skips. Work down the list, run the script after each stage, and commit whenever a line turns green. Stop the container with `docker rm -f capstone`."
      }
     ]
    },

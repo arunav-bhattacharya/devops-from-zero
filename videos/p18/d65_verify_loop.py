@@ -53,9 +53,8 @@ class D65VerifyLoop(VoiceScene):
         self.title_card("The verify loop", "the model drafts, and a tool you trust decides")
 
         # ---------- 1. the draft
-        ask = chip("Write a Deployment for hello-devops, 3 replicas, a liveness probe, Redis", GREY_B, 20)
-        ask.move_to([CX - 0.4, 3.15, 0])
-        fit(ask, 6.4)
+        ask = chip("Write a Kubernetes Deployment for hello-devops: 3 replicas, a liveness probe, Redis", GREY_B, 22)
+        ask.move_to([0, 3.2, 0])
         self.beat("You ask an assistant for a Kubernetes Deployment for hello-devops. No files, no versions. It answers in seconds.",
                   FadeIn(ask, shift=0.1 * DOWN), run_time=1.4)
         card = RoundedRectangle(corner_radius=0.15, width=5.9, height=6.85, stroke_color=GREY_B, stroke_width=2).set_fill(tint(GREY_B, 0.05), 1)
@@ -63,11 +62,10 @@ class D65VerifyLoop(VoiceScene):
         lines = VGroup(*[self.line(i, t) for i, (t, _) in enumerate(DRAFT)])
         ttl = M("deployment-ai-draft.yaml, trimmed", 20, GREY_B).move_to([-3.75, 3.2, 0])
         self.beat("A model writes by predicting likely text, one small piece at a time. It is not looking anything up. It produces the shape it has seen thousands of times.",
-                  FadeIn(card), FadeIn(ttl), LaggedStart(*[FadeIn(l, shift=0.05 * RIGHT) for l in lines], lag_ratio=0.12), run_time=5.0)
+                  FadeOut(ask), FadeIn(card), FadeIn(ttl), LaggedStart(*[FadeIn(l, shift=0.05 * RIGHT) for l in lines], lag_ratio=0.12), run_time=5.0)
         self.beat("Common shapes come out well. Rare details come out as guesses, and the guesses look exactly like facts. Can you spot them?",
                   Indicate(lines, color=WHITE, scale_factor=1.02), run_time=2.0)
-        self.beat("So one rule for this whole lesson. The model drafts, and a tool you trust decides.",
-                  FadeOut(ask), run_time=1.2)
+        self.beat("So one rule for this whole lesson. The model drafts, and a tool you trust decides.")
 
         # ---------- 2. the loop on the right
         kc = check("schema check", "kubeconform -strict", BLUE_M, 2.55, 1.6)
@@ -92,7 +90,7 @@ class D65VerifyLoop(VoiceScene):
             return b, lines[i].animate.set_color(color)
 
         # kubeconform -strict
-        f1 = VGroup(T("1  containerPort: got string, want integer", 20), T("2  timeout: not a probe field", 20)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+        f1 = VGroup(T("1  port: got string, want integer", 20), T("2  timeout: not a probe field", 20)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         f1.move_to([CX, 2.13, 0])
         b1, m1 = mark(9, 1, BLUE_M)
         b2, m2 = mark(16, 2, BLUE_M)
@@ -111,7 +109,7 @@ class D65VerifyLoop(VoiceScene):
                    (0.6, Create(ok1), f1.animate.set_opacity(0.35), kc[0].animate.set_stroke(width=3)))
 
         # server dry run
-        f2 = T("3  selector does not match template labels", 20).move_to([CX, 0.4, 0])
+        f2 = T("3  selector does not match labels", 20).move_to([CX, 0.4, 0])
         b3, m3 = mark(1, 3, PURPLE_M)
         b3b, m3b = mark(4, 3, PURPLE_M)
         self.steps("The API server is not. Some rules live only in the server. A server dry run sends the object, runs every check of a real apply, and then throws it away.",
@@ -125,10 +123,10 @@ class D65VerifyLoop(VoiceScene):
                    (0.6, Create(ok2), f2.animate.set_opacity(0.35), dr[0].animate.set_stroke(width=3)))
 
         # the review
-        q = T("checks prove shape, not intent", 26, GOLD_M).move_to([CX, -0.8, 0])
+        q = T("checks prove shape, not intent", 22, GOLD_M).move_to([CX, -0.8, 0])
         self.beat("But is it right for hello-devops? Checks prove shape, not intent. No schema knows that your app listens on 8000, or which path is healthy.",
                   rv[0].animate.set_stroke(width=6), FadeIn(q), run_time=2.0)
-        routes = M("app.py: /  /healthz  /readyz  /metrics", 20, GREY_B).move_to([CX, -1.2, 0])
+        routes = M("app.py: /healthz, /readyz", 20, GREY_B).move_to([CX, -1.2, 0])
         b4, m4 = mark(15, 4, GOLD_M)
         self.beat("Read the routes in app.py. The probe uses slash health, but the app serves /healthz.",
                   FadeIn(routes), FadeIn(b4), m4, run_time=2.0)
@@ -144,7 +142,7 @@ class D65VerifyLoop(VoiceScene):
         self.steps("Paste the tool output and your notes back, ask for a fixed version, and run the same checks again.",
                    (1.0, travel(back, GREY_B, 1.0)),
                    (1.4, *[Transform(lines[i], self.line(i, t, GREEN_M)) for i, t in fixes], lines[13].animate.set_color(GREEN_M),
-                    lines[18].animate.set_color(GREEN_M), FadeOut(VGroup(b4, b5, b6, b7, b8))),
+                    lines[18].animate.set_opacity(0.25), FadeOut(VGroup(b4, b5, b6, b7, b8))),
                    (1.4, scan(BLUE_M, 1.2)), (1.4, scan(PURPLE_M, 1.2)))
         ok3 = tick(True, 0.2).next_to(rv[1], RIGHT, buff=0.25)
         self.beat("When it matches the tested deployment file, and both checks pass, only then does it go into a pull request.",

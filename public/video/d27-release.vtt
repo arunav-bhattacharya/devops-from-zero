@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.576
+A release job has to write to a registry, so it needs a key.
+
+2
+00:00:06.576 --> 00:00:09.482
+The simple way is to store a key as a secret.
+
+3
+00:00:09.482 --> 00:00:14.197
+That key lives for months, works from anywhere, and is painful to rotate.
+
+4
+00:00:14.400 --> 00:00:18.239
+If it leaks, an attacker can use it until someone notices.
+
+5
+00:00:18.239 --> 00:00:20.621
+Here is how release.yml does better.
+
+6
+00:00:21.433 --> 00:00:25.713
+It starts when you push a version tag, such as v1.2.0.
+
+7
+00:00:25.713 --> 00:00:30.151
+Any tag that matches v star starts a run of release.yml.
+
+8
+00:00:31.067 --> 00:00:36.342
+Without a gate, every tag you push ships at once, even one you pushed by mistake.
+
+9
+00:00:36.342 --> 00:00:39.208
+So the job names an environment: production.
+
+10
+00:00:39.433 --> 00:00:43.466
+Before the job starts, GitHub checks the environment's rules.
+
+11
+00:00:43.466 --> 00:00:45.185
+Here, a required reviewer.
+
+12
+00:00:45.400 --> 00:00:46.979
+The run stops and waits.
+
+13
+00:00:46.979 --> 00:00:50.533
+It can wait up to thirty days for a person to say yes.
+
+14
+00:00:50.767 --> 00:00:53.227
+One approval lets the job go on.
+
+15
+00:00:53.433 --> 00:00:56.085
+Now the job starts, on a fresh machine.
+
+16
+00:00:56.300 --> 00:01:00.039
+Every job gets a token without asking: the GITHUB_TOKEN.
+
+17
+00:01:00.039 --> 00:01:04.847
+GitHub creates it when the job starts, and it expires when the job ends.
+
+18
+00:01:05.067 --> 00:01:07.648
+It only works on the current repository.
+
+19
+00:01:07.648 --> 00:01:09.261
+But what may it do there?
+
+20
+00:01:09.467 --> 00:01:11.948
+You decide, with the permissions key.
+
+21
+00:01:11.948 --> 00:01:16.776
+At the top of the workflow, the default for every job is contents: read.
+
+22
+00:01:17.000 --> 00:01:20.509
+This job alone adds packages: write, to push images.
+
+23
+00:01:20.509 --> 00:01:23.477
+Any permission you do not list becomes none.
+
+24
+00:01:23.700 --> 00:01:25.387
+That is least privilege.
+
+25
+00:01:25.387 --> 00:01:28.620
+The token gets only the access its task needs.
+
+26
+00:01:29.133 --> 00:01:30.889
+Then the steps run in order.
+
+27
+00:01:31.100 --> 00:01:34.293
+Checkout fetches the code at the tag.
+
+28
+00:01:34.293 --> 00:01:39.817
+QEMU, an emulator, lets this amd64 runner build arm64 steps too.
+
+29
+00:01:40.033 --> 00:01:45.587
+The login step logs in to ghcr.io with the job's own GITHUB_TOKEN.
+
+30
+00:01:45.587 --> 00:01:48.196
+No password is stored anywhere.
+
+31
+00:01:48.400 --> 00:01:56.300
+The metadata step turns the git tag into image tags: 1.2.0, sha plus the short commit, and latest.
+
+32
+00:01:56.533 --> 00:02:03.495
+Then build and push makes the image for both CPU types, and pushes them under one multi-platform tag.
+
+33
+00:02:03.700 --> 00:02:04.877
+Here is the catch.
+
+34
+00:02:04.877 --> 00:02:09.585
+Every action in the job can use the token, even if you never pass it on.
+
+35
+00:02:09.585 --> 00:02:12.659
+Whatever the token may do, every action may do.
+
+36
+00:02:13.567 --> 00:02:17.797
+And an action is someone else's code, running with your token.
+
+37
+00:02:17.797 --> 00:02:21.004
+A tag such as v4 is only a label on one commit.
+
+38
+00:02:21.233 --> 00:02:25.168
+Whoever controls the action's repository can move it.
+
+39
+00:02:25.168 --> 00:02:35.412
+In March 2025 that really happened: the tags of a popular action were moved to a malicious commit, which printed CI secrets into the logs.
+
+40
+00:02:35.633 --> 00:02:37.968
+A full commit SHA cannot be moved.
+
+41
+00:02:37.968 --> 00:02:43.666
+So release.yml pins every third-party action to one, with the version in a comment.
+
+42
+00:02:43.666 --> 00:02:46.000
+Dependabot moves the pins for you.
+
+43
+00:02:46.233 --> 00:02:48.993
+When the job ends, the token expires.
+
+44
+00:02:48.993 --> 00:02:53.393
+What is left is the image in GHCR, built once from the tag.
+
+45
+00:02:54.000 --> 00:02:55.449
+A tag starts the run.
+
+46
+00:02:55.449 --> 00:02:57.105
+A person opens the gate.
+
+47
+00:02:57.105 --> 00:03:04.559
+The job gets a short-lived token with only the rights it needs, and pinned actions use it to push one image.

@@ -19,7 +19,8 @@ def folder(name, cmds, color=GREY_B, w=7.6):
     cs = VGroup(*[chip(c, color, 20, mono=True) for c in cmds]).arrange(RIGHT, buff=0.12)
     for c in cs:
         c[0].stretch_to_fit_height(0.44)
-    cs.move_to(r).align_to(r, LEFT).shift(RIGHT * 3.0)
+    if len(cs):
+        cs.move_to(r).align_to(r, LEFT).shift(RIGHT * 3.0)
     return VGroup(r, n, cs)
 
 
@@ -42,7 +43,7 @@ class D02Path(VoiceScene):
         CX = -2.9
         TOP = 1.3
         GAP = 0.72
-        STAGE = [3.0, -3.1, 0]
+        STAGE = [2.75, -3.1, 0]
 
         def slots(n):
             return [[CX, TOP - GAP * i, 0] for i in range(n)]
@@ -98,7 +99,7 @@ class D02Path(VoiceScene):
         self.beat("On Apple Silicon Macs, Homebrew lives in /opt/homebrew, and puts its commands in /opt/homebrew/bin.",
                   FadeIn(hb, shift=UP * 0.15), run_time=2.4)
         self.beat("But the PATH that macOS starts with does not include that folder. The tool is in the room, but not on the list.",
-                  Indicate(ptitle, color=GREY_B), Succession(Wait(2.6), Indicate(hb[0], color=GOLD_M)), run_time=4.2)
+                  Indicate(ptitle, color=GREY_B), Succession(Wait(2.6), Indicate(hb[1], color=GOLD_M)), run_time=4.2)
 
         ns = VGroup(T("installer: Next steps", 24, GOLD_M), M("eval ... brew shellenv ...", 22)).arrange(DOWN, buff=0.15).move_to([3.9, 0.55, 0])
         self.beat("When the installer finishes, it prints Next steps: two or three commands. Most people get stuck right here, because they skip them.",
@@ -181,5 +182,5 @@ class D02Path(VoiceScene):
         # ---- recap
         rc = T("The shell runs the first match on your PATH.", 30, YELLOW_M).move_to([0, -3.3, 0])
         self.beat("So the shell runs the first match on your PATH. Homebrew's Next steps add its folder, and a venv puts its own folder first.",
-                  FadeOut(vb), FadeIn(rc, shift=UP * 0.15), Succession(Wait(2.8), Indicate(hb[0], color=GOLD_M)), run_time=5.4)
+                  FadeOut(vb), FadeIn(rc, shift=UP * 0.15), Succession(Wait(2.8), Indicate(hb[1], color=GOLD_M)), run_time=5.4)
         self.wait(1.0)

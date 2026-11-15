@@ -33,8 +33,8 @@ class D37Precedence(VoiceScene):
         # hosts on the right
         HX = 4.3
 
-        def host(name, y):
-            r = RoundedRectangle(corner_radius=0.14, width=4.4, height=1.55, stroke_color=GREY_B, stroke_width=3).set_fill(tint(GREY_B, 0.08), 1).move_to([HX, y, 0])
+        def host(name, y, x=HX, w=4.4):
+            r = RoundedRectangle(corner_radius=0.14, width=w, height=1.55, stroke_color=GREY_B, stroke_width=3).set_fill(tint(GREY_B, 0.08), 1).move_to([x, y, 0])
             n = M(name, 26, WHITE).move_to(r.get_top() + DOWN * 0.35).align_to(r, LEFT).shift(RIGHT * 0.3)
             g = M("greeting:", 20, GREY_B).next_to(n, RIGHT, buff=0.4)
             return VGroup(r, n, g)
@@ -59,7 +59,7 @@ class D37Precedence(VoiceScene):
         strong = T("strongest", 22, GOLD_M).next_to(rungs[6], UP, buff=0.18).align_to(rungs[6], LEFT).shift(LEFT * 0.4)
         self.beat("But a variable can be set in many places. The docs list 22 levels. In practice you need seven, from weakest to strongest.",
                   GrowArrow(up), LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rungs], lag_ratio=0.15), FadeIn(weak), FadeIn(strong), run_time=4.0)
-        self.play(rungs.animate.set_opacity(0.35), run_time=0.4)
+        self.play(rungs.animate.set_opacity(0.5), run_time=0.4)
 
         def put(i, text, color=WHITE):
             return M(text, 20, color).next_to(rungs[i], RIGHT, buff=0.25)
@@ -105,11 +105,11 @@ class D37Precedence(VoiceScene):
                    (1.0, on(6), FadeIn(e, shift=RIGHT * 0.1)), (1.6, Wait(1.6)),
                    (1.6, setv(1, "Hi from -e", GOLD_M, e), setv(2, "Hi from -e", GOLD_M, e)))
         self.beat("But only for that one command. Run again without it, and the inventory values are back.",
-                  FadeOut(e), rungs[6].animate.set_opacity(0.35),
+                  FadeOut(e), rungs[6].animate.set_opacity(0.5),
                   setv(1, "Hello from Ansible", TEAL_M, g), setv(2, "Hello from web2, the canary", TEAL_M, hv), run_time=2.0)
 
         # 5. the pattern, and how to ask
-        q = T("how do you know which one won?", 26, GREY_B).move_to([HX, 3.15, 0])
+        q = T("how do you know which one won?", 26, GREY_B).move_to([3.9, 3.15, 0])
         self.beat("So how do you know which one won? Ansible never asks you, and never warns. It picks the winner by this list, silently.",
                   FadeIn(q, shift=DOWN * 0.1), run_time=1.6)
         dbg = M("ansible web -m ansible.builtin.debug -a var=hello_devops_greeting", 20, YELLOW_M).move_to([0.3, -3.35, 0])
@@ -129,7 +129,7 @@ class D37Precedence(VoiceScene):
                   Indicate(hv, color=TEAL_M, scale_factor=1.06), Succession(Wait(1.2), AnimationGroup(Create(x), Wiggle(V[2]))), run_time=2.8)
         keep = VGroup(T("defaults/: settings a user may change", 24, GREEN_M), T("vars/: the role's own fixed details", 24, PURPLE_M)).arrange(DOWN, buff=0.18, aligned_edge=LEFT).move_to([HX - 0.3, 3.05, 0])
         self.beat("So defaults is for every setting a user may want to change, and vars is for the role's own fixed details.",
-                  FadeIn(keep, shift=DOWN * 0.1), FadeOut(rv), FadeOut(x), rungs[5].animate.set_opacity(0.35),
+                  FadeIn(keep, shift=DOWN * 0.1), FadeOut(rv), FadeOut(x), rungs[5].animate.set_opacity(0.5),
                   setv(1, "Hello from Ansible", TEAL_M, g), setv(2, "Hello from web2, the canary", TEAL_M, hv), run_time=3.0)
         self.play(FadeOut(keep), run_time=0.4)
         v1, v2 = V[1], V[2]
@@ -138,27 +138,29 @@ class D37Precedence(VoiceScene):
         ladder = VGroup(rungs, up, weak, strong, d, g, hv)
         self.play(ladder.animate.set_opacity(0), run_time=0.6)
         self.remove(ladder)
-        mac = RoundedRectangle(corner_radius=0.15, width=5.4, height=3.2, stroke_color=BLUE_M, stroke_width=2.5).set_fill(tint(BLUE_M, 0.06), 1).move_to([-3.6, 0, 0])
+        mac = RoundedRectangle(corner_radius=0.15, width=5.7, height=3.2, stroke_color=BLUE_M, stroke_width=2.5).set_fill(tint(BLUE_M, 0.06), 1).move_to([-3.75, 0, 0])
         macl = T("your Mac: the control node", 24, BLUE_M).next_to(mac, UP, buff=0.18)
         tpl = VGroup(M("hello-devops.env.j2", 22, GOLD_M), M("GREETING={{ hello_devops_greeting }}", 20, WHITE)).arrange(DOWN, buff=0.3, aligned_edge=LEFT).move_to(mac)
         self.beat("Where does the winning value go? Often into a template. The template module reads a Jinja2 file on your Mac.",
-                  Create(mac), FadeIn(macl), FadeIn(tpl), run_time=2.4)
+                  Create(mac), FadeIn(macl), FadeIn(tpl), FadeOut(web1[2]), FadeOut(web2[2]),
+                  Transform(web1[0], host("web1", 1.25, 3.95, 5.5)[0]), Transform(web2[0], host("web2", -1.25, 3.95, 5.5)[0]),
+                  web1[1].animate.shift(LEFT * 0.7), web2[1].animate.shift(LEFT * 0.7),
+                  v1.animate.shift(LEFT * 0.35), v2.animate.shift(LEFT * 0.35), run_time=2.4)
         self.beat("Double curly braces print a value. Here, the greeting.",
                   Indicate(tpl[1], color=GOLD_M, scale_factor=1.05), run_time=1.6)
         f1 = M("GREETING=Hello from Ansible", 20, TEAL_M).move_to(v1)
         f2 = M("GREETING=Hello from web2, the canary", 20, TEAL_M).move_to(v2)
-        fit(f2, 4.1)
         a1 = Arrow(mac.get_right() + UP * 0.4, web1[0].get_left(), buff=0.15, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.1)
         a2 = Arrow(mac.get_right() + DOWN * 0.4, web2[0].get_left(), buff=0.15, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.1)
-        lab1 = M("/etc/hello-devops.env", 20, GREY_B).move_to(web1[2]).align_to(web1[2], LEFT)
-        lab2 = M("/etc/hello-devops.env", 20, GREY_B).move_to(web2[2]).align_to(web2[2], LEFT)
+        lab1 = M("/etc/hello-devops.env", 20, GREY_B).next_to(web1[1], RIGHT, buff=0.5)
+        lab2 = M("/etc/hello-devops.env", 20, GREY_B).next_to(web2[1], RIGHT, buff=0.5)
         self.steps("It fills the file in for each host, with that host's values, and copies the result to the server.",
                    (1.0, GrowArrow(a1), GrowArrow(a2)), (1.0, travel(a1, GOLD_M, 1.0), travel(a2, GOLD_M, 1.0)),
-                   (1.2, Transform(v1, f1), Transform(v2, f2), Transform(web1[2], lab1), Transform(web2[2], lab2)))
+                   (1.2, Transform(v1, f1), Transform(v2, f2), FadeIn(lab1), FadeIn(lab2)))
         nj = chip("servers need no Jinja2", GREEN_M, 24).move_to([HX, -3.05, 0])
         self.beat("One file, two results. Templates render on the control node, so the servers do not need Jinja2.",
                   FadeIn(nj, shift=UP * 0.1), Indicate(tpl[0], color=GOLD_M), run_time=2.4)
-        self.play(FadeOut(VGroup(mac, macl, tpl, a1, a2, nj, web1, web2, v1, v2)), run_time=0.7)
+        self.play(FadeOut(VGroup(mac, macl, tpl, a1, a2, nj, web1[0], web1[1], web2[0], web2[1], v1, v2, lab1, lab2)), run_time=0.7)
 
         # 8. recap
         rcp = VGroup(T("knobs in role defaults", 30, GREEN_M), T("shared values in group_vars", 30, TEAL_M),

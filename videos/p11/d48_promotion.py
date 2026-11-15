@@ -112,7 +112,7 @@ class D48Promotion(VoiceScene):
         self.steps("Argo CD sees the change in its folder, and deploys dev.",
                    (1.0, travel(e1, YELLOW_M, 1.0)), (1.0, travel(e3, YELLOW_M, 1.0), FadeIn(sync)),
                    (0.8, dpods[0].animate.set_stroke(YELLOW_M).set_fill(tint(YELLOW_M, 0.3)), Transform(dver, M("1.1.0", 22, YELLOW_M).move_to(dver))))
-        tst = VGroup(tick(True, 0.18), T("tested", 20, GREEN_M)).arrange(RIGHT, buff=0.12).next_to(dver, RIGHT, buff=0.4)
+        tst = VGroup(tick(True, 0.18), T("tested", 20, GREEN_M)).arrange(RIGHT, buff=0.12).next_to(dver, LEFT, buff=0.35)
         self.beat("Step three. You test dev.",
                   FadeOut(sync), FadeIn(tst), run_time=1.0)
 
@@ -144,7 +144,7 @@ class D48Promotion(VoiceScene):
         b2 = Rectangle(width=0.07, height=0.32, stroke_width=0).set_fill(GREEN_M, 0.9).move_to([0.9, -3.45, 0], aligned_edge=LEFT)
         k1 = M("kustomize edit set image", 20, GREY_B).next_to(b1, LEFT, buff=0.25)
         k2 = M("yq", 20, GREY_B).next_to(b2, LEFT, buff=0.25).align_to(k1, RIGHT)
-        n1 = T("80 lines", 20, RED_M).move_to(b1)
+        n1 = T("80 lines", 22, WHITE).move_to(b1)
         n2 = T("1 line", 20, GREEN_M).next_to(b2, RIGHT, buff=0.2)
         self.steps("Who writes that line? The classic tool, kustomize edit set image, rewrote the whole prod file: 80 lines changed to set one tag.",
                    (0.8, FadeIn(wq)), (1.2, FadeIn(k1), GrowFromEdge(b1, LEFT)), (0.6, FadeIn(n1)))
@@ -175,7 +175,7 @@ class D48Promotion(VoiceScene):
         self.steps("Tomorrow it moves to image B. But the file in git did not change. So Argo CD sees nothing to sync, and git no longer tells you what runs.",
                    (1.0, tagl.animate.next_to(imgB, UP, buff=0.15)), (1.2, Wait(1.2)), (0.8, FadeIn(same_git)), (1.0, Indicate(app, color=RED_M)))
         self.beat("And a revert cannot bring the old version back. Use a version tag like 1.1.0, or a digest, which nobody can move.",
-                  FadeOut(VGroup(imgA, imgB, tagl, same_git)), Transform(fprod[1][1], M('newTag: "1.1.0"', 22, YELLOW_M).move_to(fprod[1][1], aligned_edge=LEFT)),
+                  FadeOut(VGroup(imgA, imgB, tagl, same_git)), Transform(fprod[1][1], M('newTag: "1.0.0"', 22, WHITE).move_to(fprod[1][1], aligned_edge=LEFT)),
                   run_time=2.0)
 
         # ---------- 6. recap

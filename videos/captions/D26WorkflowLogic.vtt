@@ -1,0 +1,201 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:04.894
+A workflow is text with blanks in it.
+
+2
+00:00:04.894 --> 00:00:06.821
+This step prints the branch name.
+
+3
+00:00:07.000 --> 00:00:10.165
+The part in dollar and double braces is an expression.
+
+4
+00:00:10.165 --> 00:00:14.501
+And the text is filled in at two different moments, by different programs.
+
+5
+00:00:14.667 --> 00:00:16.093
+Picture three places.
+
+6
+00:00:16.093 --> 00:00:17.248
+GitHub's servers.
+
+7
+00:00:17.248 --> 00:00:19.966
+The runner, the machine that runs a job.
+
+8
+00:00:19.966 --> 00:00:22.480
+And the shell, bash, on that machine.
+
+9
+00:00:22.667 --> 00:00:23.391
+Moment one.
+
+10
+00:00:23.391 --> 00:00:30.170
+Just before the step starts, the runner works out each expression, and pastes the result into the text.
+
+11
+00:00:30.170 --> 00:00:32.671
+On a push to main, the result is main.
+
+12
+00:00:32.867 --> 00:00:33.589
+Moment two.
+
+13
+00:00:33.589 --> 00:00:36.739
+The shell gets the finished script, and runs it.
+
+14
+00:00:36.739 --> 00:00:38.970
+The expression never reaches bash.
+
+15
+00:00:38.970 --> 00:00:41.661
+It was replaced before bash even started.
+
+16
+00:00:42.400 --> 00:00:43.783
+Why does this matter?
+
+17
+00:00:43.783 --> 00:00:46.352
+Say a step prints a pull request title.
+
+18
+00:00:46.352 --> 00:00:48.393
+Someone else writes that title.
+
+19
+00:00:48.533 --> 00:00:50.884
+The runner pastes the title in as text.
+
+20
+00:00:50.884 --> 00:00:52.813
+Its quote mark ends your string.
+
+21
+00:00:53.000 --> 00:00:55.821
+So bash runs a command the title added.
+
+22
+00:00:55.821 --> 00:00:57.557
+Pasted text became code.
+
+23
+00:00:57.733 --> 00:01:02.455
+The fix: put the value in env, and use dollar TITLE in the script.
+
+24
+00:01:02.600 --> 00:01:04.981
+Now the script itself never changes.
+
+25
+00:01:04.981 --> 00:01:09.280
+The title travels as a variable, and the shell treats it as data.
+
+26
+00:01:09.280 --> 00:01:10.471
+It just prints it.
+
+27
+00:01:11.267 --> 00:01:14.376
+Now a job's own keys, such as if and runs-on.
+
+28
+00:01:14.376 --> 00:01:18.384
+GitHub's servers work those out, before any runner exists.
+
+29
+00:01:18.533 --> 00:01:24.449
+At that moment, GitHub only knows four contexts: github, needs, vars and inputs.
+
+30
+00:01:24.600 --> 00:01:28.679
+The env, steps and runner contexts do not exist yet.
+
+31
+00:01:28.679 --> 00:01:31.973
+So if env dot DEPLOY on a job is an error.
+
+32
+00:01:32.133 --> 00:01:36.257
+When something behaves strangely, ask which of the two moments you are in.
+
+33
+00:01:37.133 --> 00:01:40.176
+Now the other problem: passing a value along.
+
+34
+00:01:40.176 --> 00:01:42.204
+Each step runs in a new shell.
+
+35
+00:01:42.204 --> 00:01:44.300
+Each job runs on a new machine.
+
+36
+00:01:44.467 --> 00:01:48.417
+So you append the value to a file the runner gives every step.
+
+37
+00:01:48.417 --> 00:01:51.093
+Its path is in the variable GITHUB_OUTPUT.
+
+38
+00:01:51.267 --> 00:01:55.391
+The step writes a line, version equals 1.4.0.
+
+39
+00:01:55.533 --> 00:02:00.628
+When the step ends, the runner reads the file and records what you wrote.
+
+40
+00:02:00.628 --> 00:02:04.955
+Later steps in this job read it as steps.meta.outputs.version.
+
+41
+00:02:05.133 --> 00:02:09.271
+Between jobs you need one more hop, because jobs share nothing.
+
+42
+00:02:09.271 --> 00:02:11.898
+The job's outputs block names the value.
+
+43
+00:02:11.898 --> 00:02:15.116
+When the job ends, the runner sends it to GitHub.
+
+44
+00:02:15.267 --> 00:02:18.984
+GitHub hands it to every job that needs this one.
+
+45
+00:02:18.984 --> 00:02:22.853
+That job reads it as needs.version.outputs.version.
+
+46
+00:02:23.000 --> 00:02:24.661
+Outputs are always strings.
+
+47
+00:02:24.661 --> 00:02:27.244
+And never write a secret into these files.
+
+48
+00:02:27.244 --> 00:02:29.889
+Everyone who can read the run can see them.
+
+49
+00:02:30.800 --> 00:02:35.186
+Expressions are pasted in first, then the shell runs the finished text.
+
+50
+00:02:35.186 --> 00:02:40.499
+And a value travels from a file, to a step output, to a job output, and through needs.

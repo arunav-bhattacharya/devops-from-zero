@@ -1,0 +1,241 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.729
+A Dockerfile ends with a line that builds nothing.
+
+2
+00:00:05.729 --> 00:00:08.879
+It only says what the container runs when it starts.
+
+3
+00:00:09.900 --> 00:00:12.979
+Here are two ways to write that line, for the same app.
+
+4
+00:00:13.200 --> 00:00:16.023
+The lesson timed docker stop on both.
+
+5
+00:00:16.023 --> 00:00:18.846
+One container stopped in 0.6 seconds.
+
+6
+00:00:18.846 --> 00:00:21.135
+The other needed 10.2 seconds.
+
+7
+00:00:21.367 --> 00:00:22.772
+Same app, same image.
+
+8
+00:00:22.772 --> 00:00:24.512
+So why the big difference?
+
+9
+00:00:24.512 --> 00:00:26.720
+Let's build it up from the start.
+
+10
+00:00:27.533 --> 00:00:29.328
+First, CMD and ENTRYPOINT.
+
+11
+00:00:29.328 --> 00:00:32.295
+Both say what runs when a container starts.
+
+12
+00:00:32.295 --> 00:00:34.572
+Take a tiny image called greeter.
+
+13
+00:00:34.800 --> 00:00:39.219
+When you type docker run greeter, Docker puts the two together.
+
+14
+00:00:39.219 --> 00:00:42.096
+ENTRYPOINT gives the program: echo Hello.
+
+15
+00:00:42.096 --> 00:00:44.761
+CMD gives its default argument: world.
+
+16
+00:00:44.967 --> 00:00:47.043
+So it prints: Hello, world.
+
+17
+00:00:47.267 --> 00:00:51.177
+Now type a name after the image: docker run greeter Ana.
+
+18
+00:00:51.400 --> 00:00:53.371
+What you type replaces CMD.
+
+19
+00:00:53.371 --> 00:00:55.488
+Ana takes the place of world.
+
+20
+00:00:55.700 --> 00:00:57.207
+But ENTRYPOINT stays.
+
+21
+00:00:57.207 --> 00:01:00.797
+Ana is added after it, so the program is the same.
+
+22
+00:01:00.797 --> 00:01:02.376
+It prints: Hello, Ana.
+
+23
+00:01:02.600 --> 00:01:06.117
+So CMD is a default, and ENTRYPOINT is fixed.
+
+24
+00:01:06.117 --> 00:01:10.182
+Only the flag --entrypoint swaps the program itself.
+
+25
+00:01:10.182 --> 00:01:13.777
+For a web app, CMD alone is the simple choice.
+
+26
+00:01:14.600 --> 00:01:16.552
+Next, how you write the line.
+
+27
+00:01:16.552 --> 00:01:17.899
+There are two forms.
+
+28
+00:01:18.100 --> 00:01:20.049
+Exec form is a JSON list.
+
+29
+00:01:20.049 --> 00:01:22.544
+Docker starts gunicorn directly.
+
+30
+00:01:22.544 --> 00:01:27.379
+So your app runs as PID 1, the first process in the container.
+
+31
+00:01:27.600 --> 00:01:29.379
+Shell form is plain text.
+
+32
+00:01:29.379 --> 00:01:34.077
+Docker runs it through a shell: /bin/sh -c, and then your command.
+
+33
+00:01:34.300 --> 00:01:38.680
+Now the shell is PID 1, and gunicorn is only its child.
+
+34
+00:01:38.900 --> 00:01:41.028
+Now run docker stop on both.
+
+35
+00:01:41.028 --> 00:01:44.525
+Docker sends a signal called SIGTERM to PID 1.
+
+36
+00:01:44.525 --> 00:01:47.261
+It means: please finish up and exit.
+
+37
+00:01:47.467 --> 00:01:49.853
+On the right, gunicorn gets it.
+
+38
+00:01:49.853 --> 00:01:55.395
+It finishes its work, and exits on its own, with code 0, in 0.6 seconds.
+
+39
+00:01:55.600 --> 00:01:57.577
+On the left, the shell gets it.
+
+40
+00:01:57.577 --> 00:02:00.894
+But the shell does not pass SIGTERM on to its child.
+
+41
+00:02:00.894 --> 00:02:02.425
+Gunicorn never hears it.
+
+42
+00:02:02.633 --> 00:02:03.767
+So Docker waits.
+
+43
+00:02:03.767 --> 00:02:07.169
+After 10 seconds, it gives up and sends SIGKILL.
+
+44
+00:02:08.167 --> 00:02:12.199
+The container ends with code 137, after 10.2 seconds.
+
+45
+00:02:12.199 --> 00:02:20.340
+In production, every deploy then waits ten extra seconds per container, and requests in flight are cut off.
+
+46
+00:02:21.267 --> 00:02:23.778
+So is exec form the whole fix?
+
+47
+00:02:23.778 --> 00:02:24.615
+Not quite.
+
+48
+00:02:24.615 --> 00:02:26.791
+PID 1 is special in Linux.
+
+49
+00:02:27.000 --> 00:02:31.438
+The kernel drops any signal that PID 1 has no handler for.
+
+50
+00:02:31.438 --> 00:02:33.733
+SIGKILL is the only exception.
+
+51
+00:02:33.967 --> 00:02:39.195
+A handler is code in the program that says what to do when a signal arrives.
+
+52
+00:02:39.195 --> 00:02:41.191
+Gunicorn has one for SIGTERM.
+
+53
+00:02:41.400 --> 00:02:43.658
+A bare Python script has none.
+
+54
+00:02:43.658 --> 00:02:48.325
+So even in exec form, as PID 1, its SIGTERM is simply dropped.
+
+55
+00:02:48.533 --> 00:02:54.705
+In the lesson's test, it waited out the full 10 seconds, just like sleep did on Day 17.
+
+56
+00:02:55.533 --> 00:02:56.864
+So you need both.
+
+57
+00:02:56.864 --> 00:02:59.369
+Exec form, so your app is PID 1.
+
+58
+00:02:59.369 --> 00:03:03.831
+And an app that handles SIGTERM itself, as gunicorn does.
+
+59
+00:03:04.033 --> 00:03:07.267
+ENTRYPOINT is fixed, and CMD is a default.
+
+60
+00:03:07.267 --> 00:03:12.964
+Write both as a JSON list, so your app is PID 1, and it hears docker stop.
