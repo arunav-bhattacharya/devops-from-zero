@@ -1,0 +1,213 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.256
+Take a made-up product.
+
+2
+00:00:04.256 --> 00:00:06.421
+Eight services, three Pods each.
+
+3
+00:00:06.421 --> 00:00:08.992
+That is twenty four Pods on two nodes.
+
+4
+00:00:09.200 --> 00:00:12.268
+Every mesh adds proxies to the path of each call.
+
+5
+00:00:12.268 --> 00:00:16.339
+The real question is where those proxies run, and what they cost.
+
+6
+00:00:16.567 --> 00:00:19.261
+Linkerd puts a sidecar in every Pod.
+
+7
+00:00:19.261 --> 00:00:23.676
+Its proxy is linkerd2-proxy, a micro-proxy written in Rust.
+
+8
+00:00:23.676 --> 00:00:25.696
+Linkerd does not use Envoy.
+
+9
+00:00:25.900 --> 00:00:32.520
+A call from one Pod to another leaves through its own proxy, and arrives through the other Pod's proxy.
+
+10
+00:00:32.520 --> 00:00:34.191
+Two proxies on every call.
+
+11
+00:00:34.400 --> 00:00:46.204
+Before you write a single policy, you get mutual TLS for all TCP traffic between meshed Pods, golden metrics for every workload, and load balancing per request.
+
+12
+00:00:46.833 --> 00:00:48.693
+Cilium works the other way.
+
+13
+00:00:48.693 --> 00:00:52.896
+It is already the network plugin, so it sits on every packet.
+
+14
+00:00:52.896 --> 00:00:53.723
+No sidecars.
+
+15
+00:00:53.933 --> 00:01:02.102
+Pod networking, Service load balancing and network policy run in the Linux kernel, as small eBPF programs.
+
+16
+00:01:02.102 --> 00:01:03.952
+No trip through a proxy.
+
+17
+00:01:04.167 --> 00:01:07.097
+Anything that needs HTTP goes to Envoy.
+
+18
+00:01:07.097 --> 00:01:11.305
+But only one Envoy per node, the cilium-envoy DaemonSet.
+
+19
+00:01:11.533 --> 00:01:15.398
+Between nodes, Cilium can encrypt with WireGuard or IPsec.
+
+20
+00:01:15.398 --> 00:01:16.931
+That protects the wire.
+
+21
+00:01:16.931 --> 00:01:21.729
+But it proves which node a packet came from, not which workload sent it.
+
+22
+00:01:21.933 --> 00:01:26.765
+Mutual TLS between workload identities is where Cilium is still moving.
+
+23
+00:01:26.765 --> 00:01:28.875
+Its replacement design is Beta.
+
+24
+00:01:28.875 --> 00:01:33.367
+So if that is your main reason for a mesh, check its status first.
+
+25
+00:01:34.100 --> 00:01:35.036
+Now the bill.
+
+26
+00:01:35.036 --> 00:01:40.151
+Go back to one sidecar per Pod, and measure one proxy, as the lab does.
+
+27
+00:01:40.367 --> 00:01:46.085
+In the worked example, one Envoy hop added about 0.6 ms to the median call.
+
+28
+00:01:46.085 --> 00:01:49.745
+A sidecar mesh puts two such hops on every call.
+
+29
+00:01:49.967 --> 00:01:53.448
+An idle Envoy held about 64 MB of memory.
+
+30
+00:01:53.448 --> 00:01:55.740
+You pay that for every Pod.
+
+31
+00:01:55.967 --> 00:01:58.133
+Twenty four times sixty four.
+
+32
+00:01:58.133 --> 00:02:02.764
+About 1.5 gigabytes of proxies, before they carry any traffic.
+
+33
+00:02:03.367 --> 00:02:05.160
+And the bill has more lines.
+
+34
+00:02:05.160 --> 00:02:06.696
+Upgrades of every proxy.
+
+35
+00:02:06.696 --> 00:02:09.898
+Debugging, because a call has more places to fail.
+
+36
+00:02:09.898 --> 00:02:13.996
+And people, who own the certificates and read the release notes.
+
+37
+00:02:14.600 --> 00:02:19.170
+For a handful of services owned by one team, I would not start with a mesh.
+
+38
+00:02:19.170 --> 00:02:21.973
+Tools you already know cover most of the list.
+
+39
+00:02:22.200 --> 00:02:25.294
+NetworkPolicy decides who may talk to whom.
+
+40
+00:02:25.294 --> 00:02:28.892
+A shared client library sets timeouts and retries.
+
+41
+00:02:28.892 --> 00:02:31.483
+One Gateway handles TLS at the edge.
+
+42
+00:02:31.483 --> 00:02:36.520
+And OpenTelemetry and Prometheus give you per call metrics and traces.
+
+43
+00:02:36.733 --> 00:02:44.441
+For our made-up product, with one team and no auditor asking for mutual TLS, the checklist says: no mesh yet.
+
+44
+00:02:45.067 --> 00:02:54.631
+The answer changes as services and teams multiply, with many languages, or when an auditor asks for encryption and identity on every call.
+
+45
+00:02:54.833 --> 00:02:56.932
+Then go one namespace at a time.
+
+46
+00:02:56.932 --> 00:03:00.212
+First, mesh it, and only watch the golden metrics.
+
+47
+00:03:00.212 --> 00:03:02.704
+You will find calls nobody knew about.
+
+48
+00:03:02.933 --> 00:03:09.442
+Next, mutual TLS in permissive mode, so meshed callers encrypt and everyone else still works.
+
+49
+00:03:09.442 --> 00:03:12.312
+Then strict, once every caller is meshed.
+
+50
+00:03:12.533 --> 00:03:16.463
+Then authorization policies, starting with sensitive data.
+
+51
+00:03:16.463 --> 00:03:20.461
+And traffic policies, retries, timeouts and canaries, last.
+
+52
+00:03:20.667 --> 00:03:21.550
+Decide first.
+
+53
+00:03:21.550 --> 00:03:25.629
+And if a mesh is worth it, switch it on one layer at a time.

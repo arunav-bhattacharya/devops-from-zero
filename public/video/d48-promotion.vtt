@@ -1,0 +1,221 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.198
+Dev is where new versions land first.
+
+2
+00:00:05.198 --> 00:00:06.751
+Prod is what users see.
+
+3
+00:00:06.751 --> 00:00:10.464
+Here both live in your kind cluster, in two namespaces.
+
+4
+00:00:10.667 --> 00:00:12.396
+Dev runs one Pod.
+
+5
+00:00:12.396 --> 00:00:13.923
+Prod runs four.
+
+6
+00:00:13.923 --> 00:00:16.873
+Both run version 1.0.0 today.
+
+7
+00:00:17.100 --> 00:00:20.965
+In git, each environment has its own Kustomize overlay.
+
+8
+00:00:20.965 --> 00:00:23.705
+The line that matters is the image tag.
+
+9
+00:00:23.933 --> 00:00:27.096
+Argo CD needs one Application per environment.
+
+10
+00:00:27.096 --> 00:00:34.315
+An ApplicationSet writes them from one template: a list of values, and an Application with a placeholder.
+
+11
+00:00:34.533 --> 00:00:37.302
+The controller fills it in once per entry.
+
+12
+00:00:37.302 --> 00:00:40.861
+Two Applications appear, one for dev and one for prod.
+
+13
+00:00:41.067 --> 00:00:45.873
+Each one watches its own folder in git, and deploys it to its own namespace.
+
+14
+00:00:46.100 --> 00:00:48.784
+Now you have a new version, 1.1.0.
+
+15
+00:00:48.784 --> 00:00:52.257
+How does it travel from dev to prod, safely?
+
+16
+00:00:52.467 --> 00:00:53.436
+Step one.
+
+17
+00:00:53.436 --> 00:00:58.711
+You push the tag v1.1.0, and CI builds the image.
+
+18
+00:00:58.711 --> 00:00:59.249
+Once.
+
+19
+00:00:59.467 --> 00:01:00.157
+Step two.
+
+20
+00:01:00.157 --> 00:01:04.067
+A pull request changes one line in the dev overlay.
+
+21
+00:01:04.300 --> 00:01:05.630
+You merge it.
+
+22
+00:01:05.630 --> 00:01:08.495
+Now git says dev runs 1.1.0.
+
+23
+00:01:08.700 --> 00:01:12.739
+Argo CD sees the change in its folder, and deploys dev.
+
+24
+00:01:12.967 --> 00:01:14.127
+Step three.
+
+25
+00:01:14.127 --> 00:01:15.497
+You test dev.
+
+26
+00:01:15.700 --> 00:01:16.603
+Step four.
+
+27
+00:01:16.603 --> 00:01:22.199
+A second pull request sets the prod overlay to the same 1.1.0.
+
+28
+00:01:22.400 --> 00:01:24.604
+Someone reviews it, and merges it.
+
+29
+00:01:24.833 --> 00:01:30.404
+Argo CD syncs prod, and the rollout replaces the four prod Pods, one at a time.
+
+30
+00:01:30.404 --> 00:01:34.212
+Dev is not touched, because its folder did not change.
+
+31
+00:01:34.933 --> 00:01:36.887
+Notice what never happened.
+
+32
+00:01:36.887 --> 00:01:38.913
+The image was never rebuilt.
+
+33
+00:01:38.913 --> 00:01:41.735
+Prod runs the exact bytes that dev ran.
+
+34
+00:01:41.735 --> 00:01:43.472
+Build once, deploy many.
+
+35
+00:01:44.100 --> 00:01:45.603
+Who writes that line?
+
+36
+00:01:45.603 --> 00:01:53.116
+The classic tool, kustomize edit set image, rewrote the whole prod file: 80 lines changed to set one tag.
+
+37
+00:01:53.333 --> 00:01:56.023
+yq changes only the field you name.
+
+38
+00:01:56.023 --> 00:01:56.715
+One line.
+
+39
+00:01:56.715 --> 00:02:03.401
+The lab's bump-image workflow uses yq, then pushes a branch and opens the pull request.
+
+40
+00:02:04.133 --> 00:02:05.691
+And if prod misbehaves?
+
+41
+00:02:05.691 --> 00:02:08.399
+Press Revert on the merged pull request.
+
+42
+00:02:08.399 --> 00:02:11.513
+It opens a new one that puts the old tag back.
+
+43
+00:02:11.733 --> 00:02:15.985
+Merge it, and Argo CD puts 1.0.0 back.
+
+44
+00:02:16.600 --> 00:02:20.051
+This only works if a tag always means the same image.
+
+45
+00:02:20.051 --> 00:02:22.395
+Say the overlay said latest instead.
+
+46
+00:02:22.600 --> 00:02:25.798
+latest points at different images over time.
+
+47
+00:02:25.798 --> 00:02:26.816
+Today image A.
+
+48
+00:02:27.033 --> 00:02:28.976
+Tomorrow it moves to image B.
+
+49
+00:02:28.976 --> 00:02:31.321
+But the file in git did not change.
+
+50
+00:02:31.321 --> 00:02:36.077
+So Argo CD sees nothing to sync, and git no longer tells you what runs.
+
+51
+00:02:36.300 --> 00:02:39.940
+And a revert cannot bring the old version back.
+
+52
+00:02:39.940 --> 00:02:44.975
+Use a version tag like 1.1.0, or a digest, which nobody can move.
+
+53
+00:02:45.200 --> 00:02:46.694
+Build the image once.
+
+54
+00:02:46.694 --> 00:02:51.177
+Then promote the same tag from dev to prod with a pull request.
+
+55
+00:02:51.177 --> 00:02:54.521
+Review it, merge it, and let Argo CD deploy it.

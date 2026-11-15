@@ -49,7 +49,7 @@ class D48Promotion(VoiceScene):
         nsp = RoundedRectangle(corner_radius=0.15, width=3.6, height=1.5, stroke_color=BLUE_M, stroke_width=2.5).move_to([NX, PY, 0])
         nld = M("hello-dev", 20, TEAL_M).next_to(nsd, UP, buff=0.1).align_to(nsd, LEFT)
         nlp = M("hello-prod", 20, BLUE_M).next_to(nsp, UP, buff=0.1).align_to(nsp, LEFT)
-        dpods = VGroup(podc()).move_to(nsd).shift(UP * 0.2)
+        dpods = VGroup(podc()).move_to(nsd).shift(UP * 0.2 + LEFT * 0.6)
         ppods = VGroup(*[podc() for _ in range(4)]).arrange(RIGHT, buff=0.3).move_to(nsp).shift(UP * 0.2)
         dver = M("1.0.0", 22, GREY_B).next_to(dpods, DOWN, buff=0.18)
         pver = M("1.0.0", 22, GREY_B).next_to(ppods, DOWN, buff=0.18)
@@ -112,7 +112,7 @@ class D48Promotion(VoiceScene):
         self.steps("Argo CD sees the change in its folder, and deploys dev.",
                    (1.0, travel(e1, YELLOW_M, 1.0)), (1.0, travel(e3, YELLOW_M, 1.0), FadeIn(sync)),
                    (0.8, dpods[0].animate.set_stroke(YELLOW_M).set_fill(tint(YELLOW_M, 0.3)), Transform(dver, M("1.1.0", 22, YELLOW_M).move_to(dver))))
-        tst = VGroup(tick(True, 0.18), T("tested", 20, GREEN_M)).arrange(RIGHT, buff=0.12).next_to(dver, LEFT, buff=0.35)
+        tst = VGroup(tick(True, 0.18), T("tested", 20, GREEN_M)).arrange(RIGHT, buff=0.12).next_to(dver, RIGHT, buff=0.3)
         self.beat("Step three. You test dev.",
                   FadeOut(sync), FadeIn(tst), run_time=1.0)
 

@@ -1,0 +1,265 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:08.116
+So far you reached hello-devops with a NodePort, or with kubectl port-forward.
+
+2
+00:00:08.116 --> 00:00:09.922
+Both are fine on a laptop.
+
+3
+00:00:09.922 --> 00:00:12.213
+Neither is how real users arrive.
+
+4
+00:00:12.433 --> 00:00:22.381
+For traffic from outside, you usually want one entry point for many apps, routing by host name and path, TLS in one place, and gradual releases.
+
+5
+00:00:22.600 --> 00:00:25.853
+A Service of type LoadBalancer gives you an address.
+
+6
+00:00:25.853 --> 00:00:28.480
+But it works with connections, at layer 4.
+
+7
+00:00:28.700 --> 00:00:31.180
+The request carries a path and headers.
+
+8
+00:00:31.180 --> 00:00:33.597
+A layer 4 Service never looks at them.
+
+9
+00:00:33.597 --> 00:00:35.696
+To it, this is only a connection.
+
+10
+00:00:35.900 --> 00:00:40.670
+Routing on those needs a proxy that understands HTTP, at layer 7.
+
+11
+00:00:40.670 --> 00:00:44.852
+Plus a Kubernetes object that tells the proxy what to do.
+
+12
+00:00:45.067 --> 00:00:47.443
+The older API for this is Ingress.
+
+13
+00:00:47.443 --> 00:00:49.121
+It was small on purpose.
+
+14
+00:00:49.121 --> 00:00:50.589
+Hosts, paths and TLS.
+
+15
+00:00:50.589 --> 00:00:56.251
+Everything else went into annotations, which each controller defined its own way.
+
+16
+00:00:56.467 --> 00:00:59.153
+The Ingress API is now frozen.
+
+17
+00:00:59.153 --> 00:01:06.139
+And ingress-nginx, the most popular controller, was retired on March 24, 2026.
+
+18
+00:01:06.139 --> 00:01:09.095
+The newer API is the Gateway API.
+
+19
+00:01:09.800 --> 00:01:11.988
+It splits the job by who owns what.
+
+20
+00:01:11.988 --> 00:01:14.988
+A GatewayClass says which controller handles it.
+
+21
+00:01:14.988 --> 00:01:17.863
+The platform team creates it once per cluster.
+
+22
+00:01:18.067 --> 00:01:23.492
+A Gateway is an entry point, with listeners, such as HTTP on port 80.
+
+23
+00:01:23.700 --> 00:01:27.362
+And an HTTPRoute holds the routing rules for one app.
+
+24
+00:01:27.362 --> 00:01:30.817
+App teams own these, and attach them to a Gateway.
+
+25
+00:01:31.533 --> 00:01:33.349
+Now apply the lab's folder.
+
+26
+00:01:33.349 --> 00:01:36.645
+Envoy Gateway's controller watches these objects.
+
+27
+00:01:36.867 --> 00:01:37.537
+Step one.
+
+28
+00:01:37.537 --> 00:01:40.067
+The class eg names the controller.
+
+29
+00:01:40.067 --> 00:01:44.161
+Envoy Gateway sees its own name, and accepts the class.
+
+30
+00:01:44.367 --> 00:01:45.044
+Step two.
+
+31
+00:01:45.044 --> 00:01:47.000
+The Gateway uses class eg.
+
+32
+00:01:47.000 --> 00:01:52.792
+So the controller creates an Envoy proxy, a Deployment and a Service, for it.
+
+33
+00:01:53.000 --> 00:01:53.829
+Step three.
+
+34
+00:01:53.829 --> 00:01:59.861
+The HTTPRoute attaches to hello-gateway, and points at the hello-devops Service.
+
+35
+00:02:00.067 --> 00:02:00.721
+Step four.
+
+36
+00:02:00.721 --> 00:02:05.959
+The controller turns the route into Envoy settings, and sends them to the proxy.
+
+37
+00:02:05.959 --> 00:02:07.596
+Now it starts forwarding.
+
+38
+00:02:07.800 --> 00:02:11.493
+A request now goes from curl, to Envoy, to hello-devops.
+
+39
+00:02:11.493 --> 00:02:13.406
+Look where the controller is.
+
+40
+00:02:13.406 --> 00:02:15.186
+It never handles a request.
+
+41
+00:02:15.186 --> 00:02:18.088
+It only watches objects and writes settings.
+
+42
+00:02:18.300 --> 00:02:23.115
+On kind there is no cloud, so the proxy's Service never gets a real address.
+
+43
+00:02:23.115 --> 00:02:24.635
+The routing still works.
+
+44
+00:02:24.635 --> 00:02:26.789
+You reach Envoy with port-forward.
+
+45
+00:02:27.500 --> 00:02:28.377
+Now a canary.
+
+46
+00:02:28.377 --> 00:02:32.697
+A second version of the app, hello-canary, gets its own Service.
+
+47
+00:02:32.900 --> 00:02:35.361
+The lab's canary route has two rules.
+
+48
+00:02:35.361 --> 00:02:36.891
+Look at rule two first.
+
+49
+00:02:36.891 --> 00:02:40.749
+It sends traffic to both Services, with weights 90 and 10.
+
+50
+00:02:40.967 --> 00:02:45.965
+So about nine of every ten requests go to hello-devops, and one to the canary.
+
+51
+00:02:46.167 --> 00:02:51.894
+Envoy picks a backend at random for each request, in proportion to the weights.
+
+52
+00:02:51.894 --> 00:02:55.375
+So fifty requests rarely split exactly 45 and 5.
+
+53
+00:02:55.600 --> 00:02:57.194
+That is a canary release.
+
+54
+00:02:57.194 --> 00:03:02.995
+The new version gets a small share of real traffic, while you watch its errors and latency.
+
+55
+00:03:03.200 --> 00:03:04.863
+Rule one is for testers.
+
+56
+00:03:04.863 --> 00:03:07.843
+A request with the header x-canary, always.
+
+57
+00:03:08.067 --> 00:03:11.770
+It also has the path slash, so both rules match it.
+
+58
+00:03:11.770 --> 00:03:12.859
+Which one wins?
+
+59
+00:03:13.067 --> 00:03:14.915
+The most specific match wins.
+
+60
+00:03:14.915 --> 00:03:18.103
+A header match is more specific than a path alone.
+
+61
+00:03:18.103 --> 00:03:20.781
+So this request always goes to the canary.
+
+62
+00:03:20.781 --> 00:03:22.693
+You never order rules by hand.
+
+63
+00:03:23.400 --> 00:03:26.413
+If the canary looks good, you move the weights.
+
+64
+00:03:26.413 --> 00:03:31.541
+If not, you set the canary to zero, and every request goes back to hello-devops.
+
+65
+00:03:33.767 --> 00:03:36.643
+The objects on top only configure the proxy.
+
+66
+00:03:36.643 --> 00:03:41.481
+The proxy carries the real requests, and splits them between the Services.
