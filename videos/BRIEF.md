@@ -51,3 +51,12 @@ For each video in your task:
 
 - 21 videos already exist (see `videos/manifest/*.json` and `public/video/`). Watch how they look by reading one or two scene files; do not repeat a topic an existing video already covers in the same lesson.
 - Caption times were fixed in `fg.py` (`_ts`). If you add pronunciations, prefer `SAY.extend([...])` inside your own scene file.
+
+## Third batch notes (Nov 15)
+
+- 33 videos exist. This batch covers the 36 lessons that still have none, so each lesson gets its first video.
+- Aim for 2.5 to 3.5 minutes. Earlier videos ran long (4 to 5 min); one clear idea told well beats two.
+- Final renders: use `videos/render_slot.sh` (same arguments as `render_hd.sh`). It allows only 2 final renders at once across all writers and waits for a free slot. Quick `-ql` checks are fine to run any time with `nice -n 10`.
+- Pick the one concept in the lesson that is hardest to get from text and gains most from motion (a flow, a loop, a before/after, an order of steps). Use the lesson's own diagram caption and worked example as a guide.
+- When you finish a video (final render done, media folder deleted, manifest updated), move on to the next one. Do not wait for review.
+- Build intuition, not a summary. Open with the problem (what goes wrong without this, ideally with hello-devops), then show the mechanism step by step (which part talks to which, in what order, what changes), then show why it is built that way. Keep one main picture that grows across the video rather than many unrelated slides. Ask the question a beginner would ask ("but how does it know?") and answer it on screen.
