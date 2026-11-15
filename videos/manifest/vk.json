@@ -1,0 +1,12 @@
+{
+ "d39": [
+  {
+   "slug": "d39-pod-start",
+   "title": "Inside a Pod: init containers, a sidecar and the app, in order",
+   "after": 4,
+   "file": "p10/d39_pod_start.py",
+   "scene": "D39PodStart",
+   "poster_at": 188.0
+  }
+ ]
+}

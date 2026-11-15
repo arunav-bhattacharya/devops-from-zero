@@ -1,0 +1,12 @@
+{
+ "d32": [
+  {
+   "slug": "d32-loops",
+   "title": "count or for_each: why removing one name can replace two copies",
+   "after": 5,
+   "file": "p8/d32_loops.py",
+   "scene": "D32Loops",
+   "poster_at": 150.0
+  }
+ ]
+}

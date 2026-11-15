@@ -1,0 +1,305 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:05.512
+hello-devops answers requests all day.
+
+2
+00:00:05.512 --> 00:00:06.901
+A few of them fail.
+
+3
+00:00:06.901 --> 00:00:08.364
+That always happens.
+
+4
+00:00:08.533 --> 00:00:11.603
+So at 3 a.m., how many failures are too many?
+
+5
+00:00:11.603 --> 00:00:13.581
+When should a person wake up?
+
+6
+00:00:13.733 --> 00:00:15.182
+Do not aim for 100%.
+
+7
+00:00:15.182 --> 00:00:23.368
+Users rarely notice the difference between high and extreme reliability, and each extra nine costs far more work.
+
+8
+00:00:24.067 --> 00:00:28.223
+First, decide what good means, seen from the user's side.
+
+9
+00:00:28.223 --> 00:00:31.504
+hello-devops has one real job: the JSON at /.
+
+10
+00:00:31.667 --> 00:00:35.721
+A good event is a response to / that is not 5xx.
+
+11
+00:00:35.721 --> 00:00:38.677
+A valid event is any response to /.
+
+12
+00:00:38.867 --> 00:00:44.740
+A 404 for a mistyped URL is the user's mistake, so it does not count against you.
+
+13
+00:00:44.933 --> 00:00:47.578
+Good events divided by valid events.
+
+14
+00:00:47.578 --> 00:00:51.325
+That ratio is the SLI, the service level indicator.
+
+15
+00:00:52.667 --> 00:00:59.642
+An SLO, a service level objective, is a target for that ratio over a time window.
+
+16
+00:00:59.642 --> 00:01:05.843
+For hello-devops: 99.9% of requests to / succeed, over the last 30 days.
+
+17
+00:01:06.000 --> 00:01:10.946
+The rest is the error budget: 100% minus the SLO.
+
+18
+00:01:10.946 --> 00:01:13.369
+For 99.9%, that is 0.1%.
+
+19
+00:01:13.369 --> 00:01:17.305
+It is the failure the SLO still allows.
+
+20
+00:01:18.067 --> 00:01:19.131
+Make it real.
+
+21
+00:01:19.131 --> 00:01:22.816
+Say hello-devops gets 200,000 requests a day.
+
+22
+00:01:23.000 --> 00:01:29.321
+Thirty days hold 6 million requests, and 0.1% of them, 6,000, may fail.
+
+23
+00:01:29.467 --> 00:01:36.437
+If everything fails at once, the budget is 43.2 minutes of full outage.
+
+24
+00:01:36.437 --> 00:01:40.168
+0.1% of the 43,200 minutes in 30 days.
+
+25
+00:01:40.333 --> 00:01:44.440
+Now one bad deploy breaks everything for 20 minutes.
+
+26
+00:01:44.440 --> 00:01:46.256
+20 out of 43.2 minutes.
+
+27
+00:01:46.400 --> 00:01:49.109
+That one deploy spent almost half the month.
+
+28
+00:01:49.109 --> 00:01:52.003
+So a rollback has to take minutes, not an hour.
+
+29
+00:01:52.800 --> 00:01:56.431
+Developers want to ship, and operators want quiet nights.
+
+30
+00:01:56.431 --> 00:01:59.235
+The budget gives both sides the same number.
+
+31
+00:01:59.400 --> 00:02:03.268
+While budget is left, you ship at normal speed and take some risks.
+
+32
+00:02:03.467 --> 00:02:10.279
+When it is spent, the SRE book's answer is to pause risky releases until reliability is back.
+
+33
+00:02:11.467 --> 00:02:16.120
+At 3 a.m., the useful question is not how much budget is spent.
+
+34
+00:02:16.120 --> 00:02:18.115
+It is how fast it is going.
+
+35
+00:02:18.267 --> 00:02:24.289
+The burn rate says how fast you are spending it: the current error ratio, divided by the budget.
+
+36
+00:02:24.467 --> 00:02:27.265
+Draw the budget over the 30 day window.
+
+37
+00:02:27.265 --> 00:02:29.345
+Full at day zero, at the top.
+
+38
+00:02:29.345 --> 00:02:30.780
+Empty at the bottom.
+
+39
+00:02:30.933 --> 00:02:35.962
+If 0.1% of requests fail, the error ratio equals the budget.
+
+40
+00:02:35.962 --> 00:02:37.638
+That is burn rate 1.
+
+41
+00:02:37.638 --> 00:02:40.404
+The budget lasts exactly 30 days.
+
+42
+00:02:40.600 --> 00:02:43.310
+At 0.6%, the burn rate is 6.
+
+43
+00:02:43.310 --> 00:02:46.117
+The budget is gone in 5 days.
+
+44
+00:02:46.267 --> 00:02:49.320
+At 1.44%, the burn rate is 14.4.
+
+45
+00:02:49.320 --> 00:02:52.659
+The budget is gone in about 2 days.
+
+46
+00:02:53.600 --> 00:02:59.303
+Burn rate beats a raw error count, because it is already scaled to your traffic and your target.
+
+47
+00:03:00.267 --> 00:03:02.864
+But why the odd number 14.4?
+
+48
+00:03:02.864 --> 00:03:04.256
+Work backwards.
+
+49
+00:03:04.256 --> 00:03:06.390
+30 days have 720 hours.
+
+50
+00:03:06.390 --> 00:03:11.771
+At burn rate 1, the budget is spread over all 720 of them.
+
+51
+00:03:11.933 --> 00:03:18.033
+The rule is: page once a single hour has spent 2% of the budget.
+
+52
+00:03:18.033 --> 00:03:21.845
+2% of 720 hours is 14.4 hours of budget.
+
+53
+00:03:22.000 --> 00:03:28.257
+Spend those 14.4 hours of budget in one hour, and that is burn rate 14.4.
+
+54
+00:03:28.400 --> 00:03:31.914
+These numbers come from Google's SRE Workbook.
+
+55
+00:03:31.914 --> 00:03:35.581
+Page at 14.4 over one hour, or 6 over six hours.
+
+56
+00:03:35.581 --> 00:03:38.255
+Open a ticket at 1 over three days.
+
+57
+00:03:39.133 --> 00:03:42.284
+Now sort every alert into one of three groups.
+
+58
+00:03:42.284 --> 00:03:45.502
+Page: users hurt now, and a human must act now.
+
+59
+00:03:45.502 --> 00:03:47.831
+Ticket: a human, in working hours.
+
+60
+00:03:47.831 --> 00:03:50.296
+Everything else goes on a dashboard.
+
+61
+00:03:50.467 --> 00:03:55.513
+A bad hour: 2% of requests fail for 60 minutes.
+
+62
+00:03:55.513 --> 00:04:01.097
+The burn rate is 0.02 divided by 0.001, which is 20.
+
+63
+00:04:01.097 --> 00:04:03.137
+That is above 14.4.
+
+64
+00:04:03.333 --> 00:04:04.940
+So this one pages.
+
+65
+00:04:05.133 --> 00:04:08.675
+A slow leak: 0.3% of requests fail all week.
+
+66
+00:04:08.675 --> 00:04:12.699
+That is burn rate 3, and the budget lasts 10 days.
+
+67
+00:04:12.867 --> 00:04:16.950
+Nobody needs to wake up, but someone must fix it this week.
+
+68
+00:04:16.950 --> 00:04:17.573
+A ticket.
+
+69
+00:04:17.733 --> 00:04:23.142
+And a server at 90% CPU that answers every request in 50 ms?
+
+70
+00:04:23.142 --> 00:04:25.576
+It is simply doing its job.
+
+71
+00:04:25.733 --> 00:04:30.926
+High CPU, memory, a single pod restart: these are causes, not symptoms.
+
+72
+00:04:30.926 --> 00:04:33.120
+Users never feel most of them.
+
+73
+00:04:33.120 --> 00:04:34.948
+They go on the dashboard.
+
+74
+00:04:35.133 --> 00:04:38.282
+Page on causes, and the pager fires all the time.
+
+75
+00:04:38.282 --> 00:04:43.680
+People learn that pages are noise, and start to ignore them, including the real one.
+
+76
+00:04:43.867 --> 00:04:50.060
+An SLO turns raw requests into a budget, and the burn rate decides who gets woken up.

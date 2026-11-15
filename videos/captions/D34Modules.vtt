@@ -1,0 +1,225 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.117
+You have one hello-devops stack, on port 8080.
+
+2
+00:00:06.117 --> 00:00:08.912
+Now you want a second one for testing.
+
+3
+00:00:09.067 --> 00:00:11.207
+Copying the folder works for a week.
+
+4
+00:00:11.400 --> 00:00:15.491
+Then someone fixes a setting in one copy, and forgets the other.
+
+5
+00:00:15.491 --> 00:00:17.728
+Now every fix has to be made twice.
+
+6
+00:00:18.467 --> 00:00:20.612
+A module is a folder of .tf files.
+
+7
+00:00:20.612 --> 00:00:25.029
+You write the shape of the stack once, in a folder called hello-stack.
+
+8
+00:00:25.200 --> 00:00:29.134
+Every name inside it is built from an input, var.name.
+
+9
+00:00:29.134 --> 00:00:30.227
+So is the port.
+
+10
+00:00:30.400 --> 00:00:33.730
+The folder where you run terraform is the root module.
+
+11
+00:00:33.730 --> 00:00:36.259
+It calls hello-stack with a module block.
+
+12
+00:00:36.400 --> 00:00:39.564
+And it can call it again, with a different name and port.
+
+13
+00:00:39.733 --> 00:00:41.568
+It works like a function.
+
+14
+00:00:41.568 --> 00:00:43.991
+The variables are its parameters.
+
+15
+00:00:43.991 --> 00:00:47.881
+The call dev passes in the name hello, and port 8080.
+
+16
+00:00:48.067 --> 00:00:50.437
+The resources are the side effects.
+
+17
+00:00:50.437 --> 00:00:54.501
+Out come real objects: hello-net, hello-redis and hello-web.
+
+18
+00:00:54.667 --> 00:00:58.507
+Call it twice, and you get two sets of real objects.
+
+19
+00:00:58.507 --> 00:01:02.125
+The test call makes hello-test-web, on port 8082.
+
+20
+00:01:02.267 --> 00:01:02.922
+But wait.
+
+21
+00:01:02.922 --> 00:01:06.488
+Docker refuses two containers with the same name.
+
+22
+00:01:06.488 --> 00:01:08.089
+Why is there no clash?
+
+23
+00:01:08.267 --> 00:01:11.780
+Because the module builds every name from var.name.
+
+24
+00:01:11.780 --> 00:01:14.467
+Hello for dev, and hello-test for test.
+
+25
+00:01:15.067 --> 00:01:17.964
+The outputs are its return values.
+
+26
+00:01:17.964 --> 00:01:21.203
+The root reads them as module.dev.url.
+
+27
+00:01:21.400 --> 00:01:23.852
+Here is the difference from a function.
+
+28
+00:01:23.852 --> 00:01:26.367
+A function call is gone once it returns.
+
+29
+00:01:26.367 --> 00:01:28.631
+A module call lives on in the state.
+
+30
+00:01:28.800 --> 00:01:35.392
+Its resources get addresses with a module prefix, such as module.dev.docker_container.app.
+
+31
+00:01:35.392 --> 00:01:38.029
+They stay until you remove the call.
+
+32
+00:01:38.200 --> 00:01:39.815
+Now the fix from before.
+
+33
+00:01:39.815 --> 00:01:41.968
+You make it once, in the module.
+
+34
+00:01:42.133 --> 00:01:45.898
+And every stack that calls it changes on its next apply.
+
+35
+00:01:45.898 --> 00:01:47.309
+Nothing drifts apart.
+
+36
+00:01:48.200 --> 00:01:52.303
+Dev, test and prod need the same shape, with small differences.
+
+37
+00:01:52.303 --> 00:01:55.168
+One clean way is one folder per environment.
+
+38
+00:01:55.333 --> 00:01:57.015
+Each one is a short root.
+
+39
+00:01:57.015 --> 00:02:00.111
+A provider, and one call to the shared module.
+
+40
+00:02:00.111 --> 00:02:01.860
+Only the arguments differ.
+
+41
+00:02:02.000 --> 00:02:04.386
+Each folder has its own state file.
+
+42
+00:02:04.386 --> 00:02:07.112
+So a prod apply has no way to touch dev.
+
+43
+00:02:07.800 --> 00:02:09.325
+Compare a workspace.
+
+44
+00:02:09.325 --> 00:02:12.679
+In envs/dev, run terraform workspace new qa.
+
+45
+00:02:12.679 --> 00:02:16.033
+Terraform switches to a second, empty state.
+
+46
+00:02:16.200 --> 00:02:19.247
+An empty state means nothing exists yet.
+
+47
+00:02:19.247 --> 00:02:26.027
+So the plan wants to create everything again, with the same name site-dev, and port 8201.
+
+48
+00:02:26.200 --> 00:02:27.583
+Dev already uses both.
+
+49
+00:02:27.583 --> 00:02:32.549
+Applying would fail, because the code does not use the workspace name anywhere.
+
+50
+00:02:32.733 --> 00:02:37.007
+If you use workspaces, build names from terraform.workspace.
+
+51
+00:02:37.200 --> 00:02:39.320
+But workspaces share one backend.
+
+52
+00:02:39.320 --> 00:02:45.229
+HashiCorp's docs say that makes them unsuitable when environments need separate credentials.
+
+53
+00:02:45.229 --> 00:02:48.697
+So most teams use a folder per long-lived environment.
+
+54
+00:02:49.600 --> 00:02:52.311
+A module is a folder you call with inputs.
+
+55
+00:02:52.311 --> 00:02:57.218
+Each call makes its own real objects, and hands values back through outputs.
+
+56
+00:02:57.218 --> 00:03:01.801
+And each long-lived environment gets its own folder, and its own state.
