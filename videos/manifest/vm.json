@@ -1,4 +1,14 @@
 {
+ "d03": [
+  {
+   "slug": "d03-shell-line",
+   "title": "What the shell does with your line before the program runs",
+   "after": 6,
+   "file": "p1/d03_shell_line.py",
+   "scene": "D03ShellLine",
+   "poster_at": 160.0
+  }
+ ],
  "d12": [
   {
    "slug": "d12-two-zones",

@@ -38,5 +38,15 @@
    "scene": "D29Dependencies",
    "poster_at": 110.0
   }
+ ],
+ "d26": [
+  {
+   "slug": "d26-workflow-logic",
+   "title": "Who fills in the blanks, and when: expressions, the shell and job outputs",
+   "after": 3,
+   "file": "p6/d26_workflow_logic.py",
+   "scene": "D26WorkflowLogic",
+   "poster_at": 150.0
+  }
  ]
 }

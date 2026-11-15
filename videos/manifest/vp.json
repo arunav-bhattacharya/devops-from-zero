@@ -28,5 +28,15 @@
    "scene": "D55Index",
    "poster_at": 128.6
   }
+ ],
+ "d62": [
+  {
+   "slug": "d62-dql-pipeline",
+   "title": "A DQL query is a pipeline: records flow down, one command at a time",
+   "after": 2,
+   "file": "p16/d62_dql.py",
+   "scene": "D62Dql",
+   "poster_at": 118.0
+  }
  ]
 }
