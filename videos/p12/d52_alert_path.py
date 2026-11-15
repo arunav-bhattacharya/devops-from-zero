@@ -157,9 +157,10 @@ class D52AlertPath(VoiceScene):
                   FadeIn(wait), run_time=1.8)
         self.play(ef.animate.move_to([SLA, ih.get_y(), 0]), es.animate.move_to([SLB, ih.get_y(), 0]), run_time=1.0)
         mu = T("muted", 22, GOLD_M).next_to(es, UP, buff=0.1)
+        es.save_state()
         self.beat("Then inhibition. The page fires for the job hello-devops, so the ticket for the same job is muted.",
                   Succession(Wait(3.0), AnimationGroup(es.animate.set_opacity(0.25), FadeIn(mu))), run_time=4.4)
-        hook = panel(9.0, 0.95, GREY_B, [0, -3.15, 0], 0.05, 2)
+        hook = panel(11.8, 0.95, GREY_B, [0, -3.15, 0], 0.05, 2)
         out = M("[pager] FIRING HelloErrorBudgetFastBurn job=hello-devops ...", 20, RED_M).move_to(hook)
         self.beat("The page walks down the tree to the pager, and the webhook prints one line. Only the page arrived.",
                   Succession(ef.animate(run_time=1.0).move_to([SLA, ro.get_y(), 0]), ef.animate(run_time=1.0).move_to(pg), FadeOut(ef, run_time=0.3)),
@@ -177,7 +178,7 @@ class D52AlertPath(VoiceScene):
                                                        Transform(out, M("[pager] RESOLVED HelloErrorBudgetFastBurn job=hello-devops ...", 20, GREEN_M).move_to(hook)))), run_time=6.0)
         out2 = M("[tickets] FIRING HelloErrorBudgetSlowBurn job=hello-devops ...", 20, GOLD_M)
         out2.move_to(hook.get_center() + DOWN * 0.2).align_to(out, LEFT)
-        self.play(es.animate.set_opacity(1), FadeOut(mu), run_time=0.4)
+        self.play(Restore(es), FadeOut(mu), run_time=0.4)
         self.beat("In the same second, Alertmanager released the ticket it had been muting. The outage really did spend budget.",
                   Succession(es.animate(run_time=1.0).move_to([SLB, ro.get_y(), 0]), es.animate(run_time=1.0).move_to(tkt), FadeOut(es, run_time=0.3)),
                   Succession(Wait(2.4), AnimationGroup(out.animate.shift(UP * 0.2), FadeIn(out2, shift=UP * 0.1))),

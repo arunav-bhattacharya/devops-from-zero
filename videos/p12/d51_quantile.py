@@ -134,7 +134,7 @@ class D51Quantile(VoiceScene):
         self.beat("Step five, histogram_quantile, with 0.95. Draw each bucket as a bar.",
                   light(3, False), light(4), qpart(4, PURPLE_M), Create(base),
                   *[ReplacementTransform(rrow[i], bars[i]) for i in range(4)], heads.animate.move_to([heads.get_x(), B0 - 0.3, 0]), run_time=3.0)
-        vals = VGroup(*[M(str(r), 22, WHITE).move_to(b.get_top() + DOWN * 0.32) for r, b in zip(RATES, bars)])
+        vals = VGroup(*[M(str(r), 22, WHITE).move_to(b.get_top() + DOWN * 0.32) for r, b in zip(RATES, bars)]).set_z_index(3)
         line95 = DashedLine([-2.0, B0 + 95 * SC, 0], [6.4, B0 + 95 * SC, 0], dash_length=0.1, stroke_width=2.5, color=YELLOW_M)
         l95 = T("95% of 100 = 95", 24, YELLOW_M).move_to([-0.9, B0 + 95 * SC + 0.45, 0])
         self.add(vals)
@@ -168,7 +168,7 @@ class D51Quantile(VoiceScene):
         est = T("an estimate, only as precise as the buckets", 30, YELLOW_M).move_to([1.8, 2.0, 0])
         cA = VGroup(T("Prometheus's own API: a few ms", 24), T("first bucket 0 to 0.1 s", 24, GREY_B), M("p95 = 0.095", 24, PURPLE_M)).arrange(DOWN, buff=0.2)
         cB = VGroup(T("hello-devops, Redis outage", 24), T("bucket 5 to 7.5 s", 24, GREY_B), M("p95 = 6.12 s", 24, PURPLE_M)).arrange(DOWN, buff=0.2)
-        cards = VGroup(cA, cB).arrange(RIGHT, buff=1.0).move_to([1.8, 0.2, 0])
+        cards = VGroup(cA, cB).arrange(RIGHT, buff=0.5).move_to([1.9, 0.2, 0])
         self.beat("So the answer is always an estimate. Both of these happened in the lab.",
                   FadeIn(est, shift=DOWN * 0.1), run_time=1.8)
         self.beat("Prometheus's own query API answered in a few milliseconds. But its first bucket is 0 to 0.1 seconds, so the p95 came out at exactly 0.095.",

@@ -1,4 +1,24 @@
 {
+ "d12": [
+  {
+   "slug": "d12-two-zones",
+   "title": "One network across two zones: public and private subnets",
+   "after": 3,
+   "file": "p3/d12_two_zones.py",
+   "scene": "D12TwoZones",
+   "poster_at": 199.0
+  }
+ ],
+ "d13": [
+  {
+   "slug": "d13-iam-check",
+   "title": "How AWS decides each call: signatures, policies and roles",
+   "after": 4,
+   "file": "p3/d13_iam_check.py",
+   "scene": "D13IamCheck",
+   "poster_at": 150.0
+  }
+ ],
  "d15": [
   {
    "slug": "d15-script-io",
@@ -6,7 +26,7 @@
    "after": 5,
    "file": "p4/d15_script_io.py",
    "scene": "D15ScriptIo",
-   "poster_at": 163.0
+   "poster_at": 158.0
   }
  ],
  "d16": [

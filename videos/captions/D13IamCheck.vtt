@@ -9,181 +9,193 @@ Every command you type with the AWS CLI becomes an API call to AWS.
 Like this one, which reads a report from a bucket.
 
 3
-00:00:12.265 --> 00:00:15.798
+00:00:12.233 --> 00:00:15.767
 Any call can create, change or delete something.
 
 4
-00:00:15.798 --> 00:00:19.553
+00:00:15.767 --> 00:00:19.521
 So before S3 does anything, AWS asks two questions.
 
 5
-00:00:19.803 --> 00:00:20.784
+00:00:19.733 --> 00:00:20.715
 Who is calling?
 
 6
-00:00:20.784 --> 00:00:23.336
+00:00:20.715 --> 00:00:23.267
 And may they do this, on this resource?
 
 7
-00:00:23.586 --> 00:00:26.320
+00:00:23.467 --> 00:00:26.200
 The first answer comes from credentials.
 
 8
-00:00:26.320 --> 00:00:31.514
+00:00:26.200 --> 00:00:31.395
 An access key ID, a secret, and, for temporary credentials, a session token.
 
 9
-00:00:31.764 --> 00:00:34.545
+00:00:31.600 --> 00:00:34.381
 The CLI never sends the secret itself.
 
 10
-00:00:34.545 --> 00:00:37.473
+00:00:34.381 --> 00:00:37.309
 It uses the secret to sign each request.
 
 11
-00:00:37.723 --> 00:00:42.019
+00:00:37.533 --> 00:00:41.829
 AWS checks the signature with its own copy of the secret.
 
 12
-00:00:42.019 --> 00:00:45.033
+00:00:41.829 --> 00:00:44.843
 If they match, AWS knows who is calling.
 
 13
-00:00:45.283 --> 00:00:47.922
+00:00:45.067 --> 00:00:47.706
 So where should those credentials come from?
 
 14
-00:00:47.922 --> 00:00:50.501
+00:00:47.706 --> 00:00:50.285
 The worst place is a long-lived access key.
 
 15
-00:00:50.751 --> 00:00:57.350
+00:00:50.500 --> 00:00:57.099
 It works for whoever holds it, copied from a laptop, a log or a git repo, until someone deletes it.
 
 16
-00:00:57.600 --> 00:01:00.828
+00:00:57.300 --> 00:01:00.528
 People should sign in through a browser instead.
 
 17
-00:01:00.828 --> 00:01:02.173
+00:01:00.528 --> 00:01:01.873
 aws login does that.
 
 18
-00:01:02.173 --> 00:01:05.535
+00:01:01.873 --> 00:01:05.235
 It turns your browser sign-in into temporary keys.
 
 19
-00:01:05.785 --> 00:01:10.395
+00:01:05.467 --> 00:01:10.077
 It stores temporary credentials and refreshes them every 15 minutes.
 
 20
-00:01:10.395 --> 00:01:12.497
+00:01:10.077 --> 00:01:12.179
 No key ever lands on your disk.
 
 21
-00:01:13.247 --> 00:01:14.761
+00:01:12.900 --> 00:01:14.414
 Now the second question.
 
 22
-00:01:14.761 --> 00:01:17.979
+00:01:14.414 --> 00:01:17.633
 Say the caller has the lab's reports reader policy.
 
 23
-00:01:17.979 --> 00:01:22.333
+00:01:17.633 --> 00:01:21.987
 It allows listing the reports, and reading the objects under reports.
 
 24
-00:01:22.583 --> 00:01:25.623
+00:01:22.200 --> 00:01:25.239
 AWS decides every call the same way.
 
 25
-00:01:25.623 --> 00:01:27.311
+00:01:25.239 --> 00:01:26.928
 It starts from deny.
 
 26
-00:01:27.561 --> 00:01:29.891
+00:01:27.133 --> 00:01:29.463
 A matching Allow opens the call.
 
 27
-00:01:29.891 --> 00:01:34.551
+00:01:29.463 --> 00:01:34.123
 s3:GetObject on reports matches, so the call goes through to S3.
 
 28
-00:01:34.801 --> 00:01:36.153
+00:01:34.333 --> 00:01:35.685
 Now try a delete.
 
 29
-00:01:36.153 --> 00:01:39.731
+00:01:35.685 --> 00:01:39.264
 Nothing in the policy allows s3:DeleteObject.
 
 30
-00:01:39.731 --> 00:01:42.991
+00:01:39.264 --> 00:01:42.524
 So it stays denied, and S3 never sees it.
 
 31
-00:01:43.241 --> 00:01:44.509
+00:01:42.733 --> 00:01:44.001
 And one more rule.
 
 32
-00:01:44.509 --> 00:01:47.607
+00:01:44.001 --> 00:01:47.099
 An explicit Deny anywhere beats every Allow.
 
 33
-00:01:49.057 --> 00:01:51.496
+00:01:48.500 --> 00:01:50.939
 Programs should not hold keys at all.
 
 34
-00:01:51.496 --> 00:01:52.748
+00:01:50.939 --> 00:01:52.192
 They assume a role.
 
 35
-00:01:52.748 --> 00:01:54.858
+00:01:52.192 --> 00:01:54.301
 And a role carries two policies.
 
 36
-00:01:55.108 --> 00:01:59.723
+00:01:54.533 --> 00:01:59.148
 The permissions policy, like the one we just read, says what the role may do.
 
 37
-00:01:59.973 --> 00:02:02.390
+00:01:59.367 --> 00:02:01.784
 The trust policy says who may assume it.
 
 38
-00:02:02.640 --> 00:02:04.723
+00:02:02.000 --> 00:02:04.083
 Here the Principal ends in root.
 
 39
-00:02:04.723 --> 00:02:10.647
+00:02:04.083 --> 00:02:10.007
 That means the whole account: any identity in it whose own policy allows assuming the role.
 
 40
-00:02:10.647 --> 00:02:12.665
+00:02:10.007 --> 00:02:12.025
 It does not mean the root user.
 
 41
-00:02:12.915 --> 00:02:15.783
+00:02:12.233 --> 00:02:15.101
 aws sts assume-role checks both sides.
 
 42
-00:02:15.783 --> 00:02:21.291
+00:02:15.101 --> 00:02:20.609
 Your own policy must allow it, and the role's trust policy must list you.
 
 43
-00:02:21.541 --> 00:02:24.211
+00:02:20.833 --> 00:02:23.503
 Then it hands back temporary credentials.
 
 44
-00:02:24.211 --> 00:02:26.099
+00:02:23.503 --> 00:02:25.391
 They last an hour by default.
 
 45
-00:02:26.299 --> 00:02:28.545
+00:02:25.600 --> 00:02:27.846
 Their key ID starts with ASIA.
 
 46
-00:02:28.545 --> 00:02:30.941
+00:02:27.846 --> 00:02:30.242
 Long-lived keys start with AKIA.
 
 47
-00:02:30.941 --> 00:02:33.636
+00:02:30.242 --> 00:02:32.937
 So you can tell them apart in a log.
+
+48
+00:02:33.767 --> 00:02:36.306
+So the signature proves who is calling.
+
+49
+00:02:36.306 --> 00:02:40.799
+The policies start at deny, an Allow opens the call, and a Deny wins.
+
+50
+00:02:40.799 --> 00:02:44.901
+People sign in for short-lived keys, and programs assume roles.
