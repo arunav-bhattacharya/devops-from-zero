@@ -13,7 +13,7 @@ Everything an app needs around it to run is called infrastructure: the computers
 The cure is to write the setup down for a tool to follow. This is called **Infrastructure as Code** (IaC): you describe your infrastructure in text files, and a tool makes the real world match them. The files live in git, the tool from Part 2 that keeps every saved version of your files, right next to the app's code. So a change to infrastructure goes through the same steps as any change to code:
 - `git log` shows every change, who made it and why.
 - A pull request (a proposed change that a teammate reads before it is accepted) lets someone review the change before it reaches anything real.
-- Reverting a commit (undoing one saved change) and applying again rolls a change back.
+- Undoing one saved change and applying again rolls the infrastructure back.
 - The same files build a second, identical environment.
 
 This part of the course uses Terraform, the most widely used IaC tool. For four lessons you practise with Docker on your own laptop, so nothing costs money. Day 35, "Terraform on a real cloud, and in CI", goes to a real cloud, and you can skip it. First, though, we need to see how a tool can follow a description instead of a list of steps.
@@ -22,11 +22,13 @@ This part of the course uses Terraform, the most widely used IaC tool. For four 
 S1 = """
 You can ask a helper to set up the café in two ways. You can hand over a list of steps, such as "carry in the chairs, then plug in the fridge". Or you can hand over a drawing of the finished room. The first way is called imperative: you list the steps. The second is declarative: you describe the result, and the helper works out the steps.
 
-Now the computer version, with this lesson's running example. Docker is the tool that builds and runs containers: sealed boxes that each run one program the same way on any computer. A container starts from an image, a packed copy of the program. Ours is nginx, a popular web server (a program that answers web browsers with a page). We want it on port 8090. A port is a numbered door that a program listens at.
+Now the computer version, with this lesson's running example. Docker is the tool that runs containers: sealed boxes that each run one program the same way on any computer. Our program is nginx, a popular program that answers web browsers with a page.
+
+A container starts from an image, a packed copy of the program. We want ours on port 8090. A port is a numbered door that a program listens at.
 - Imperative: "Pull (download) the nginx image, then start a container, then publish port 8090." A shell script, a file of typed commands that run one after another, works this way.
 - Declarative: "There is one nginx container called tf-web on port 8090." The tool works out the steps.
 
-Terraform is declarative. Your files describe the desired state: what should exist once Terraform is done. You feel the difference the second time you run it. Run a script that uses `docker run` twice, and the second run fails, because the name tf-web is already taken. Run Terraform twice and the second run prints `No changes`. A command that gives the same result however many times you run it is called idempotent.
+Terraform is declarative. Your files describe the desired state: what should exist once Terraform is done. You feel the difference the second time you run it. Run a script that uses `docker run`, then run it again: the second run fails, because the name tf-web is already taken. Run Terraform twice and the second run prints `No changes`. A command that gives the same result however many times you run it is called idempotent.
 
 How does Terraform know the container is already there? Picture an architect's drawing of a house, and a builder who compares the drawing with the house on every visit. The drawing is your Terraform files, the builder is Terraform, and the house is the real containers. The builder also keeps a notebook of everything built so far. That notebook is the state: a file called `terraform.tfstate` that records each object Terraform made and that object's real ID (the unique name Docker gave it).
 
@@ -42,20 +44,20 @@ The plan is the difference between the desired state and what really exists, wri
 
 Apply carries out the plan and writes the result back into the state. On the second run, Docker reported the saved container with the right settings, so the plan was empty.
 
-Docker Compose, from the lesson of that name, is declarative too, but it only knows Docker on one machine. Terraform talks to almost anything that has an API, a set of rules that lets one program ask another for things. That means Docker, AWS, Google Cloud, Azure, GitHub, Cloudflare and thousands more. Before we see how, a short word on who makes it.
+The builder picture has one limit. This builder only comes when called: Terraform looks only when you run plan or apply. A change made by hand stays in place until your next run.
+
+Docker Compose, from Part 5, is declarative too, but it only knows Docker on one machine. Terraform talks to almost anything that has an API, a set of rules that lets one program ask another for things. That means Docker, AWS, Google Cloud, Azure, GitHub, Cloudflare and thousands more. Before we see how, a quick look at the other tools you will hear named beside it.
 """
 
 S2 = """
-You will hear other names next to Terraform's, and a little history explains why. A company called HashiCorp makes Terraform, and IBM bought HashiCorp in February 2025. Terraform was open source until August 2023. Open source means anyone may read, change and share the code. Its license (the written rules for using it) was the Mozilla Public License (MPL). Then [HashiCorp moved it to the Business Source License](https://www.hashicorp.com/en/blog/hashicorp-adopts-business-source-license) (BSL). You may still use Terraform for free at work. What you may not do is sell a product that competes with HashiCorp's own.
+You will hear other names next to Terraform's. The closest is OpenTofu, a free copy of Terraform that part of the community started in 2023, after Terraform's license changed. The box below tells that story. You type `tofu` instead of `terraform`, and `tofu plan` behaves like `terraform plan`. The language is the same, and everything in this part works with both. A few newer features exist in only one of them. If your team already uses one, stay with it.
 
-Part of the community disliked the change and forked the last open source version. To fork is to take a copy and carry it on as a separate project. The fork is called OpenTofu. It lives at the Linux Foundation, a non-profit that looks after many open source projects. In 2025 it joined the CNCF (Cloud Native Computing Foundation), the home of Kubernetes, which runs containers across many computers. You type `tofu` instead of `terraform`, and `tofu plan` behaves like `terraform plan`. The language is the same, and everything in this part works with both. A few newer features exist in only one of them. If your team already uses one, stay with it.
-
-You will hear about these tools too:
-- CloudFormation: the IaC service of AWS (Amazon Web Services, Amazon's cloud), written as YAML or JSON templates. YAML and JSON are text formats for neatly nested settings. It works only for AWS.
+Three more tools come up often:
+- CloudFormation: the IaC service of AWS (Amazon Web Services, Amazon's cloud). You write it as YAML or JSON, two text formats for neatly nested settings. It works only for AWS.
 - Pulumi: IaC written in normal programming languages such as TypeScript, Python, Go, C# or Java.
 - Ansible: connects to servers that already exist and sets them up (packages, files, services). Days 36 and 37 teach it.
 
-Teams often combine them, the way a house needs both a builder and a decorator. Terraform creates the network, the machines and the Kubernetes cluster (a group of computers run as one). A container image or Ansible decides what runs inside. Terraform can set up software on servers too, but that is not its strength. Now let's open a Terraform file and see what it is made of.
+Teams often combine them, the way a house needs both a builder and a decorator. Terraform creates the network, the machines and the Kubernetes cluster (a group of computers that run containers together, Part 10). A container image or Ansible decides what runs inside. Terraform can set up software on servers too, but that is not its strength. Now let's open a Terraform file and see what it is made of.
 """
 
 S3 = """
@@ -104,7 +106,7 @@ You will also see these in almost every plan:
 
 In the worked example below, changing the restart policy (what Docker does when the container stops) gives `~`. Docker can change it on a running container, so the container keeps its ID.
 
-Replacement is where people get hurt. Some settings cannot change on a running object. Docker cannot move a running container to a new host port, or give it new environment variables. So changing the port from 8090 to 8091 becomes `-/+`, and the line that caused it ends with `# forces replacement`. One small edit, and the container comes back with a new ID.
+Replacement is where people get hurt. Some settings cannot change on a running object. Docker cannot move a running container to a new host port (the port on your laptop), or give it new environment variables. So changing the port from 8090 to 8091 becomes `-/+`, and the line that caused it ends with `# forces replacement`. One small edit, and the container comes back with a new ID.
 
 For an nginx container, replacement means a second of downtime. For a database it can mean an empty database. It is easy to type `yes` without reading when the edit was one word. Build the habit now, while the containers are toys: read the summary line and search the plan for `forces replacement`. If the numbers surprise you, stop and find out why.
 
@@ -114,27 +116,27 @@ Apply also leaves a few files in your folder, each with its own rule.
 """
 
 S6 = """
-After your first apply, the folder holds three new things. Each has a different rule for git:
-- `.terraform/` holds the downloaded provider binaries (ready-to-run program files). It is a cache, a store of copies that `init` can always rebuild. Never commit it.
+After your first apply, the folder holds three new things. Each has a different rule for git, and to commit a file means to save it into git's history:
+- `.terraform/` holds the downloaded providers. It is a cache, a store of copies that `init` can always rebuild. Never commit it.
 - `.terraform.lock.hcl` records the exact provider version and its checksums. A checksum is a short fingerprint made from a file's contents, so any change to the file changes it. Commit the lock file, so your laptop, your teammates and CI (the server that builds and tests every change) all run the same provider code.
 - `terraform.tfstate` is the state, the builder's notebook. Never commit it.
 
 Inside, the state pairs each address, such as `docker_container.web`, with the real container ID and every setting Docker reported. State can also hold passwords in plain text, which is the main reason it stays out of git. Day 33, "State: Terraform's memory", is all about it.
 
-Two names sound alike, so keep them apart. The lock file pins provider versions. A state lock, which you meet on Day 33, stops two people from changing the same state at once.
+Two names sound alike, so keep them apart. The lock file fixes the provider versions. A state lock, which you meet on Day 33, stops two people from changing the same state at once.
 
-The lab's `.gitignore`, the file that lists names git should ignore, already blocks `.terraform/` and `*.tfstate`. GitHub keeps a [ready-made Terraform .gitignore](https://github.com/github/gitignore/blob/main/Terraform.gitignore) if you start a new repo.
+The lab's `.gitignore`, the file that lists names git should ignore, already blocks `.terraform/` and `*.tfstate`. GitHub keeps a [ready-made Terraform .gitignore](https://github.com/github/gitignore/blob/main/Terraform.gitignore) if you start a new repo (a folder that git tracks).
 
 Our file still has a weakness, though. Every value, such as the port 8090, is typed straight into the block, so three containers would mean three copied blocks. The next lesson fixes that.
 """
 
 new = {
     "goal": "By the end you can explain why teams write their infrastructure as code, read a Terraform plan, and create, change and destroy a container with Terraform on your laptop.",
-    "opening": """Picture a friend who opens a small café. On the first morning you help her set up. You plug in the coffee machine, set the fridge to four degrees, line up twelve chairs and write the Wi-Fi password on a card by the till. It all works, and nobody writes any of it down. Why would you? You were both right there.
+    "opening": """Picture a friend who opens a small café. On the first morning you help her set up. You plug in the coffee machine, set the fridge to four degrees and line up twelve chairs. It all works, and nobody writes any of it down. Why would you? You were both right there.
 
 A year later she opens a second café and asks you to make it exactly the same. You stand in the empty room and can't remember half of what you did. The trap is easy to fall into: doing things by hand feels fast the first time, and the cost arrives later.
 
-In "Fast builds, CI and containers for JVM apps" we packed programs into containers by typing commands. Typed commands leave the same gap as the café: nothing remembers them. In this lesson, we'll write a setup down in a file and let a tool called Terraform build it, check it and tear it down. Before we start, make a guess, and keep it in mind.""",
+Last time, we built programs quickly and packed them into containers, sealed boxes that run anywhere. We did much of it by typing commands, which leave the same gap as the café: nothing remembers them. In this lesson, we'll write a setup down in a file and let a tool called Terraform build it, check it and tear it down. Before we start, make a guess, and keep it in mind.""",
     "guess": (
         "You run `terraform apply` and it succeeds. Then you run `terraform apply` again, without changing any file. What happens the second time?",
         "Terraform remembers what it created, checks that those things still exist, and compares them with your files. When they match there is nothing to do, so running it again is safe.",
@@ -152,7 +154,7 @@ In "Fast builds, CI and containers for JVM apps" we packed programs into contain
     "sections": [
         ("A setup that lives only in someone's memory", S0),
         ("A drawing instead of a list of steps", S1),
-        ("Who makes Terraform, and its close cousins", S2),
+        ("Terraform's close cousins", S2),
         ("What a Terraform file is made of", S3),
         ("Four commands: init, plan, apply, destroy", S4),
         ("Reading a plan before you say yes", S5),
@@ -238,11 +240,12 @@ The `terraform` block can also hold `required_version`, which sets the versions 
 
 OpenTofu reads the same blocks but downloads providers from its own registry. Read the OpenTofu migration guide before you switch one state between `terraform` and `tofu`, and keep a backup of the state while you try it.
 """,
-    "keep": {
-        "analogy": "Terraform works like a builder with an architect's drawing. Before each visit, the builder walks round the house, compares it with the drawing, and does only the work that is missing. Bring the same drawing twice, and the second visit is a short walk with no hammering. This builder only comes when called, though. Terraform looks only when you run plan or apply, so a change made by hand stays in place until your next run.",
-        "mistake": "You type `yes` without reading the plan, because the edit was one word. That one word can turn into `-/+`, and replacing a database means losing its data. Read the summary line and search for `forces replacement` every time, most of all when you are sure the change is small.",
-        "real_world": "Picture a team that runs a payments product. Nobody there creates real infrastructure by clicking, because clicks leave no review and no record. Every change is a pull request with the Terraform plan attached, and a second engineer reads the plan before anyone applies it. People still open the web console to look around, or during an incident, and whatever they change by hand shows up in the next plan.",
+    "aside": {
+        "title": "Who owns Terraform, and why does OpenTofu exist?",
+        "body": "A company called HashiCorp makes Terraform, and IBM bought HashiCorp in February 2025. Until August 2023, Terraform was open source under the Mozilla Public License (MPL), which let anyone read, change and share the code. Then [HashiCorp moved it to the Business Source License](https://www.hashicorp.com/en/blog/hashicorp-adopts-business-source-license) (BSL). You may still use Terraform for free at work, but you may not sell a product that competes with HashiCorp's own. Part of the community disliked the change and forked the last open source version: they took a copy and carried it on as its own project. That fork is OpenTofu, which lives at the Linux Foundation and joined the CNCF (Cloud Native Computing Foundation, the home of Kubernetes) in 2025.",
+        "after": 2,
     },
+    "drop": ["analogy", "mistake", "real_world"],
 }
 
 apply(8, "d31", new)

@@ -13,7 +13,7 @@ L["opening"] = (
     "tables for a big group. A cook takes a dish off because the fish ran out. Nobody writes any of it on the board. "
     "By nine, the board and the room tell two different stories, and the next shift believes the board.\n\n"
     "It is an easy mess to get into. Every change made sense at the time, and writing it down felt like extra work. "
-    "In the last lesson, Troubleshooting Kubernetes, you fixed broken apps by typing commands by hand. "
+    "Last time, you tracked down broken apps on your cluster and fixed them by typing commands by hand. "
     "That left a quiet question: who keeps the board and the room in step?\n\n"
     "In this lesson, we'll hand that job to a program, watch it undo a hand edit, and roll back a bad release "
     "using nothing but the history of your files.\n\n"
@@ -240,8 +240,8 @@ L["aside"] = {
     "title": "If the manager undoes hand edits, can I still use kubectl at all?",
     "body": (
         "Yes. Commands that only read, such as `kubectl get`, `kubectl describe` and `kubectl logs`, change nothing, "
-        "so Argo CD has nothing to undo. They stay your main tools for finding problems, as in Troubleshooting "
-        "Kubernetes. What changes is where writes go. A write to an object Argo CD manages belongs in git, or it "
+        "so Argo CD has nothing to undo. They stay your main tools for finding problems, as they were last time. "
+        "What changes is where writes go. A write to an object Argo CD manages belongs in git, or it "
         "will not last. Objects that Argo CD does not manage, such as a throwaway test Pod, are still yours to "
         "create and delete by hand."
     ),
@@ -395,6 +395,10 @@ L["closing"] = (
     "Next, we'll run hello-devops as two copies, dev and prod, and answer the question every team meets: how does "
     "a tested version move safely from one to the other?"
 )
+
+# The opening and sections carry the board-and-manager picture and the hand-fix mistake (lead's notes).
+L.pop("analogy", None)
+L.pop("mistake", None)
 
 P.write_text(json.dumps(d, indent=1, ensure_ascii=False) + "\n")
 print("d47 written")

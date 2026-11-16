@@ -56,7 +56,7 @@ Most teams run this loop, typed in the terminal (the window for text commands) w
 6. Answer the review by pushing more commits to the same branch. The PR updates itself.
 7. Merge, for example with Squash and merge and Delete branch, or `gh pr merge --squash --delete-branch`. Then `git switch main && git pull`.
 
-Squash and merge, in step 7, turns all of the branch's commits into one new commit on `main`; Go deeper compares the three merge methods.
+Squash and merge, in step 7, turns the branch's commits into one new commit on `main` (Go deeper compares merge methods).
 
 Two facts about CI on pull requests explain our kitchen. First, GitHub builds a temporary merge commit of your branch into the current main, and CI tests that combination. Second, CI starts only when something happens to the PR itself: it is opened, gets new commits, or is reopened.
 
@@ -71,7 +71,7 @@ L["aside"] = {
 }
 
 S[1]["h"] = "What a reviewer catches that tests miss"
-S[1]["body"] = """The kitchen taster checks the salt, because that is its job. The head chef notices the card that never says how much stock to use. In code, CI runs the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a confusing name.
+S[1]["body"] = """The kitchen taster checks the salt. The head chef notices the card that never says how much stock to use. In code, CI runs the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a confusing name.
 
 As the author:
 
@@ -134,7 +134,7 @@ S[4]["body"] = """In the kitchen, CI is the taster who tries each dish the momen
 
 Continuous integration (CI), which Day 1 sketched, means everyone merges small changes often, and a server builds and tests every change automatically. A server is a computer that runs programs for others. Without CI, people test on their own laptops, and the combined code first meets a test when someone tries to release. With CI you hear about a broken test minutes after you push, while you still remember what you changed.
 
-On GitHub, that server is a fresh virtual machine (a computer simulated in software) that GitHub starts for the test and deletes afterwards (Day 24). [Martin Fowler's article on continuous integration](https://martinfowler.com/articles/continuousIntegration.html) is the classic description and worth an evening.
+On GitHub, it is a fresh virtual machine (a computer simulated in software), started for the test and deleted afterwards (Day 24). [Martin Fowler's article on continuous integration](https://martinfowler.com/articles/continuousIntegration.html) is the classic description and worth an evening.
 
 CD has two meanings, often mixed up:
 
@@ -155,7 +155,7 @@ Build the image once, at the publish step. This rule is called **build once, dep
 Automating these steps also moves the DORA metrics from Day 1, which measure how teams deliver: how often you deploy, how long a change takes to reach users, and more. Next: how the new version replaces the old one while users keep clicking."""
 
 S[5]["h"] = "Swapping versions while people keep using the app"
-S[5]["body"] = """Picture changing the menu mid-dinner by closing the doors, swapping every recipe and opening again. The naive software deploy works the same way: it stops the old version, then starts the new one. Users get errors during the gap, and if the new version is broken, every user hits it at once. Four common ways avoid one or both problems:
+S[5]["body"] = """The naive deploy is like changing a menu mid-dinner by closing the doors, swapping every recipe and opening again. It stops the old version, then starts the new one. Users get errors during the gap, and if the new version is broken, every user hits it at once. Four common ways avoid one or both problems:
 
 - Rolling: replace servers or containers a few at a time. Kubernetes does this by default (Day 40).
 - Blue/green: run the new version (green) next to the old one (blue), then switch all traffic at once.

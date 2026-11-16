@@ -13,9 +13,9 @@ L["goal"] = r"""By the end you can write a Python script that reads a log file, 
 
 L["opening"] = r"""Picture leaving a helper in charge of your small shop for the morning. You hand over a written checklist: open the stock room, count yesterday's visitors in the door book, then leave a note that says done or failed. At lunch the note says "done". Later you find out the stock room key never turned, and the helper simply moved on to the next line.
 
-Nobody lied. The checklist never said what to do when a step fails, and a helper who follows a list exactly will carry on. Computer scripts behave the same way. The trap is easy to miss, because a script that carried on looks just like a script that worked.
+Nobody lied. The checklist never said what to do when a step fails, and a helper who follows a list exactly will carry on. Scripts, the files of instructions a computer follows in order, behave the same way. The trap is easy to miss, because a script that carried on looks just like a script that worked.
 
-In the last lesson, Hands-on AWS 2: a server of your own with EC2, VPC and CloudWatch, Bash scripts such as `server-up.sh` launched a whole server for you. In this lesson, we'll write a helper in Python. It reads a log, counts what matters, and reports done or failed in a way both people and machines can trust.
+Last time, a few scripts launched a whole server in Amazon's cloud for you. In this lesson, we'll write our own helper in Python, a programming language that reads almost like English. It reads a log, counts what matters, and reports done or failed in a way both people and machines can trust.
 
 Before we start, make a guess, and keep it in mind."""
 
@@ -38,42 +38,45 @@ for t in L["terms"]:
 S = L["sections"]
 
 S[0]["h"] = "When the checklist outgrows Bash"
-S[0]["body"] = r"""A script is a text file of instructions that the computer follows from top to bottom, like the helper's checklist. Bash is the language of the terminal, the text window where you type commands. Day 7's Bash scripts came with a rule of thumb. Once a script needs real data structures or grows past about a hundred lines, write it in Python, a programming language that reads almost like English.
+S[0]["body"] = r"""Our helper's checklist will be a script. On Day 7 you wrote scripts in Bash, the language of the terminal (the text window where you type commands). That lesson ended with a rule of thumb: once a script needs real data structures or grows past about a hundred lines, write it in Python.
 
-Bash is very good at starting programs and wiring their output together. It gets painful once you need to keep data around and make decisions about it. Move to Python when a script needs any of these:
+Bash is good at starting programs and wiring their output together. It gets painful once you need to keep data around and make decisions about it. Move to Python when a script needs any of these:
 
 - Lookup data, such as a count for each page of a website. The bash 3.2 on your Mac has no associative arrays (lookup tables) at all.
-- JSON, a common text format for data, or an HTTP API, a web address that programs ask for data. One `jq` call is fine (jq reads JSON). Five of them glued together are a program in disguise.
+- JSON, a common text format for data. One `jq` call is fine (jq reads JSON), but five glued together are a program in disguise.
+- An HTTP API, a web address that programs ask for data.
 - Different handling for a missing file, a timeout or a 404 ("page not found").
 - Tests. pytest (Day 16) is far easier than testing a shell script.
 - The same behaviour on macOS and Linux. `sed -i` and `date -d` differ between the two; Python's `re` and `datetime` do not.
 
-Keep Bash for short glue: a five-line CI step, a `RUN` line in a Dockerfile, or `healthcheck.sh` from Day 7. CI, continuous integration, is a service that runs your checks on every change. Keep the Day 7 habits too: a clear exit code, messages on stderr and a loud failure. Most of today is about doing those well in Python.
+Keep Bash for short glue: a five-line CI step, a `RUN` line in a Dockerfile (Part 5), or `healthcheck.sh` from Day 7. CI is a service that runs your checks on every change. Keep the Day 7 habits too: a clear exit code, messages on stderr and a loud failure. Most of today is about doing those well in Python.
 
 Python is already installed on GitHub's Ubuntu runners (the machines that run CI jobs) and on Ubuntu and Amazon Linux servers. Its standard library, the toolbox that comes with it, covers files, JSON, CSV, regular expressions, time zones and running other programs. Today uses nothing else. Day 16 adds the two outside packages most ops scripts need: requests and boto3.
 
 So Python it is. But which Python, and where do its add-ons live?"""
 
 S[1]["h"] = "One tool for Python, its packages and one-file scripts: uv"
-S[1]["body"] = r"""On Day 2 you set up hello-devops, the course's tiny web app that answers every visit with a greeting and a count of visits so far. You did it the classic way: Homebrew's Python, `python3 -m venv .venv`, `source .venv/bin/activate`, then `pip install -r requirements-dev.txt`. That still works, and hello-devops keeps it, because its Dockerfile and its CI (Day 25) use pip. The `.venv` folder is a virtual environment: a private home for one project's packages (ready-made code by other people).
+S[1]["body"] = r"""On Day 2 you set up hello-devops, the course's tiny web app that answers every visit with a greeting and a count of visits so far. You did it the classic way: Homebrew's Python, `python3 -m venv .venv`, `source .venv/bin/activate`, then `pip install -r requirements-dev.txt`. That still works, and hello-devops keeps it, because its Dockerfile and its CI (Day 25) use pip.
+
+The `.venv` folder is a virtual environment: a private home for one project's packages (ready-made code by other people).
 
 For new tools this course uses uv, one program from Astral, the company that also makes ruff (a checker for Python code). It does the jobs of Homebrew's Python, venv and pip, and a few more:
 
 - `uv python install 3.14` downloads a Python version, so you stop depending on what Homebrew has.
-- `uv init` starts a project with a `pyproject.toml`, the standard file for a project's name, Python version and dependencies (the packages it needs).
-- `uv add requests` adds a dependency and writes the exact version of every package to `uv.lock`. Commit that file (save it in Git), so CI and teammates get the versions you tested.
+- `uv init` starts a project with a `pyproject.toml`, the standard file for a project's name, Python version and the packages it needs.
+- `uv add requests` adds a dependency (a package the project needs) and writes the exact version of every package to `uv.lock`. Commit that file (save it in Git), so CI and teammates get the versions you tested.
 - `uv run <command>` first makes `.venv` match the lock file, then starts the command with `.venv/bin` at the front of its PATH (Day 7), the list of folders searched for programs. That is most of what `activate` does, so you never activate anything.
 - `uvx ruff check` runs a tool in a throwaway environment.
 
-A single script does not even need a project. PEP 723, one of the Python Enhancement Proposals that set Python's standards, defines inline script metadata. It is a comment block at the top of the file that names the Python version and packages the script needs. The command `uv init --script check.py --python 3.14` creates the block, and `uv add --script check.py requests` adds a package to it. Then `uv run check.py` builds a cached environment with those packages and runs the script.
+A single script does not even need a project. A standard called PEP 723 defines inline script metadata. It is a comment block at the top of the file that names the Python version and packages the script needs. The command `uv init --script check.py --python 3.14` creates the block, and `uv add --script check.py requests` adds a package to it. Then `uv run check.py` builds a cached environment with those packages and runs the script.
 
 The lab's `scripts/logsum.py` has such a block with an empty package list. Inside a project, a script with a block ignores the project and uses only its own list. Read a script from the internet before you `uv run` it, because uv installs whatever its block asks for. The lab pins Python 3.14, the version in the course's Docker images and CI, in `.python-version`.
 
-With the tools in place, let's open the helper itself."""
+Now let's open the helper itself."""
 
 L["aside"] = {
     "title": "Can I start a script without typing uv run?",
-    "body": r"""Yes. Make the first line of the file `#!/usr/bin/env -S uv run --script`. That line is a shebang: it tells the system which program should run the file. Then mark the file as runnable with `chmod +x`, and you can start it as `./logsum.py`. The `-S` makes `env` split `uv run --script` into three words; without it, `env` looks for one program with that whole name.""",
+    "body": r"""Yes. Make the first line of the file `#!/usr/bin/env -S uv run --script`. That line is a shebang: it tells the system which program should run the file. Then mark the file as runnable with `chmod +x`, and you can start it as `./logsum.py`. The `-S` makes `env` split `uv run --script` into three words; without it, `env` looks for one program with that whole name. (And PEP? It stands for Python Enhancement Proposal, one of the documents that set Python's standards.)""",
     "after": 1,
 }
 
@@ -93,7 +96,7 @@ That odd last line runs `main` only when you start the file as a program. Python
 
 - Positional arguments (`file`) and options (`--top 5`), each with a `type` that converts the text and rejects bad values.
 - `choices=["text", "json"]`, so `--format xml` fails at once.
-- Subcommands, like git's: `logsum access FILE` and `logsum app FILE` share their common options through a parent parser.
+- Subcommands, like git's: `logsum access FILE` and `logsum app FILE` share their common options.
 - Defaults from the environment: `default=os.environ.get("LOGSUM_MAX_ERROR_RATE", "1.0")`. Because argparse uses a default only when the flag is missing, a flag beats the variable, and the variable beats the built-in `1.0`.
 
 An environment variable is a named setting that a program inherits from the terminal that started it. Read one with `os.environ.get("NAME", default)`. Plain `os.environ["NAME"]` stops with a `KeyError` when the variable is missing, which is right only for a setting the script cannot run without. On a bad argument, argparse prints the usage line and exits with 2, the same "you called me wrong" code that `healthcheck.sh` used on Day 7.
@@ -101,13 +104,17 @@ An environment variable is a named setting that a program inherits from the term
 Next, the helper reads the log and counts."""
 
 S[3]["h"] = "Turning log lines into numbers"
-S[3]["body"] = r"""A web server keeps an access log, one line for every request (each time a browser or program asks for a page). A line holds who asked, when, which path (such as `/login`) and a status code, a three-digit answer: 2xx fine, 3xx sent elsewhere, 4xx the asker's mistake, 5xx the server's failure.
+S[3]["body"] = r"""This is the door book our helper reads. A web server keeps an access log, one line for every request (each time a browser or program asks for a page).
+
+Each line holds who asked, when, and the path, such as `/login`. It also holds a status code, a three-digit answer: 2xx fine, 3xx sent elsewhere, 4xx the asker's mistake, 5xx the server's failure.
 
 First comes the file. Current Python handles files with `pathlib.Path`. `Path.home() / "code" / "linux-lab"` joins the parts with `/` on any OS. `path.read_text()`, `path.exists()` and `path.glob("*.log")` replace most uses of `open`, `os.path` and `ls`.
 
-Next, one line. A regular expression, or regex (Day 4), is a pattern that describes text. With named groups it turns one access log line into a dictionary, a set of named values such as `path` and `status`. You name a group with `(?P<name>...)`. Write the pattern as a raw string, `r"..."`, so Python leaves its backslashes alone. In a normal string, `"\b"` becomes a backspace character instead of the regex word boundary. Try the pattern on one line in the REPL, Python's type-and-see prompt, before you trust it on 238 lines.
+Next, one line. A regular expression, or regex (Day 4), is a pattern that describes text. With named groups it turns one access log line into a dictionary, a set of named values such as `path` and `status`. You name a group with `(?P<name>...)`.
 
-Then, the counting. A plain dictionary fails at once: `paths[path] += 1` raises `KeyError`, because that path is not in it yet. `collections.Counter` is a dictionary made for counting. A missing key reads as 0, so the same line just works, and `paths.most_common(5)` returns the top five. One pass over the file now collects everything: requests per path, per status class and per server error.
+Write the pattern as a raw string, `r"..."`, so Python leaves its backslashes alone. In a normal string, `"\b"` becomes a backspace character instead of the regex word boundary. Try the pattern on one line in the REPL, Python's type-and-see prompt, before trusting all 238 lines.
+
+Then, the counting. A plain dictionary fails: `paths[path] += 1` raises `KeyError`, because that path is not in it yet. `collections.Counter` is a dictionary made for counting. A missing key reads as 0, so the same line works, and `paths.most_common(5)` returns the top five. One pass over the file now collects everything: requests per path, per status class and per server error.
 
 How does that compare with Day 5's awk pipeline? It prints the same three server error lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. Python pays off once you want several answers from one pass, a time window, JSON output, a limit and tests. It also counts more honestly, because it strips the query string (such as `?page=3`) before counting a path. The worked example shows how far apart the two top lists end up.
 
@@ -116,7 +123,9 @@ Every log line also carries a time, and times hide the next trap."""
 S[4]["h"] = "Times, JSON and CSV without quiet mistakes"
 S[4]["body"] = r"""Picture two unlabelled clocks in the shop, one on London time and one on Berlin time. Read both, and you are an hour off without knowing it. Scripts make the same quiet mistake.
 
-A Python `datetime` is either naive, with no time zone, or aware, with one. Comparing a naive one with an aware one raises `TypeError: can't compare offset-naive and offset-aware datetimes`, which is at least loud. The quiet bug is two naive values from different zones. Say you drop the `+0000` while parsing a log time in UTC, the world's reference clock. Then you compare it with `datetime.now()`, which is your Mac's local time. Every answer is off by your offset from UTC, and nothing complains.
+A Python `datetime` is either naive, with no time zone, or aware, with one. Comparing a naive one with an aware one raises `TypeError: can't compare offset-naive and offset-aware datetimes`, which is at least loud.
+
+The quiet bug is two naive values from different zones. Say you drop the `+0000` while parsing a log time in UTC, the world's reference clock. Then you compare it with `datetime.now()`, which is your Mac's local time. Every answer is off by your offset from UTC, and nothing complains.
 
 Three habits prevent it:
 
@@ -126,22 +135,24 @@ Three habits prevent it:
 
 JSON is the format for other programs. `json.dumps(report, indent=2)` writes it, and `json.loads(text)` reads it. For JSON Lines, one JSON record per line, such as `events.jsonl` from Day 5, call `json.loads` once per line. When a script prints JSON, print nothing else to stdout, its normal output, so `| jq` keeps working.
 
-CSV, plain text with values split by commas, is for people with spreadsheets. Use the `csv` module instead of `",".join(...)`, because it quotes values that contain commas. Open the file with `newline=""`, as the `csv` docs ask, or an extra `\r` ends up in each line on Windows.
+CSV, plain text with values split by commas, is for people with spreadsheets. Use the `csv` module instead of `",".join(...)`, because it quotes values that contain commas. Open the file with `newline=""`, or an extra `\r` ends up in each line on Windows.
 
 The numbers are right. Now the helper has to report them."""
 
 S[5]["h"] = "Reporting back: exit codes, stderr and errors that say what to do"
 S[5]["body"] = r"""A person reads the helper's note. A machine only asks: did it work? The exit code answers.
 
-CI, systemd (Day 6), cron (the Unix scheduler for timed jobs) and Kubernetes exec probes (Day 43) decide success or failure from the exit code alone. A Python script ends with a code in one of three ways:
+CI and cron (the Unix scheduler for timed jobs) decide success or failure from the exit code alone. A Python script ends with a code in one of three ways:
 
 - `sys.exit(main())` turns the number `main` returns into the exit code.
-- An uncaught exception, Python's way of stopping on an error, prints a traceback (the trail of lines that led there) and exits with 1.
+- An uncaught exception (Python stopping on an error) prints a traceback and exits with 1. The traceback is the trail of lines that led there.
 - argparse exits with 2 on bad arguments.
 
 So the lab uses one contract in every script: 0 means all good, 1 means the check found a problem, and 2 means the script could not do its job. A caller can then tell "the error rate is too high" apart from "the log file is missing".
 
-Output goes to two places. The report goes to stdout, the only stream a pipe (Day 5) passes on. Everything for people, such as warnings, progress and the reason for a failure, goes to stderr, which shows on screen but skips the pipe. The `logging` module sends messages there after `logging.basicConfig(stream=sys.stderr, ...)`. Each message has a level, from DEBUG up to ERROR, and messages below the level you set are dropped. The summarizer sets INFO, and `-v` lowers it to DEBUG. Pass values as arguments, `log.warning("line %d skipped", number)`, so the text is only built when the message is shown.
+Output goes to two places. The report goes to stdout, the only stream a pipe (Day 5) passes on. Everything for people, such as warnings, progress and the reason for a failure, goes to stderr, which shows on screen but skips the pipe.
+
+The `logging` module sends messages there after `logging.basicConfig(stream=sys.stderr, ...)`. Each message has a level, from DEBUG up to ERROR, and messages below the level you set are dropped. The summarizer sets INFO, and `-v` lowers it to DEBUG. Pass values as arguments, `log.warning("line %d skipped", number)`, so the text is only built when the message is shown.
 
 Now the naive helper. Wrapping the whole script in `try: ... except Exception: pass` turns a crash into a silent success. The script exits 0, CI goes green, and nothing was checked. That is the stuck key from the opening, written in Python. Instead, catch the errors you expect, by name, and turn each into one clear line. In the summarizer, `except FileNotFoundError` becomes `logsum: ERROR no such file: nope.log` and exit code 2. Let every other exception crash with its traceback, the quickest way to debug something you did not expect. And never log a token or a password, not even at DEBUG.
 
@@ -150,7 +161,7 @@ Now the naive helper. Wrapping the whole script in `try: ... except Exception: p
 Last, the helper must learn to ask other programs for help."""
 
 S[6]["h"] = "Asking other programs for help, safely"
-S[6]["body"] = r"""Sooner or later a script calls `git`, `kubectl` (which drives Kubernetes) or `terraform` (which builds servers from a plan). `subprocess.run` starts the program and waits for it. Remember the guess: on its own, it records the exit code and carries on. Give it four things every time:
+S[6]["body"] = r"""Sooner or later a script calls another program, such as `git`, `kubectl` or `terraform`. `subprocess.run` starts the program and waits for it. Remember the guess: on its own, it records the exit code and carries on. Give it four things every time:
 
 - A list of arguments, `["git", "rev-parse", "--short", "HEAD"]`, which Python hands straight to the program, so no shell ever reads them.
 - `check=True`, so a non-zero exit raises `CalledProcessError` instead of passing silently.

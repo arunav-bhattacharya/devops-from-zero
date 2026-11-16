@@ -15,7 +15,7 @@ L["opening"] = """Picture a small shop that sells its own jam. You cook it in yo
 
 You never wrote it down, because the mill had always been fine. That is an easy trap to fall into. Trusting good suppliers is what lets a small shop work at all.
 
-In the last lesson, Dynatrace in practice, we watched an app while it ran. Watching shows what an app does. It can't show what went into it. In this lesson, we'll write the ingredient label for the hello-devops app, check it for known problems, seal it, and check the seal before we ship. Before we start, make a guess, and keep it in mind."""
+Last time, we watched an app closely while it ran. Watching shows what an app does. It can't show what went into it. In this lesson, we'll write the ingredient label for the hello-devops app, check it for known problems, seal it, and check the seal before we ship. Before we start, make a guess, and keep it in mind."""
 
 L["guess"]["q"] = ("Your build uses a ready-made step from another project, written as `some-org/scan-action@v4`. "
                    "An attacker steals the secret token of the person who looks after that project and adds new code. "
@@ -46,12 +46,14 @@ S[0]["body"] = """The jam shop's first job is to count what came from somewhere 
 
 Debian is one kind of Linux, the free operating system on most servers. A dependency is a package that another package needs. So the jar is almost all bought fruit and sugar, with one spoon of your own recipe.
 
-And that is only what ships. Your release workflow is a file of steps that GitHub, the site that stores your code, runs on a borrowed computer called a runner. It uses actions, ready-made steps other people wrote: the Docker actions, a scanner and a signing tool, all on GitHub's runner. Each one runs with your workflow's rights, so each one could read the workflow's token, a secret string that works like a key card.
+And that is only what ships. Your release workflow is a file of steps that GitHub, the site that stores your code, runs for you on a borrowed computer called a runner. Even the runner is someone else's code.
+
+The workflow's steps use actions, ready-made steps other people wrote: the Docker actions, a scanner and a signing tool. Each one runs with your workflow's rights. So each one could read the workflow's token, a secret string that works like a key card.
 
 That whole set is your software supply chain: every piece your code passes through between your keyboard and production, where real users reach the app. A supply chain attack goes after one of those pieces instead of your code. Like the poisoned sugar, it works because you trust the pieces and use them without opening them.
 
 DevSecOps is how teams answer this: security checks built into the chain as automatic steps, owned by the people who ship. It rests on two ideas:
-1. Shift left: run cheap checks early (left means earlier, on a timeline). A leaked token caught before `git push` (sending your work to GitHub) costs a minute. Found in production, it costs a weekend of replacing keys.
+1. Shift left: run cheap checks early (left means earlier, on a timeline). A leaked token caught before it leaves your laptop costs a minute. Found in production, it costs a weekend of replacing keys.
 2. Least privilege: every person, token and running app gets only the rights it needs, for as short a time as possible.
 
 You met both already: the `permissions:` block on Day 27, and the non-root user on Day 22. What happens when one link turns bad? Three real attacks show it."""
@@ -59,13 +61,15 @@ You met both already: the `permissions:` block on Day 27, and the non-root user 
 S[1]["h"] = "Three real attacks, three different weak links"
 S[1]["body"] = """None of these attacks touched the victims' own code. Each hit a different link, like poison in the sugar, the lids or the van.
 
-The xz-utils backdoor (2024). A backdoor is a hidden way in. xz is a small compression library (code that makes files smaller) that almost every Linux system has. Its maintainer, the volunteer who looks after it, came to trust a new contributor over time. That contributor then hid malicious code in the release tarballs of versions 5.6.0 and 5.6.1. A tarball is a packed .tar.gz file, much like a zip file.
+The xz-utils backdoor (2024). A backdoor is a hidden way in. xz is a small compression library (code that makes files smaller) that almost every Linux system has.
 
-The code was not in the git repository, the project's stored history, where reviewers look. It sat in extra build files inside the tarballs, which Linux distributions (ready-to-install Linux versions, such as Debian) build from. Some distributions link the SSH server to xz's library indirectly. SSH is how people log in to a computer from far away, so on those systems the backdoor ran inside SSH. A developer, Andres Freund, was measuring speed when he saw SSH logins using too much CPU (the computer's main chip). He traced it to xz. The [GitHub advisory](https://github.com/advisories/GHSA-rxwq-x6h5-x525), a public warning, scores it 10 out of 10.
+Its maintainer, the volunteer who looks after it, came to trust a new contributor over time. That contributor then hid malicious code in the release tarballs of versions 5.6.0 and 5.6.1. A tarball is a packed .tar.gz file, much like a zip file. The code was not in the git repository, the project's stored history, where reviewers look. It sat in extra build files inside the tarballs.
+
+Linux distributions (ready-to-install Linux versions, such as Debian) build from those tarballs. Some of them link SSH to xz's library indirectly. SSH is how people log in to a computer from far away, so on those systems the backdoor ran inside SSH. A developer, Andres Freund, was measuring speed when he saw SSH logins using too much computer power. He traced it to xz. The [GitHub advisory](https://github.com/advisories/GHSA-rxwq-x6h5-x525), a public warning, scores it 10 out of 10.
 
 tj-actions/changed-files (March 2025). Attackers moved this popular GitHub Action's version tags to a malicious commit (a saved change of their own). For about a day, every workflow using one of those tags ran a script that printed CI secrets into the build log. CI (continuous integration) is the automatic build and test on every change. In a public repository, anyone can read that log. [GitHub's advisory](https://github.com/advisories/GHSA-mrrh-fwg8-r2c3) says over 23,000 repositories used the action.
 
-Trivy (March 2026). Trivy is a security scanner, the same one in your release workflow. After an earlier break-in, the attackers still had working credentials (passwords and tokens), because the key rotation was not done all at once. On 19 March they published a malicious Trivy v0.69.4 and force-pushed (moved by force) 76 of the 77 `trivy-action` tags. The bad code stole secrets, then ran the real scan, so builds looked normal. [Aqua's advisory](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23) notes that images pulled by digest were not affected. Hold on to that detail.
+Trivy (March 2026). Trivy is a security scanner (a tool that checks software for known holes), the same one in your release workflow. After an earlier break-in, the attackers still had working credentials (passwords and tokens), because the key rotation (replacing every key) was not done all at once. On 19 March they published a malicious Trivy v0.69.4 and moved 76 of the 77 `trivy-action` tags by force. The bad code stole secrets, then ran the real scan, so builds looked normal. [Aqua's advisory](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23) notes that images pulled by digest were not affected. Hold on to that detail.
 
 Each attack leaves a rule:
 - A trusted maintainer can turn bad, so know exactly what you ship.
@@ -75,7 +79,7 @@ Each attack leaves a rule:
 The second rule is the cheapest to follow, so we start there. Why can a tag move at all?"""
 
 S[2]["h"] = "Why a tag can move and a commit SHA cannot"
-S[2]["body"] = """Here is the naive way to use an action, as many examples write it: `uses: some-org/action@v4`. It reads like a fixed version, but the `v4` is a git tag. Git records your code's history as commits, saved snapshots of every file. A tag is a name that points at one commit, like a sticky note on a page. Anyone with push rights to that repository can peel the note off and stick it on another commit.
+S[2]["body"] = """Here is the naive way to use an action, as many examples write it: `uses: some-org/action@v4`. It reads like a fixed version, but the `v4` is a git tag. Git records your code's history as commits, saved snapshots of every file. A tag is a name that points at one commit, like a sticky note on a page. Anyone allowed to change that repository can peel the note off and stick it on another commit.
 
 Your next run executes the new code, though nothing in your own repository changed. The worked example below does exactly this: the tag `v1` points at commit `fdc7302`, then one command later at `2df87fd`.
 
@@ -86,16 +90,18 @@ A commit SHA is a 40-character hash of the commit's content: its files, its pare
 
 GitHub runs the SHA. The part after `#` is a comment, a note only for humans. Dependabot (Day 27), a GitHub robot that watches for new releases, updates the SHA and the comment together. The price: pinned code never changes by itself, so you need a bot to bring fixes and a person to review them.
 
-Image tags move too. Someone can push `hello-devops:1.2.0` again with new content. A digest cannot change. It is `@sha256:` followed by 64 hex characters, a fingerprint of the image itself. That explains the Trivy detail: images pulled by digest were not affected. It is also why the workflow signs the digest.
+Image tags move too. Someone can push `hello-devops:1.2.0` again with new content. A digest cannot change. It is `@sha256:` followed by 64 letters and digits, a fingerprint of the image itself. That explains the Trivy detail: images pulled by digest were not affected. It is also why the workflow signs the digest.
 
-One gap in the lab: `actions/checkout@v7` and `actions/attest@v4` still use tags. They come from GitHub itself, and many teams accept that risk. Stricter teams pin them too, and for a release workflow I would. Pinning keeps the build steps honest. It says nothing about the 87 packages inside the image, so next we write those down."""
+Pinning keeps the build steps honest. It says nothing about the 87 packages inside the image, so next we write those down."""
 
 S[3]["h"] = "Writing the ingredient label: SBOMs and scanners"
-S[3]["body"] = """The poisoned sugar was a crisis only because nobody had written down which jars held it. An SBOM (software bill of materials) is that list for software: every package and version inside an artifact, in a format machines can read. An artifact is any finished thing a build makes, such as our image. The tool `syft` reads an image and writes one in either standard format, SPDX or CycloneDX, or both.
+S[3]["body"] = """The poisoned sugar was a crisis only because nobody had written down which jars held it. An SBOM (software bill of materials) is that list for software: every package and version inside an artifact, in a format machines can read. An artifact is any finished thing a build makes, such as our image. The tool `syft` reads an image and writes its SBOM in a standard format such as SPDX.
 
 You need that list most on the morning the next xz is announced. Without SBOMs, every team pulls and inspects its images. With an SBOM stored for every release, you search the files and have the answer in minutes.
 
-A vulnerability scanner compares that list with public databases of known holes. Each known hole (a vulnerability) has a CVE ID and a severity: LOW, MEDIUM, HIGH or CRITICAL. Trivy and grype, the two common free scanners, each download a database built from public sources, such as the US National Vulnerability Database and the security notices of Linux distributions. They match every package name and version against it. In the shop, that is checking your label against the food recall list. Trivy can also check Dockerfiles, Kubernetes YAML and Terraform files for risky settings.
+A scanner compares that list with public databases of known security holes. Each hole has a public ID called a CVE, and a severity: LOW, MEDIUM, HIGH or CRITICAL.
+
+Trivy and grype, the two common free scanners, each download a database built from public sources, such as the US National Vulnerability Database and the security notices of Linux distributions. They match every package name and version against it. In the shop, that is checking your label against the food recall list.
 
 Scanners have two limits:
 - They cannot find a backdoor nobody has reported yet. The xz code had no CVE until the day it was found.
@@ -108,23 +114,25 @@ Decide in advance what fails the build. My rule: fail on HIGH and CRITICAL findi
 Now we know what is in the jar, but not who filled it or whether anyone opened it. That is a job for a seal."""
 
 S[4]["h"] = "A seal on the jar: who built this, and has it changed?"
-S[4]["body"] = """A scan tells you what is inside. A signature answers two more questions: who made this artifact, and has anyone changed it since? It is the jar's tamper-evident seal, stamped with the factory's mark. Classic signing uses a key pair: a private key that only the signer holds, and a public key anyone can check with. In CI, the private key is one more secret to leak.
+S[4]["body"] = """A scan tells you what is inside. A signature answers two more questions: who made this artifact, and has anyone changed it since? It is the jar's tamper-evident seal, stamped with the factory's mark. Classic signing uses two matching keys: a private one that only the signer holds, and a public one anyone can check with. In CI, the private key is one more secret to leak.
 
-Keyless signing removes the stored key. The tool is cosign, from the free Sigstore project. It relies on a certificate, a signed card that ties a key to a name, issued by a certificate authority (Day 11). When the release job signs, five things happen:
-1. The job asks GitHub for an OIDC token: a short signed note that says "I am release.yml in this repository, running for tag v1.2.0". You met OIDC on Day 27, for cloud logins.
+Keyless signing removes the stored key. The tool is cosign, from the free Sigstore project.
+
+It relies on a certificate, a signed card that ties a key to a name, issued by a certificate authority (Day 11). When the release job signs, five things happen:
+1. The job asks GitHub for an OIDC token: a short signed note that says "I am release.yml in this repository, running for tag v1.2.0".
 2. cosign makes a fresh key pair that lives only in memory.
 3. Fulcio, Sigstore's certificate authority, checks the token and issues a certificate for that key. It is valid for 10 minutes and has the workflow identity written inside.
 4. cosign signs the image digest and stores the signature in the registry, next to the image.
 5. The signing event goes into Rekor, a public log that only grows. Nobody can quietly remove or rewrite an entry.
 
-To verify, you name the identity you expect. The command `cosign verify` takes `--certificate-identity` (your workflow file and tag) and `--certificate-oidc-issuer` (GitHub's token service). Then cosign checks that the signature matches the digest, that Fulcio issued the certificate, and that the identity inside is yours. An image signed by anyone else fails.
+To verify, you tell `cosign verify` the identity you expect: your workflow file, your tag and GitHub's token service. Then cosign checks that the signature matches the digest, that Fulcio issued the certificate, and that the identity inside is yours. An image signed by anyone else fails.
 
 A pass tells you where the image came from and that nobody changed it. Like a seal, it says nothing about quality: a signed image can still be full of bugs.
 
-The [cosign README](https://github.com/sigstore/cosign/blob/main/README.md) adds two warnings. Sign the digest, never a tag, or you might sign something you did not intend. And when you sign as a person, your email goes into the public log, where it cannot be removed. The seal says who packed the jar; next, we record how it was made."""
+The [cosign README](https://github.com/sigstore/cosign/blob/main/README.md) adds two warnings. Sign the digest, never a tag, or you might sign something you did not intend. And signing as a person has a privacy cost, which Go deeper explains. The seal says who packed the jar; next, we record how it was made."""
 
 S[5]["h"] = "The delivery note: provenance, SLSA and attestations"
-S[5]["body"] = """A signature says who signed. Provenance says how the thing was built: which repository, commit, workflow file and kind of runner. In the shop, it is the delivery note naming the factory and the production line. It is a signed statement in a standard format called in-toto, bound to the artifact's digest, so it fits only that one image.
+S[5]["body"] = """A signature says who signed. Provenance says how the thing was built: which repository, commit, workflow file and kind of runner. In the shop, it is the delivery note naming the factory and the production line. It is a signed statement bound to the artifact's digest, so it fits only that one image.
 
 SLSA (say "salsa") grades how far you can trust that statement. Below, a hosted build platform is a build service someone else runs, such as GitHub's, and tampering means secret changes. The build track of the [SLSA spec](https://github.com/slsa-framework/slsa/blob/main/spec/build-track-basics.md) has four levels:
 - Build L0: no guarantees.
@@ -136,7 +144,7 @@ GitHub artifact attestations, signed statements attached to an artifact, give yo
 
 Most teams stop there, and [GitHub's own docs](https://docs.github.com/en/actions/concepts/security/artifact-attestations) warn that generating attestations alone gives no security benefit. A person or a machine has to verify them, for example with `gh attestation verify` before a deploy. To deploy is to put a new version where users reach it.
 
-**A seal nobody checks protects nobody. Verify before you deploy.** We now have every piece, so the last step is to see them in the order the workflow runs them."""
+**A seal nobody checks protects nobody. Verify before you deploy.** For a deploy by hand, run `security/verify-release.sh` from Files below. Later, the cluster (the group of machines that runs your app) can refuse unverified images, as Go deeper shows. Next, we put every piece in the order the workflow runs them."""
 
 S[6]["h"] = "Following one release through the workflow"
 S[6]["body"] = """Open `.github/workflows/release.yml` in Files below and follow one tag push through it. A tag push starts a release: you name a commit `v1.2.0` and send the name to GitHub. The file has one job, a group of steps on one runner, and each step sits where it does for a reason:
@@ -150,7 +158,7 @@ S[6]["body"] = """Open `.github/workflows/release.yml` in Files below and follow
 
 A platform here is a chip family: amd64 is in most servers, and arm64 is in Apple Silicon Macs. Every step after the push uses `${IMAGE}@${DIGEST}`, the image name joined to its fingerprint, never a tag. Every third-party action is pinned to a SHA, even the scanner attacked in March 2026.
 
-You wrote this file on Day 27. Today adds steps 2, 3, 5, 6 and 7, and the two rights they need. Notice what it does not cover: where the workflow's secrets live, and who may change the cluster (the group of machines that runs your app). Those are the next links to guard."""
+You wrote this file on Day 27. Today adds steps 2, 3, 5, 6 and 7, and the two rights they need. Notice what it does not cover: where the workflow's secrets live, and who may change the cluster. Those are the next links to guard."""
 
 L["aside"] = {
     "title": "If the certificate lasts ten minutes, why does a check next month still pass?",
@@ -158,17 +166,9 @@ L["aside"] = {
     "after": 4,
 }
 
-# The validator still requires these three fields, so they stay, short, each adding one thing the prose does not.
-L["analogy"] = ("Every check in this lesson has a twin on a jam shop's shelf. The ingredient label is the SBOM, and checking it "
-                "against the food recall list is the scan. The seal with the factory's stamp is the signature, and the delivery "
-                "note that names the factory and the production line is the provenance. The shop's rule \"no seal, no sale\" is "
-                "verification before deploy. The picture stops at taste: a seal can't tell you whether the jam is any good, and a signature can't either.")
-L["mistake"] = ("Making signatures, SBOMs and attestations, and then never checking them, is easy to do and protects nothing. "
-                "Put a verify step in front of every deploy: run `security/verify-release.sh` before a deploy by hand. "
-                "Later, a rule in the cluster can refuse any image that fails the check (see Go deeper).")
-L["real_world"] = ("When a critical CVE is announced, a team with an SBOM stored for every image can answer in one search. "
-                   "Its security team finds the affected services and opens pull requests for them, instead of asking every team to check by hand. "
-                   "Auditors, the people who check a company's records, ask the same two questions of every release: what is in it, and who built it?")
+# analogy, mistake and real_world are woven into the opening and sections, so they go.
+for k in ("analogy", "mistake", "real_world"):
+    L.pop(k, None)
 
 W = L["worked"]["steps"]
 W[0]["say"] = ("First, make a throwaway repository, a fresh folder that git tracks, and play the maintainer of an action. "
@@ -249,7 +249,9 @@ I[2]["a"] = ("A tag is a movable pointer, so whoever controls the action's repos
              "The cost is that you stop getting fixes automatically, so you need Dependabot or Renovate to propose updates that a person reviews. "
              "I keep the version as a comment after the SHA so people can still read it.")
 
-L["deeper"]["body"] = """Start one level down. `trivy-action` is a composite action, an action built from other actions. It runs another action, `aquasecurity/setup-trivy`, to install the Trivy program. Your SHA pin fixes the outer code, so check what that code pulls in. Open the action's `action.yaml` file at the SHA you pinned, and you find:
+L["deeper"]["body"] = """A few details first that the main text skipped. SBOMs come in two standard formats, SPDX and CycloneDX, and syft can write both at once. Provenance uses a standard format too, called in-toto. Trivy can also check Dockerfiles, Kubernetes YAML and Terraform files for risky settings (`trivy fs` in Commands). When you sign as a person instead of a workflow, your email goes into the public Rekor log, where it cannot be removed. And one gap in the lab: `actions/checkout@v7` and `actions/attest@v4` still use tags. They come from GitHub itself, and many teams accept that risk. Stricter teams pin them too, and for a release workflow I would.
+
+Now go one level down. `trivy-action` is a composite action, an action built from other actions. It runs another action, `aquasecurity/setup-trivy`, to install the Trivy program. Your SHA pin fixes the outer code, so check what that code pulls in. Open the action's `action.yaml` file at the SHA you pinned, and you find:
 - `uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.6`, a pin by SHA.
 - A `version` input whose default is a fixed Trivy release, `v0.70.0`, not `latest`.
 
@@ -270,7 +272,7 @@ L["closing"] = """We started in a jam shop, with poisoned sugar and no record of
 
 Open your own `release.yml` and find every `uses:` line that ends in a tag such as `@v4`. For each one, ask who could move it tonight.
 
-Next, in Secrets, access and policy as code, we'll look at the keys themselves. Where should secrets live, who may do what, and how can rules written as code stop a bad change before it lands?"""
+Next, we'll look at the keys themselves. Where should secrets live, who may do what, and how can rules written as code stop a bad change before it lands?"""
 
 # keep key order tidy: opening after goal, closing after deeper
 order = list(L.keys())

@@ -17,8 +17,8 @@ In Part 5 you read those lines with `docker logs`. Docker runs each app in a con
 
 Centralized logging is the hospital's central chart: every line every container prints is copied, as it is written, to one store you can search. Metrics from Part 12 say that errors went up. Logs say which request failed and why.
 
-A log pipeline has four jobs, and the lab gives each one to a different program:
-1. The app prints one event per line to stdout, the standard place where a program writes its text.
+A log pipeline has four jobs, one program each in the lab:
+1. The app prints one event per line to stdout, a program's standard text output.
 2. A shipper, Fluent Bit, collects the lines, splits them into fields and sends them on.
 3. A store, Elasticsearch, indexes every field so search is fast.
 4. A web page, Kibana, lets people search and draw charts.
@@ -33,15 +33,15 @@ Fluent Bit's settings file, `fluent-bit.yaml`, is YAML (plain text with one name
 - `parser`, another filter, turns a JSON line (named fields in curly braces) into fields.
 - Outputs send records on. `es` writes to Elasticsearch, and `stdout` prints a copy.
 
-Each record carries a tag, here `hello.` plus the container name. Every filter and output handles only the records whose tag fits its `match` pattern, like a mail room sorting by name.
+Each record carries a tag (here `hello.` plus the container name). Each filter or output handles only records whose tag fits its `match` pattern, like a mail room sorting by name.
 
 Next, we'll look at what a good line looks like before it sets out."""
 
-S2 = """Compare two lines from the lab. Gunicorn, the web server program that receives visits and hands them to hello-devops, prints this when it starts a worker:
+S2 = """Compare two lines from the lab. Gunicorn, the web server that hands visits to hello-devops, prints this when it starts a worker:
 
 `[2026-10-30 05:03:07 +0000] [8] [INFO] Booting worker with pid: 8`
 
-And this is one line of the access log the lab turns on, which has one line per visit:
+And this is a line of the access log (one line per visit) that the lab turns on:
 
 `{"level":"INFO","logger":"access","method":"GET","path":"/","status":200,"duration_ms":8}`
 
@@ -73,7 +73,7 @@ Why not just search the text? The grep command, typed in the terminal (the windo
 
 In the worked example, the analyzer turned `Payment FAILED for order 42: card declined` into `payment`, `failed`, `for`, `order`, `42`, `card` and `declined`.
 
-Now watch two grep-style searches, by a piece of text, fail:
+Now watch two grep-style searches fail:
 - `payments` finds nothing. Only `payment` was stored, and the default analyzer does not reduce words to a common stem.
 - `redis.exceptions.ConnectionError` stays one token, because dots between letters do not split words. Search for `ConnectionError` and you get zero hits. Search for the phrase `"service not known"` from the same error and you find it at once.
 
@@ -114,7 +114,7 @@ Two rules follow:
 1. The number of primary shards is fixed when the index is created. Elasticsearch picks each document's shard from a hash of its `_id` (a number always worked out the same way from it) and the number of primaries. A new number would send lookups to the wrong shard. Replicas can change at any time.
 2. Elasticsearch never puts a replica on the same node as its primary, because a copy on the same machine would die with it.
 
-Cluster health works like a traffic light. Green means every shard is placed. Yellow means all data is there, but a copy is missing. Red means a primary is missing, so some data cannot be searched. Rule 2 makes an index with one replica yellow on your laptop. The lab's daily index starts yellow for exactly this reason, because new indices get one replica by default. On Day 56 you set replicas to 0 for it. On one node, yellow is normal.
+Cluster health works like a traffic light. Green means every shard is placed. Yellow means all data is there, but a copy is missing. Red means a primary is missing, so some data cannot be searched. Rule 2 is why the lab's daily index starts yellow on your laptop: new indices get one replica by default, and it has nowhere to go. On Day 56 you set replicas to 0 for it. On one node, yellow is normal.
 
 More shards are not free. Each search runs on one thread per shard (a thread is one line of work the computer runs), and every shard costs memory. The Elastic sizing guide suggests shards between 10 GB and 50 GB. A lab that stores a few megabytes a day needs one shard per index.
 
@@ -133,7 +133,7 @@ EFK swaps the L for an F: Fluentd or Fluent Bit. Both are open source (anyone ma
 
 This course needs neither Logstash nor Fluentd, because Fluent Bit sends straight to Elasticsearch. On Kubernetes a shipper runs on every node, so you pay for its memory once on every node. Fluent Bit was built for that job.
 
-You will also meet OpenSearch, which looks and works much like Elasticsearch. The box below tells where it came from. None of this changes the lab, and today's ideas carry over to OpenSearch.
+You will also meet OpenSearch, a close cousin of Elasticsearch. The box below tells its story. None of this changes the lab, and today's ideas carry over to it.
 
 Next, we'll open Kibana and find our failed requests."""
 
@@ -157,7 +157,7 @@ Two habits save time:
 - Check the time picker first. Discover shows the last 15 minutes by default, so older logs look missing.
 - Add the fields you care about (`path`, `status`, `duration_ms`) as columns. Otherwise each row is one long summary.
 
-Today's setup has limits. It runs on one laptop and wants at least 6 GB of memory for Docker. Security is off, so anything that reaches port 9200 can read and delete every log. On Kubernetes you also want each line to name the pod that wrote it, and old daily indices must go on a schedule. The next lesson picks up there."""
+Today's setup has limits. It runs on one laptop and wants at least 6 GB of memory for Docker. Security is off, so anything that reaches port 9200 can read and delete every log. On Kubernetes, each line must also name its pod, and old indices must go on a schedule. That is the next lesson."""
 
 CLOSING = """We started with a clipboard thrown out with a hospital bed, and with a container's log lost with the container. Now every line hello-devops prints travels through Docker and Fluent Bit into one daily index, and Kibana finds it long after the container is gone. We also watched two honest searches find nothing, and saw why. In the lab, stop Redis, search for `ConnectionError` and then for `"service not known"`, and run `_analyze` on the error line to see which tokens were filed.
 

@@ -29,13 +29,11 @@ S = L["sections"]
 S[0]["h"] = "What DevOps is: one team instead of two"
 S[0]["body"] = """Let's grow the bakery a little. You bake, and your cousin drives the loaves to the café. One Friday the café calls at seven: the bread is flat. Your cousin can't fix it, because only you know the recipe. You blame the hot van, your cousin blames the dough, and the café still has no bread.
 
-Software companies were long split the same way. Developers (dev) wrote the code, the instructions that tell a computer what to do. Operations (ops) ran that code on servers, computers that stay on day and night and answer other computers over a network. When the app broke at 2 a.m., ops got the call, but only the developers understood the code. So releases, the batches of changes handed to users, became rare, huge and dreaded.
+Software companies were long split the same way. One team, the developers, wrote the code, the instructions that tell a computer what to do. A second team, operations, ran that code on servers. A server is a computer that stays on day and night and answers other computers over a network.
 
-DevOps removes that wall. It is a way of working where the people who build software also share the work of running it. It has three parts:
+When the app broke at 2 a.m., operations got the call, but only the developers understood the code. Each side blamed the other. So both made releases rare. A release is one batch of changes handed to users, and rare releases grew huge and dreaded.
 
-- Culture: dev and ops share goals, on-call duty (being the person called when it breaks) and the review after an outage.
-- Practices: small changes, automated tests, automated deploys (putting a new version live) and a close watch on the live system.
-- Tools: the software that makes those practices cheap enough to do every day.
+DevOps removes that wall. It is a way of working where the people who build software also share the work of running it. In the bakery, you and your cousin share one goal, good bread at seven, and you take turns answering the early call. You make small recipe changes, taste every batch and watch the café shelf. Then you buy the timer and the mixer that make those habits cheap enough to keep. Software teams name those three layers culture, practices and tools. Taking turns to be the person called when something breaks is known as on-call duty.
 
 The real, live system that your users use is called production. In a DevOps team, finishing your code is only the halfway point. You are done when the change runs well in production and you can see that it does.
 
@@ -55,27 +53,27 @@ Software takes the same road, called the pipeline. Its steps, in order:
 5. Release: the package gets a version number and goes to a shared store, called a registry.
 6. Deploy: the new version replaces the old one on the servers.
 7. Run: software on the servers keeps the app alive, restarts it if it crashes and starts extra copies when traffic grows.
-8. Observe: graphs, logs (written records of what the app did) and alerts (messages that call a person) show how the app behaves.
+8. Observe: graphs, logs and alerts show how the app behaves. A log is a written record of what the app did, and an alert is a message that calls a person.
 9. Feedback: what you learn shapes the next change, and the loop starts again.
 
 In the bakery, the recipe card is the code, the tasting is the test, the bag is the package and the van is the deploy.
 
-Now the same mistake in software. Tomorrow you create hello-devops, a tiny web app that answers every visit with a greeting and a count of visits so far. Say you change its default greeting from "Hello, DevOps!" to "Hi there" and push (send your commits to a shared copy online). The test step fails at once, because one test still expects the old greeting. You find out two minutes later on your own branch (your own line of work, apart from everyone else's), instead of from a user on Friday night. Each step of the pipeline catches a different kind of mistake, as close as possible to where it was made.
+Now the same mistake in software. Tomorrow you create hello-devops, a tiny web app that answers every visit with a greeting and a count of visits so far. Say you change its default greeting from "Hello, DevOps!" to "Hi there" and push, which sends your commits to a shared copy online. The test step fails at once, because one test still expects the old greeting. You find out two minutes later on your own branch, instead of from a user on Friday night. A branch is your own line of work, kept apart from everyone else's. Each step of the pipeline catches a different kind of mistake, as close as possible to where it was made.
 
-The name CI/CD covers steps 2 to 6. Continuous integration (CI) means you merge small changes into the shared code often, and a machine builds and tests each one. Continuous delivery (CD) means every change that passes is ready to release at any time. You build both in Part 6.
+The name CI/CD covers steps 2 to 6. Continuous integration (CI) means you add small changes to the shared code often, and a machine builds and tests each one. Continuous delivery (CD) means every change that passes is ready to release at any time. You build both in Part 6.
 
 Deciding what to change takes a person. Building, testing and shipping do not. **When a step goes the same way every time, give it to a machine.**
 
 Next, we'll put the course's parts along the road."""
 
 S[2]["h"] = "Where each part of this course sits on the road"
-S[2]["body"] = """Twenty stops on one road are easier to remember than twenty tool names. The course has 68 lessons in 20 parts, and each part owns one piece of the pipeline. Below, a service is a program that does a job for other programs, and a request is a message asking it for something.
+S[2]["body"] = """Twenty stops on one road are easier to remember than twenty tool names. The course has 68 lessons in 20 parts, and each part owns one piece of the pipeline. Two words come up below. A service is a program that does a job for other programs. A request is a message asking a service for something.
 
 - Part 0, Start here (Days 1 and 2): this map, and your laptop setup.
 - Part 1, The Linux command line (Days 3 to 7): typing commands to Linux, the system most servers run, from files to SSH (logging in to other machines) and scripts.
 - Part 2, Git (Days 8 and 9): how Git stores your work, how to undo mistakes, and branches.
-- Part 3, Networking and the cloud (Days 10 to 14): addresses, DNS (names to addresses), HTTP and TLS (web requests, encrypted), cloud basics, then AWS (Amazon's rented computers) by hand.
-- Part 4, Python scripts (Days 15 and 16): small automation scripts that read logs and call APIs (the requests another program accepts).
+- Part 3, Networking and the cloud (Days 10 to 14): how computers find each other and talk safely, then cloud basics and AWS (Amazon's rented computers) by hand.
+- Part 4, Python scripts (Days 15 and 16): small automation scripts that read logs and ask other programs for data.
 - Part 5, Docker (Days 17 to 22): package the app into an image that runs the same everywhere. A running image is a container.
 - Part 6, CI/CD with GitHub Actions (Days 23 to 27): test, build and publish on every push.
 - Part 7, Builds with Gradle (Days 28 to 30): build, test and package an app written in Kotlin (another programming language), fast, in CI.
@@ -86,21 +84,11 @@ S[2]["body"] = """Twenty stops on one road are easier to remember than twenty to
 - Part 12, Prometheus (Days 49 to 52): collect metrics (numbers measured over time) and alert when something is wrong.
 - Part 13, Grafana (Days 53 and 54): dashboards (screens of live graphs), plus alerts and logs in the same tool.
 - Part 14, Logs and traces (Days 55 to 57): search all logs in one place, and follow one request across services.
-- Part 15, Service mesh (Days 58 to 60): tools that manage the calls between services (Envoy, Istio, Linkerd, Cilium), and when you need none.
+- Part 15, Service mesh (Days 58 to 60): tools that manage the calls between services, and when you need none.
 - Part 16, Dynatrace (Days 61 and 62): a commercial platform that covers much of Parts 12 to 14 in one product.
 - Part 17, DevSecOps (Days 63 and 64): security checks at every step, from dependencies (code your app borrows) to the cluster.
 - Part 18, AI in DevOps (Days 65 and 66): use AI assistants and agents, check their work, and keep them safe.
 - Part 19, Platform engineering and your capstone (Days 67 and 68): internal platforms, then one final project that touches every part.
-
-On the site, the parts sit in seven sections, in the same order:
-
-- Foundations (Days 1 to 16): the shell, Git, networks and the cloud, and Python.
-- Build and ship (Days 17 to 30): Docker, GitHub Actions and Gradle.
-- Infrastructure as code (Days 31 to 37): Terraform and Ansible.
-- Run on Kubernetes (Days 38 to 48): Kubernetes and Argo CD.
-- Observability (Days 49 to 57): metrics, dashboards, logs and traces.
-- Operate at scale (Days 58 to 62): service mesh and Dynatrace.
-- Security, AI and the capstone (Days 63 to 68).
 
 Read it as layers. Linux and networking sit underneath everything, because every server, container and CI runner (the machine that runs your checks) runs Linux and talks over a network. Each tool above them takes one stretch of the road. DevSecOps checks every step, and Python and AI assistants help along all of it.
 
@@ -127,7 +115,7 @@ But how does a team know it is getting better at all this? Next, we'll measure i
 S[4]["h"] = "Measuring how a team delivers: the DORA metrics"
 S[4]["body"] = """The bakery now supplies five cafés. Are you getting faster, or does it only feel that way? You can't tell without counting.
 
-Software teams count too. This course uses the metrics from DORA (DevOps Research and Assessment), a long-running research program that studies software teams. A metric is a number you measure again and again. DORA's [guide to the metrics](https://dora.dev/guides/dora-metrics/) names five measures in two groups.
+Software teams count too. This course uses the metrics from DORA, a long-running research program that studies software teams. A metric is a number you measure again and again. DORA's [guide to the metrics](https://dora.dev/guides/dora-metrics/) names five measures in two groups.
 
 Throughput shows how fast changes flow:
 
@@ -139,8 +127,6 @@ Instability shows how often changes cause harm:
 
 - Change fail rate: the share of deployments that need immediate action, such as a rollback (putting the previous version back).
 - Deployment rework rate: the share of deployments that are unplanned fixes for a problem in production.
-
-Older articles talk about the "four keys" and "time to restore service". DORA's current guide lists the five above, with rework rate as the newest.
 
 You might expect fast teams to break more things. DORA's research finds that speed and stability tend to go together, and the best teams do well on both groups. Small changes are one reason: each one is quick to ship and easy to undo.
 
@@ -172,15 +158,15 @@ S[6]["body"] = """Nobody learns to bake from recipes alone, so every lesson mixe
 
 Two optional extras follow: an interview corner and a "go deeper" box for days with more time. Each part ends with flashcards and a short quiz. A few quiz questions come from earlier parts on purpose, because mixing old and new topics helps you remember both.
 
-All course long you ship one small app: hello-devops, written in Python, a programming language known for being easy to read. You create its repo tomorrow (a repo, short for repository, is a project folder that Git tracks). By the capstone it is tested, packaged, deployed to Kubernetes by Argo CD and watched on dashboards. Part 7 adds a second small app, hello-jvm, written in Kotlin. It shows the same ideas with Gradle (a build tool) and the JVM (the program that runs Kotlin and Java code).
+All course long you ship one small app: hello-devops, written in Python, a programming language known for being easy to read. You create its repo tomorrow. A repo, short for repository, is a project folder that Git tracks. By the capstone, the final project, it is tested, packaged, deployed to Kubernetes by Argo CD and watched on dashboards.
 
-Everything runs on your Mac and costs nothing. From Day 2 you practise Linux in a throwaway container running Ubuntu, a popular version of Linux. From Day 6 you also use a small Ubuntu virtual machine, a whole computer simulated in software. The steps that use a real cloud account are on Days 13, 14 and 35. They are optional: you can follow Days 13 and 14 with a local stand-in for AWS instead, and every cloud step ends with a cleanup.
+Part 7 adds a second small app, hello-jvm, written in Kotlin, so you see the same ideas with a different kind of app.
+
+Everything runs on your Mac and costs nothing. From Day 2 you practise Linux in a throwaway container running Ubuntu, a popular version of Linux. Throwaway means you can break it and start a fresh one. From Day 6 you also use a small Ubuntu virtual machine, a whole computer simulated in software. The steps that use a real cloud account are on Days 13, 14 and 35. They are optional: you can follow Days 13 and 14 with a local stand-in for AWS instead, and every cloud step ends with a cleanup.
 
 Tomorrow, the map turns into tools on your laptop."""
 
-L["analogy"] = "A pipeline works a lot like a car factory. Each station does one job, such as fitting the engine or testing the brakes. Robots do the work that repeats, and every station runs its own checks, so a fault is caught close to where it started. Cars already on the road report problems back to the designers, who improve the next model. A factory builds the same car thousands of times, though, while each software change you ship is new. So your tests have to keep growing with your code."
 
-L["mistake"] = "Many teams treat DevOps as a set of tools to install. They buy a CI server (a machine that builds and tests code) and set up Kubernetes, but keep big releases four times a year. A separate ops team still gets woken at night for code it never saw. Start with the habits (small changes, shared ownership, fast feedback), then pick tools that support them."
 
 L["real_world"] = "Picture an online payments company that works this way. When more customers than usual see errors at checkout (the page where they pay), the alert goes to the team that wrote checkout. That one product team owns the service from code to production, and its pipeline tests and deploys changes many times a day. A platform team gives every product team shared pipelines, clusters and dashboards, so nobody builds those from scratch."
 
@@ -242,7 +228,7 @@ The second idea surprises most people at first. In the bakery, it would mean acc
 
 Platform engineering shows up once a company has many product teams. Instead of each team building its own pipelines and clusters, with repeated work and uneven quality, a platform team builds shared, self-service tools. The CNCF (Cloud Native Computing Foundation) is a non-profit group that looks after Kubernetes and many other tools in this course. Its [platforms white paper](https://tag-app-delivery.cncf.io/whitepapers/platforms/) argues that an internal platform should be run like a product, with the app teams as its users. You see this on Day 67.
 
-DORA's guide also warns about pitfalls teams hit when they adopt the metrics:
+DORA stands for DevOps Research and Assessment. Older articles talk about its "four keys" and "time to restore service". DORA's current guide lists the five metrics from this lesson, with rework rate as the newest. The guide also warns about pitfalls teams hit when they adopt the metrics:
 
 - Turning a metric into a goal, which invites people to game it.
 - Trusting one metric alone, instead of several that balance each other.
@@ -256,6 +242,10 @@ L["closing"] = """We started in a home kitchen, with a café that wanted forty g
 The next time an app on your phone updates, ask which steps that change passed through, and which of them a person did by hand.
 
 Next, we'll set up your laptop with the tools for that road, open a Linux practice box and push a first, tested copy of hello-devops. The question it answers: what does the kitchen need before the first loaf?"""
+
+L.pop("analogy", None)
+L.pop("mistake", None)
+L["aside"] = {"title": "Where do these parts sit on the site?", "after": 2, "body": """On the site, the twenty parts sit in seven groups, in the same order. Foundations (Days 1 to 16) covers the shell, Git, networks and the cloud, and Python. Build and ship (Days 17 to 30) covers Docker, GitHub Actions and Gradle. Infrastructure as code (Days 31 to 37) is Terraform and Ansible, and Run on Kubernetes (Days 38 to 48) is Kubernetes and Argo CD. Observability (Days 49 to 57) covers metrics, dashboards, logs and traces, and Operate at scale (Days 58 to 62) covers service mesh and Dynatrace. The last group is Security, AI and the capstone (Days 63 to 68)."""}
 
 json.dump(P, open(PATH, "w"), indent=1, ensure_ascii=False)
 open(PATH, "a").write("\n")
