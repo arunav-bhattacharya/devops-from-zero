@@ -4,7 +4,7 @@ NEW["goal"] = "By the end you can explain what each part of a Kubernetes cluster
 
 NEW["opening"] = """Picture a Friday night in a busy restaurant. You are the manager, and every table needs a waiter and every order needs a cook. At six, a cook calls in sick. At seven, a fridge stops working. At eight, a party of thirty walks in without a booking. In a small café you could fix each problem yourself. With twenty stations and a full room, you cannot be in twenty places at once.
 
-Software has the same Friday night. In the last lesson, Ansible in practice: variables, templates, roles and Vault, a careful checklist set up our servers. But it stopped watching them the moment it finished. So who starts our app again when it crashes at 3 in the morning?
+Software has the same Friday night. Last time, a careful checklist set up our servers, and we could run it twice without harm. But it stopped watching them the moment it finished. So who starts our app again when it crashes at 3 in the morning?
 
 In this lesson, we'll meet a manager for programs that never goes home. We'll open each of its parts, follow one request from your keyboard to a running program, and build a practice version on your laptop. Before we start, make a guess, and keep it in mind."""
 
@@ -26,21 +26,25 @@ NEW["terms"] = [
 S = []
 
 S.append(("From one laptop to twenty servers", """
-A home kitchen with one cook needs no manager, but a full restaurant does. Software grows in the same way. Our running example is hello-devops, a tiny web app that answers every visit with a greeting and a count of visits so far. On Day 21 you ran it next to Redis with Docker Compose. Each one ran in a container: a program packed with everything it needs, so it runs the same on any machine. Redis is a small, fast database, and the app keeps its visit count there. Docker is the tool that builds and runs containers, and Docker Compose starts several of them on one computer from one file. One `docker compose up` on one laptop, and it worked.
+A home kitchen with one cook needs no manager, but a full restaurant does. Software grows in the same way.
 
-A real product is bigger. Say it has 40 services (small apps that work together), several copies of each, spread over 20 servers. A server is a computer that runs programs for other people, usually in a data center. Someone has to answer these questions all day:
+Our running example is hello-devops, a tiny web app that answers every visit with a greeting and a count of visits so far. On Day 21 you ran it in a container. A container is a program packed with everything it needs, so it runs the same on any machine. Next to it ran Redis, a small database that kept the visit count.
+
+Docker is the tool that builds and runs containers. Its helper, Docker Compose, starts several containers on one computer from one file. One `docker compose up` on one laptop, and it worked.
+
+A real product is bigger. Say it is made of 40 small apps that work together, called services. Each one runs in several copies, spread over 20 servers. A server is a computer that runs programs for other people, usually in a data center. Someone has to answer these questions all day:
 - Which server has room for this container?
 - A container crashed at 3 in the morning. Who starts it again?
 - A server died. Who moves its containers somewhere else?
-- Traffic (the stream of visitors) doubled. Who adds copies, and who removes them later?
-- How do you replace version 1 with version 2 without downtime (minutes when the app does not answer)?
+- Visitors doubled. Who adds copies, and who removes them later?
+- How do you replace version 1 with version 2 while the app keeps answering?
 - Copies come and go. How does one service find another?
 
-Compose handles a few of these, on one machine. Its restart policy (Day 21) brings a crashed container back. Its DNS finds services by name (DNS is the system that turns a name such as `redis` into an address). But nothing in Compose moves work off a dead server, spreads copies over 20 machines or adds copies when traffic grows.
+Compose handles a few of these, on one machine. Its restart policy (Day 21) brings a crashed container back. It also lets one container find another by name, such as `redis`. But nothing in Compose moves work off a dead server, spreads copies over 20 machines or adds copies when traffic (the stream of visitors) grows.
 
-**Kubernetes** answers every one of those questions. It is an open-source system (anyone may read and use its code) that runs containers across a group of machines called a cluster. People often write it K8s: a K, eight letters, then an s. Google built it from what it learned running its own internal system, Borg, and released it as open source in 2014. Today the Cloud Native Computing Foundation (CNCF), a non-profit group, looks after it, and every big cloud sells it.
+**Kubernetes** answers every one of those questions. It is a free, open-source system, so anyone may read and use its code. It runs containers across a group of machines, and that group is called a cluster. People often write it K8s: a K, eight letters, then an s.
 
-You write down the result you want, and Kubernetes keeps making it true. How it keeps that promise comes next.
+You write down the result you want, and Kubernetes keeps making it true. How does it keep that promise? That comes next.
 """))
 
 S.append(("A wish list and a loop that never stops", """
@@ -64,11 +68,11 @@ Most kinds of object have a controller, sometimes several, whose job is to make 
 
 The loop has two effects that surprise beginners:
 - Kubernetes fixes problems you never told it about. A crashed container or a dead node is one more gap to close.
-- A change made behind its back does not stick. Stop a container directly on a node, and Kubernetes sees the gap and starts it again.
+- A change made behind its back does not stick. Stop a container directly on a node, and Kubernetes sees the gap and starts it again. Edit the manifest and apply it instead.
 
 **Kubernetes undoes changes it was not told about. Change the wish, not the container.**
 
-Terraform (Part 8) builds servers from a written plan, and Ansible (Part 9) runs a checklist, called a playbook, on them. Both compare code with reality, but only while `terraform apply` or a playbook runs. Kubernetes checks all the time, with nobody at the keyboard. Next, we open the manager's office to see who does the checking.
+Terraform (Part 8) builds servers from a written plan, and Ansible (Part 9) runs a checklist, called a playbook, on them. Both compare code with reality, but only while `terraform apply` or a playbook runs. Kubernetes checks all the time, with nobody at the keyboard. Next, we open the manager's office.
 """))
 
 S.append(("The manager's office: the control plane", """
@@ -88,32 +92,33 @@ Clusters in a cloud (computers you rent over the internet) add a fifth part, the
 
 These parts never call each other. They all read and write objects through the API server, and they watch it for changes. A watch is one long-lived request: the API server streams every change down it as it happens. Picture a cook who keeps one eye on the ticket rail instead of waiting to be called. So any part can crash, restart, read the current state again and carry on as if nothing happened.
 
-The office only decides. Next, we walk into the kitchen, where the work gets done.
+Next, we walk into the kitchen, where the work gets done.
 """))
 
 S.append(("The kitchen stations: what runs on each node", """
-Each node runs three programs of its own:
-- kubelet: a helper program that watches the API server for Pods given to its node. It starts their containers, checks on them and reports their status.
-- A container runtime, usually containerd: it pulls (downloads) images and starts containers. The kubelet talks to it through a standard called the CRI (Container Runtime Interface).
-- kube-proxy: sets up network rules so traffic sent to a Service reaches one of its Pods. A Service is one fixed address for a group of Pods, and Day 41 explains it.
+Walk over to one cooking station and watch a node at work. Three programs run there.
 
-The kubelet is the station cook: it never decides what to make, and cooks only the tickets with its station's name.
+The first is the kubelet, the station cook. It keeps an eye on the API server for Pods given to its node. It never decides what to make. When a Pod with its node's name appears, it gets to work, and later it reports back how that Pod is doing.
 
-You may be thinking, "But my images were built with Docker, and these nodes have no Docker." They still run here. A Docker image follows the OCI (Open Container Initiative) image standard, a shared format for images, and containerd runs any OCI image. Kubernetes removed its built-in Docker support (called dockershim) in version 1.24, and image builds did not change at all.
+The kubelet does not start containers with its own hands. It passes that job to a container runtime, usually containerd. This program pulls (downloads) images and starts containers from them.
 
-Two add-ons run as ordinary Pods:
-- CoreDNS: the cluster's DNS server, so Pods can find Services by name.
-- A network plugin (CNI, Container Network Interface): it gives every Pod an IP address and connects Pods across nodes. kind uses a small one called kindnet.
+You may be thinking, "But my images were built with Docker, and these nodes have no Docker." They still run here. Docker images follow a shared format, and containerd runs any image in that format. The Go deeper part at the end of this lesson explains why.
 
-If a cluster ever refuses to start, check cgroups. Linux is the operating system almost every server runs, and cgroups is the Linux feature that limits the CPU and memory of containers. It comes in two versions. Since Kubernetes 1.35, the kubelet refuses by default to start on hosts that still use the old cgroup v1. Docker Desktop on a Mac uses cgroup v2, so you are fine, and `docker info | grep -i cgroup` confirms it in seconds.
+The third program is kube-proxy, the station's runner. It sets up network rules so that traffic sent to a Service reaches one of its Pods. A Service is one fixed address for a group of Pods, and Day 41 explains it.
+
+Two more helpers run as ordinary Pods, like staff shared by the whole kitchen. CoreDNS is the cluster's phone book: it turns a name, such as a Service's name, into an address. The network plugin gives every Pod an IP address and connects Pods across nodes. kind uses a small one called kindnet.
+
+One last thing can stop a station from opening at all. Linux is the operating system almost every server runs. Inside it, a feature called cgroups limits how much CPU (computing power) and memory each container may use. It comes in two versions. Since Kubernetes 1.35, the kubelet refuses by default to start on hosts that still use the old cgroup v1. Docker Desktop on a Mac uses cgroup v2, so you are fine, and `docker info | grep -i cgroup` confirms it in seconds.
 
 Next, we follow one order from the door to the stove.
 """))
 
 S.append(("Following one order from the door to the stove", """
-Say you send Kubernetes a Deployment that asks for two copies of nginx, a popular web server program that makes a handy test app. A Deployment is an object that keeps a set number of Pods running (Day 40 covers it). You write it in YAML, a plain text format for settings, and a file like that is called a manifest. Interviewers love to ask what happens next, so learn this chain well:
+Say you send Kubernetes a Deployment that asks for two copies of nginx. A Deployment is an object that keeps a set number of Pods running (Day 40 covers it). nginx is a popular web server program, handy as a test app.
 
-1. kubectl reads `~/.kube/config` to find the cluster and your credentials (the proof of who you are). It sends the YAML to the API server over HTTPS, the encrypted way programs talk on a network.
+You write the Deployment in YAML, a plain text format for settings. A file like that is called a manifest. Interviewers love to ask what happens next, so learn this chain well:
+
+1. kubectl reads `~/.kube/config`, a settings file with the cluster's address and your credentials (proof of who you are). It sends the YAML to the API server over HTTPS, the encrypted way programs talk on a network.
 2. The API server checks who you are and whether you may do this. It validates the object and stores it in etcd. Then it answers `created`, and kubectl exits.
 3. The Deployment controller sees the new Deployment through its watch. It creates a ReplicaSet, a helper object that keeps a set number of identical Pods.
 4. The ReplicaSet controller sees the ReplicaSet and creates two Pod objects. They have no node yet.
@@ -121,9 +126,9 @@ Say you send Kubernetes a Deployment that asks for two copies of nginx, a popula
 6. The kubelet on each chosen node sees a Pod given to it. It asks containerd to pull the image and start the container.
 7. The kubelet reports back: the Pod is running, and here is its IP address. The API server stores that in the Pod's status.
 
-Now remember the guess from the top of the page. When kubectl printed `created`, we were only at step 2. The ticket was on the rail, and no cook had touched it yet.
+Remember the guess at the top of the page? When kubectl printed `created`, we were only at step 2. The ticket was on the rail, and no cook had touched it yet.
 
-Look at who talks to whom: every step goes through the API server. Each part acts on what it finds there, and none sends orders to another. The steps also leave short records called events, so `kubectl get events` shows the whole chain. The worked example below runs it.
+Every step goes through the API server. Each part acts on what it finds there, and none sends orders to another. The steps also leave short records called events, so `kubectl get events` shows the whole chain. The worked example below runs it, and on a team it is often the first command anyone runs after a bad release.
 
 If a step cannot happen, the chain stops there. A Pod that fits on no node stays `Pending` with no node name, and its events say why (Day 46 debugs cases like that).
 
@@ -143,7 +148,7 @@ Kubernetes still costs people time. Someone must learn it, keep it upgraded and 
 - Your small team has nobody to own the platform.
 - A simpler service fits, such as a PaaS or serverless containers (Day 12).
 
-A PaaS (platform as a service) takes your app and runs it for you, with no machines to look after. A useful test: can you name the person who will upgrade the cluster next spring? If not, start with something simpler.
+Both of those run your app for you. A PaaS (platform as a service) takes your app and its settings. Serverless containers take one container and hide every server from you. A useful test: can you name the person who will upgrade the cluster next spring? If not, start with something simpler.
 
 Your manifests work the same on kind, EKS, AKS and GKE, so practice on a laptop is real practice. The differences sit at the edges: load balancers, disks and identity (how the cluster proves who is allowed to do what). Next, we build that laptop cluster.
 """))
@@ -175,11 +180,10 @@ NEW["aside"] = {
     "after": 1,
 }
 
-NEW["analogy"] = "A busy restaurant runs much like a cluster. Waiters never talk to cooks: they pin order tickets on a rail (the API server, with etcd as the rail's memory). The head chef reads new tickets and gives each dish to a station (the scheduler). Each station cook makes only the dishes given to them (the kubelet). A floor manager keeps checking that every table got what it ordered, and has dropped plates made again (the controllers). A real kitchen also improvises when it runs out of something, and Kubernetes never does: it works only toward exactly what the ticket says."
 
-NEW["real_world"] = "Picture a payments company with three managed clusters on EKS: one for development, one for testing (staging) and one for production. A small platform team owns them, and product teams never touch the control plane. When a release misbehaves, the first thing anyone runs is `kubectl get events` in the team's namespace, because the events say which part gave up and why."
 
-NEW["mistake"] = "Reaching past Kubernetes to fix things by hand is the habit to drop. Examples are a `docker exec` into a kind node to stop a container with `crictl`, or restarting a program yourself on a server. The kubelet sees the gap between desired and actual state and undoes your change, or your fix quietly disappears with the next Pod. Change the desired state through the API instead: edit the manifest and apply it."
+
+NEW["drop"] = ["analogy", "real_world", "mistake"]
 
 NEW["diagram_caption"] = "kubectl talks only to the API server. The scheduler, the controllers and the kubelet all watch the API server and act on what they see."
 
@@ -253,7 +257,7 @@ It uses a watch. A part asks the API server for a list of objects and keeps the 
 - Each kubelet watches Pods given to its own node.
 - Each controller watches the kinds of objects it cares about.
 
-Controllers are also level-triggered: they act on the current state, not on a list of past events. A manager who reads the room does not need to remember every order that came before. If a controller crashes and restarts, it lists everything again and carries on. Nothing is lost, because the state lives in etcd, not in the controller's memory. This is why Kubernetes copes so well with its own parts failing.
+Controllers are also level-triggered: they act on the current state, not on a list of past events. If a controller crashes and restarts, it lists everything again and carries on. Nothing is lost, because the state lives in etcd, not in the controller's memory. This is why Kubernetes copes so well with its own parts failing.
 
 Two fields in `metadata`, the part of an object that holds its name and labels, will come up again:
 - Every object has a `resourceVersion`. If two clients update the same object at once, the second one gets a conflict error and must read the object again. This is called optimistic concurrency.
@@ -269,6 +273,10 @@ kind builds a cluster like this:
 5. It writes a context into `~/.kube/config` so kubectl can connect.
 
 You can watch the stream yourself. Run `kubectl get pods -w` in one terminal, then create and delete a Pod in another. Each new line is an event the API server pushed to kubectl, the same way it pushes events to controllers.
+
+Two short stories finish the picture. First, where Kubernetes came from. Google built it from what it learned running its own internal system, Borg, and released it as open source in 2014. Today the Cloud Native Computing Foundation (CNCF), a non-profit group, looks after it, and every big cloud sells it.
+
+Second, why Docker images run on nodes without Docker. A Docker image follows the OCI (Open Container Initiative) image standard, and containerd runs any OCI image. The kubelet talks to containerd through another standard, the CRI (Container Runtime Interface). Kubernetes removed its built-in Docker support (called dockershim) in version 1.24, and image builds did not change at all.
 
 If you want to see every moving part, [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way) by Kelsey Hightower builds a cluster by hand. It needs four machines and an afternoon, so treat it as optional reading.
 """

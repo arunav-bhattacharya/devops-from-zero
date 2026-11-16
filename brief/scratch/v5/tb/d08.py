@@ -7,7 +7,7 @@ opening = """Picture a shared office folder with five files in it: `prices.docx`
 
 Saving copies under new names feels safe, and almost everyone has done it. It works for one person and a few days. It falls apart when two people edit at once, or when you need last month's version and the names no longer mean anything.
 
-In the last lesson, Environment, packages, SSH and shell scripts, you wrote your first scripts. Scripts change too, and one day you will want an old version back.
+Last time, you wrote your first shell scripts. Scripts change too, and one day you will want an old version back.
 
 In this lesson, we'll open up Git, the tool that keeps every saved version of a project for you. We'll look inside a saved version, lose one on purpose, and get it back. Before we start, make a guess, and keep it in mind."""
 
@@ -24,7 +24,7 @@ terms_plain = [
     "A blob is the contents of one file, and a tree is one folder: a list of names that point to blobs and other trees.",
     "Git's marker for where you are right now, usually the name of the branch you are on.",
     "A movable name stuck on one commit, which moves forward each time you commit on it.",
-    "A record, kept only on your own computer, of every place HEAD and each branch pointed to, kept for 30 to 90 days.",
+    "A record, only on your own computer, of every place HEAD and each branch pointed to, kept for 30 to 90 days.",
 ]
 
 s1 = """Picture an office. Your desk holds the pages you are working on, and next to it sits a tray for copies of pages that are ready. Behind you stands a filing cabinet. Whenever you say "save", a clerk photographs everything in the tray and files the photo.
@@ -39,7 +39,14 @@ Many people skip the tray in their heads, yet it is the useful part. Say you fix
 
 This lesson uses a practice repo, built by the worked example below. It holds price-tool, a tiny price calculator by two made-up people, Ana and Ben. Its main file, `price.py`, is a short Python program that adds tax to a price.
 
-`git status` compares the three places and tells you what differs. After an edit to `price.py` and a new file `todo.txt`, `git status --short` printed ` M price.py` and `?? todo.txt`. The first column is the tray and the second is the desk. So ` M`, with a space first, means changed but not staged (not yet in the tray), while `M ` means staged. A file marked `MM` has part of its change in the tray and part not. A file marked `??` is one Git has never tracked, or been asked to watch.
+`git status` compares the three places and tells you what differs. Its short form, `git status --short`, gives each file two columns of letters. The first column is the tray, and the second is the desk.
+
+Say you edit `price.py` and create a new file, `todo.txt`. The short form printed two lines:
+
+- ` M price.py`: the M sits in the desk column. The change is on your desk but not yet in the tray. Git calls that not staged.
+- `?? todo.txt`: Git has never been asked to watch this file. Git calls it untracked.
+
+Now run `git add price.py`. The M moves to the tray column and shows as `M `, which means staged. Edit the file once more before you commit, and you see `MM`: part of the change in the tray, part still on the desk.
 
 So what exactly does one of the clerk's photos hold? Next, we'll open one."""
 
@@ -51,13 +58,13 @@ You may be thinking, "A full copy every time must fill my disk." It would, so Gi
 - A tree is one folder. It lists names, and each name points to a blob or to another tree.
 - A commit points to one tree, the top folder of the project. It also holds its parent commit (the one before it), the author, the time and the message.
 
-Each object is named by a hash of its content. A hash function is a recipe that turns any bytes into a short fingerprint of fixed length. The same bytes always give the same fingerprint, and a one-letter change gives a completely different one. Git uses SHA-1 (Secure Hash Algorithm 1). It gives 40 hex characters, which are the digits 0 to 9 and the letters a to f, and Git usually shows only the first 7.
+Each object is named by a hash of its content. A hash function is a recipe that turns any bytes into a short fingerprint of fixed length. The same bytes always give the same fingerprint, and a one-letter change gives a completely different one. Git uses a hash function called SHA-1. It gives 40 hex characters, which are the digits 0 to 9 and the letters a to f, and Git usually shows only the first 7.
 
 So the same content gets the same name on every computer. Try `echo hello | git hash-object --stdin`, which pipes the word hello into Git's hash function. It prints `ce013625030ba8dba906f756967f9e9ca394464a` on your Mac and on any other machine.
 
 That naming is how Git avoids copies: a file that did not change is the same blob in every commit. When you `git add` a file, Git hashes it. If an object with that name is already in `.git/objects`, there is nothing new to store. In the practice repo, `README.md` is the blob `c1118d8` in both of the last two commits, and Git stores it once.
 
-A commit's hash covers its tree, its parent, its author line and its message. Change any of them, even one letter of the message, and you get a different commit with a new hash. That is why a rebase, a way of rewriting history in the next lesson, gives your commits new IDs. Git 3.0 plans to make the longer SHA-256 hashes the default for new repositories, with no release date yet. Nothing in this course depends on which kind you have.
+A commit's hash covers its tree, its parent, its author line and its message. Change any of them, even one letter of the message, and you get a different commit with a new hash. That is why a rebase, a way of rewriting history in the next lesson, gives your commits new IDs.
 
 Nobody wants to remember `d6aad6e`, though. Next, we'll meet the names people actually use."""
 
@@ -89,8 +96,6 @@ Run `git-setup.sh` from the Files section once, with your own name and email in 
 4. Four aliases, which are short names for longer commands. `git st` and `git lg` alone save a lot of typing.
 
 The script only adds settings, so the lines that `gh auth login` (GitHub's own tool) wrote on Day 2 stay. When Git behaves differently on two machines, `git config --list --show-origin` prints every setting and its file.
-
-Git 2.46 added a newer spelling, `git config set user.name ...`. The older form used in this course still works.
 
 Now you are ready for the loop you will repeat all day: change, look, stage, save. Next, we'll slow it down."""
 
@@ -170,11 +175,11 @@ sections = [
     ("The undo toolbox: pick by committed and pushed", s7),
 ]
 
-closing = """We started with a shared folder full of `prices-final-2.docx` files and nobody sure which one was right. Git replaces that folder with three places, a cabinet of full snapshots named by their content, and sticky notes that say where each line of work stands. Undo, most of the time, means moving a note, and the reflog remembers where every note has been.
+closing = """We started with a folder full of `prices-final-2.docx` files and nobody sure which was right. Git replaces it with a cabinet of full snapshots named by their content, and sticky notes that say where each line of work stands. Undo usually means moving a note, and the reflog remembers every move.
 
-In your own hello-devops repo from Day 2, run `git status --short` and `git log --oneline --graph --all`. Name each column and each pointer you see.
+Open your hello-devops repo from Day 2, the tiny web app that answers every visit with a greeting and a count of visits. Run `git status --short` and `git log --oneline --graph --all`, and name each column and pointer you see.
 
-Next, we'll give Ana and Ben a second line of work each, with branches, merging, rebasing and remotes. What happens when two people change the same line?"""
+Next, we'll bring Ben's side branch back into main, and share our work with other people's copies. What happens when two people change the same line?"""
 
 worked_say = [
     "First run `git-setup.sh` from the Files section, so Git knows your name and email. Then make the practice repo. If you cloned the course repo on Day 3, run `git -C ~/code/devops-from-zero pull` to download the new `labs/git` folder (`-C` tells Git which folder to work in). The script fixes every name and date, so your commit IDs match the ones below.",
@@ -245,9 +250,11 @@ deeper = {"body": """Git's everyday commands are a friendly layer over the cabin
 
 Those five steps are what `git commit` does for you, plus writing the reflog entry and running hooks (small scripts Git can run at set moments).
 
-Two more things are worth seeing while you are inside `.git`. First, Git stores new objects as single compressed files, one per object, under `.git/objects`. When about 6,700 of these loose objects pile up, Git runs `git gc --auto`. It packs them into one packfile, which stores similar objects as deltas, the differences from each other. You can also run `git gc` yourself. In the practice repo, 27 loose object files turned into one `.pack` file plus its index. So Git does use diffs after all, but only as a storage trick inside packfiles. Every command still sees full snapshots.
+Three more things are worth knowing while you are inside `.git`. First, Git stores new objects as single compressed files, one per object, under `.git/objects`. When about 6,700 of these loose objects pile up, Git runs `git gc --auto`. It packs them into one packfile, which stores similar objects as deltas, the differences from each other. You can also run `git gc` yourself. In the practice repo, 27 loose object files turned into one `.pack` file plus its index. So Git does use diffs after all, but only as a storage trick inside packfiles. Every command still sees full snapshots.
 
-Second, `git gc` also deletes unreachable objects, but only after the reflog entries that point to them expire. That takes 90 days for entries that are still reachable, and 30 days for the rest. That is the window you have to rescue a commit after a bad reset. [Pro Git's chapter on maintenance and data recovery](https://git-scm.com/book/en/v2/Git-Internals-Maintenance-and-Data-Recovery) shows how to find a lost commit even when the reflog is gone, with `git fsck --lost-found`."""}
+Second, `git gc` also deletes unreachable objects, but only after the reflog entries that point to them expire. That takes 90 days for entries that are still reachable, and 30 days for the rest. That is the window you have to rescue a commit after a bad reset. [Pro Git's chapter on maintenance and data recovery](https://git-scm.com/book/en/v2/Git-Internals-Maintenance-and-Data-Recovery) shows how to find a lost commit even when the reflog is gone, with `git fsck --lost-found`.
+
+Third, the hashes themselves may change one day. SHA-1 stands for Secure Hash Algorithm 1. Git 3.0 plans to make the longer SHA-256 hashes the default for new repositories, and it has no release date yet. Nothing in this course depends on which kind you have. Settings have a newer spelling too: Git 2.46 added `git config set user.name ...`, and the older form used in this course still works."""}
 
 apply(2, "d08", {
     "goal": "By the end you can explain what Git saves when you commit, find your way around a project's history with status, diff, log and blame, and pick the right undo for a mistake, even getting back a commit you thought was gone.",
@@ -264,9 +271,8 @@ apply(2, "d08", {
     "check": check,
     "interview": interview,
     "deeper": deeper,
+    "drop": ["analogy", "mistake"],
     "aside": {"title": "What if HEAD points at a commit instead of a branch?", "after": 2, "body": "You can point HEAD at a commit directly, as in `git switch --detach 09e16be`. Git calls this a detached HEAD, and it is fine for looking around. A commit you make there belongs to no branch, though: no sticky note carries its name. Git's history views start from HEAD and the branch names, so once you switch away, only the reflog (the last section) still leads to that commit. Run `git switch -c some-name` before you leave, to stick a new note on it."},
-    "analogy": "Picture Git as an office with a desk, a tray and a filing cabinet. You work at the desk and put finished pages in the tray. On each commit a clerk photographs the whole tray and files the photo, labelled with a fingerprint of what is in it. Branches are sticky notes on photos, a reset only moves a note, and a logbook records every move. A real clerk would print every page again each time. Git reuses the old print of every page that did not change, so a thousand commits do not take a thousand times the space.",
-    "mistake": "Running `git reset --hard` or `git restore .` to \"start clean\" while uncommitted work is still on the desk. Those edits were never stored in `.git`, so the reflog cannot bring them back. Commit first, even as a `wip` (work in progress) commit on a branch, or run `git stash -u`, and then reset. Anything committed can be recovered for weeks.",
-    "real_world": "Teams name exact versions by their commit hash, because a hash means the same snapshot on every computer. Picture a fix that goes out on a Friday and breaks refunds in a team's payment app. The bug report names the bad commit by its hash. Nobody resets `main` or force-pushes, which would overwrite the shared copy on GitHub. The engineer on call runs `git revert` on that hash (it adds a new commit that undoes the bad one) and ships the revert within minutes, with a record of what happened.",
+    "real_world": "Teams name exact versions by their commit hash, because a hash means the same snapshot on every computer. Picture a fix that goes out on a Friday and breaks refunds in a team's payment app. The bug report names the bad commit by its hash. Nobody resets `main` or force-pushes, which would overwrite the shared copy on GitHub. The engineer on call runs `git revert` on that hash, which adds a new commit that undoes the bad one. The revert ships within minutes, with a record of what happened.",
 })
 print("d08 written")

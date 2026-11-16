@@ -11,6 +11,7 @@ import datetime
 import hashlib
 import html
 import json
+import os
 import pathlib
 import re
 
@@ -282,6 +283,9 @@ def main():
     course["sections"] = sections
     page = render(course)
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    if os.environ.get("DFZ_CHECK_ONLY"):  # writers check that the build works without touching the published files
+        print(f"build ok (check only): {len(page) // 1024} KB")
+        return
     OUT.write_text(page)  # fragment for claude.ai (it wraps the page in its own document): the full course
     WEB.mkdir(parents=True, exist_ok=True)
     (WEB / "index.html").write_text(document(page))           # Cloudflare (or any static host): the same course as a full web page

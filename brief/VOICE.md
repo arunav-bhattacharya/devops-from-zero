@@ -105,7 +105,8 @@ book's or a speaker's.
    writers' parts.
 3. After each lesson: `python3 brief/validate.py content/pN.json`, `python3 brief/tells.py content/pN.json`,
    and `python3 brief/scratch/v5/protect.py brief/scratch/v5/orig/pN.json content/pN.json` (0 non-prose
-   changes). Then `python3 site/build.py` must succeed.
+   changes). Then `DFZ_CHECK_ONLY=1 python3 site/build.py` must succeed (check only: never rebuild the
+   published dist/ and public/ files; the lead does that after review).
 4. Read each lesson from the top as the newcomer before moving on. Check the skill's "Before you hand it in"
    list.
 5. No git commands. The lead commits.

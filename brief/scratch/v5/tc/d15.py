@@ -38,24 +38,24 @@ for t in L["terms"]:
 S = L["sections"]
 
 S[0]["h"] = "When the checklist outgrows Bash"
-S[0]["body"] = r"""A script is a text file of instructions that the computer follows from top to bottom, like the helper's checklist. Bash is the language of the terminal, the text window where you type commands. On Day 7 you wrote Bash scripts and met a rule of thumb: once a script needs real data structures or grows past about a hundred lines, write it in Python. Python is a programming language that reads almost like English.
+S[0]["body"] = r"""A script is a text file of instructions that the computer follows from top to bottom, like the helper's checklist. Bash is the language of the terminal, the text window where you type commands. Day 7's Bash scripts came with a rule of thumb. Once a script needs real data structures or grows past about a hundred lines, write it in Python, a programming language that reads almost like English.
 
-Bash is very good at starting programs and wiring their output together. It gets painful as soon as you need to keep data around and make decisions about it. Move to Python when a script needs any of these:
+Bash is very good at starting programs and wiring their output together. It gets painful once you need to keep data around and make decisions about it. Move to Python when a script needs any of these:
 
 - Data you look things up in, such as a count for each page of a website. The bash 3.2 on your Mac has no associative arrays (lookup tables) at all.
 - JSON, a common text format for data, or an HTTP API, a web address that programs ask for data. One `jq` call is fine (jq reads JSON). Five of them glued together with `$(...)` are a program in disguise.
-- Different handling for different errors: a missing file, a timeout, a 404 ("page not found").
+- Different handling for a missing file, a timeout or a 404 ("page not found").
 - Tests. pytest (Day 16) is far easier than testing a shell script.
 - The same behaviour on macOS and Linux. `sed -i` and `date -d` differ between the two; Python's `re` and `datetime` do not.
 
-Keep Bash for short glue: a five-line CI step, a `RUN` line in a Dockerfile (Part 5), or `healthcheck.sh` from Day 7. CI, continuous integration, is a service that runs your checks on every change. Keep the Day 7 habits too: a clear exit code, messages on stderr and a loud failure. Most of today is about doing those well in Python.
+Keep Bash for short glue: a five-line CI step, a `RUN` line in a Dockerfile, or `healthcheck.sh` from Day 7. CI, continuous integration, is a service that runs your checks on every change. Keep the Day 7 habits too: a clear exit code, messages on stderr and a loud failure. Most of today is about doing those well in Python.
 
-Python is already installed on GitHub's Ubuntu runners (the machines that run CI jobs) and on Ubuntu and Amazon Linux servers. Its standard library, the toolbox that comes with Python, covers files, JSON, CSV, regular expressions, time zones and running other programs. Today's scripts use nothing else. Day 16 adds the two outside packages most ops scripts need: requests and boto3.
+Python is already installed on GitHub's Ubuntu runners (the machines that run CI jobs) and on Ubuntu and Amazon Linux servers. Its standard library, the toolbox that comes with it, covers files, JSON, CSV, regular expressions, time zones and running other programs. Today uses nothing else. Day 16 adds the two outside packages most ops scripts need: requests and boto3.
 
 So Python it is. But which Python, and where do its add-ons live?"""
 
 S[1]["h"] = "One tool for Python, its packages and one-file scripts: uv"
-S[1]["body"] = r"""On Day 2 you set up hello-devops, the course's tiny web app that answers every visit with a greeting and a count of visits so far. You did it the classic way: Homebrew's Python, `python3 -m venv .venv`, `source .venv/bin/activate`, then `pip install -r requirements-dev.txt`. That still works, and hello-devops keeps it, because its Dockerfile and its CI (Day 25) use pip. The `.venv` folder is a virtual environment: a private home for one project's packages (ready-made code that other people wrote), so projects cannot break each other.
+S[1]["body"] = r"""On Day 2 you set up hello-devops, the course's tiny web app that answers every visit with a greeting and a count of visits so far. You did it the classic way: Homebrew's Python, `python3 -m venv .venv`, `source .venv/bin/activate`, then `pip install -r requirements-dev.txt`. That still works, and hello-devops keeps it, because its Dockerfile and its CI (Day 25) use pip. The `.venv` folder is a virtual environment: a private home for one project's packages (ready-made code by other people).
 
 For new tools this course uses uv, one program from Astral, the company that also makes ruff (a checker for Python code). It does the jobs of Homebrew's Python, venv and pip, and a few more:
 
@@ -65,13 +65,11 @@ For new tools this course uses uv, one program from Astral, the company that als
 - `uv run <command>` first makes `.venv` match the lock file, then starts the command with `.venv/bin` at the front of its PATH (Day 7), the list of folders searched for programs. That is most of what `activate` does, so you never activate anything.
 - `uvx ruff check` runs a tool in a throwaway environment.
 
-Underneath, uv creates the same kind of `.venv` folder that `python3 -m venv` makes. You just stop managing it by hand.
-
-A single script does not even need a project. PEP 723 (a Python Enhancement Proposal, one of the documents that set Python's standards) defines inline script metadata. It is a comment block at the top of the file, like a shopping list taped to a recipe. It names the Python version and the packages the script needs. The command `uv init --script check.py --python 3.14` creates the block, and `uv add --script check.py requests` adds a package to it. Then `uv run check.py` builds a cached environment with those packages and runs the script.
+A single script does not even need a project. PEP 723, one of the Python Enhancement Proposals that set Python's standards, defines inline script metadata. It is a comment block at the top of the file that names the Python version and packages the script needs. The command `uv init --script check.py --python 3.14` creates the block, and `uv add --script check.py requests` adds a package to it. Then `uv run check.py` builds a cached environment with those packages and runs the script.
 
 The lab's `scripts/logsum.py` has such a block with an empty package list. Inside a project, a script with a block ignores the project and uses only its own list. Read a script from the internet before you `uv run` it, because uv installs whatever its block asks for. The lab pins Python 3.14, the version in the course's Docker images and CI, in `.python-version`.
 
-With the tools in place, we can open the helper and see how it is built."""
+With the tools in place, let's open the helper itself."""
 
 L["aside"] = {
     "title": "Can I start a script without typing uv run?",
@@ -80,10 +78,10 @@ L["aside"] = {
 }
 
 S[2]["h"] = "The shape every helper script shares"
-S[2]["body"] = r"""Open `scripts/logsum.py` in the Files section. It is our running example: a log summarizer that counts how many requests to a web server went well and how many failed. Every script in the lab has the same shape, top to bottom:
+S[2]["body"] = r"""Open `scripts/logsum.py` in the Files section. It is our running example, a log summarizer, and every lab script has the same shape, top to bottom:
 
 1. The shebang and the PEP 723 block.
-2. A docstring (a note in quotes) with examples and the exit codes. It is the first thing a tired person reads.
+2. A docstring (a note in quotes) with examples and the exit codes, the first thing a tired person reads.
 3. Imports, which load parts of the standard library, then constants such as the pattern for one log line.
 4. Small functions (named blocks of steps) that each do one job and return data. `parse_access` never prints.
 5. `main(argv=None) -> int`, which reads the arguments, calls the functions, prints, and returns an exit code as a whole number.
@@ -91,34 +89,32 @@ S[2]["body"] = r"""Open `scripts/logsum.py` in the Files section. It is our runn
 
 That odd last line runs `main` only when you start the file as a program. Python sets `__name__` to `"__main__"` in the file you ran, and to the module's name, `"logsum"`, in a file that is imported. So when a test imports the file, nothing runs. With `argv=None`, argparse reads the real command line from `sys.argv`. A test passes its own list instead, `main(["access", "x.log"])`, and checks the number it gets back, which is what Day 16 does.
 
-Arguments are the words you type after a script's name. `argparse` turns `sys.argv` into named values and writes `--help` for you. The summarizer uses four of its features:
+`argparse` turns `sys.argv`, the words typed after the script's name, into named values and writes `--help` for you. The summarizer uses four of its features:
 
 - Positional arguments (`file`) and options (`--top 5`), each with a `type` that converts the text and rejects bad values.
 - `choices=["text", "json"]`, so `--format xml` fails at once.
 - Subcommands, like git's: `logsum access FILE` and `logsum app FILE` share their common options through a parent parser.
 - Defaults from the environment: `default=os.environ.get("LOGSUM_MAX_ERROR_RATE", "1.0")`. Because argparse uses a default only when the flag is missing, a flag beats the variable, and the variable beats the built-in `1.0`.
 
-An environment variable is a named setting that a program inherits from the terminal that started it. Read one with `os.environ.get("NAME", default)`. Plain `os.environ["NAME"]` raises `KeyError` (Python stops with an error) when the variable is missing, which is right only for a setting the script cannot run without. On a bad argument, argparse prints the usage line and exits with 2, the same "you called me wrong" code that `healthcheck.sh` used on Day 7.
+An environment variable is a named setting that a program inherits from the terminal that started it. Read one with `os.environ.get("NAME", default)`. Plain `os.environ["NAME"]` stops with a `KeyError` when the variable is missing, which is right only for a setting the script cannot run without. On a bad argument, argparse prints the usage line and exits with 2, the same "you called me wrong" code that `healthcheck.sh` used on Day 7.
 
 The skeleton is ready. Now the helper has to read the log and count."""
 
 S[3]["h"] = "Turning log lines into numbers"
-S[3]["body"] = r"""A web server keeps an access log: a text file with one line for every request, each time a browser or program asks it for a page. A line holds who asked, when, which path (such as `/login`) and a status code. That is a three-digit answer: 2xx fine, 3xx sent elsewhere, 4xx the asker's mistake, 5xx the server's failure.
+S[3]["body"] = r"""A web server keeps an access log, one line for every request (each time a browser or program asks for a page). A line holds who asked, when, which path (such as `/login`) and a status code. That is a three-digit answer: 2xx fine, 3xx sent elsewhere, 4xx the asker's mistake, 5xx the server's failure.
 
-First, the file. `pathlib.Path` is how current Python handles files. `Path.home() / "code" / "linux-lab"` joins the parts with `/` on any OS. `path.read_text()`, `path.exists()` and `path.glob("*.log")` replace most uses of `open`, `os.path` and `ls`.
+First comes the file. Current Python handles files with `pathlib.Path`. `Path.home() / "code" / "linux-lab"` joins the parts with `/` on any OS. `path.read_text()`, `path.exists()` and `path.glob("*.log")` replace most uses of `open`, `os.path` and `ls`.
 
 Next, one line. A regular expression, or regex (Day 4), is a pattern that describes text. With named groups it turns one access log line into a dictionary, a set of named values such as `path` and `status`. You name a group with `(?P<name>...)`. Write the pattern as a raw string, `r"..."`, so Python leaves its backslashes alone. In a normal string, `"\b"` becomes a backspace character instead of the regex word boundary. Try the pattern on one line in the REPL, Python's type-and-see prompt, before you trust it on 238 lines.
 
-Then, the counting. A plain dictionary fails on the very first line: `paths[path] += 1` raises `KeyError`, because that path is not in it yet. `collections.Counter` is a dictionary made for counting. A missing key reads as 0, so the same line just works, and `paths.most_common(5)` returns the top five. One pass over the file now collects everything: requests per path, per status class and per server error.
+Then, the counting. A plain dictionary fails at once: `paths[path] += 1` raises `KeyError`, because that path is not in it yet. `collections.Counter` is a dictionary made for counting. A missing key reads as 0, so the same line just works, and `paths.most_common(5)` returns the top five. One pass over the file now collects everything: requests per path, per status class and per server error.
 
-How does that compare with Day 5? The pipeline `awk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn` prints the same three lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. Python pays off once you want several answers from one pass, a time window, JSON output, a limit and tests. It also counts more honestly, because it strips the query string (such as `?page=3`) before counting a path. The worked example shows how far apart the two top lists end up.
-
-For big files, loop over the open file with `for line in f:` instead of `read_text()`. You get one line at a time, so memory stays flat, as the Go deeper section measures.
+How does that compare with Day 5? The pipeline `awk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn` prints the same three lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. Python pays off once you want several answers from one pass, a time window, JSON output, a limit and tests. It also counts more honestly, because it strips the query string (such as `?page=3`) before counting a path. The worked example shows how far apart the two top lists end up. (For big files, loop with `for line in f:` instead of `read_text()`; Go deeper measures why.)
 
 Every log line also carries a time, and times hide the next trap."""
 
 S[4]["h"] = "Times, JSON and CSV without quiet mistakes"
-S[4]["body"] = r"""Picture two clocks on the shop wall with no labels, one on London time and one on Berlin time. Read one, then the other, and you are an hour off without knowing it. Time zones trip up ops scripts in the same quiet way.
+S[4]["body"] = r"""Picture two unlabelled clocks in the shop, one on London time and one on Berlin time. Read both, and you are an hour off without knowing it. Scripts make the same quiet mistake.
 
 A Python `datetime` is either naive, with no time zone, or aware, with one. Comparing a naive one with an aware one raises `TypeError: can't compare offset-naive and offset-aware datetimes`, which is at least loud. The quiet bug is two naive values from different zones. Say you drop the `+0000` while parsing a log time in UTC, the world's reference clock. Then you compare it with `datetime.now()`, which is your Mac's local time. Every answer is off by your offset from UTC, and nothing complains.
 
@@ -135,7 +131,7 @@ CSV, plain text with values split by commas, is for people with spreadsheets. Us
 The numbers are right now. What's left is the note: how the helper tells you what it found."""
 
 S[5]["h"] = "Reporting back: exit codes, stderr and errors that say what to do"
-S[5]["body"] = r"""A person reads the words on the helper's note. A machine reads only one thing: did it work? A program answers that with its exit code.
+S[5]["body"] = r"""A person reads the helper's note. A machine only asks: did it work? The exit code answers.
 
 CI, systemd (Day 6), cron (the Unix scheduler for timed jobs) and Kubernetes exec probes (Day 43) decide success or failure from the exit code alone. A Python script ends with a code in one of three ways:
 
@@ -145,16 +141,16 @@ CI, systemd (Day 6), cron (the Unix scheduler for timed jobs) and Kubernetes exe
 
 So the lab uses one contract in every script: 0 means all good, 1 means the check found a problem, and 2 means the script could not do its job. A caller can then tell "the error rate is too high" apart from "the log file is missing".
 
-Output goes to two places. The report goes to stdout, the only stream a pipe (Day 5) passes on. Everything for people, such as warnings, progress and the reason for a failure, goes to stderr, which shows on your screen but stays out of the pipe. The `logging` module sends messages there after `logging.basicConfig(stream=sys.stderr, ...)`. Each message has a level, from DEBUG up to ERROR, and messages below the level you set are dropped. The summarizer sets INFO, and `-v` lowers it to DEBUG. Pass values as arguments, `log.warning("line %d skipped", number)`, so the text is only built when the message is shown.
+Output goes to two places. The report goes to stdout, the only stream a pipe (Day 5) passes on. Everything for people, such as warnings, progress and the reason for a failure, goes to stderr, which shows on screen but skips the pipe. The `logging` module sends messages there after `logging.basicConfig(stream=sys.stderr, ...)`. Each message has a level, from DEBUG up to ERROR, and messages below the level you set are dropped. The summarizer sets INFO, and `-v` lowers it to DEBUG. Pass values as arguments, `log.warning("line %d skipped", number)`, so the text is only built when the message is shown.
 
-Now the naive helper. Wrapping the whole script in `try: ... except Exception: pass` turns a crash into a silent success. The script exits 0, CI goes green, and nothing was checked. That is the stuck key from the opening, written in Python. Instead, catch the errors you expect, by name, and turn each into one clear line. In the summarizer, `except FileNotFoundError` becomes `logsum: ERROR no such file: nope.log` and exit code 2. Let every other exception crash with its traceback, since a traceback is the quickest way to debug something you did not expect. And never log a token or a password, not even at DEBUG.
+Now the naive helper. Wrapping the whole script in `try: ... except Exception: pass` turns a crash into a silent success. The script exits 0, CI goes green, and nothing was checked. That is the stuck key from the opening, written in Python. Instead, catch the errors you expect, by name, and turn each into one clear line. In the summarizer, `except FileNotFoundError` becomes `logsum: ERROR no such file: nope.log` and exit code 2. Let every other exception crash with its traceback, the quickest way to debug something you did not expect. And never log a token or a password, not even at DEBUG.
 
 **A hidden failure looks exactly like success. Catch errors by name.**
 
 The helper can count and report now. Its last skill is asking other programs for help."""
 
 S[6]["h"] = "Asking other programs for help, safely"
-S[6]["body"] = r"""Sooner or later a script calls `git`, `kubectl` (which drives Kubernetes) or `terraform` (which builds servers from a plan). `subprocess.run` starts the program and waits for it. Remember the guess: on its own, it only records the exit code and lets your script carry on. Give it four things every time:
+S[6]["body"] = r"""Sooner or later a script calls `git`, `kubectl` (which drives Kubernetes) or `terraform` (which builds servers from a plan). `subprocess.run` starts the program and waits for it. Remember the guess: on its own, it records the exit code and carries on. Give it four things every time:
 
 - A list of arguments, `["git", "rev-parse", "--short", "HEAD"]`, which Python hands straight to the program, so no shell ever reads them.
 - `check=True`, so a non-zero exit raises `CalledProcessError` instead of passing silently.
@@ -169,7 +165,7 @@ Now the dangerous version. A shell, such as Bash, is the program that reads a co
 
 Environment variables flow down to the child program, as on Day 7. To add one, copy the current environment: `env={**os.environ, "KUBECONFIG": path}`. Passing `env={"KUBECONFIG": path}` alone gives the child no `PATH` and no `HOME` at all.
 
-Today's helper has a limit: it knows only Python's built-in toolbox, and for one quick question awk is still faster. Day 16 adds outside packages, and tests that prove the helper works."""
+Today's helper has limits: it knows only the standard library, and for one quick question awk is still faster. Day 16 adds outside packages, and tests that prove the helper works."""
 
 L["analogy"] = r"""In shop terms, the helper is the script and the checklist is its code. The report sheet is stdout, the note for the manager is stderr, and the thumbs up or down at the end is the exit code. Unlike a person, a script never stops to ask when a step looks wrong, so the checklist itself must say what counts as failure. And a script can hand over half its report and still fail, so a caller checks the exit code before trusting what arrived."""
 
@@ -237,7 +233,7 @@ L["deeper"]["body"] = r"""The summarizer reads a whole file into memory with `re
 To find out, we repeated `access.log` 4,200 times: 999,600 lines, 158 MB. Then we parsed it in two ways with the same `parse_access` function:
 
 - `parse_access(read_lines(path))`, which reads everything first, peaked at 384 MB of memory.
-- `with path.open() as f: parse_access(f)`, which hands over one line at a time, peaked at 15 MB.
+- `with path.open() as f: parse_access(f)`, which hands over one line at a time, peaked at 15 MB. Looping over an open file, as in `for line in f:`, reads one line at a time, so memory stays flat.
 
 `parse_access` already accepts anything that hands out lines one by one, so streaming needed no change inside it. That is a good reason to write parsing functions this way. A file, a list in a test, `sys.stdin` (the text piped into a script) and a decompressed stream all work.
 

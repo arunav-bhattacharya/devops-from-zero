@@ -39,9 +39,9 @@ DevOps removes that wall. It is a way of working where the people who build soft
 
 The real, live system that your users use is called production. In a DevOps team, finishing your code is only the halfway point. You are done when the change runs well in production and you can see that it does.
 
-This course teaches mostly tools, because tools are what you can practise alone on a laptop. Keep the culture in mind anyway. A team that installs Kubernetes (a popular tool for running apps on many machines) but keeps the wall ends up with the same wall, plus Kubernetes.
+This course teaches mostly tools, because you can practise those alone on a laptop. Keep the culture in mind anyway. A team that installs Kubernetes (a popular tool for running apps on many machines) but keeps the wall ends up with the same wall, plus Kubernetes.
 
-If one team owns the whole road from kitchen to customer, what does that road look like? Next, we'll follow one change along it."""
+Next, we'll follow one change along the road that this one team now owns."""
 
 S[1]["h"] = "Following one change from the kitchen to the customer"
 S[1]["body"] = """Say you decide to use less sugar. Before the café sees that change, you write it on the recipe card, bake a test batch and taste it. You bag the loaves, the van takes them to the café, and you watch who buys a second one. Skip the tasting to save ten minutes, and you learn on Friday, from an unhappy owner, that the bread tastes of nothing. The mistake was made on Tuesday, far from where you paid for it.
@@ -60,11 +60,11 @@ Software changes take the same road, and engineers call that road the pipeline. 
 
 In the bakery, the recipe card is the code, the tasting is the test, the bag is the package and the van is the deploy.
 
-Now the same mistake in software. Tomorrow you create hello-devops, a tiny web app that answers every visit with a greeting and a count of visits so far. Say you change its default greeting from "Hello, DevOps!" to "Hi there" and push, which means you send your commits to a shared copy online. The test step fails at once, because one test still expects the old greeting. You find out two minutes later on your own branch (your own line of work, kept apart from everyone else's), instead of from a user on Friday night. Each step of the pipeline catches a different kind of mistake, as close as possible to where it was made.
+Now the same mistake in software. Tomorrow you create hello-devops, a tiny web app that answers every visit with a greeting and a count of visits so far. Say you change its default greeting from "Hello, DevOps!" to "Hi there" and push (send your commits to a shared copy online). The test step fails at once, because one test still expects the old greeting. You find out two minutes later on your own branch (your own line of work, apart from everyone else's), instead of from a user on Friday night. Each step of the pipeline catches a different kind of mistake, as close as possible to where it was made.
 
 The name CI/CD covers steps 2 to 6. Continuous integration (CI) means you merge small changes into the shared code often, and a machine builds and tests each one. Continuous delivery (CD) means every change that passes is ready to release at any time. You build both in Part 6.
 
-Deciding what to change takes a person. Building, testing and shipping go the same way every time. **When a step goes the same way every time, give it to a machine.**
+Deciding what to change takes a person. Building, testing and shipping do not. **When a step goes the same way every time, give it to a machine.**
 
 Each step has its own tools. Next, we'll put the course's parts along the road."""
 
@@ -74,7 +74,7 @@ S[2]["body"] = """Twenty stops on one road are easier to remember than twenty to
 - Part 0, Start here (Days 1 and 2): this map, and your laptop setup.
 - Part 1, The Linux command line (Days 3 to 7): typing commands to Linux, the system most servers run, from files to SSH (logging in to other machines) and scripts.
 - Part 2, Git (Days 8 and 9): how Git stores your work, how to undo mistakes, and branches.
-- Part 3, Networking and the cloud (Days 10 to 14): addresses, DNS (names to addresses), HTTP and TLS (web requests, encrypted), cloud basics, then AWS (Amazon's cloud) by hand.
+- Part 3, Networking and the cloud (Days 10 to 14): addresses, DNS (names to addresses), HTTP and TLS (web requests, encrypted), cloud basics (renting computers), then AWS (Amazon's cloud) by hand.
 - Part 4, Python scripts (Days 15 and 16): small automation scripts that read logs and call APIs (the requests another program accepts).
 - Part 5, Docker (Days 17 to 22): package the app into an image that runs the same everywhere. A running image is a container.
 - Part 6, CI/CD with GitHub Actions (Days 23 to 27): test, build and publish on every push.
@@ -102,9 +102,9 @@ On the site, the parts sit in seven sections, in the same order:
 - Operate at scale (Days 58 to 62): service mesh and Dynatrace.
 - Security, AI and the capstone (Days 63 to 68).
 
-Read it as layers. Linux and networking sit underneath everything: every server, container and CI runner (the machine that runs your checks) runs Linux and talks over a network. Git keeps every change. Docker, GitHub Actions and Gradle carry it to a package. Terraform builds the ground it runs on, and Ansible sets up the servers. Kubernetes and Argo CD run and deploy it, and a service mesh can manage the calls between services. Prometheus, Grafana, the EFK stack (three tools for logs), OpenTelemetry (a shared way to send out traces) and Dynatrace show how it behaves. DevSecOps checks each step, and Python and AI assistants help at every layer.
+Read it as layers. Linux and networking sit underneath everything, because every server, container and CI runner (the machine that runs your checks) runs Linux and talks over a network. Each tool above them takes one stretch of the road. DevSecOps checks every step, and Python and AI assistants help along all of it.
 
-Do not try to memorize the list. When a new tool appears, come back here and ask which step it owns. Tools come and go, but the ideas under them last. Those come next."""
+Do not try to memorize the list. When a new tool appears, come back here and ask which step it owns. The ideas under all these tools come next."""
 
 S[3]["h"] = "Four ideas that sit under every tool"
 S[3]["body"] = """Back to the bakery. The café says today's bread is dry. That same day, you changed the flour, the oven setting and the baking time. Which change made it dry? You can't tell, so you undo all three, or guess.
@@ -116,18 +116,18 @@ Tools change every few years, and the ideas behind them change much more slowly.
 - Ship small changes often: each one is easy to review, test and undo.
 - Get feedback fast: tests, deploys and alerts should answer within minutes.
 
-The ideas lean on each other. Code that lives in Git can be checked by machines, and those automated checks are what make small changes safe. A small change also gives clear feedback: when it breaks something, you know where to look. That was the trouble with the dry bread. A release with 300 changes in it can fail in 300 places.
+The ideas lean on each other. Code that lives in Git can be checked by machines, and those automated checks are what make small changes safe. A small change also gives clear feedback: when it breaks something, you know where to look. A release with 300 changes in it can fail in 300 places.
 
 **Change one thing at a time, and you will know what broke.**
 
 Infrastructure as code (IaC) is the second idea applied to servers and networks. You describe what you want in a text file, and a tool such as Terraform creates it. You write your first one on Day 31.
 
-Small changes and fast feedback sound good. But how would a team know it is getting better at them? Next, we'll measure it."""
+But how does a team know it is getting better at all this? Next, we'll measure it."""
 
 S[4]["h"] = "Measuring how a team delivers: the DORA metrics"
-S[4]["body"] = """The bakery now supplies five cafés, and you feel faster than last year. Feelings are hard to compare, so you start a notebook: how long from recipe idea to shelf, and how often does a batch come back?
+S[4]["body"] = """The bakery now supplies five cafés. Are you getting faster, or does it only feel that way? You can't tell without counting.
 
-Software teams need the same notebook. This course uses the metrics from DORA (DevOps Research and Assessment), a long-running research program that studies software teams. A metric is a number you measure again and again, so you can see it change. DORA's [guide to the metrics](https://dora.dev/guides/dora-metrics/) names five measures in two groups.
+Software teams need the same notebook. This course uses the metrics from DORA (DevOps Research and Assessment), a long-running research program that studies software teams. A metric is a number you measure again and again. DORA's [guide to the metrics](https://dora.dev/guides/dora-metrics/) names five measures in two groups.
 
 Throughput shows how fast changes flow:
 
@@ -172,9 +172,9 @@ S[6]["body"] = """Nobody learns to bake from recipes alone, so every lesson mixe
 
 Two optional extras follow: an interview corner and a "go deeper" box for days with more time. Each part ends with flashcards and a short quiz. A few quiz questions come from earlier parts on purpose, because mixing old and new topics helps you remember both.
 
-All course long you ship one small app: hello-devops, written in Python, a programming language known for being easy to read. You create its repo tomorrow (a repo, short for repository, is a project folder that Git tracks). By the capstone it is tested, packaged, deployed to Kubernetes by Argo CD and watched on dashboards. Part 7 adds a second small app called hello-jvm, written in Kotlin. With it you see the same ideas with Gradle, a build tool, and the JVM, the program that runs Kotlin and Java code.
+All course long you ship one small app: hello-devops, written in Python, a programming language known for being easy to read. You create its repo tomorrow (a repo, short for repository, is a project folder that Git tracks). By the capstone it is tested, packaged, deployed to Kubernetes by Argo CD and watched on dashboards. Part 7 adds a second small app, hello-jvm, written in Kotlin, to show the same ideas with Gradle (a build tool) and the JVM (the program that runs Kotlin and Java code).
 
-Everything runs on your Mac and costs nothing. From Day 2 you practise Linux in a throwaway container running Ubuntu, a popular version of Linux, and from Day 6 you also use a small Ubuntu virtual machine, a whole computer simulated in software. The steps that use a real cloud account are on Days 13, 14 and 35. They are optional: you can follow Days 13 and 14 with a local stand-in for AWS instead, and every cloud step ends with a cleanup.
+Everything runs on your Mac and costs nothing. From Day 2 you practise Linux in a throwaway container running Ubuntu, a popular version of Linux. From Day 6 you also use a small Ubuntu virtual machine, a whole computer simulated in software. The steps that use a real cloud account are on Days 13, 14 and 35. They are optional: you can follow Days 13 and 14 with a local stand-in for AWS instead, and every cloud step ends with a cleanup.
 
 Tomorrow, the map turns into real tools on your own laptop."""
 

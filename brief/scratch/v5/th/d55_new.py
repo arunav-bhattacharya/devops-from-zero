@@ -1,26 +1,26 @@
-S1 = """Every program can write short notes about its work: started, served a page, could not reach the database. Each note is one line of text, and the lines together are the program's log. Our lab app, hello-devops, is a tiny web app that answers every visit with a greeting and a count of visits so far. It writes a line for every visit and every error.
+S1 = """Every program can write short notes about its work: started, served a page, could not reach the database. Those lines of text are its log. Our lab app, hello-devops, is a tiny web app that answers every visit with a greeting and a count of visits so far. It logs every visit and every error.
 
-In Part 5 you read those lines with `docker logs`. Docker runs each app in a container, a sealed box with the app and all it needs. That works for one app on one laptop. Now picture hello-devops on Kubernetes, the system that runs containers across many machines. It runs as three pods (Kubernetes' wrapper around a container) on three nodes (the machines), and every deploy replaces all three. A customer says a payment failed at 14:02. Which pod handled it? That pod may be gone, and its logs left with it, like the clipboard with the bed.
+In Part 5 you read those lines with `docker logs`. Docker runs each app in a container, a sealed box with the app and all it needs. Now picture hello-devops on Kubernetes, the system that runs containers across many machines. It runs as three pods (Kubernetes' wrapper around a container) on three nodes (the machines), and every deploy replaces all three. A customer says a payment failed at 14:02. Which pod handled it? That pod may be gone, and its logs with it, like the clipboard with the bed.
 
-Centralized logging is the hospital's central chart. Every line every container prints is copied, as it is written, to one store you can search. Metrics from Part 12 (numbers measured over time) tell you that errors went up. Logs tell you which request failed and why, so you usually read them in that order.
+Centralized logging is the hospital's central chart: every line every container prints is copied, as it is written, to one store you can search. Metrics from Part 12 (numbers measured over time) tell you that errors went up. Logs tell you which request failed and why.
 
 A log pipeline has four jobs, and the lab gives each one to a different program:
-1. The app prints one event per line to stdout, the standard place where a program writes its text. hello-devops already does.
-2. A shipper collects the lines, splits them into fields and sends them on. Here that is Fluent Bit.
-3. A store indexes every field so search is fast. Here that is Elasticsearch.
-4. A web page lets people search and draw charts. Here that is Kibana.
+1. The app prints one event per line to stdout, the standard place where a program writes its text.
+2. A shipper, Fluent Bit, collects the lines, splits them into fields and sends them on.
+3. A store, Elasticsearch, indexes every field so search is fast.
+4. A web page, Kibana, lets people search and draw charts.
 
-Docker carries each line to Fluent Bit. Whatever a container prints goes first to the Docker engine, the background program that runs containers. A logging driver decides where the engine sends it. The default driver, `json-file`, writes it to a file that `docker logs` reads. The lab's compose file (the list of containers that Docker Compose starts together) sets the `fluentd` driver on the web container. Now the engine sends every line to port 24224 and still keeps a local copy.
+Docker carries each line to Fluent Bit. Whatever a container prints goes first to the Docker engine, the background program that runs containers. A logging driver decides where the engine sends it. The default, `json-file`, writes a file that `docker logs` reads. The lab's compose file (the list of containers that Docker Compose starts together) sets the `fluentd` driver on the web container. Now the engine sends every line to port 24224 and still keeps a local copy.
 
-A port is a numbered door on a computer, and a program listens behind it. The engine opens this connection, not a container, so the address is `localhost:24224`. Localhost means this same computer, and 24224 is the port Fluent Bit publishes on your laptop. The lab also sets `fluentd-async`. Without it, a container stops at once when it cannot reach its log collector.
+A port is a numbered door on a computer that a program listens behind. The engine opens this connection, not a container, so the address is `localhost:24224`. Localhost means this same computer, where Fluent Bit publishes that port. The lab also sets `fluentd-async`. Without it, a container stops at once when it cannot reach its log collector.
 
-Fluent Bit's settings file, `fluent-bit.yaml`, is written in YAML, plain text with one name and value per line. It has one block per stage:
+Fluent Bit's settings file, `fluent-bit.yaml`, is YAML (plain text with one name and value per line). It has one block per stage:
 - Inputs take records in. `forward` listens on port 24224 for the Docker driver.
-- Filters change records. `multiline` glues a Python traceback (a many-line error report) into one record.
+- Filters change records. `multiline` glues a traceback, Python's many-line error report, into one record.
 - `parser`, another filter, turns a JSON line (named fields in curly braces) into fields.
 - Outputs send records on. `es` writes to Elasticsearch, and `stdout` prints a copy.
 
-Python is the language hello-devops is written in. Each record carries a tag, here `hello.` plus the container name. Every filter and output has a `match` pattern and handles only the records whose tag fits it, like a mail room sorting letters by the name on the envelope.
+Python is the language hello-devops is written in. Each record carries a tag, here `hello.` plus the container name. Every filter and output has a `match` pattern and handles only the records whose tag fits it, like a mail room sorting by the name on the envelope.
 
 The road is ready. Next, we'll look at what a good line looks like before it sets out."""
 
@@ -32,9 +32,9 @@ And this is one line of the access log the lab turns on, which has one line per 
 
 `{"level":"INFO","logger":"access","method":"GET","path":"/","status":200,"duration_ms":8}`
 
-A person reads the first line easily. A machine has to guess where the level ends and the message starts, and every program formats it a little differently. The second line is JSON, a text format of names and values inside curly braces. That makes it a structured log: data with named fields. Fluent Bit turns each name into a field, so you can ask for `status >= 500` or the slowest `path`. You never need a regular expression, a fragile text pattern for cutting lines apart.
+The first is fine for a person. A machine has to guess where the level ends and the message starts, and every program formats it a little differently. The second line is JSON, a text format of names and values inside curly braces. That makes it a structured log: data with named fields. Fluent Bit turns each name into a field, so you can ask for `status >= 500` or the slowest `path`. You never need a regular expression, a fragile text pattern for cutting lines apart.
 
-You did not change `app.py`, the app's code, to get this. The lab's compose file gives gunicorn an `--access-logformat` that prints JSON. In your own services, use a JSON logging library and write one event per line. Fields pay off most when every service uses the same names, such as `service`, `level`, `order_id` and `trace_id`. Then one filter on an `order_id` reads a failed payment's whole story across all of them.
+You did not change `app.py`, the app's code, to get this. The lab's compose file gives gunicorn an `--access-logformat` that prints JSON. In your own services, use a JSON logging library and write one event per line. Fields pay off most when every service uses the same names, such as `order_id` and `trace_id`. Then one filter on an `order_id` reads a failed payment's whole story across all of them.
 
 Every event also carries a level. Most teams use these four:
 - DEBUG: detail for developers. Usually off in production (the real system customers use), because it is loud.
@@ -48,27 +48,27 @@ Some things never belong in a log, because many people read the log store and it
 - payment card and bank account data
 - personal data, such as names, email addresses and home addresses
 
-A token or a session ID is a secret value that proves who you are, like a key card. Masking hides part of a value behind stars. Hashing turns it into a scrambled code that cannot be turned back. A token in a log is a security incident, and deleting it later from every copy and backup is slow work. **A secret in a log has already leaked. Scrub it at the source.**
+Tokens and session IDs are secret values that prove who you are, like a key card. Masking hides part of a value behind stars, and hashing turns it into a code that cannot be turned back. A token in a log is a security incident, and deleting it later from every copy and backup is slow work. **A secret in a log has already leaked. Scrub it at the source.**
 
-Next, we'll see what Elasticsearch does with these clean lines when they arrive."""
+Next, we'll see what Elasticsearch does with these clean lines."""
 
-S3 = """Elasticsearch is a program that stores data and finds it again fast, a search engine for your own records. It stores JSON documents. A document is one JSON object, and in logging one document is one log event. Each one gets an `_id`, and Elasticsearch keeps the exact JSON you sent in a field called `_source`.
+S3 = """Elasticsearch is a program that stores data and finds it again fast, a search engine for your own records. It stores JSON documents. A document is one JSON object, and in logging one document is one log event. Each gets an `_id`, and Elasticsearch keeps the exact JSON you sent in a field called `_source`.
 
 Documents live in an index, a named collection such as `hello-logs-2026.10.30`. You write to one index and can search many at once with a pattern like `hello-logs-*` (the star matches anything). The lab makes one index per day, which keeps old days easy to delete.
 
-Why not just search the text? The grep command, typed in the terminal (the window for typed commands), prints every line of a file that contains some text. It reads every line again on every search. That is fine for one file, and far too slow for a week of logs from fifty pods. Elasticsearch does the reading once, when a document arrives, and builds an inverted index. A part called the analyzer splits each text field into words, called tokens, and lowercases them. Elasticsearch then records, for every token, which documents contain it. It works like the index at the back of a book: to find "declined" you look it up once instead of reading every page.
+Why not just search the text? The grep command, typed in the terminal (the window for typed commands), prints every line that contains some text. It reads every line again on every search. That is fine for one file, and far too slow for a week of logs from fifty pods. Elasticsearch does the reading once, when a document arrives, and builds an inverted index. A part called the analyzer splits each text field into words, called tokens, and lowercases them. Then Elasticsearch records which documents contain each token. It works like the index at the back of a book: to find "declined" you look it up once instead of reading every page.
 
-In the worked example, the default analyzer turned `Payment FAILED for order 42: card declined` into `payment`, `failed`, `for`, `order`, `42`, `card` and `declined`.
+In the worked example, the analyzer turned `Payment FAILED for order 42: card declined` into `payment`, `failed`, `for`, `order`, `42`, `card` and `declined`.
 
-Now search the way grep taught us, by any piece of text, and watch two searches fail in the lab:
+Now search the way grep taught us, by any piece of text, and watch two searches fail:
 - `payments` finds nothing. Only `payment` was stored, and the default analyzer does not reduce words to a common stem.
 - `redis.exceptions.ConnectionError` stays one token, because dots between letters do not split words. Search for `ConnectionError` and you get zero hits. Search for the phrase `"service not known"` from the same error and you find it at once.
 
-That second failure answers the guess. The error means hello-devops could not reach Redis, the small database that keeps its visit count. The error happened. Our search asked for a word that was never filed. Before you trust an empty result, check the tokens with `_analyze`. **Search finds whole tokens, never pieces of them. Ask for words that are really there.**
+That second failure answers the guess. The error means hello-devops could not reach Redis, the small database that keeps its visit count. The error happened, but our search asked for a word that was never filed. Before you trust an empty result, check the tokens with `_analyze`. **Search finds whole tokens, never pieces of them. Ask for words that are really there.**
 
 New documents are not searchable in the same instant. Elasticsearch makes them visible within about one second, in a step called a refresh. The Elastic docs call this near real-time search.
 
-Next, we'll see how Elasticsearch decides which fields are text in the first place."""
+Next, we'll see how Elasticsearch decides which fields are text at all."""
 
 S4 = """Each index has a mapping: the type of every field (text, number, date and so on) and how it is indexed. You can write one yourself, or let Elasticsearch guess from the first document that contains a field. That guess is called dynamic mapping, and it sticks. Every stored document was indexed for that type, so Elasticsearch never changes a field's type in place. You create a new index with the right mapping and copy the documents over, a reindex.
 
@@ -91,7 +91,7 @@ The word "cluster" just slipped in. Next, we'll see what it means, and why yours
 
 S5 = """One running Elasticsearch program is a node. Nodes that work together form a cluster. Your lab is a cluster of one node.
 
-An index is split into shards. Each shard is a complete small Lucene index holding part of the documents. Lucene is the search library under Elasticsearch: ready-made code, written in Java, that builds and reads inverted indices. Shards let one index spread over many nodes, so more machines can store and search it in parallel.
+An index is split into shards. Each shard is a complete small Lucene index holding part of the documents. Lucene is the search library under Elasticsearch, ready-made Java code that builds and reads inverted indices. Shards let one index spread over many nodes, so more machines can store and search it in parallel.
 
 There are two kinds:
 - A primary shard holds the original documents. Each document belongs to exactly one primary.
@@ -101,7 +101,7 @@ Two rules follow from this:
 1. The number of primary shards is fixed when the index is created. Elasticsearch picks each document's shard from a hash of its `_id` (a number always worked out the same way from it) and the number of primaries. A new number would send lookups to the wrong shard. Replicas can change at any time.
 2. Elasticsearch never puts a replica on the same node as its primary, because a copy on the same machine would die with it.
 
-Rule 2 explains a colour you will see on day one. Cluster health works like a traffic light. Green means every shard is placed. Yellow means all data is there, but a copy is missing. Red means a primary is missing, so some data cannot be searched. On your laptop, an index with one replica is yellow. The lab's daily index starts yellow for exactly this reason, because new indices get one replica by default. On Day 56 you set replicas to 0 for it. On one node, yellow is normal: the cluster is only telling the truth.
+Cluster health works like a traffic light. Green means every shard is placed. Yellow means all data is there, but a copy is missing. Red means a primary is missing, so some data cannot be searched. Rule 2 makes an index with one replica yellow on your laptop. The lab's daily index starts yellow for exactly this reason, because new indices get one replica by default. On Day 56 you set replicas to 0 for it. On one node, yellow is normal: the cluster is only telling the truth.
 
 More shards are not free. Each search runs on one thread per shard (a thread is one line of work the computer runs), and every shard costs memory. The Elastic sizing guide suggests shards between 10 GB and 50 GB. A lab that stores a few megabytes a day needs one shard per index.
 
@@ -114,7 +114,7 @@ S6 = """ELK is the classic name for three products of Elastic, the company behin
 
 Elastic later added Beats, small single-purpose shippers such as Filebeat. Then came Elastic Agent, one agent (a collecting program on each machine) that you manage centrally with Fleet. Elastic now calls the whole family the Elastic Stack.
 
-EFK swaps the L for an F: Fluentd or Fluent Bit. Both are open source (anyone may read, use and change the code), and neither is an Elastic product. Both are graduated projects of the CNCF, the non-profit foundation that looks after Kubernetes. Graduated is its most mature level. Fluentd came first and is written in C and Ruby. Fluent Bit is written in C for small machines. Its docs compare the two like this:
+EFK swaps the L for an F: Fluentd or Fluent Bit. Both are open source (anyone may read, use and change the code), and neither is an Elastic product. Both are graduated projects of the CNCF, the non-profit foundation that looks after Kubernetes. Graduated is its most mature level. Fluentd came first and is written in C and Ruby. Fluent Bit is written in C for small machines. Its docs compare the two:
 - Memory: Fluentd needs more than 60 MB, Fluent Bit about 450 KB.
 - Plugins (add-ons): Fluentd has over 1,000 external plugins, Fluent Bit over 100 built in.
 
@@ -136,7 +136,7 @@ ES|QL mode, the Elasticsearch Query Language, needs no data view. You write a pi
 
 `FROM hello-logs-* | WHERE status >= 500 | STATS errors = COUNT(*) BY path | SORT errors DESC`
 
-Read it left to right: take the daily indices, keep the failures, count them per path, and put the biggest count first. On the lab it returned 5 for `/readyz` and 3 for `/`.
+Read it left to right: take the daily indices, keep the failures, count them per path, biggest count first. On the lab it returned 5 for `/readyz` and 3 for `/`.
 
 My rule of thumb: KQL to narrow down what you are looking at, ES|QL when the question needs counting, grouping or math. You can even mix them, because ES|QL accepts KQL inside `WHERE KQL("status >= 500")`.
 
@@ -144,8 +144,4 @@ Two habits save time:
 - Check the time picker first. Discover shows the last 15 minutes by default, so older logs look missing.
 - Add the fields you care about (`path`, `status`, `duration_ms`) as columns. Otherwise each row is one long summary.
 
-Today's setup has limits. It runs on one laptop and wants at least 6 GB of memory for Docker. Security is switched off, so anything that reaches port 9200 can read and delete every log. On Kubernetes you also want each line to say which pod wrote it, and old daily indices must go on a schedule. That is where the next lesson picks up."""
-
-CLOSING = """We started with a clipboard thrown out with a hospital bed, and with a container's log lost with the container. Now every line hello-devops prints travels through Docker and Fluent Bit into one daily index, and Kibana finds it long after the container is gone. We also watched two honest searches find nothing, and saw why. In the lab, stop Redis, search for `ConnectionError` and then for `"service not known"`, and run `_analyze` on the error line to see which tokens were filed.
-
-Next, we'll run the same pipeline in "Running EFK on Kubernetes". When many pods share one log store, how do we know who wrote each line?"""
+Today's setup has limits. It runs on one laptop and wants at least 6 GB of memory for Docker. Security is off, so anything that reaches port 9200 can read and delete every log. On Kubernetes you also want each line to name the pod that wrote it, and old daily indices must go on a schedule. The next lesson picks up there."""
