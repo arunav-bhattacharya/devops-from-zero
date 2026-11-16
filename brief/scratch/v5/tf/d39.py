@@ -27,7 +27,7 @@ NEW["terms"] = [
 S = []
 
 S.append(("Writing a ticket the kitchen can read", """
-A manifest is how you write down one of the objects Kubernetes stores. It is a file in YAML, a plain text format where each line holds a name, a colon and a value. Indentation (spaces at the start of a line) shows what belongs inside what. You hand the file to kubectl, and kubectl sends it to the API server.
+A manifest is how you write down one of the objects Kubernetes stores. It is a file in YAML, a plain text format where each line holds a name, a colon and a value. Indentation (spaces at the start of a line) shows what belongs inside what. You hand the file to kubectl, the command you type to talk to a cluster. kubectl sends it to the API server, the cluster's front door.
 
 Pods, Services and Namespaces are all objects. Every manifest for them starts with the same four fields, much as every order ticket has the same boxes to fill in:
 - `apiVersion`: which version of the rules defines this kind of object. The API server checks your fields against it. A Pod is `v1`, a Deployment is `apps/v1`.
@@ -35,9 +35,9 @@ Pods, Services and Namespaces are all objects. Every manifest for them starts wi
 - `metadata`: who the object is. The `name` and `namespace`, plus `labels` and `annotations`.
 - `spec`: your desired state, the part the controllers read. Its shape depends on the kind.
 
-You never write the fifth field, `status`. The controllers and the kubelet write it, to report what is really there. Any gap between `spec` and `status` is work the cluster has not finished yet.
+You never write the fifth field, `status`. The controllers (the small loops that make objects come true) and the kubelet write it, to report what is really there. Any gap between `spec` and `status` is work the cluster has not finished yet.
 
-Like our strict cook, kubectl catches spelling mistakes in field names before anything is stored. It checks strictly by default. A field written as `imagePullPolicyy`, with one letter too many, fails with an error that names the unknown field. That is annoying for a second and a gift for the rest of the day.
+Like our strict cook, kubectl catches spelling mistakes in field names before anything is stored. It checks strictly by default. A field written as `imagePullPolicyy`, with one letter too many, fails with an error that names the unknown field.
 
 Writing every field from memory would be slow and full of such mistakes. Next, we'll get the computer to write the first draft.
 """))
@@ -61,23 +61,23 @@ We keep saying Pod. It is time to look at what one is.
 """))
 
 S.append(("Pods: the smallest thing Kubernetes runs", """
-Back in the restaurant, a waiter carries a tray to one table. The tray may hold a main dish and a side, but they always travel together and land on the same table. A **Pod** is that tray. It is one or more containers that Kubernetes places on one node together. They share three things:
-- One IP address and one set of ports. Containers in a Pod reach each other on `localhost`, the name a machine uses for itself.
+A waiter carries a tray to one table. The tray may hold a main dish and a side, but they always travel together and land on the same table. A **Pod** is that tray. It is one or more containers (packed programs) that Kubernetes places together on one node, one machine of the cluster. They share three things:
+- One IP address (the number that names it on a network) and one set of ports. Containers in a Pod reach each other on `localhost`, the name a machine uses for itself.
 - Volumes, if the Pod defines them. A volume is a folder that the Pod's containers can all read and write.
 - One life. They start on the same node and are removed together.
 
-Most Pods hold exactly one container. The Pod is then a thin wrapper that gives the container an address and a place in the cluster. Inside the Pod, the host name (the name a machine calls itself) is the Pod's name. So the `host` field in hello-devops' answer will show the Pod's name.
+Most Pods hold exactly one container, and the Pod is a thin wrapper that gives it an address. Inside the Pod, the host name (the name a machine calls itself) is the Pod's name. So the `host` field in hello-devops' answer will show the Pod's name.
 
-The wrapper matters for helpers that only work right next to the app. One example is a proxy, a program that sits in front of the app and passes requests to it on `localhost`. Another is a log shipper, which reads the app's log files and sends them to a central place. The Pod keeps such a group together, and the scheduler places the whole Pod on one node.
+The wrapper matters for helpers that only work right next to the app. One example is a proxy, a program that sits in front of the app and passes requests to it on `localhost`. Another is a log shipper, which reads the app's log files and sends them to a central place. The Pod keeps such a group together, and the scheduler, the part that picks nodes, places the whole Pod on one node.
 
-Pods are also disposable. The kubelet restarts a bare Pod's containers (a Pod you made yourself, with no controller), but no controller counts bare Pods or makes new ones. If a node dies, its Pods die with it, and nothing brings them back. Delete a Pod and it is gone. A new Pod made from the same YAML is a different Pod, with a new IP address.
+Pods are also disposable. A bare Pod is one you made yourself, with no controller. The kubelet, the helper program on each node, restarts its containers. But no controller counts bare Pods or makes new ones. If a node dies, its Pods die with it, and nothing brings them back. Delete a Pod and it is gone. A new Pod made from the same YAML is a different Pod, with a new IP address.
 
 So you rarely create Pods yourself. You create a controller, usually a Deployment (Day 40), and it creates and replaces Pods for you. Today we make bare Pods anyway, because that is the clearest way to see one. Next, we follow a Pod through its life.
 """))
 
 S.append(("A Pod's life: phases, states and restarts", """
 A Pod's life is summed up in one field, `status.phase`. It has only five values:
-- `Pending`: accepted, but not running yet. It may be waiting for a node or pulling an image.
+- `Pending`: accepted, but not running yet. It may be waiting for a node or pulling (downloading) its image.
 - `Running`: on a node, containers created, at least one running or restarting.
 - `Succeeded`: all containers exited with code 0 and will not restart.
 - `Failed`: all containers have stopped, and at least one failed.
@@ -105,7 +105,7 @@ Init containers are the prep cooks. They run first, one at a time, in order. Eac
 - Download or fill in a config file and put it in a shared volume.
 - Fix file permissions on a volume (who may read or change its files).
 
-A sidecar is the runner: a helper that runs beside your app for the Pod's whole life. Typical sidecars ship logs or add encryption (TLS) in front of the app. Native sidecars have been stable since Kubernetes 1.33. You declare one as an init container with `restartPolicy: Always`. The init list already starts containers in order, before the app, and that is the order a sidecar needs. For an entry with that policy, Kubernetes:
+A sidecar is the runner: a helper that runs beside your app for the Pod's whole life. Typical sidecars ship logs or add encryption (TLS) in front of the app. Native sidecars have been stable since Kubernetes 1.33. You declare one as an init container with `restartPolicy: Always`. For an entry with that policy, Kubernetes:
 1. Starts it in init order, before the app containers.
 2. Moves on as soon as it is running, without waiting for it to exit.
 3. Restarts it if it crashes.
@@ -146,14 +146,14 @@ A big restaurant may have several dining rooms, and each room can have its own t
 - `kube-system`: the cluster's own parts, such as CoreDNS.
 - `kube-public` and `kube-node-lease`: used by the system. Leave them alone.
 
-Namespaces group names the way folders group files. They do not wall off the network, though. A Pod in one namespace can still reach a Pod in another, and blocking that takes a NetworkPolicy (Day 41). Teams attach access rules and quotas (limits on how much a team may use) to namespaces. Deleting a namespace deletes everything in it, which makes cleanup easy and mistakes expensive.
+Namespaces group names the way folders group files. They do not wall off the network, though. A Pod in one namespace can still reach a Pod in another, and blocking that takes a NetworkPolicy (Day 41). Deleting a namespace deletes everything in it, which makes cleanup easy and mistakes expensive.
 
 Which cluster does kubectl talk to? It reads a kubeconfig file, `~/.kube/config` by default. You can also list other files in the `KUBECONFIG` environment variable. The file has three lists:
 - clusters: each API server's address and certificate (a file that proves the server is the real one).
 - users: your credentials.
 - contexts: a cluster plus a user plus a default namespace, under one name.
 
-One context is current, and every kubectl command goes there. It is the restaurant you are phoning. Picture placing a large order and only then hearing the wrong branch answer. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters in the same file. One `kubectl delete` can then land somewhere you did not mean.
+One context is current, and every kubectl command goes there. It is the restaurant you are phoning. Docker Desktop can run its own Kubernetes with a context called `docker-desktop`, and at work you will have contexts for real clusters in the same file. One `kubectl delete` can then land somewhere you did not mean.
 
 `kubectl config get-contexts` lists every context and marks the current one with a star. Before anything that changes or deletes, run `kubectl config current-context`, because the current one is not always the one you think. Give production contexts names that stand out. To stop typing `-n hello` on every command, set a default namespace with `kubectl config set-context --current --namespace=hello`.
 

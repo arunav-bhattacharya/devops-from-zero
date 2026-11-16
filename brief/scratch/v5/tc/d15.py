@@ -11,7 +11,7 @@ O = next(x for x in ORIG["lessons"] if x["id"] == "d15")
 
 L["goal"] = r"""By the end you can write a Python script that reads a log file, takes arguments and environment variables, reports on stdout and stderr, and returns exit codes that CI can act on, and you can run it with uv."""
 
-L["opening"] = r"""Picture leaving a helper in charge of your small shop for the morning. You hand over a written checklist: open the stock room, count yesterday's visitors in the door book, then leave a note that says done or failed. At lunch the note says "done". Later you find out the stock room key never turned, and the helper simply moved on to the next line.
+L["opening"] = r"""Picture leaving a helper in charge of your shop for the morning. You hand over a written checklist: open the stock room, count yesterday's visitors in the door book, then leave a note that says done or failed. At lunch the note says "done". Later you learn the stock room key never turned, and the helper just moved on.
 
 Nobody lied. The checklist never said what to do when a step fails, and a helper who follows a list exactly will carry on. Scripts, the files of instructions a computer follows in order, behave the same way. The trap is easy to miss, because a script that carried on looks just like a script that worked.
 
@@ -154,27 +154,29 @@ Output goes to two places. The report goes to stdout, the only stream a pipe (Da
 
 The `logging` module sends messages there after `logging.basicConfig(stream=sys.stderr, ...)`. Each message has a level, from DEBUG up to ERROR, and messages below the level you set are dropped. The summarizer sets INFO, and `-v` lowers it to DEBUG. Pass values as arguments, `log.warning("line %d skipped", number)`, so the text is only built when the message is shown.
 
-Now the naive helper. Wrapping the whole script in `try: ... except Exception: pass` turns a crash into a silent success. The script exits 0, CI goes green, and nothing was checked. That is the stuck key from the opening, written in Python. Instead, catch the errors you expect, by name, and turn each into one clear line. In the summarizer, `except FileNotFoundError` becomes `logsum: ERROR no such file: nope.log` and exit code 2. Let every other exception crash with its traceback, the quickest way to debug something you did not expect. And never log a token or a password, not even at DEBUG.
+Now the naive helper. Wrapping the whole script in `try: ... except Exception: pass` turns a crash into a silent success. The script exits 0, CI goes green, and nothing was checked. That is the stuck key from the opening, written in Python.
+
+Instead, catch the errors you expect, by name, and turn each into one clear line. In the summarizer, `except FileNotFoundError` becomes `logsum: ERROR no such file: nope.log` and exit code 2. Let every other exception crash with its traceback, the quickest way to debug something you did not expect. And never log a token or a password, not even at DEBUG.
 
 **A hidden failure looks exactly like success. Catch errors by name.**
 
 Last, the helper must learn to ask other programs for help."""
 
 S[6]["h"] = "Asking other programs for help, safely"
-S[6]["body"] = r"""Sooner or later a script calls another program, such as `git`, `kubectl` or `terraform`. `subprocess.run` starts the program and waits for it. Remember the guess: on its own, it records the exit code and carries on. Give it four things every time:
+S[6]["body"] = r"""Often a script calls another program, such as `git` or the cloud tools of later parts (`kubectl`, `terraform`). `subprocess.run` starts the program and waits for it. Remember the guess: on its own, it records the exit code and carries on. Give it four things every time:
 
-- A list of arguments, `["git", "rev-parse", "--short", "HEAD"]`, which Python hands straight to the program, so no shell ever reads them.
+- A list of arguments, `["git", "rev-parse", "--short", "HEAD"]`, which Python hands to the program, so no shell reads them.
 - `check=True`, so a non-zero exit raises `CalledProcessError` instead of passing silently.
 - `capture_output=True, text=True`, to get stdout and stderr back as strings (pieces of text).
 - `timeout=30`, so a hung command raises `TimeoutExpired` instead of hanging your script.
 
-Here is a loud failure. In `/tmp`, `subprocess.run(["git", "log", "-1"], check=True, capture_output=True, text=True)` raised `CalledProcessError(128, ['git', 'log', '-1'])`, and `err.stderr` held `fatal: not a git repository`. That message is exactly what to log before you exit with 2.
+Here is a loud failure. In `/tmp`, `subprocess.run(["git", "log", "-1"], check=True, capture_output=True, text=True)` raised `CalledProcessError(128, ['git', 'log', '-1'])`, and `err.stderr` held `fatal: not a git repository`. That message is what to log before you exit with 2.
 
 Now the dangerous version. A shell, such as Bash, is the program that reads a command line and splits it into commands. `shell=True` with outside input is how scripts get hijacked. With it, Python passes one string to `/bin/sh`, and the shell reads a `;` inside it as the start of a second command. With `name = "x; echo pwned"`, the call `subprocess.run(f"ls {name}", shell=True)` printed `pwned`, proof that a second command ran. The list form passed the whole string to `ls` as one argument, and `ls` answered `cannot access 'x; echo pwned'`.
 
 **Outside input must never reach a shell. Pass a list.**
 
-Environment variables flow down to the child program, as on Day 7. To add one, copy the current environment: `env={**os.environ, "KUBECONFIG": path}`. Passing `env={"KUBECONFIG": path}` alone gives the child no `PATH` and no `HOME` at all.
+Environment variables flow down to the child program, as on Day 7. To add one, copy the current environment: `env={**os.environ, "KUBECONFIG": path}`. Passing `env={"KUBECONFIG": path}` alone gives the child no `PATH` and no `HOME`.
 
 Today's helper has limits: it knows only the standard library, and for one quick question awk is still faster. Day 16 adds outside packages, and tests that prove the helper works."""
 
@@ -259,7 +261,7 @@ That is the general pattern for Python ops scripts. Write the clear version firs
 
 L["closing"] = r"""We started with a helper whose note said "done" while the stock room key was still stuck. Our summarizer can't do that. It counts 238 requests, finds 11 server errors, says why on stderr, and exits with 1, so CI turns red. Look through any script you own, or the lab's `scripts/` folder, for two things: an `except Exception: pass`, and a `subprocess.run(` without `check=True`. Each one is a helper that carries on after a failed step.
 
-Next, we'll let the helper talk to the GitHub API and to AWS. That raises a harder question: how do you test a script that needs the internet, without the internet?"""
+Next, we'll let the helper talk to GitHub and to Amazon's cloud. That raises a harder question: how do you test a script that needs the internet, without the internet?"""
 
 # Key order: the original order, with opening after goal and aside, closing at the end.
 new = {}

@@ -136,7 +136,7 @@ new = {
 
 A year later she opens a second café and asks you to make it exactly the same. You stand in the empty room and can't remember half of what you did. The trap is easy to fall into: doing things by hand feels fast the first time, and the cost arrives later.
 
-Last time, we built programs quickly and packed them into containers, sealed boxes that run anywhere. We did much of it by typing commands, which leave the same gap as the café: nothing remembers them. In this lesson, we'll write a setup down in a file and let a tool called Terraform build it, check it and tear it down. Before we start, make a guess, and keep it in mind.""",
+Last time, we made a program build fast on a build server and packed it into a container, a sealed box that runs anywhere. To start containers, we typed commands, which leave the same gap as the café: nothing remembers them. In this lesson, we'll write a setup down in a file and let a tool called Terraform build it, check it and tear it down. Before we start, make a guess, and keep it in mind.""",
     "guess": (
         "You run `terraform apply` and it succeeds. Then you run `terraform apply` again, without changing any file. What happens the second time?",
         "Terraform remembers what it created, checks that those things still exist, and compares them with your files. When they match there is nothing to do, so running it again is safe.",

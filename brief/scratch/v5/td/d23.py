@@ -14,11 +14,11 @@ L["goal"] = ("By the end you can take a change from branch to merged pull reques
              "send each change to the right reviewers with CODEOWNERS, tag a version, and tell continuous integration, "
              "delivery and deployment apart.")
 
-L["opening"] = """Picture a restaurant kitchen on a Friday morning. Two cooks improve the house recipe book before lunch. The first moves the spare stock into a new green pot and fixes every card that mentioned the old blue pot. The second works from the cards as they were at breakfast. Their new soup card says to take one ladle from the blue pot. At noon, the new soup reaches for an empty pot.
+L["opening"] = """One Friday morning, two cooks in a restaurant kitchen improve the house recipe book. The first moves the spare stock into a new green pot and fixes every card that named the old blue pot. The second, working from the breakfast cards, writes a new soup that takes a ladle from the blue pot. At noon, the new soup reaches for an empty pot.
 
 Nobody was careless. Each cook checked their own work, and the two changes never touched the same card. That is why the trap is easy to fall into: the trouble lives in the combination, and nobody tasted the combination.
 
-Production-ready images left us with an image good enough to ship, and a question: how does a change reach it safely when other people change the same code? In this lesson, we'll follow one change through a pull request, a review and a merge. Then we'll name the ideas (CI, CD, rollouts, versions) that the rest of this part automates. Before we start, make a guess, and keep it in mind."""
+Last time, we packed our app into an image ready to ship. That left a question: how does a change reach it safely when other people change the same code? In this lesson, we'll follow one change through a pull request (GitHub's page for proposing a change), a review and a merge. Then we'll meet the ideas this part automates: testing, shipping and naming each change. Before we start, make a guess, and keep it in mind."""
 
 L["guess"]["q"] = "You join a new team, and they say they practice continuous deployment. What do they mean?"
 L["guess"]["why"] = ("With continuous deployment, every change that passes the automatic checks goes live, and nobody clicks anything. "
@@ -40,13 +40,13 @@ for t, p in zip(L["terms"], plains):
 S = L["sections"]
 
 S[0]["h"] = "One change, from your laptop to main"
-S[0]["body"] = """Git, the tool from Part 2 that records every change to files, keeps tonight's recipe book on a branch called `main`. A branch is a separate line of saved changes, where you can work without touching what others use. Each saved change is a commit.
+S[0]["body"] = """Git, the tool from Part 2 that records every change to files, keeps the code everyone uses on a branch called `main`: our recipe book. A branch is a separate line of saved changes, where you can work without touching what others use. Each saved change is a commit.
 
-Day 9 left you with a clean branch on your laptop. You could merge it into `main` yourself (add its commits there) and push it, sending your commits to GitHub, the website that holds the team's shared copy (the repository). But then nobody else reads the change before it lands, and no test runs on it unless you ran one.
+Day 9 left you with a clean branch on your laptop. You could merge it into `main` yourself, which adds its commits there. Then you would push, which sends your commits to GitHub. GitHub is the website that keeps the team's shared copy of the project. But then nobody else reads the change before it lands, and no test runs on it unless you ran one.
 
-A pull request (PR) fixes both. It is a page on GitHub that asks to merge your branch into `main`. Teammates read the diff there, the list of lines you added and removed. Checks run on it too: automatic tests that show a green tick or a red cross. Those checks are CI, explained below; Day 24 sets them up. In kitchen terms, the PR is your page on the head chef's desk, and the checks are a taster.
+A pull request (PR) fixes both. It is a page on GitHub that asks to merge your branch into `main`. Teammates read the diff there, the list of lines you added and removed. Checks run on it too: automatic tests that show a green tick or a red cross, which Day 24 sets up. In kitchen terms, the PR is your page on the head chef's desk, and the checks are a taster.
 
-Most teams run this loop, typed in the terminal (the window for text commands) with `gh`, GitHub's command-line tool from Day 2:
+Most teams run this loop, typed in the terminal, the window for text commands. The repository is your project's home on GitHub, with its whole history. And `gh` is GitHub's own command-line tool, from Day 2.
 
 1. Start from a fresh main: `git switch main && git pull`, then `git switch -c add-pr-template`.
 2. Commit in small steps and push the branch with `git push -u origin add-pr-template`.
@@ -56,11 +56,10 @@ Most teams run this loop, typed in the terminal (the window for text commands) w
 6. Answer the review by pushing more commits to the same branch. The PR updates itself.
 7. Merge, for example with Squash and merge and Delete branch, or `gh pr merge --squash --delete-branch`. Then `git switch main && git pull`.
 
-Squash and merge, in step 7, turns the branch's commits into one new commit on `main` (Go deeper compares merge methods).
 
-Two facts about CI on pull requests explain our kitchen. First, GitHub builds a temporary merge commit of your branch into the current main, and CI tests that combination. Second, CI starts only when something happens to the PR itself: it is opened, gets new commits, or is reopened.
+Two facts about the checks on pull requests explain our kitchen. First, GitHub builds a temporary merge commit, one that joins your branch with the current main, and the checks test that combination. Second, they start only when something happens to the PR itself: it is opened, gets new commits, or is reopened.
 
-So a new commit on main is not an event on your PR, and nothing reruns. A PR that was green yesterday may be red against today's main, like a soup card written before the pots moved. The Update branch button brings main into your branch and runs CI again. While a PR has a merge conflict (changes to the same lines that Git cannot combine alone), GitHub cannot build that temporary merge, so CI does not run at all.
+So a new commit on main is not an event on your PR, and nothing reruns. A PR that was green yesterday may be red against today's main, like a soup card written before the pots moved. The Update branch button brings main into your branch and runs the checks again. A merge conflict means two changes hit the same lines and Git cannot combine them alone. While a PR has one, GitHub cannot build that temporary merge, so the checks do not run at all.
 
 Next, we'll see what a human reviewer adds that a green tick cannot."""
 
@@ -71,7 +70,7 @@ L["aside"] = {
 }
 
 S[1]["h"] = "What a reviewer catches that tests miss"
-S[1]["body"] = """The kitchen taster checks the salt. The head chef notices the card that never says how much stock to use. In code, CI runs the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a confusing name.
+S[1]["body"] = """The kitchen taster checks the salt. The head chef notices the card that never says how much stock to use. In code, the checks run the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a confusing name.
 
 As the author:
 
@@ -101,11 +100,11 @@ A `CODEOWNERS` file writes the rule down. It maps paths (files and folders in th
 - Each line is a pattern, much like in `.gitignore` (the Part 2 file that lists what Git ignores), then owners such as `@username` or `@org/team-name`.
 - The last matching line wins, so put the broad `*` line first and the specific paths below it.
 - Owners need write access (permission to change the repository), or their line does nothing.
-- GitHub reads the file from the PR's base branch, so a change to it counts only after it is merged. A PR cannot pick its own reviewers.
+- GitHub reads the file from the PR's base branch (the one it merges into), so a change to it counts only after it is merged. A PR cannot pick its own reviewers.
 
 On its own the file only requests reviews. To make an owner's approval required, turn on Require review from Code Owners in a ruleset; Day 25 builds the ruleset for main. An approval from any one of a line's owners is enough. Give the file itself an owner too, with a line for `/.github/CODEOWNERS`. Otherwise a PR could change who owns what without the owners seeing it.
 
-Code owners work in public repositories on the Free plan; private ones need a paid plan. In your solo hello-devops every line names you, and you can't approve your own PR, so the file has no effect yet. Add it anyway: GitHub highlights any line with bad syntax when you open the file.
+In your solo hello-devops every line names you, and you can't approve your own PR, so the file has no effect yet. Add it anyway: GitHub highlights any line with bad syntax when you open the file.
 
 Owners decide who reads a change. Next: how long may a change wait on its branch?"""
 
@@ -114,7 +113,9 @@ S[3]["body"] = """Imagine two ways to keep the recipe book. In one, every cook a
 
 A team's answer, including where releases come from, is its branching strategy. Two styles are common.
 
-In trunk-based development, everyone merges small branches into one main branch, the trunk, at least once a day. A branch lives for hours or a day or two, and `main` is always in a state you could release. Unfinished work is merged too, but switched off behind a feature flag: a setting that turns code on or off without a new deploy. To deploy is to put a new version where users can reach it.
+In trunk-based development, everyone merges small branches into one main branch, the trunk, at least once a day. A branch lives for hours or a day or two, and `main` is always in a state you could release.
+
+Unfinished work is merged too, but switched off behind a feature flag: a setting that turns code on or off without a new deploy. To deploy is to put a new version where users can reach it.
 
 GitFlow uses several long-lived branches:
 
@@ -136,7 +137,7 @@ Continuous integration (CI), which Day 1 sketched, means everyone merges small c
 
 On GitHub, it is a fresh virtual machine (a computer simulated in software), started for the test and deleted afterwards (Day 24). [Martin Fowler's article on continuous integration](https://martinfowler.com/articles/continuousIntegration.html) is the classic description and worth an evening.
 
-CD has two meanings, often mixed up:
+CD has two meanings, often mixed up. Both end in production, the real system your users use:
 
 - Continuous delivery: every change that passes is ready to release. A person decides when it goes to production, often with one click.
 - Continuous deployment: every change that passes goes to production on its own. Nobody clicks anything.
@@ -148,21 +149,25 @@ The steps a change goes through form a pipeline. A typical one runs in this orde
 3. Publish: build a container image and push it to a registry.
 4. Deploy: release that image to staging (a copy of production for a last check), then to production.
 
-Dependencies are other people's code your app needs; linters are programs that check code for style and common mistakes. An image, from Part 5, is your app packed with everything it needs to run; a registry is an online store for images. Production is the real system your users use.
+Dependencies are other people's code your app needs. Linters are programs that check code for style and common mistakes.
+
+An image, from Part 5, is your app packed with everything it needs to run, and a registry is an online store for images.
 
 Build the image once, at the publish step. This rule is called **build once, deploy many**: the very same image, with the same digest from Day 18, moves from staging to production. A digest is a fingerprint of the image's exact contents. If you rebuilt it for production, the build could pull newer packages, and what you ship would no longer be what you tested.
 
-Automating these steps also moves the DORA metrics from Day 1, which measure how teams deliver: how often you deploy, how long a change takes to reach users, and more. Next: how the new version replaces the old one while users keep clicking."""
+Automating these steps also moves the delivery numbers from Day 1 (the DORA metrics), such as how often you deploy and how long a change takes to reach users. Next: how the new version replaces the old one while users keep clicking."""
 
 S[5]["h"] = "Swapping versions while people keep using the app"
-S[5]["body"] = """The naive deploy is like changing a menu mid-dinner by closing the doors, swapping every recipe and opening again. It stops the old version, then starts the new one. Users get errors during the gap, and if the new version is broken, every user hits it at once. Four common ways avoid one or both problems:
+S[5]["body"] = """The naive deploy is like changing a menu mid-dinner by closing the doors, swapping every recipe and opening again. It stops the old version, then starts the new one. Users get errors during the gap, and if the new version is broken, every user hits it at once.
+
+First, three words. A container is one running copy of an image. Kubernetes, which Part 10 teaches, runs containers across many servers and replaces them for you. Traffic means the requests users send. Four common ways avoid one or both problems:
 
 - Rolling: replace servers or containers a few at a time. Kubernetes does this by default (Day 40).
 - Blue/green: run the new version (green) next to the old one (blue), then switch all traffic at once.
 - Canary: send a small share of traffic, say 5%, to the new version, then grow it step by step.
 - Feature flags: ship new code switched off, then turn it on for some users with a setting.
 
-A container is one running copy of an image. Kubernetes, which Part 10 teaches, runs containers across many servers and replaces them for you. Traffic means the requests users send. So a canary is the new soup offered to a few tables first.
+A canary, then, is the new soup offered to a few tables first.
 
 Each one has a cost. Rolling needs no extra servers, but for a few minutes old and new versions serve users side by side, so both must work with the same database. Blue/green gives you an instant rollback (a quick return to the old version) and costs double the capacity during the switch. A canary limits the damage of a bad release, as long as you have good metrics to judge it (Part 12 builds them). Metrics are numbers measured over time, such as errors per minute. Feature flags need no deploy at all. You pay for them later, with `if` branches in the code that someone has to clean up.
 
@@ -191,17 +196,8 @@ Open your hello-devops repository on GitHub. Check that your first PR shows as m
 
 Next, we'll write our first workflow in GitHub Actions, GitHub's built-in way to run commands for you. It answers the question this lesson left open: who actually tastes the dish?"""
 
-L["analogy"] = ("A pull request also works like a suggested edit in a shared document. You write on your own copy, a colleague comments in the margin, "
-                "and the owner accepts it into the main text. CI is a spell checker that runs on every suggestion before anyone reads it, "
-                "and CODEOWNERS decides whose desk the suggestion lands on. A shared document checks each suggestion against the text as it is now. "
-                "GitHub checks a PR only when the PR changes, so two suggestions that were each fine can still clash once both are accepted.")
-L["mistake"] = ("Putting the catch-all `*` line at the bottom of CODEOWNERS looks tidy, and it quietly breaks every line above it. "
-                "The last matching line wins, so `*` now matches every file, and the platform team never hears about `infra/`. "
-                "Put `*` first, then the specific paths below it.")
-L["real_world"] = ("Picture the checkout service of PayLoop, a made-up payments company. Every change goes through a pull request. "
-                   "CODEOWNERS sends anything under `payments/` to the payments team, and the merge button turns on only after one of them approves and CI is green. "
-                   "Merges to `main` deploy to staging on their own. The same image reaches production when an engineer clicks approve, "
-                   "and that human click is why this counts as continuous delivery.")
+for k in ("analogy", "mistake", "real_world"):
+    L.pop(k, None)
 
 says = [
     "Now the two cooks from the opening, in real code. Make a scratch clone of hello-devops (a full copy in a new folder), so your real repository stays clean. Turn on the virtual environment from Day 2, the project's private set of Python packages. Then play teammate A, the cook who moves the stock. On a branch, rename `count_visit` to `record_visit` in `app.py` (the function and its one caller), then commit and run the tests.",
@@ -285,7 +281,9 @@ While you are in the merge settings, pick one merge method for the repository:
 
 Many trunk-based teams allow only squash. One PR becomes one commit on `main`, so `git log` stays readable and `git revert` undoes a whole PR in one step. The small commits are still visible on the PR page.
 
-Two side effects are worth knowing. After a squash merge, `git branch -d` on your laptop says the branch is not fully merged, because main got one new commit instead of yours; `git branch -D` is safe then. And Rebase and merge creates new commits on GitHub's side, so commits you signed on Day 9 lose their Verified badge. See [About merge methods on GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github)."""
+Two side effects are worth knowing. After a squash merge, `git branch -d` on your laptop says the branch is not fully merged, because main got one new commit instead of yours; `git branch -D` is safe then. And Rebase and merge creates new commits on GitHub's side, so commits you signed on Day 9 lose their Verified badge. See [About merge methods on GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github).
+
+One plan detail from the CODEOWNERS section: code owners work in public repositories on the Free plan, and private ones need a paid plan."""
 
 PATH.write_text(json.dumps(P, indent=1, ensure_ascii=False) + "\n")
 print("d23 written")

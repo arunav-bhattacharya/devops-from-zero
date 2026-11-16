@@ -1,7 +1,7 @@
 {
  "part": 2,
  "title": "Version control with Git",
- "intro": "You have used git for years as add, commit and push. This part opens it up. Day 8 shows what a commit really is and how to undo almost anything. Day 9 covers branches, merging, rebasing and working with a remote as part of a team. It comes now because every later part keeps its work in git, and from Part 6 on, every change reaches production through a pull request.",
+ "intro": "Git is the tool that keeps every saved version of a project, so nothing you commit is ever really lost. Day 8 opens a commit to see what Git actually saves, and shows how to undo almost any mistake. Day 9 covers branches, merging, rebasing and sharing work with a team through GitHub. It comes now because every later part keeps its work in Git, and from Part 6 on, every change reaches users through a pull request.",
  "lessons": [
   {
    "id": "d08",
@@ -410,9 +410,10 @@
    "id": "d09",
    "title": "Branches, merging, rebasing and remotes",
    "minutes": 50,
-   "goal": "By the end you can branch, merge and rebase on purpose, resolve a conflict calmly, tidy a branch before review, and work with a remote, including a force push that cannot destroy a teammate's work.",
+   "goal": "By the end you can branch, merge and rebase on purpose, resolve a conflict calmly, tidy a branch before review, and share work through a remote, including a force push that cannot destroy a teammate's work.",
+   "opening": "Picture two colleagues, Ana and Ben, who each take a copy of the shop's price list home for the weekend. Ana groups the thousands with commas. Ben moves the currency to the front. On Monday the list goes to the printer at noon, and both of them have changed the same line.\n\nSomeone has to combine the two copies. The easy move is to keep whichever one arrived last. That is how a weekend of work quietly disappears: \"last one wins\" feels fair, and nobody notices what was lost.\n\nLast time, you saw that a commit is a full snapshot and a branch is only a sticky note on one. That leaves a question open: what happens when two notes move apart?\n\nIn this lesson, we'll give work its own branch, join branches back together, and settle a real clash between Ana and Ben. Then we'll share it all through GitHub without destroying anyone's commits. Before we start, make a guess, and keep it in mind.",
    "guess": {
-    "q": "You rebase your feature branch onto the newest main. What happens to your commits?",
+    "q": "Rebase is a Git command that moves your branch's commits so they start from the newest main. What happens to those commits?",
     "options": [
      "They move on top of main and keep their IDs",
      "Git squashes them into a single merge commit",
@@ -420,16 +421,16 @@
      "They are deleted, and you redo the work"
     ],
     "answer": 2,
-    "why": "A commit's ID covers its parent. Rebase gives each commit a new parent, so git writes new commits and moves your branch to them; the old ones are left behind in the reflog."
+    "why": "A commit's ID covers its parent, and rebase gives each commit a new parent. So Git writes new commits and moves your branch to them, and the old ones are left behind in the reflog."
    },
    "terms": [
     {
      "term": "Merge base",
-     "plain": "The newest commit that two branches both contain. Git compares each side with it."
+     "plain": "The newest commit that two branches both contain; Git compares each side with it."
     },
     {
      "term": "Fast-forward",
-     "plain": "A merge where git only moves the branch pointer forward, because that branch had no new commits."
+     "plain": "A merge where Git only moves the branch pointer forward, because that branch had no new commits of its own."
     },
     {
      "term": "Merge commit",
@@ -437,7 +438,7 @@
     },
     {
      "term": "Merge conflict",
-     "plain": "Both sides changed the same lines in different ways, so git stops and asks you."
+     "plain": "Both sides changed the same lines in different ways, so Git stops and asks you to choose."
     },
     {
      "term": "Rebase",
@@ -445,21 +446,21 @@
     },
     {
      "term": "Remote-tracking branch",
-     "plain": "Your copy of where a remote branch was at your last fetch, such as origin/main."
+     "plain": "Your own record of where a branch on the shared copy was at your last fetch, such as origin/main."
     },
     {
      "term": "Upstream",
-     "plain": "The remote branch your local branch is linked to, used by a plain git pull or git push."
+     "plain": "The branch on the shared copy that your own branch is linked to, used by a plain git pull or git push."
     },
     {
      "term": "Force with lease",
-     "plain": "A force push that is refused if the remote branch moved since you last fetched."
+     "plain": "A force push that is refused if the shared branch moved since you last fetched."
     }
    ],
    "sections": [
     {
-     "h": "Branches and tags are pointers",
-     "body": "You branch so a half-done change can live next to main without touching it. Day 8 showed that a branch is a file holding one commit hash. So creating a branch writes 41 bytes, and git never copies your project to make one. The commands you need:\n\n- `git switch -c currency-first` creates a branch at the current commit and moves HEAD to it.\n- `git switch main` moves HEAD back and changes your files to match main's snapshot.\n- `git branch -v` lists the branches and the commit each one points to.\n- `git branch -d readme-fix` deletes a branch that is already merged. The commits stay; only the name goes.\n\nUncommitted edits come along when you switch, because they live in your working tree and staging area, which belong to no branch. That works as long as the other branch does not change the same files. If it does, git refuses to switch, so that it never overwrites your work. Commit or stash first.\n\nA tag is a pointer that never moves, so `v1.0.0` still names the same commit next year, when you need to rebuild or compare that release. Git has two kinds:\n\n- A lightweight tag is only a name for a commit: `git tag v0.1.0 0a622b0`.\n- An annotated tag is an object of its own, with a tagger, a date and a message: `git tag -a v1.0.0 -m \"First release\"`.\n\nI made one of each in the practice repo, and `git cat-file -t v1.0.0` printed `tag` for the annotated one, and `commit` for the lightweight one. Use annotated tags for releases, because they record who tagged what, and when. A plain `git push` does not send tags, so push each one by name: `git push origin v1.0.0`.",
+     "h": "Why a branch costs almost nothing, and a tag never moves",
+     "body": "Ben wants to try showing the currency first, without touching the price list everyone else uses. So he makes a branch, a second sticky note, and his half-done work grows next to main without touching it. Last time, you saw that a branch is a file holding one commit hash. Creating one writes 41 bytes, and Git never copies your project to make it. The commands you need:\n\n- `git switch -c currency-first` creates a branch at the current commit and moves HEAD (Git's \"you are here\" marker) to it.\n- `git switch main` moves HEAD back and changes your files to match main's snapshot.\n- `git branch -v` lists the branches and the commit each one points to.\n- `git branch -d readme-fix` deletes a branch that is already merged. The commits stay; only the name goes.\n\nWhat about edits you have not committed yet? They come along when you switch, because they live on your desk and in the tray. The working tree and the staging area belong to no branch. That works as long as the other branch does not change the same files. If it does, Git refuses to switch, so that it never overwrites your work. Commit or stash (shelve) your edits first.\n\nA tag is a sticky note glued down so it never moves. So `v1.0.0` still names the same commit next year, when you need to rebuild or compare that release, the version you handed to users. Git has two kinds:\n\n- A lightweight tag is only a name for a commit: `git tag v0.1.0 0a622b0`.\n- An annotated tag is an object of its own, with a tagger, a date and a message: `git tag -a v1.0.0 -m \"First release\"`.\n\nWith one of each in the practice repo, `git cat-file -t v1.0.0` printed `tag` for the annotated one, and `commit` for the lightweight one. Use annotated tags for releases, because they record who tagged what, and when. A plain `git push` (which sends your commits to GitHub) does not send tags. Push each one by name: `git push origin v1.0.0`.\n\nBranches let work drift apart. Sooner or later, it has to come back together. Next, we'll join two branches.",
      "refs": [
       {
        "title": "Pro Git: Tagging",
@@ -474,8 +475,8 @@
      ]
     },
     {
-     "h": "Fast-forward and three-way merges",
-     "body": "`git merge other` brings the commits of `other` into the branch you are on. What happens depends on the shape of the history:\n\n- Fast-forward: your branch gained no commits since `other` split off from it. Git moves your branch pointer forward to `other`'s newest commit and creates nothing new.\n- Three-way merge: both branches have new commits. Git finds the merge base, the newest commit both branches contain, and compares each side with it. It combines the two sets of changes into a merge commit with two parents.\n\nWhen I merged a one-commit branch into main in the practice repo, git printed `Updating d6aad6e..a18a0e8` and then `Fast-forward`. The three in \"three-way\" are the merge base and the two branch tips. A change made on only one side goes in as it is. Say the base has `TAX_RATE = 0.20`, main has `0.25`, and your branch still has `0.20`. Only main changed that line, so git takes `0.25`. Without the base, git would see two different lines and could not tell which side changed. A line that both sides changed, in different ways, is a conflict.\n\n`git merge-base main currency-first` prints that shared commit, `c711550` in the practice repo. Two flags change the default:\n\n- `--no-ff` makes a merge commit even when a fast-forward was possible, so the history shows where a branch's work came in. The Merge pull request button on GitHub works this way (Day 23).\n- `--ff-only` refuses to merge unless a fast-forward is possible. It is a safe way to update your `main` from `origin/main`: if your `main` has a stray commit of its own, git stops instead of making a surprise merge.",
+     "h": "Two ways to join branches: fast-forward and three-way",
+     "body": "`git merge other` brings the commits of `other` into the branch you are on. What Git does depends on the shape of the history, and there are only two shapes.\n\nIn the first, your branch gained no commits since `other` split off from it. Git simply moves your sticky note forward to `other`'s newest commit and creates nothing new. That is a fast-forward. In the practice repo, merging a one-commit branch into main printed `Updating d6aad6e..a18a0e8` and then `Fast-forward`.\n\nIn the second shape, both branches have new commits, like Ana's and Ben's weekend copies. Now Git needs a third version to compare against: the merge base, the newest commit both branches contain. Git compares each side with the base and combines the two sets of changes. It saves the result as a merge commit with two parents. In the office, it staples both drafts together with a cover note that says \"these two joined here\".\n\nWhy does Git need that third version? Say the base has `TAX_RATE = 0.20`, main has `0.25`, and your branch still has `0.20`. Without the base, Git would see two different lines and could not tell which side changed. With it, the answer is plain: only main changed that line, so Git takes `0.25`. The three in \"three-way\" are the merge base and the two branch tips, each branch's newest commit. A change made on only one side goes in as it is. A line that both sides changed, in different ways, is a conflict.\n\n`git merge-base main currency-first` prints that shared commit, `c711550` in the practice repo. Two options change the default:\n\n- `--no-ff` makes a merge commit even when a fast-forward was possible, so the history shows where a branch's work came in. GitHub's Merge pull request button works this way. (A pull request asks teammates to review a branch before it is merged; Day 23 covers them.)\n- `--ff-only` refuses to merge unless a fast-forward is possible. It is a safe way to update your `main` from `origin/main`, your record of GitHub's main. If your `main` has a stray commit of its own, Git stops instead of making a surprise merge.\n\nAna and Ben, though, changed the same line. Next, we'll see what Git does when it cannot decide.",
      "refs": [
       {
        "title": "Pro Git: Basic branching and merging",
@@ -490,8 +491,8 @@
      ]
     },
     {
-     "h": "Merge conflicts: reading the markers",
-     "body": "A conflict means git found two different edits to the same lines and will not guess which one you want. The merge stops halfway, `git status` lists the file under `both modified`, and the file holds both versions between markers:\n\n- `<<<<<<< HEAD` starts your version, from the branch you are on.\n- `=======` separates the two versions.\n- `>>>>>>> currency-first` ends the version from the branch you are merging in.\n\nEdit the file until it says what it should, and delete every marker line. `git diff --check` warns about any marker you missed. Then `git add` the file to mark it resolved, and `git commit` to finish the merge. You can always back out: `git merge --abort` puts everything back the way it was before the merge.\n\nTwo settings in the Files section make conflicts easier. With `merge.conflictStyle zdiff3`, git adds a block after `|||||||` that shows the lines as they were in the merge base. Seeing the original tells you what each side changed. With `rerere.enabled true` (rerere stands for reuse recorded resolution), git remembers how you resolved a conflict and reuses that resolution when the same conflict comes back.\n\nGit only checks that the text merged. It does not know if the code still works, so run the tests after you resolve a conflict.",
+     "h": "When Git stops and asks: reading conflict markers",
+     "body": "Back to Monday morning. Ana's line groups thousands and Ben's puts the currency first, on the same line of `price.py`. Git will not guess which one you want. The merge stops halfway, and `git status` lists the file under `both modified`. The file now holds both versions between markers, lines Git adds to show where each version starts and ends:\n\n- `<<<<<<< HEAD` starts your version, from the branch you are on.\n- `=======` separates the two versions.\n- `>>>>>>> currency-first` ends the version from the branch you are merging in.\n\nThe first time, it looks as if Git broke your file. It didn't. It is asking you a question.\n\nTo answer, edit the file until it says what it should, and delete every marker line. `git diff --check` warns about any marker you missed. Then `git add` the file to mark it resolved, and `git commit` to finish the merge. You can always back out: `git merge --abort` puts everything back the way it was before the merge.\n\nTwo settings in the Files section make conflicts easier:\n\n- With `merge.conflictStyle zdiff3`, Git adds a block after `|||||||` that shows the lines as they were in the merge base. Seeing the original tells you what each side changed.\n- With `rerere.enabled true`, Git remembers how you resolved a conflict. It reuses that resolution when the same conflict comes back.\n\nTests are small programs that check that your code still does what it should, and you will write them from Part 4 on. They matter here, because Git only checks the text.\n\n**Git checks that the text merged, not that the code works. Run the tests after every conflict.**\n\nA merge is one way to bring a branch up to date. Next, we'll meet the other way, which rewrites history.",
      "refs": [
       {
        "title": "Resolving a merge conflict using the command line (GitHub Docs)",
@@ -511,8 +512,8 @@
      ]
     },
     {
-     "h": "Rebase: replay your commits on a new base",
-     "body": "Merging main into your branch every few days works, but each merge adds a commit that says nothing about your work, and the history fills with them. Rebase is the other way to bring your branch up to date with main. `git rebase main`, run on your feature branch, works in three steps:\n\n1. It lists the commits on your branch that main does not have.\n2. It moves your branch to main's newest commit.\n3. It applies your commits again, one at a time, on top.\n\nEach replayed commit has a new parent. The parent is part of a commit's hash, so every replayed commit is a new commit with a new ID. The old ones still exist, but no branch points to them any more. You end up with a straight line of history, as if you had started your work today.\n\nIf a replayed commit conflicts, the rebase stops on that commit. You fix the file and `git add` it as in a merge, then run `git rebase --continue`, not `git commit`. `git rebase --abort` takes your branch back to where it was. Git replays the commits one at a time, so you may resolve conflicts more than once.\n\nOne rule matters more than the rest: do not rebase commits that other people already have. Their copies still hold the old commits, so their history and yours no longer match. If a teammate then merges your rebased branch, their history holds each of your changes twice, under old and new IDs. Someone has to clean that up by hand. Rebasing your own branch before anyone builds on it is fine, and that is how most teams use it.",
+     "h": "Rebase: retype your commits on a new base",
+     "body": "Picture Ben's branch a week later. Main has moved on, and Ben has merged main into his branch every few days to keep up. Each merge adds a commit that says nothing about his work, and his history fills up with them. Rebase is the other way to bring a branch up to date. `git rebase main`, run on your feature branch (a branch for one new piece of work), works in three steps:\n\n1. It lists the commits on your branch that main does not have.\n2. It moves your branch to main's newest commit.\n3. It applies your commits again, one at a time, on top.\n\nIn the office, a rebase retypes your pages so they start after the latest version of the report. The words stay the same, but they are new pages. Each replayed commit has a new parent. The parent is part of a commit's hash, so every replayed commit is a new commit with a new ID. The old ones still exist, but no branch points to them any more. You end up with a straight line of history, as if you had started your work today.\n\nIf a replayed commit conflicts, the rebase stops on that commit. You fix the file and `git add` it as in a merge, then run `git rebase --continue`, not `git commit`. `git rebase --abort` takes your branch back to where it was. Git replays the commits one at a time, so you may resolve conflicts more than once.\n\nOne rule matters more than the rest: do not rebase commits that other people already have. Anyone who copied your old pages now holds pages the report no longer has, so their history and yours no longer match. If a teammate then merges your rebased branch, their history holds each of your changes twice, under old and new IDs. Someone has to clean that up by hand. Unlike a typist, Git retypes in a second, which is exactly why this mistake is so easy to make.\n\nRebasing your own branch before anyone builds on it is fine, and that is how most teams use it. Rebase can do more than move commits, too. Next, we'll use it to tidy them.",
      "refs": [
       {
        "title": "Pro Git: Rebasing",
@@ -527,8 +528,8 @@
      ]
     },
     {
-     "h": "Clean up a branch before review",
-     "body": "Real work produces commits like `wip`, `fix typo` and `really fix it`. Before you ask for a review, an interactive rebase turns them into a short story a reviewer can follow. The command `git rebase -i main` opens your editor with one line per commit, oldest first. You change the word at the start of a line:\n\n- `pick` keeps the commit as it is.\n- `reword` keeps it and lets you edit the message.\n- `squash` melds it into the commit above it and lets you edit the combined message.\n- `fixup` melds it into the commit above it and drops its message.\n- `drop` removes it.\n\nYou can also move lines to reorder commits. Save and close the editor, and git replays the commits as you wrote them. In today's team scenario, changing `pick` to `fixup` on Ben's `wip` commit turns three commits into two. For fixes you make later there is a shortcut: commit with `git commit --fixup <commit>`, run `git rebase -i --autosquash main`, and git moves the fix under the right commit and marks it `fixup` for you.\n\n`git cherry-pick <commit>` copies one commit onto the branch you are on, as a new commit. Git takes the change that commit made compared with its parent, and applies the same change here. It is the tool for a hotfix (an urgent fix) that must also land on a release branch, which holds an older version you still support. It also saves one good commit from a branch you are about to throw away. Add `-x` and the new commit's message records which commit it came from.",
+     "h": "Tidy a branch before anyone reviews it",
+     "body": "Real work produces commits like `wip` (work in progress), `fix typo` and `really fix it`. Before a teammate reviews your branch, an interactive rebase turns them into a short story a reviewer can follow. The command `git rebase -i main` opens your editor with one line per commit, oldest first. You change the word at the start of a line:\n\n- `pick` keeps the commit as it is.\n- `reword` keeps it and lets you edit the message.\n- `squash` melds it into the commit above it and lets you edit the combined message.\n- `fixup` melds it into the commit above it and drops its message.\n- `drop` removes it.\n\nYou can also move lines to reorder commits. Save and close the editor, and Git replays the commits as you wrote them. Today's task uses a pretend team on your laptop: Ana, Ben, and a shared copy that plays GitHub. There, changing `pick` to `fixup` on Ben's `wip` commit turns three commits into two.\n\nFor fixes you make later there is a shortcut. Commit with `git commit --fixup <commit>`, then run `git rebase -i --autosquash main`. Git moves the fix under the right commit and marks it `fixup` for you.\n\nSometimes you want one commit, not a whole branch. `git cherry-pick <commit>` copies one commit onto the branch you are on, as a new commit. Git takes the change that commit made compared with its parent, and applies the same change here. It is the tool for a hotfix (an urgent fix) that must also land on a release branch, which holds an older version you still support. It also saves one good commit from a branch you are about to throw away. Add `-x` and the new commit's message records which commit it came from.\n\nPicture a security fix on main that customers on the older 2.3 release need too, without the newer features. The team cherry-picks it with `-x` onto `release-2.3`, tests it there, and ships it as `v2.3.5`.\n\nSo far, every branch has lived on your own laptop. Next, we'll share them.",
      "refs": [
       {
        "title": "Pro Git: Rewriting history",
@@ -548,8 +549,8 @@
      ]
     },
     {
-     "h": "Remotes: fetch, pull and push",
-     "body": "A remote is a name for another copy of the repository, usually on GitHub, and `git clone` calls it `origin`. Your repository also keeps remote-tracking branches such as `origin/main`. They record where the remote's branches were the last time you talked to it, and they only move when you fetch.\n\n- `git fetch` downloads new commits and moves the `origin/...` pointers. It never changes your own branches or files, so it is always safe.\n- `git pull` is a fetch followed by a merge or a rebase onto your branch's upstream, the remote branch it tracks.\n- `git push` uploads your commits and moves the branch on the remote. The first time, `git push -u origin json-logs` also sets the upstream.\n\nWhen you and the remote both added commits, and you have not told git what to do, `git pull` stops with `fatal: Need to specify how to reconcile divergent branches.` Choose once. I set `pull.rebase true`, which replays my unpushed commits on top of the fetched ones and keeps the history straight.\n\nAfter a rebase, git refuses a normal push, because the remote branch has commits yours no longer contains. A plain `git push --force` overwrites the remote branch no matter what. With `--force-with-lease`, git overwrites it only if it still points where your `origin/...` copy says. If a teammate pushed in the meantime, git rejects your push with `(stale info)`, and their commit survives. Use the lease every time. It trusts your last fetch, though, so an editor that fetches in the background can defeat it. Look at `git log origin/json-logs` before any force push.\n\nOpen-source projects work with forks. A fork is your own copy of someone else's repository on GitHub. You push branches to your fork and open pull requests back to the original, which you add as a second remote, usually called `upstream`. Here the word is a remote's name, a different use from a branch's upstream above.",
+     "h": "Sharing through a remote: fetch, pull and push",
+     "body": "Picture a second office across town with its own filing cabinet. That is GitHub. A remote is the name your repo uses for another copy of itself, like an entry in an address book. The command `git clone`, which copies a repo from GitHub to your laptop, names that entry `origin`.\n\nYour repo also keeps notes about the other office, called remote-tracking branches, such as `origin/main`. Each one records where a branch over there was the last time you talked to it. They only move when you fetch:\n\n- `git fetch` downloads new commits and moves the `origin/...` pointers. It never changes your own branches or files, so it is always safe.\n- `git pull` is a fetch followed by a merge or a rebase onto your branch's upstream, the remote branch it is linked to.\n- `git push` uploads your commits and moves the branch on the remote. The first time, `git push -u origin json-logs` also sets the upstream.\n\nWhen you and the remote both added commits, and you have not told Git what to do, `git pull` stops with `fatal: Need to specify how to reconcile divergent branches.` Choose once. I prefer `pull.rebase true`, which replays your unpushed commits on top of the fetched ones and keeps the history straight.\n\nAfter a rebase, Git refuses a normal push, because the remote branch has commits yours no longer contains. A plain `git push --force` overwrites the remote branch no matter what. Any commit a teammate pushed in the meantime silently disappears. With `--force-with-lease`, Git overwrites the branch only if it still points where your `origin/...` copy says. If a teammate pushed in the meantime, Git rejects your push with `(stale info)`, and their commit survives.\n\n**A plain force push trusts you; a lease checks first. Use the lease every time.**\n\nThe lease trusts your last fetch, though, so an editor that fetches in the background can defeat it. Look at `git log origin/json-logs` before any force push.\n\nEvery push has to prove who sent it. Next, we'll set that up, and sign our commits too.",
      "refs": [
       {
        "title": "Pro Git: Remote branches",
@@ -569,8 +570,8 @@
      ]
     },
     {
-     "h": "Logging in to GitHub, and signing your commits",
-     "body": "GitHub accepts pushes over HTTPS (the encrypted web protocol, Day 11) or SSH (Day 7). On Day 2, `gh auth login` set up HTTPS and told git to use gh's login, so pushing hello-devops already works. SSH is handy on machines without gh, such as a server. To use it, reuse your key from Day 7:\n\n1. Add the public key to your account: `gh ssh-key add ~/.ssh/id_ed25519.pub --title \"My Mac\"`, or on GitHub under Settings, SSH and GPG keys, New SSH key.\n2. Test it with `ssh -T git@github.com`. It answers `Hi USERNAME! You've successfully authenticated, but GitHub does not provide shell access.`\n3. Point the repository at the SSH address: `git remote set-url origin git@github.com:USERNAME/hello-devops.git`.\n\nAnyone can set `user.name` to anything, so the author line on a commit proves nothing. A signed commit carries a signature that only your private key can make, and anyone with the matching public key can check it. Git 2.34 and later can sign with the same SSH key:\n\n1. Tell git to sign with SSH, and which key: `gpg.format ssh` and `user.signingkey`. The names say gpg because git first signed only with GPG (GNU Privacy Guard), an older tool. The Files section has the commands.\n2. Set `commit.gpgsign true`, so every commit gets signed.\n3. Upload the public key again, this time as a signing key, because GitHub keeps login keys and signing keys in separate lists: `gh ssh-key add ~/.ssh/id_ed25519.pub --type signing`.\n\nGitHub then checks each commit's signature against your signing keys and marks the commit Verified. The signature lives inside the commit object: `git cat-file -p HEAD` shows a `gpgsig` block, which is also why signing changes a commit's hash. Turn signing on only once the key exists. If git cannot load the key, every commit fails with `fatal: failed to write commit object`.",
+     "h": "Proving who you are to GitHub, and signing commits",
+     "body": "GitHub accepts a push only from someone it can identify, like a mail room that wants to see your staff badge. It accepts two kinds of connection: HTTPS (the encrypted web protocol, Day 11) and SSH (the secure login from Day 7). On Day 2, `gh auth login` set up HTTPS and told Git to use the login of gh, GitHub's own tool. So pushing hello-devops already works. SSH is handy on machines without gh, such as a server. To use it, reuse your key from Day 7:\n\n1. Add the public key to your account: `gh ssh-key add ~/.ssh/id_ed25519.pub --title \"My Mac\"`, or on GitHub under Settings, SSH and GPG keys, New SSH key.\n2. Test it with `ssh -T git@github.com`. It answers `Hi USERNAME! You've successfully authenticated, but GitHub does not provide shell access.`\n3. Point the repository at the SSH address: `git remote set-url origin git@github.com:USERNAME/hello-devops.git`.\n\nThe badge proves who pushed. It says nothing about who wrote each commit. Anyone can set `user.name` to anything, so Ben could put \"Ana Silva\" on his commits and Git would not object. A signed commit carries a signature that only your private key can make. Anyone with the matching public key can check it. The private key is the secret half of your key pair, and the public key is the half you share. Git 2.34 and later can sign with the same SSH key:\n\n1. Tell Git to sign with SSH, and which key: `gpg.format ssh` and `user.signingkey`. The names say gpg because Git first signed only with GPG, an older tool. The Files section has the commands.\n2. Set `commit.gpgsign true`, so every commit gets signed.\n3. Upload the public key again, this time as a signing key, because GitHub keeps login keys and signing keys in separate lists: `gh ssh-key add ~/.ssh/id_ed25519.pub --type signing`.\n\nGitHub then checks each commit's signature against your signing keys and marks the commit Verified. The signature lives inside the commit object: `git cat-file -p HEAD` shows a `gpgsig` block. That is also why signing changes a commit's hash. Turn signing on only once the key exists. If Git cannot load the key, every commit fails with `fatal: failed to write commit object`.\n\nA signature has its limit too: it proves who made a commit, not that the commit is any good. That is still a job for reviews and tests.",
      "refs": [
       {
        "title": "Adding a new SSH key to your GitHub account (GitHub Docs)",
@@ -590,19 +591,18 @@
      ]
     }
    ],
-   "analogy": "Two people write chapters of the same report in shared folders. A merge staples their pages together and adds a cover note that says \"these two drafts joined here\". A rebase is retyping your pages so they start after the latest version of the report. The words stay the same, but they are new pages, and anyone who photocopied your old pages now holds pages the report no longer has. Unlike a typist, git does the retyping in a second, which is exactly why it is so easy to rebase pages other people already copied.",
    "diagram": "<svg viewBox=\"0 0 560 268\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Top: a three-way merge joins main and a feature branch with a merge commit M. Bottom: a rebase copies the feature commits D and E on top of main as new commits, and the old ones are left behind\"><text class=\"ts\" x=\"24\" y=\"22\" font-size=\"11\" text-anchor=\"start\">merge: a new commit with two parents</text><rect class=\"bx\" x=\"24\" y=\"34\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"t\" x=\"46\" y=\"54\" font-size=\"13\" text-anchor=\"middle\">A</text><line class=\"ln\" x1=\"68\" y1=\"49\" x2=\"84\" y2=\"49\" marker-end=\"url(#ar)\"/><rect class=\"bx\" x=\"88\" y=\"34\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"t\" x=\"110\" y=\"54\" font-size=\"13\" text-anchor=\"middle\">B</text><line class=\"ln\" x1=\"132\" y1=\"49\" x2=\"148\" y2=\"49\" marker-end=\"url(#ar)\"/><rect class=\"bxt\" x=\"152\" y=\"34\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"174\" y=\"54\" font-size=\"13\" text-anchor=\"middle\">C</text><line class=\"ln\" x1=\"126\" y1=\"64\" x2=\"154\" y2=\"82\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"152\" y=\"84\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"174\" y=\"104\" font-size=\"13\" text-anchor=\"middle\">D</text><line class=\"ln\" x1=\"196\" y1=\"99\" x2=\"212\" y2=\"99\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"216\" y=\"84\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"238\" y=\"104\" font-size=\"13\" text-anchor=\"middle\">E</text><line class=\"ln\" x1=\"196\" y1=\"49\" x2=\"276\" y2=\"49\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"260\" y1=\"90\" x2=\"282\" y2=\"66\" marker-end=\"url(#ar)\"/><rect class=\"bxp\" x=\"280\" y=\"34\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"302\" y=\"54\" font-size=\"13\" text-anchor=\"middle\">M</text><text class=\"ts\" x=\"238\" y=\"130\" font-size=\"11\" text-anchor=\"middle\">feature</text><text class=\"ts\" x=\"302\" y=\"80\" font-size=\"11\" text-anchor=\"middle\">main</text><text class=\"ts\" x=\"356\" y=\"46\" font-size=\"11\" text-anchor=\"start\">history shows both lines</text><text class=\"ts\" x=\"356\" y=\"64\" font-size=\"11\" text-anchor=\"start\">safe on shared branches</text><text class=\"ts\" x=\"24\" y=\"162\" font-size=\"11\" text-anchor=\"start\">rebase: your commits copied on top of main, with new IDs</text><rect class=\"bx\" x=\"24\" y=\"174\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"t\" x=\"46\" y=\"194\" font-size=\"13\" text-anchor=\"middle\">A</text><line class=\"ln\" x1=\"68\" y1=\"189\" x2=\"84\" y2=\"189\" marker-end=\"url(#ar)\"/><rect class=\"bx\" x=\"88\" y=\"174\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"t\" x=\"110\" y=\"194\" font-size=\"13\" text-anchor=\"middle\">B</text><line class=\"ln\" x1=\"132\" y1=\"189\" x2=\"148\" y2=\"189\" marker-end=\"url(#ar)\"/><rect class=\"bxt\" x=\"152\" y=\"174\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"174\" y=\"194\" font-size=\"13\" text-anchor=\"middle\">C</text><line class=\"ln\" x1=\"196\" y1=\"189\" x2=\"212\" y2=\"189\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"216\" y=\"174\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"238\" y=\"194\" font-size=\"13\" text-anchor=\"middle\">D'</text><line class=\"ln\" x1=\"260\" y1=\"189\" x2=\"276\" y2=\"189\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"280\" y=\"174\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"302\" y=\"194\" font-size=\"13\" text-anchor=\"middle\">E'</text><text class=\"ts\" x=\"302\" y=\"220\" font-size=\"11\" text-anchor=\"middle\">feature</text><line class=\"lnd\" x1=\"126\" y1=\"204\" x2=\"154\" y2=\"222\" marker-end=\"url(#ar)\"/><rect class=\"bx\" x=\"152\" y=\"224\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"t\" x=\"174\" y=\"244\" font-size=\"13\" text-anchor=\"middle\">D</text><line class=\"lnd\" x1=\"196\" y1=\"239\" x2=\"212\" y2=\"239\" marker-end=\"url(#ar)\"/><rect class=\"bx\" x=\"216\" y=\"224\" width=\"44\" height=\"30\" rx=\"10\"/><text class=\"t\" x=\"238\" y=\"244\" font-size=\"13\" text-anchor=\"middle\">E</text><text class=\"ts\" x=\"272\" y=\"243\" font-size=\"11\" text-anchor=\"start\">old D and E: only the reflog points here</text><text class=\"ts\" x=\"356\" y=\"186\" font-size=\"11\" text-anchor=\"start\">one straight line</text><text class=\"ts\" x=\"356\" y=\"204\" font-size=\"11\" text-anchor=\"start\">only for your own branch</text></svg>",
    "diagram_caption": "A merge adds one commit with two parents; a rebase copies your commits on top of main with new IDs.",
    "worked": {
     "title": "Resolve a real conflict between two branches",
     "steps": [
      {
-      "say": "Make a second copy of the practice repo, so today's work does not mix with Day 8's. Ana's commit on main and Ben's commit on `currency-first` both start from `c711550`, the merge base.",
+      "say": "Make a second copy of the practice repo, so today's work does not mix with last time's. Ana's commit on main and Ben's commit on `currency-first` both start from `c711550`, the merge base.",
       "code": "$ bash ~/code/devops-from-zero/labs/git/make-practice-repo.sh ~/code/git-merge-demo\nMade a practice repo in /Users/you/code/git-merge-demo:\n  8 commits: 7 on main, 1 more on the branch currency-first.\nNext:  cd \"/Users/you/code/git-merge-demo\" && git log --oneline --graph --all\n$ cd ~/code/git-merge-demo\n$ git log --oneline --graph --all -4\n* d6aad6e (HEAD -> main) Group thousands in prices\n| * d229503 (currency-first) Show the currency before the amount\n|/\n* c711550 Explain how to run the calculator\n* 09e16be Raise the tax rate to 25%\n$ git merge-base main currency-first\nc711550a5dd6a4cff3ec0eb68273f42a3d462a29",
       "lang": "console"
      },
      {
-      "say": "Merge Ben's branch into main. Both commits changed the same line of `price.py`, so git cannot decide alone and stops.",
+      "say": "Merge Ben's branch into main. Both commits changed the same line of `price.py`, so Git cannot decide alone, and it stops.",
       "code": "$ git merge currency-first\nAuto-merging price.py\nCONFLICT (content): Merge conflict in price.py\nAutomatic merge failed; fix conflicts and then commit the result.",
       "lang": "console"
      },
@@ -612,7 +612,7 @@
       "lang": "console"
      },
      {
-      "say": "Look at the clash. Above `=======` is main's version (HEAD), with commas for thousands. Below it is Ben's, with the currency first.",
+      "say": "Look at the clash. Above `=======` is main's version (HEAD), with commas for thousands. Below it is Ben's, with the currency first. The `sed -n '14,20p'` command prints lines 14 to 20 of the file.",
       "code": "$ sed -n '14,20p' price.py\n\ndef label(net):\n<<<<<<< HEAD\n    return f\"{total(net):,.2f} {CURRENCY}\"\n=======\n    return f\"{CURRENCY} {total(net):.2f}\"\n>>>>>>> currency-first",
       "lang": "console"
      },
@@ -627,7 +627,7 @@
       "lang": "console"
      },
      {
-      "say": "The graph shows the two lines of work joined again, and the merge commit object has two `parent` lines: main's old tip and Ben's commit. Run `git branch -d currency-first` now if you like, because the branch is fully merged.",
+      "say": "The graph shows the two lines of work joined again. The merge commit object has two `parent` lines: main's old tip and Ben's commit. Run `git branch -d currency-first` now if you like, because the branch is fully merged.",
       "code": "$ git log --oneline --graph -5\n*   25ff3e9 (HEAD -> main) Merge branch 'currency-first'\n|\\\n| * d229503 (currency-first) Show the currency before the amount\n* | d6aad6e Group thousands in prices\n|/\n* c711550 Explain how to run the calculator\n* 09e16be Raise the tax rate to 25%\n$ git cat-file -p HEAD | head -3\ntree d4386084c94d006452ad946a2569a35f723338de\nparent d6aad6e3057b617ea767db224d5348b52ca46c3f\nparent d2295036425ce18950e26087949488d2eaf547b5",
       "lang": "console"
      }
@@ -713,15 +713,13 @@
      "what": "Show the last commit and check its signature (needs an allowed signers file locally)."
     }
    ],
-   "mistake": "Plain `git push --force` after a rebase silently deletes any commit a teammate pushed to that branch in the meantime. Git does not warn you, and their work is gone from the remote. Use `git push --force-with-lease`, and when it says `stale info`, fetch and look at what changed before you push again.",
-   "real_world": "A security fix lands on `main`, and customers on the 2.3 release need it too, without the features that came after it. The release manager runs `git cherry-pick -x` with the fix's commit onto the `release-2.3` branch, CI tests it there, and the patch release ships with a tag `v2.3.5`. The `-x` note in the message lets anyone trace the copy back to the original pull request.",
    "task": {
     "title": "Play Ben: rebase, a conflict and a safe force push",
     "steps": [
-     "Run `make-team-scenario.sh` from the Files section. Read its last lines: you play Ben, in `~/code/git-team/ben`, and `origin.git` plays GitHub.",
+     "Run `make-team-scenario.sh` from the Files section. Read its last lines: you play Ben, in `~/code/git-team/ben`, and a folder called `origin.git` plays GitHub.",
      "As Ben, look at the graph, then fetch, then look again. Say in one sentence what Ana did while you were not looking.",
      "Rebase `json-logs` onto `origin/main`. When it stops on a conflict, keep both changes (Ana's log level and your JSON format), mark it resolved and continue.",
-     "Push the branch. Read why git refuses, then push again with a lease.",
+     "Push the branch. Read why Git refuses, then push again with a lease.",
      "Play Ana: in `../ana`, fetch, switch to `json-logs`, add one line to `README.md`, commit and push.",
      "Back as Ben, without fetching: use an interactive rebase to fold the `wip` commit into the one before it, then push with a lease. It should fail. Explain why.",
      "Fetch, look at the graph, and bring Ana's new commit onto your rewritten branch with `git cherry-pick`. Push with a lease again.",
@@ -743,11 +741,12 @@
    "recap": [
     "Branches and tags are pointers; tags never move, and annotated tags record who made them.",
     "A fast-forward only moves a pointer; a three-way merge compares both tips with the merge base and adds a commit with two parents.",
-    "Resolve a conflict by editing the file, deleting the markers, then `git add` and commit (or `rebase --continue`).",
-    "Rebase replays your commits with new IDs: great for your own branch, never for commits others have.",
+    "Resolve a conflict by editing the file and deleting the markers, then `git add` and commit (or `rebase --continue`), then run the tests.",
+    "Rebase replays your commits with new IDs: fine for your own branch, never for commits others have.",
     "Fetch is always safe; pull is fetch plus merge or rebase; after a rebase, push with `--force-with-lease`.",
-    "Push over HTTPS with gh or over SSH with your Day 7 key, and sign commits with that key to get the Verified badge."
+    "The limits: Git checks only text, not working code, and a signature proves who made a commit, not that it is right."
    ],
+   "closing": "We started with Ana and Ben's two copies of the price list and a noon deadline. Git joins such copies without guessing. It moves a note when it can, staples two drafts when it must, and stops to ask when both changed the same line. Rebase retypes your own pages, and a lease keeps your force push from erasing a teammate's work.\n\nIn the team task, before each push, run `git log --oneline --graph --all` and say out loud where `origin/json-logs` points.\n\nNext, we'll leave Git and ask how computers find each other at all. When you type a web address, how does your laptop know which machine to call?",
    "check": [
     {
      "q": "Your branch `fix-login` has two commits, and nobody has committed to main since you branched. You run `git switch main && git merge fix-login`. What happens?",
@@ -758,10 +757,10 @@
       "Git rebases fix-login onto main"
      ],
      "answer": 1,
-     "why": "Main has no commits of its own since the split, so git fast-forwards the main pointer and makes no new commit."
+     "why": "Main has no commits of its own since the split, so Git fast-forwards the main pointer and makes no new commit."
     },
     {
-     "q": "Halfway through `git rebase main`, git stops with a conflict in `config.yaml`. You fix the file. What do you run next?",
+     "q": "Halfway through `git rebase main`, Git stops with a conflict in `config.yaml`, a settings file. You fix the file. What do you run next?",
      "options": [
       "`git add config.yaml`, then `git rebase --continue`",
       "`git commit -am \"fix conflict\"`, then `git push`",
@@ -790,7 +789,7 @@
     },
     {
      "q": "What does git pull actually do?",
-     "a": "It runs `git fetch`, which downloads new commits and moves the remote-tracking branches like `origin/main`, and then it integrates the upstream branch into mine. By default that second step is a merge, and with `pull.rebase true` it is a rebase of my unpushed commits on top. If both sides have new commits and nothing is configured, current git stops and asks me to choose. When I want to look before I integrate, I run `git fetch` alone and inspect `git log HEAD..origin/main`."
+     "a": "It runs `git fetch`, which downloads new commits and moves the remote-tracking branches like `origin/main`. Then it brings the upstream branch into mine. By default that second step is a merge, and with `pull.rebase true` it is a rebase of my unpushed commits on top. If both sides have new commits and nothing is configured, current Git stops and asks me to choose. When I want to look before I integrate, I run `git fetch` alone and inspect `git log HEAD..origin/main`."
     },
     {
      "q": "Why use --force-with-lease instead of --force?",
@@ -799,7 +798,7 @@
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Something is broken, and you know an older commit where it still worked. `git bisect` finds the first bad commit by binary search. It checks out the commit halfway between good and bad, you say which one it is, and it halves the range again. Ten rounds cover about a thousand commits.\n\nTry it in a fresh practice repo. The question: which commit moved the tax rate away from 20%?\n\n1. Run `git bisect start`, then `git bisect bad main` and `git bisect good 0a622b0`. Git checks out `16cc719`, about halfway, and says `2 revisions left to test after this`.\n2. You could test each commit by hand and answer `git bisect good` or `git bisect bad`. Or hand git a command that answers for you: `git bisect run grep -q \"TAX_RATE = 0.20\" price.py`.\n3. Git runs the command on three commits and prints `09e16be8b89955258da3da735bc530fb8594f563 is the first 'bad' commit`, followed by Ben's commit and its message.\n4. `git bisect reset` takes HEAD back to where you started.\n\nThe command you give `bisect run` decides everything, so know its rules. Exit code 0 means good. Any code from 1 to 127 means bad, except 125. Exit 125 means \"this commit cannot be tested, skip it\", which you need when some commits do not even build. The docs show the pattern `git bisect run sh -c \"make || exit 125; ~/check_test_case.sh\"`. For hello-devops, `git bisect run pytest -q test_app.py` would work, as long as the test you care about exists in the good commit.\n\nBisect also explains why teams care about small commits that each build and pass the tests. If one commit mixes a refactor, a feature and a config change, bisect can only point at all three at once. If every commit does one thing, the commit bisect names is usually the answer.\n\n`git bisect log` prints your answers so far. If you marked a commit wrongly, save that log to a file, delete the wrong line, and run `git bisect reset` and then `git bisect replay` on the file. The full list of options is in the [git-bisect reference](https://git-scm.com/docs/git-bisect)."
+    "body": "Something is broken, and you know an older commit where it still worked. The command `git bisect` finds the first bad commit by binary search, the way you find a word in a paper dictionary. It checks out the commit halfway between good and bad, you say which one it is, and it halves the range again. Ten rounds cover about a thousand commits.\n\nTry it in a fresh practice repo. The question: which commit moved the tax rate away from 20%?\n\n1. Run `git bisect start`, then `git bisect bad main` and `git bisect good 0a622b0`. Git checks out `16cc719`, about halfway, and says `2 revisions left to test after this`.\n2. You could test each commit by hand and answer `git bisect good` or `git bisect bad`. Or hand Git a command that answers for you: `git bisect run grep -q \"TAX_RATE = 0.20\" price.py`.\n3. Git runs the command on three commits and prints `09e16be8b89955258da3da735bc530fb8594f563 is the first 'bad' commit`, followed by Ben's commit and its message.\n4. `git bisect reset` takes HEAD back to where you started.\n\nThe command you give `bisect run` decides everything, so know its rules. Its exit code, the number every command reports when it ends, is the answer. Exit code 0 means good. Any code from 1 to 127 means bad, except 125. Exit 125 means \"this commit cannot be tested, skip it\", which you need when some commits do not even build. The docs show the pattern `git bisect run sh -c \"make || exit 125; ~/check_test_case.sh\"`. For hello-devops, `git bisect run pytest -q test_app.py` would work, as long as the test you care about exists in the good commit.\n\nBisect also explains why teams care about small commits that each build and pass the tests. If one commit mixes a refactor, a feature and a config change, bisect can only point at all three at once. If every commit does one thing, the commit bisect names is usually the answer.\n\n`git bisect log` prints your answers so far. If you marked a commit wrongly, save that log to a file, delete the wrong line, and run `git bisect reset` and then `git bisect replay` on the file. The full list of options is in the [git-bisect reference](https://git-scm.com/docs/git-bisect).\n\nTwo names from today, for the curious: rerere stands for reuse recorded resolution, and GPG is GNU Privacy Guard."
    },
    "sources": [
     {
@@ -818,7 +817,12 @@
      "title": "git-bisect reference",
      "url": "https://git-scm.com/docs/git-bisect"
     }
-   ]
+   ],
+   "aside": {
+    "title": "What is a fork, and why is there a second upstream?",
+    "after": 5,
+    "body": "Open-source projects, which anyone may read and improve, work with forks. A fork is your own copy of someone else's repository on GitHub. You push branches to your fork and open pull requests back to the original. You add the original as a second remote, usually called `upstream`. Here the word is a remote's name, a different use from a branch's upstream."
+   }
   }
  ],
  "recap": [
@@ -826,32 +830,32 @@
   "The working tree, the staging area and the repository are three separate places; `git status` and `git diff` compare them.",
   "Branches, tags and HEAD are pointers to commits, so a branch costs almost nothing.",
   "Undo by situation: restore for edits, amend or reset for unpushed commits, revert for shared ones, reflog when something looks lost.",
-  "`.gitignore` only keeps out files git does not track yet, and `git check-ignore -v` explains every match.",
+  "`.gitignore` only keeps out files Git does not track yet, and `git check-ignore -v` explains every match.",
   "A fast-forward only moves a pointer; a three-way merge compares both tips with the merge base and adds a commit with two parents.",
-  "A conflict is git asking you to choose: edit, delete the markers, `git add`, and run the tests.",
-  "Rebase replays commits with new IDs: tidy and update your own branch with it, never commits other people have.",
+  "A conflict is Git asking you to choose: edit the file, delete the markers, `git add` it, and run the tests.",
+  "Rebase replays commits with new IDs: use it to tidy and update your own branch, never on commits other people have.",
   "Fetch is always safe, pull is fetch plus merge or rebase, and a rewritten branch goes up with `--force-with-lease`.",
   "Push with gh's HTTPS login or your SSH key, and sign commits with that key to get GitHub's Verified badge."
  ],
  "flashcards": [
   {
-   "front": "What does a commit object contain?",
+   "front": "What is inside a commit?",
    "back": "A pointer to one tree (the snapshot), its parent commit or commits, the author and committer with dates, and the message."
   },
   {
-   "front": "Does git store each commit as a diff?",
-   "back": "No. Each commit is a full snapshot; unchanged files reuse the same blob, and diffs are worked out when you ask."
+   "front": "Does Git store each commit as a list of changes?",
+   "back": "No. Each commit is a full snapshot. Unchanged files reuse the same blob, and Git works out the changes only when you ask."
   },
   {
-   "front": "What is a branch, physically?",
-   "back": "A tiny ref that holds one commit hash and moves forward when you commit on it."
+   "front": "What is a branch, on disk?",
+   "back": "A tiny file that holds one commit hash and moves forward when you commit on it."
   },
   {
    "front": "What does `.git/HEAD` usually contain?",
    "back": "The current branch's name, such as `ref: refs/heads/main`."
   },
   {
-   "front": "`git diff` vs `git diff --staged`?",
+   "front": "`git diff` or `git diff --staged`: which shows what?",
    "back": "`git diff` shows changes not staged yet; `--staged` shows what the next commit will contain."
   },
   {
@@ -859,20 +863,20 @@
    "back": "`git revert <commit>`: a new commit that undoes it, without rewriting shared history."
   },
   {
-   "front": "`reset --soft` vs `--mixed` vs `--hard`?",
-   "back": "All move the branch. Soft keeps the changes staged, mixed keeps them unstaged, hard throws them away."
+   "front": "`reset --soft`, `--mixed` and `--hard`: how do they differ?",
+   "back": "All three move the branch. Soft keeps the changes staged, mixed keeps them unstaged, and hard throws them away."
   },
   {
    "front": "How do you get back a commit after a bad `reset --hard`?",
    "back": "Find it in `git reflog`, then reset to it or put a new branch on it."
   },
   {
-   "front": "Why doesn't adding `.env` to `.gitignore` stop git tracking it?",
+   "front": "Why doesn't adding `.env` to `.gitignore` stop Git tracking it?",
    "back": "Ignore rules only apply to untracked files. Run `git rm --cached .env` and commit."
   },
   {
    "front": "When is a merge a fast-forward?",
-   "back": "When your branch has no new commits since the other one split off, so git only moves the pointer."
+   "back": "When your branch has no new commits since the other one split off, so Git only moves the pointer."
   },
   {
    "front": "What is the merge base?",
@@ -887,20 +891,20 @@
    "back": "Each replayed commit gets a new parent, and the parent is part of the hash."
   },
   {
-   "front": "`squash` vs `fixup` in an interactive rebase?",
+   "front": "`squash` or `fixup` in an interactive rebase: what is the difference?",
    "back": "Both meld a commit into the one above it; squash lets you edit the combined message, fixup drops its message."
   },
   {
-   "front": "`git fetch` vs `git pull`?",
-   "back": "Fetch downloads commits and moves the origin/... pointers only. Pull also merges or rebases your branch."
+   "front": "`git fetch` or `git pull`: what does each do?",
+   "back": "Fetch downloads commits and moves only the origin/... pointers. Pull also merges or rebases your branch."
   },
   {
    "front": "What does `--force-with-lease` check before it overwrites?",
    "back": "That the remote branch still points where your `origin/<branch>` says. If not, the push fails as stale."
   },
   {
-   "front": "Lightweight vs annotated tag?",
-   "back": "Lightweight is only a name; annotated is an object with tagger, date and message. Use annotated for releases."
+   "front": "Lightweight or annotated tag: what is the difference?",
+   "back": "A lightweight tag is only a name; an annotated tag is an object with tagger, date and message. Use annotated tags for releases."
   },
   {
    "front": "Which three settings turn on SSH commit signing?",
@@ -912,13 +916,13 @@
    "title": "Pro Git, the free book on git",
    "url": "https://git-scm.com/book/en/v2",
    "kind": "read",
-   "why": "The official book; chapters 2, 3 and 10 go deeper into everything in Days 8 and 9, internals included."
+   "why": "The official book on Git, free to read; chapters 2, 3 and 10 go deeper into everything in Days 8 and 9."
   },
   {
    "title": "Version control (git), MIT Missing Semester lecture 6",
    "url": "https://www.youtube.com/watch?v=2sjqTHE0zok",
    "kind": "watch",
-   "why": "One lecture that builds git from its data model up, the same order as Day 8."
+   "why": "One lecture that builds Git up from how it stores data, in the same order as Day 8."
   },
   {
    "title": "Missing Semester notes: Version control and Git",
@@ -936,7 +940,7 @@
    "title": "Git for professionals: tools and concepts (freeCodeCamp)",
    "url": "https://www.youtube.com/watch?v=Uszj_k0DGsg",
    "kind": "watch",
-   "why": "A practical course on interactive rebase, cherry-pick, the reflog and merge strategies."
+   "why": "A practical video course on interactive rebase, cherry-pick, the reflog and the ways to merge."
   },
   {
    "title": "Git merge vs rebase: everything you need to know (ByteByteGo)",
@@ -948,13 +952,13 @@
    "title": "gitdatamodel: Git's data model",
    "url": "https://git-scm.com/docs/gitdatamodel",
    "kind": "docs",
-   "why": "The official description of objects, references and the index, in a few pages."
+   "why": "The official description of Git's objects, pointers and staging area, in a few pages."
   },
   {
    "title": "Git cheat sheet (git-scm.com)",
    "url": "https://git-scm.com/cheat-sheet",
    "kind": "docs",
-   "why": "The official one-page list of everyday commands, handy to keep open."
+   "why": "The official one-page list of everyday commands, handy to keep open while you work."
   },
   {
    "title": "GitHub Skills: Resolve merge conflicts",
@@ -966,7 +970,7 @@
    "title": "About commit signature verification (GitHub Docs)",
    "url": "https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification",
    "kind": "docs",
-   "why": "What Verified means on GitHub, and how SSH, GPG and S/MIME signatures differ."
+   "why": "What Verified means on GitHub, and how the different kinds of signatures compare."
   }
  ],
  "quiz": [
@@ -979,10 +983,10 @@
     "`git rm --force config.py`"
    ],
    "answer": 1,
-   "why": "`--staged` moves the file out of the staging area and leaves your edits in the working tree; plain restore would throw them away."
+   "why": "`--staged` takes the file out of the staging area and leaves your edits in the working tree; plain restore would throw them away."
   },
   {
-   "q": "Which git object stores a file's name?",
+   "q": "Which Git object stores a file's name?",
    "options": [
     "The blob with its contents",
     "The commit that includes it",
@@ -990,7 +994,7 @@
     "The reflog entry for it"
    ],
    "answer": 2,
-   "why": "A blob holds only the bytes; the tree for the folder maps each name to a blob or a subtree."
+   "why": "A blob holds only the bytes; the tree for the folder links each name to a blob or a subtree."
   },
   {
    "q": "After `git reset --hard HEAD~3`, a commit you made an hour ago is missing from `git log`. What do you run first?",
@@ -1001,10 +1005,10 @@
     "`git revert HEAD~3`"
    ],
    "answer": 0,
-   "why": "The reflog lists where HEAD has been, so the lost commit's hash is there and you can reset to it or branch from it."
+   "why": "The reflog lists where HEAD has been, so the lost commit's hash is there, and you can reset to it or branch from it."
   },
   {
-   "q": "A teammate committed `prod.env` with a real API key and pushed it to main yesterday. What is the complete fix?",
+   "q": "A teammate committed `prod.env`, a file with a real API key (a password for a program), and pushed it to main yesterday. What is the complete fix?",
    "options": [
     "Add `prod.env` to `.gitignore` and push",
     "Amend the last commit and force-push it",
@@ -1023,7 +1027,7 @@
     "Only when you pass `--ff-only`"
    ],
    "answer": 1,
-   "why": "With new commits on both sides, git does a three-way merge and records it with a two-parent commit; otherwise it fast-forwards."
+   "why": "With new commits on both sides, Git does a three-way merge and records it with a two-parent commit; otherwise it fast-forwards."
   },
   {
    "q": "`git pull` stops with `fatal: Need to specify how to reconcile divergent branches.` What does it mean?",
@@ -1034,7 +1038,7 @@
     "You have uncommitted changes in the tree"
    ],
    "answer": 2,
-   "why": "Both sides moved, so git needs to know whether to merge or rebase; setting `pull.rebase` answers that once."
+   "why": "Both sides moved, so Git needs to know whether to merge or rebase; setting `pull.rebase` answers that once."
   },
   {
    "q": "A security fix on main must also go to the `release-2.3` branch, without the features merged since. Which command fits?",
@@ -1059,7 +1063,7 @@
    "why": "The rebase gave your commits new IDs; the lease replaces the remote branch only if nobody else pushed to it since your last fetch."
   },
   {
-   "q": "Both lab scripts use `set -euo pipefail`. What does the `-e` part do?",
+   "q": "Both lab scripts start with `set -euo pipefail`. What does the `-e` part do?",
    "options": [
     "Stops the script when a command fails",
     "Prints each command before it runs",
@@ -1067,7 +1071,7 @@
     "Ignores errors inside pipes"
    ],
    "answer": 0,
-   "why": "`-e` exits on the first failing command; `-u` catches unset variables and `pipefail` makes a failed pipe count as a failure.",
+   "why": "`-e` exits on the first failing command; `-u` catches unset variables, and `pipefail` makes a failed pipe count as a failure.",
    "from": "Part 1"
   },
   {
@@ -1079,7 +1083,7 @@
     "Create a new repository with `gh repo create`"
    ],
    "answer": 2,
-   "why": "gh can act as git's credential helper for github.com, so git pushes with your existing gh login instead of a password.",
+   "why": "gh can hand your GitHub login to Git, so Git pushes with your existing gh login instead of a password.",
    "from": "Part 0"
   }
  ]
