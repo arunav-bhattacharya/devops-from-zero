@@ -47,6 +47,7 @@
   --top: 52px;
   --side: 284px;
   --measure: 36em;
+  --wide-w: 960px;    /* the reading column when a rail is folded */
   --r: 4px;
 }
 @media (prefers-color-scheme: dark) {
@@ -316,7 +317,7 @@ input.field.date { max-width: 200px; }
 .plate .pd { color: var(--accent); font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; flex: none; }
 .plate .pp { color: var(--mute); padding-left: 14px; border-left: 1px solid var(--rule); min-width: 0; }
 .lhead h1 { font-size: clamp(30px, 3.3vw, 42px); line-height: 1.14; max-width: 22ch; }
-.goal { font-size: 19px; line-height: 1.55; color: var(--mute); margin: 0; max-width: 36em; }
+.goal { font-size: 19px; line-height: 1.55; color: var(--mute); margin: 0; max-width: var(--measure); }
 .lmeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
 .timer { font: 500 13px var(--f-ui); font-variant-numeric: tabular-nums; color: inherit; }
 .timer.live { color: var(--amber); font-weight: 600; }
@@ -481,26 +482,33 @@ pre .err { color: inherit; background: none; }
 .score { font: 600 26px/1.2 var(--f-display); letter-spacing: -0.015em; }
 
 .interview details, .deeper { border-top: 1px solid var(--rule); }
-.interview > div { border-bottom: 1px solid var(--rule); }
+.interview > div:not(.block-h) { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 .interview details:first-child { border-top: 0; }
-.interview summary, .deeper > summary { cursor: pointer; padding: 13px 0; list-style: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: baseline; }
+/* the question is one run of text (it may hold inline code), so the summary is a block and the + sits in its right padding */
+.interview summary, .deeper > summary { cursor: pointer; padding: 13px 36px 13px 0; list-style: none; display: block; position: relative; }
 .interview summary { font: 600 16.5px/1.5 var(--f-read); }
 .interview summary:hover { color: var(--accent); }
 .interview summary::-webkit-details-marker, .deeper > summary::-webkit-details-marker { display: none; }
-.interview summary::after, .deeper > summary::after { content: "+"; font: 400 18px/1 var(--f-mono); color: var(--accent); }
+.interview summary::after, .deeper > summary::after { content: "+"; position: absolute; right: 4px; top: 17px; font: 400 18px/1 var(--f-mono); color: var(--accent); }
 .interview details[open] summary::after, .deeper[open] > summary::after { content: "\2212"; }
 .interview .a, .deeper .inner { padding: 0 0 20px; }
 .deeper { scroll-margin-top: calc(var(--top) + 20px); border-bottom: 1px solid var(--rule); }
-.deeper > summary { padding: 18px 0; }
+.deeper > summary { padding: 18px 36px 18px 0; }
+.deeper > summary::after { top: 22px; }
 .deeper > summary > span { display: grid; gap: 4px; }
 .deeper > summary h2 { font-size: 20px; }
 .deeper > summary:hover h2 { color: var(--accent); }
 
-.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid var(--rule); padding-top: 22px; }
-.pager a { display: grid; gap: 4px; text-decoration: none; color: var(--ink); align-content: start; }
-.pager .nx { text-align: right; justify-items: end; grid-column: 2; }
-.pager b { font: 600 17.5px/1.3 var(--f-display); letter-spacing: -0.008em; transition: color 0.12s; }
-.pager a:hover b { color: var(--accent); }
+/* previous and next are buttons: previous outlined, next filled, because next is where the reader is going */
+.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; border-top: 1px solid var(--rule); padding-top: 24px; align-items: stretch; }
+.pager a { display: grid; gap: 4px; align-content: center; min-width: 0; text-decoration: none; padding: 14px 18px 15px; border: 1px solid var(--rule-3); border-radius: 6px; background: var(--panel); color: var(--ink); transition: border-color 0.12s, background-color 0.12s; }
+.pager a:hover { border-color: var(--accent); }
+.pager .nx { text-align: right; justify-items: end; grid-column: 2; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.pager .nx .label { color: color-mix(in srgb, var(--accent-ink) 84%, transparent); }
+.pager .nx:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.pager b { font: 600 16.5px/1.3 var(--f-display); letter-spacing: -0.008em; transition: color 0.12s; }
+.pager a:not(.nx):hover b { color: var(--accent); }
+@media (max-width: 560px) { .pager { grid-template-columns: 1fr; } .pager .nx { grid-column: 1; } .pager > span:empty { display: none; } }
 
 /* toc */
 .toc { position: sticky; top: calc(var(--top) + 28px); align-self: start; display: none; font-family: var(--f-ui); max-height: calc(100vh - 120px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
@@ -658,41 +666,46 @@ kbd { font: 400 11px/1 var(--f-mono); color: var(--faint); border: 1px solid var
 @media (max-width: 640px) { .sx { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); } .sx-box { max-height: calc(100vh - 20px); } .sx-r { grid-template-columns: minmax(0, 1fr); gap: 2px; } .sx-foot { display: none; } }
 body.sx-on { overflow: hidden; }
 
-/* hide the course rail on wide screens; the reading column takes the room, and "On this page" can show */
+/* hide the course rail on wide screens; "On this page" can then show from a narrower screen */
 @media (min-width: 1100px) {
   body.side-off .side { display: none; }
-  body.side-off main { margin-left: 0; padding-left: max(32px, env(safe-area-inset-left, 0px)); }
   body.side-off .lesson.toc-on { grid-template-columns: minmax(0, 1fr) 216px; }
   body.side-off .lesson.toc-on .toc { display: grid; gap: 8px; }
 }
-/* fold the "On this page" list */
+/* fold the "On this page" list: it shrinks to one small button, pointing right while open and left when folded */
 .toc-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 4px 0; background: none; border: 0; cursor: pointer; color: var(--faint); text-align: left; }
 .toc-h:hover, .toc-h:hover .label { color: var(--ink); }
 .toc-h svg { transition: transform 0.15s; flex: none; }
-.lesson.toc-shut .toc ol { display: none; }
-
-/* when the course rail or "On this page" is folded, the content grows into the room it frees:
-   listings, diagrams and videos take it all, and the text takes a longer line */
-body.side-off .page { max-width: 1200px; }
-body.side-off .lesson, .lesson.toc-shut { max-width: 1240px; }
-body.side-off .lmain, .lesson.toc-shut .lmain { max-width: 1000px; --measure: 42em; }
-body.side-off .hero .sub { max-width: 46em; }
-
-/* "On this page" points right while open (fold it to the side) and left when folded (bring it back) */
 .toc-h[aria-expanded="false"] svg { transform: rotate(180deg); }
-/* folded, it shrinks to one small button and the content takes the rest of the column */
-@media (min-width: 1360px) { .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 36px; gap: 20px; } }
-@media (min-width: 1100px) { body.side-off .lesson.toc-on.toc-shut { grid-template-columns: minmax(0, 1fr) 36px; gap: 20px; } }
+.lesson.toc-shut .toc ol { display: none; }
 .lesson.toc-shut .toc .label { display: none; }
 .lesson.toc-shut .toc-h { justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--rule); border-radius: 5px; background: var(--panel); color: var(--mute); }
 .lesson.toc-shut .toc-h:hover { border-color: var(--rule-3); color: var(--ink); }
 
-/* folded rails leave a margin: the content does not run to the edge of the screen */
+/* A folded rail gives its room to the page. The reading column (text, code, diagrams, videos)
+   widens to --wide-w and sits in the middle of the room that is left, with a clear margin on
+   both sides, so nothing starts at the edge of the screen. */
 @media (min-width: 1100px) {
-  body.side-off main { padding-left: max(clamp(40px, 6vw, 112px), env(safe-area-inset-left, 0px)); padding-right: max(clamp(32px, 6vw, 112px), env(safe-area-inset-right, 0px)); }
-  body.side-off .lesson.toc-on.toc-shut { gap: 56px; }
+  body.side-off main { margin-left: 0; --measure: var(--wide-w); padding-left: max(clamp(48px, 6vw, 112px), env(safe-area-inset-left, 0px)); padding-right: max(clamp(48px, 6vw, 112px), env(safe-area-inset-right, 0px)); }
+  body.side-off .page { max-width: 1200px; }
+  body.side-off .page:is(.w920, .w960) { max-width: 1060px; }
+  body.side-off .page.w860 { max-width: 860px; }
+  body.side-off .hero .sub { max-width: var(--wide-w); }
+  body.side-off .lesson { max-width: 1240px; }
+  body.side-off .lmain { width: 100%; max-width: var(--wide-w); justify-self: center; }
+  body.side-off .lmain :is(.task ol, .hint, .donewhen > div) { max-width: none; }
+  /* both folded: an empty column the size of the button balances it, so the column is truly centred */
+  body.side-off .lesson.toc-on.toc-shut { grid-template-columns: 36px minmax(0, 1fr) 36px; gap: 20px; }
+  body.side-off .lesson.toc-on.toc-shut > .lmain { grid-column: 2; }
+  body.side-off .lesson.toc-on.toc-shut > .toc { grid-column: 3; }
 }
-@media (min-width: 1360px) { .lesson.toc-on.toc-shut { gap: 56px; } }
+/* only "On this page" folded (it shows beside the course rail from 1360px) */
+@media (min-width: 1360px) {
+  .lesson.toc-on.toc-shut { grid-template-columns: 36px minmax(0, 1fr) 36px; gap: 20px; }
+  .lesson.toc-on.toc-shut > .lmain { grid-column: 2; width: 100%; max-width: var(--wide-w); justify-self: center; --measure: var(--wide-w); }
+  .lesson.toc-on.toc-shut > .toc { grid-column: 3; }
+  .lesson.toc-on.toc-shut .lmain :is(.task ol, .hint, .donewhen > div) { max-width: none; }
+}
 
 /* phones: headings a step smaller, so long tool names fit */
 @media (max-width: 560px) { .lsec h2, .block-h h2 { font-size: 22px; } .lmain { gap: 52px; } .page { gap: 44px; } .task { padding: 18px 16px 20px; } .quiz > .q, .card { padding-left: 16px; padding-right: 16px; } }
