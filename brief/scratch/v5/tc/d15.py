@@ -42,8 +42,8 @@ S[0]["body"] = r"""A script is a text file of instructions that the computer fol
 
 Bash is very good at starting programs and wiring their output together. It gets painful once you need to keep data around and make decisions about it. Move to Python when a script needs any of these:
 
-- Data you look things up in, such as a count for each page of a website. The bash 3.2 on your Mac has no associative arrays (lookup tables) at all.
-- JSON, a common text format for data, or an HTTP API, a web address that programs ask for data. One `jq` call is fine (jq reads JSON). Five of them glued together with `$(...)` are a program in disguise.
+- Lookup data, such as a count for each page of a website. The bash 3.2 on your Mac has no associative arrays (lookup tables) at all.
+- JSON, a common text format for data, or an HTTP API, a web address that programs ask for data. One `jq` call is fine (jq reads JSON). Five of them glued together are a program in disguise.
 - Different handling for a missing file, a timeout or a 404 ("page not found").
 - Tests. pytest (Day 16) is far easier than testing a shell script.
 - The same behaviour on macOS and Linux. `sed -i` and `date -d` differ between the two; Python's `re` and `datetime` do not.
@@ -78,16 +78,16 @@ L["aside"] = {
 }
 
 S[2]["h"] = "The shape every helper script shares"
-S[2]["body"] = r"""Open `scripts/logsum.py` in the Files section. It is our running example, a log summarizer, and every lab script has the same shape, top to bottom:
+S[2]["body"] = r"""Open `scripts/logsum.py` in the Files section. It is our running example, a log summarizer, and every lab script has the same shape:
 
 1. The shebang and the PEP 723 block.
 2. A docstring (a note in quotes) with examples and the exit codes, the first thing a tired person reads.
 3. Imports, which load parts of the standard library, then constants such as the pattern for one log line.
 4. Small functions (named blocks of steps) that each do one job and return data. `parse_access` never prints.
-5. `main(argv=None) -> int`, which reads the arguments, calls the functions, prints, and returns an exit code as a whole number.
+5. `main(argv=None) -> int`, which reads the arguments, calls the functions, prints, and returns the exit code.
 6. `if __name__ == "__main__": sys.exit(main())` as the last line.
 
-That odd last line runs `main` only when you start the file as a program. Python sets `__name__` to `"__main__"` in the file you ran, and to the module's name, `"logsum"`, in a file that is imported. So when a test imports the file, nothing runs. With `argv=None`, argparse reads the real command line from `sys.argv`. A test passes its own list instead, `main(["access", "x.log"])`, and checks the number it gets back, which is what Day 16 does.
+That odd last line runs `main` only when you start the file as a program. Python sets `__name__` to `"__main__"` in the file you ran, and to `"logsum"`, its name as a module, when another file imports it. So when a test imports the file, nothing runs. With `argv=None`, argparse reads the real command line from `sys.argv`. A test passes its own list instead, `main(["access", "x.log"])`, and checks the number it gets back, which is what Day 16 does.
 
 `argparse` turns `sys.argv`, the words typed after the script's name, into named values and writes `--help` for you. The summarizer uses four of its features:
 
@@ -98,10 +98,10 @@ That odd last line runs `main` only when you start the file as a program. Python
 
 An environment variable is a named setting that a program inherits from the terminal that started it. Read one with `os.environ.get("NAME", default)`. Plain `os.environ["NAME"]` stops with a `KeyError` when the variable is missing, which is right only for a setting the script cannot run without. On a bad argument, argparse prints the usage line and exits with 2, the same "you called me wrong" code that `healthcheck.sh` used on Day 7.
 
-The skeleton is ready. Now the helper has to read the log and count."""
+Next, the helper reads the log and counts."""
 
 S[3]["h"] = "Turning log lines into numbers"
-S[3]["body"] = r"""A web server keeps an access log, one line for every request (each time a browser or program asks for a page). A line holds who asked, when, which path (such as `/login`) and a status code. That is a three-digit answer: 2xx fine, 3xx sent elsewhere, 4xx the asker's mistake, 5xx the server's failure.
+S[3]["body"] = r"""A web server keeps an access log, one line for every request (each time a browser or program asks for a page). A line holds who asked, when, which path (such as `/login`) and a status code, a three-digit answer: 2xx fine, 3xx sent elsewhere, 4xx the asker's mistake, 5xx the server's failure.
 
 First comes the file. Current Python handles files with `pathlib.Path`. `Path.home() / "code" / "linux-lab"` joins the parts with `/` on any OS. `path.read_text()`, `path.exists()` and `path.glob("*.log")` replace most uses of `open`, `os.path` and `ls`.
 
@@ -109,7 +109,7 @@ Next, one line. A regular expression, or regex (Day 4), is a pattern that descri
 
 Then, the counting. A plain dictionary fails at once: `paths[path] += 1` raises `KeyError`, because that path is not in it yet. `collections.Counter` is a dictionary made for counting. A missing key reads as 0, so the same line just works, and `paths.most_common(5)` returns the top five. One pass over the file now collects everything: requests per path, per status class and per server error.
 
-How does that compare with Day 5? The pipeline `awk '$9 >= 500 {print $9, $7}' access.log | sort | uniq -c | sort -rn` prints the same three lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. Python pays off once you want several answers from one pass, a time window, JSON output, a limit and tests. It also counts more honestly, because it strips the query string (such as `?page=3`) before counting a path. The worked example shows how far apart the two top lists end up. (For big files, loop with `for line in f:` instead of `read_text()`; Go deeper measures why.)
+How does that compare with Day 5's awk pipeline? It prints the same three server error lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. Python pays off once you want several answers from one pass, a time window, JSON output, a limit and tests. It also counts more honestly, because it strips the query string (such as `?page=3`) before counting a path. The worked example shows how far apart the two top lists end up.
 
 Every log line also carries a time, and times hide the next trap."""
 
@@ -128,7 +128,7 @@ JSON is the format for other programs. `json.dumps(report, indent=2)` writes it,
 
 CSV, plain text with values split by commas, is for people with spreadsheets. Use the `csv` module instead of `",".join(...)`, because it quotes values that contain commas. Open the file with `newline=""`, as the `csv` docs ask, or an extra `\r` ends up in each line on Windows.
 
-The numbers are right now. What's left is the note: how the helper tells you what it found."""
+The numbers are right. Now the helper has to report them."""
 
 S[5]["h"] = "Reporting back: exit codes, stderr and errors that say what to do"
 S[5]["body"] = r"""A person reads the helper's note. A machine only asks: did it work? The exit code answers.
@@ -147,7 +147,7 @@ Now the naive helper. Wrapping the whole script in `try: ... except Exception: p
 
 **A hidden failure looks exactly like success. Catch errors by name.**
 
-The helper can count and report now. Its last skill is asking other programs for help."""
+Last, the helper must learn to ask other programs for help."""
 
 S[6]["h"] = "Asking other programs for help, safely"
 S[6]["body"] = r"""Sooner or later a script calls `git`, `kubectl` (which drives Kubernetes) or `terraform` (which builds servers from a plan). `subprocess.run` starts the program and waits for it. Remember the guess: on its own, it records the exit code and carries on. Give it four things every time:

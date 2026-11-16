@@ -39,7 +39,7 @@ for t in L["terms"]:
 S = L["sections"]
 
 S[0]["h"] = "Your image is mostly other people's work"
-S[0]["body"] = """The jam shop's first job is to count what came from somewhere else. Let's do that count for our app, hello-devops, the tiny web app this course builds, which answers every visit with a greeting and a count of visits so far. On Day 22 you packed it into an image: a sealed bundle of files that holds an app and everything it needs to run. Your own code in that image is one file, `app.py`. The rest is packages, bundles of ready-made code that other people wrote, each with a name and a version:
+S[0]["body"] = """The jam shop's first job is to count what came from somewhere else. Our app, hello-devops, is the tiny web app this course builds. It answers every visit with a greeting and a count of visits so far. On Day 22 you packed it into an image: a sealed bundle of files that holds an app and everything it needs to run. Your own code in that image is one file, `app.py`. The rest is packages, bundles of ready-made code that other people wrote, each with a name and a version:
 - 87 Debian packages from the `python:3.14-slim` base image, the starting image you build on.
 - Python itself.
 - Flask, gunicorn, redis and their dependencies: about 10 Python packages.
@@ -51,7 +51,7 @@ And that is only what ships. Your release workflow is a file of steps that GitHu
 That whole set is your software supply chain: every piece your code passes through between your keyboard and production, where real users reach the app. A supply chain attack goes after one of those pieces instead of your code. Like the poisoned sugar, it works because you trust the pieces and use them without opening them.
 
 DevSecOps is how teams answer this: security checks built into the chain as automatic steps, owned by the people who ship. It rests on two ideas:
-1. Shift left: run cheap checks early (left means earlier, on a timeline). A leaked token caught before `git push` costs a minute. Found in production, it costs a weekend of rotating keys, which means replacing every one.
+1. Shift left: run cheap checks early (left means earlier, on a timeline). A leaked token caught before `git push` (sending your work to GitHub) costs a minute. Found in production, it costs a weekend of replacing keys.
 2. Least privilege: every person, token and running app gets only the rights it needs, for as short a time as possible.
 
 You met both already: the `permissions:` block on Day 27, and the non-root user on Day 22. What happens when one link turns bad? Three real attacks show it."""
@@ -61,41 +61,41 @@ S[1]["body"] = """None of these attacks touched the victims' own code. Each hit 
 
 The xz-utils backdoor (2024). A backdoor is a hidden way in. xz is a small compression library (code that makes files smaller) that almost every Linux system has. Its maintainer, the volunteer who looks after it, came to trust a new contributor over time. That contributor then hid malicious code in the release tarballs of versions 5.6.0 and 5.6.1. A tarball is a packed .tar.gz file, much like a zip file.
 
-The code was not in the git repository, the project's stored history, where reviewers look. It sat in extra build files inside the tarballs, which Linux distributions (ready-to-install Linux versions, such as Debian) build from. Some distributions link the SSH server to xz's library indirectly. SSH is how people log in to a computer from far away, so on those systems the backdoor ran inside SSH. A developer, Andres Freund, was measuring speed when he noticed SSH logins using too much CPU (the computer's main chip), and traced the cause to xz. The [GitHub advisory](https://github.com/advisories/GHSA-rxwq-x6h5-x525), a public warning, scores it 10 out of 10.
+The code was not in the git repository, the project's stored history, where reviewers look. It sat in extra build files inside the tarballs, which Linux distributions (ready-to-install Linux versions, such as Debian) build from. Some distributions link the SSH server to xz's library indirectly. SSH is how people log in to a computer from far away, so on those systems the backdoor ran inside SSH. A developer, Andres Freund, was measuring speed when he saw SSH logins using too much CPU (the computer's main chip). He traced it to xz. The [GitHub advisory](https://github.com/advisories/GHSA-rxwq-x6h5-x525), a public warning, scores it 10 out of 10.
 
 tj-actions/changed-files (March 2025). Attackers moved this popular GitHub Action's version tags to a malicious commit (a saved change of their own). For about a day, every workflow using one of those tags ran a script that printed CI secrets into the build log. CI (continuous integration) is the automatic build and test on every change. In a public repository, anyone can read that log. [GitHub's advisory](https://github.com/advisories/GHSA-mrrh-fwg8-r2c3) says over 23,000 repositories used the action.
 
 Trivy (March 2026). Trivy is a security scanner, the same one in your release workflow. After an earlier break-in, the attackers still had working credentials (passwords and tokens), because the key rotation was not done all at once. On 19 March they published a malicious Trivy v0.69.4 and force-pushed (moved by force) 76 of the 77 `trivy-action` tags. The bad code stole secrets, then ran the real scan, so builds looked normal. [Aqua's advisory](https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23) notes that images pulled by digest were not affected. Hold on to that detail.
 
-Each attack leaves a rule you can act on:
-- A trusted maintainer can turn bad, so you need to know exactly what you ship.
-- A tag can be moved, so pin to things that cannot move: commit SHAs and image digests.
-- Security tools are part of the chain too. After an incident, rotate every secret a bad step could read.
+Each attack leaves a rule:
+- A trusted maintainer can turn bad, so know exactly what you ship.
+- A tag can be moved, so pin to what cannot move: commit SHAs and image digests.
+- Security tools are part of the chain. After an incident, rotate every secret a bad step could read.
 
 The second rule is the cheapest to follow, so we start there. Why can a tag move at all?"""
 
 S[2]["h"] = "Why a tag can move and a commit SHA cannot"
 S[2]["body"] = """Here is the naive way to use an action, as many examples write it: `uses: some-org/action@v4`. It reads like a fixed version, but the `v4` is a git tag. Git records your code's history as commits, saved snapshots of every file. A tag is a name that points at one commit, like a sticky note on a page. Anyone with push rights to that repository can peel the note off and stick it on another commit.
 
-Your next run then executes the new code, and nothing in your own repository changed. The worked example below does exactly this. The tag `v1` points at commit `fdc7302`, and one command later at `2df87fd`.
+Your next run executes the new code, though nothing in your own repository changed. The worked example below does exactly this: the tag `v1` points at commit `fdc7302`, then one command later at `2df87fd`.
 
 A commit SHA is a 40-character hash of the commit's content: its files, its parent commit, its author and its message. A hash is a fingerprint worked out from content. Change one byte and you get a different SHA, so `uses: some-org/action@<full-sha>` always means the same code. In March 2026 the attacker moved 76 `trivy-action` tags, and every old SHA still pointed at the code it always had.
 
 **A tag can be moved by anyone who holds the key. Pin the SHA.** The scan step in the lab's `release.yml` does just that:
 `uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0`
 
-GitHub runs the SHA. The part after `#` is a comment, a note only for humans. Dependabot (Day 27), a GitHub robot that watches for new releases, updates both. The price: pinned code never changes by itself, so you need a bot to bring fixes and a person to review them.
+GitHub runs the SHA. The part after `#` is a comment, a note only for humans. Dependabot (Day 27), a GitHub robot that watches for new releases, updates the SHA and the comment together. The price: pinned code never changes by itself, so you need a bot to bring fixes and a person to review them.
 
 Image tags move too. Someone can push `hello-devops:1.2.0` again with new content. A digest cannot change. It is `@sha256:` followed by 64 hex characters, a fingerprint of the image itself. That explains the Trivy detail: images pulled by digest were not affected. It is also why the workflow signs the digest.
 
-One gap in the lab: `actions/checkout@v7` and `actions/attest@v4` still use tags. They come from GitHub itself, and many teams accept that risk. Stricter teams pin them too, and for a release workflow I would. Pinning keeps the build steps honest, but it says nothing about the 87 packages inside the image. Next, we write those down."""
+One gap in the lab: `actions/checkout@v7` and `actions/attest@v4` still use tags. They come from GitHub itself, and many teams accept that risk. Stricter teams pin them too, and for a release workflow I would. Pinning keeps the build steps honest. It says nothing about the 87 packages inside the image, so next we write those down."""
 
 S[3]["h"] = "Writing the ingredient label: SBOMs and scanners"
-S[3]["body"] = """The poisoned sugar was a crisis only because nobody had written down which jars held it. An SBOM (software bill of materials) is that list for software: every package and version inside an artifact, in a format machines can read. An artifact is any finished thing a build makes, such as our image. The two standard formats are SPDX and CycloneDX. The tool `syft` reads an image and writes either one, or both.
+S[3]["body"] = """The poisoned sugar was a crisis only because nobody had written down which jars held it. An SBOM (software bill of materials) is that list for software: every package and version inside an artifact, in a format machines can read. An artifact is any finished thing a build makes, such as our image. The tool `syft` reads an image and writes one in either standard format, SPDX or CycloneDX, or both.
 
 You need that list most on the morning the next xz is announced. Without SBOMs, every team pulls and inspects its images. With an SBOM stored for every release, you search the files and have the answer in minutes.
 
-A vulnerability scanner compares that list with public databases of known holes. Each hole, or vulnerability, has a CVE ID and a severity: LOW, MEDIUM, HIGH or CRITICAL. Trivy and grype, the two common free scanners, each download a database built from public sources, such as the US National Vulnerability Database and the security notices of Linux distributions. It matches every package name and version against that database. In the shop, that is checking your label against the food recall list. Trivy can also check Dockerfiles, Kubernetes YAML and Terraform, from earlier parts of this course, for risky settings.
+A vulnerability scanner compares that list with public databases of known holes. Each known hole (a vulnerability) has a CVE ID and a severity: LOW, MEDIUM, HIGH or CRITICAL. Trivy and grype, the two common free scanners, each download a database built from public sources, such as the US National Vulnerability Database and the security notices of Linux distributions. They match every package name and version against it. In the shop, that is checking your label against the food recall list. Trivy can also check Dockerfiles, Kubernetes YAML and Terraform files for risky settings.
 
 Scanners have two limits:
 - They cannot find a backdoor nobody has reported yet. The xz code had no CVE until the day it was found.
@@ -108,7 +108,7 @@ Decide in advance what fails the build. My rule: fail on HIGH and CRITICAL findi
 Now we know what is in the jar, but not who filled it or whether anyone opened it. That is a job for a seal."""
 
 S[4]["h"] = "A seal on the jar: who built this, and has it changed?"
-S[4]["body"] = """A scan tells you what is inside. A signature answers two other questions: who made this artifact, and has anyone changed it since? It is the jar's tamper-evident seal, stamped with the factory's mark. Classic signing uses a key pair: a private key that only the signer holds, and a public key anyone can check with. In CI, the private key is one more secret to leak.
+S[4]["body"] = """A scan tells you what is inside. A signature answers two more questions: who made this artifact, and has anyone changed it since? It is the jar's tamper-evident seal, stamped with the factory's mark. Classic signing uses a key pair: a private key that only the signer holds, and a public key anyone can check with. In CI, the private key is one more secret to leak.
 
 Keyless signing removes the stored key. The tool is cosign, from the free Sigstore project. It relies on a certificate, a signed card that ties a key to a name, issued by a certificate authority (Day 11). When the release job signs, five things happen:
 1. The job asks GitHub for an OIDC token: a short signed note that says "I am release.yml in this repository, running for tag v1.2.0". You met OIDC on Day 27, for cloud logins.
@@ -124,7 +124,7 @@ A pass tells you where the image came from and that nobody changed it. Like a se
 The [cosign README](https://github.com/sigstore/cosign/blob/main/README.md) adds two warnings. Sign the digest, never a tag, or you might sign something you did not intend. And when you sign as a person, your email goes into the public log, where it cannot be removed. The seal says who packed the jar; next, we record how it was made."""
 
 S[5]["h"] = "The delivery note: provenance, SLSA and attestations"
-S[5]["body"] = """A signature says who signed. Provenance says how the thing was built: which repository, which commit, which workflow file and which kind of runner. In the shop, it is the delivery note that names the factory and the production line. It is a signed statement in a standard format called in-toto, bound to the artifact's digest, so it fits only that one image.
+S[5]["body"] = """A signature says who signed. Provenance says how the thing was built: which repository, commit, workflow file and kind of runner. In the shop, it is the delivery note naming the factory and the production line. It is a signed statement in a standard format called in-toto, bound to the artifact's digest, so it fits only that one image.
 
 SLSA (say "salsa") grades how far you can trust that statement. Below, a hosted build platform is a build service someone else runs, such as GitHub's, and tampering means secret changes. The build track of the [SLSA spec](https://github.com/slsa-framework/slsa/blob/main/spec/build-track-basics.md) has four levels:
 - Build L0: no guarantees.
@@ -150,7 +150,7 @@ S[6]["body"] = """Open `.github/workflows/release.yml` in Files below and follow
 
 A platform here is a chip family: amd64 is in most servers, and arm64 is in Apple Silicon Macs. Every step after the push uses `${IMAGE}@${DIGEST}`, the image name joined to its fingerprint, never a tag. Every third-party action is pinned to a SHA, even the scanner attacked in March 2026.
 
-You wrote this file on Day 27. Today adds steps 2, 3, 5, 6 and 7, and the two rights they need. Notice what it does not cover: where the workflow's secrets live, and who may change the cluster that runs your app. Those are the next links to guard."""
+You wrote this file on Day 27. Today adds steps 2, 3, 5, 6 and 7, and the two rights they need. Notice what it does not cover: where the workflow's secrets live, and who may change the cluster (the group of machines that runs your app). Those are the next links to guard."""
 
 L["aside"] = {
     "title": "If the certificate lasts ten minutes, why does a check next month still pass?",

@@ -3,11 +3,11 @@ from common import apply
 S0 = """
 Computers have the café's problem on a bigger scale. Many companies rent computers from a cloud, a company such as Amazon that rents out computers and storage over the internet. Each cloud has a web console, a website where you set things up by clicking.
 
-In ten minutes you can click together a server and a database, with a network that joins them. (A server is a computer that runs programs for other computers. A database is a program that stores data safely.) It works. Six months later the team needs the same setup again, this time for testing. Which boxes did you tick? Nobody remembers, and nobody wrote it down. That is the second café all over again.
+In ten minutes you can click together a server and a database, with a network that joins them. (A server is a computer that runs programs for other computers. A database is a program that stores data safely.) It works. Six months later the team needs the same setup again, this time for testing. Which boxes did you tick? Nobody remembers, and nobody wrote it down.
 
 Everything an app needs around it to run is called infrastructure: the computers, the networks, the storage. In the café, it is the room, the wiring and the fridge, not the coffee. Doing infrastructure by hand goes wrong in three ways:
 - You cannot repeat it. There is no exact copy for testing, for another region (data centres in another part of the world), or for recovery after a disaster.
-- Nobody reviews it. A change happens without a second pair of eyes, and nothing records who did what.
+- Nobody reviews it. A change happens without a second pair of eyes, and no record says who did what.
 - It drifts. During an incident (a moment when something is broken and people rush to fix it), someone changes a setting by hand. Slowly, reality moves away from what the team believes.
 
 The cure is to write the setup down for a tool to follow. This is called **Infrastructure as Code** (IaC): you describe your infrastructure in text files, and a tool makes the real world match them. The files live in git, the tool from Part 2 that keeps every saved version of your files, right next to the app's code. So a change to infrastructure goes through the same steps as any change to code:
@@ -83,9 +83,9 @@ You use the same few commands every day, in this order:
 4. `terraform apply` makes a fresh plan, shows it, waits for you to type `yes`, makes the changes and updates the state.
 5. `terraform destroy` removes everything this folder manages, after the same `yes`.
 
-People sometimes worry that plan changes things, so they run it rarely. Only apply changes things. Plan is safe to run any time, so run it often, the way the builder looks at the drawing before picking up a hammer.
+Plan is safe to run any time, because only apply changes things. Run it often, the way the builder checks the drawing before picking up a hammer.
 
-There is one gap to know about. Apply makes its own new plan, and the world may have changed since you last ran plan. On a laptop that gap does not matter. In a pipeline (a series of steps a server runs for you on every change, like the GitHub Actions workflows from Part 6) it does. So there you save the plan with `terraform plan -out=tfplan` and later run `terraform apply tfplan`. Terraform then does exactly what you reviewed, or stops if the state moved on. Day 35 uses this.
+Apply makes its own new plan, and the world may have changed since you last ran plan. On a laptop that gap does not matter. In a pipeline (a series of steps a server runs for you on every change, like the GitHub Actions workflows from Part 6) it does. There you save the plan with `terraform plan -out=tfplan` and later run `terraform apply tfplan`. Terraform then does exactly what you reviewed, or stops if the state moved on. Day 35 uses this.
 
 `terraform destroy` deletes everything in this folder's state, whenever it was added. It never touches things the folder does not manage, such as a container you started by hand. With the commands in place, the next skill is the one that keeps you safe: reading what plan prints.
 """
@@ -102,15 +102,15 @@ You will also see these in almost every plan:
 - `# (50 unchanged attributes hidden)`: Terraform left out the attributes (single settings of a resource) that do not change.
 - The summary on the last line, such as `Plan: 1 to add, 0 to change, 1 to destroy.`
 
-Our nginx example shows both kinds of change. In the worked example below, changing the restart policy (what Docker does when the container stops) from `"no"` to `"unless-stopped"` gives `~`. Docker can change that setting on a running container, so the container keeps its ID.
+In the worked example below, changing the restart policy (what Docker does when the container stops) gives `~`. Docker can change it on a running container, so the container keeps its ID.
 
-Replacement is where people get hurt. Some settings cannot change on a running object. Docker cannot move a running container to a new host port, or give it new environment variables. So changing the port from 8090 to 8091 becomes `-/+`, and the line that caused it ends with `# forces replacement`. The summary reads `Plan: 1 to add, 0 to change, 1 to destroy.` That is one small edit, and a whole container goes away and comes back with a new ID.
+Replacement is where people get hurt. Some settings cannot change on a running object. Docker cannot move a running container to a new host port, or give it new environment variables. So changing the port from 8090 to 8091 becomes `-/+`, and the line that caused it ends with `# forces replacement`. One small edit, and the container comes back with a new ID.
 
 For an nginx container, replacement means a second of downtime. For a database it can mean an empty database. It is easy to type `yes` without reading when the edit was one word. Build the habit now, while the containers are toys: read the summary line and search the plan for `forces replacement`. If the numbers surprise you, stop and find out why.
 
 **A one-word edit can replace a whole object. Read the plan before you type yes.**
 
-Apply leaves a few files behind in your folder, and each one has its own rule. That is our last stop.
+Apply also leaves a few files in your folder, each with its own rule.
 """
 
 S6 = """
@@ -125,7 +125,7 @@ Two names sound alike, so keep them apart. The lock file pins provider versions.
 
 The lab's `.gitignore`, the file that lists names git should ignore, already blocks `.terraform/` and `*.tfstate`. GitHub keeps a [ready-made Terraform .gitignore](https://github.com/github/gitignore/blob/main/Terraform.gitignore) if you start a new repo.
 
-That is a full cycle: write, plan, apply, read, destroy. Our file still has a weakness, though. Every value in it, such as the port 8090, is typed straight into the block. To run three containers, you would copy the block three times. Fixing that is the job of the next lesson.
+Our file still has a weakness, though. Every value, such as the port 8090, is typed straight into the block, so three containers would mean three copied blocks. The next lesson fixes that.
 """
 
 new = {

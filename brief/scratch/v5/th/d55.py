@@ -11,11 +11,11 @@ In "Grafana beyond dashboards: alerting, Loki and the LGTM stack" we sent those 
 
 Before we start, make a guess, and keep it in mind."""
 
-S1 = """Every program can write short notes about its work: started, served a page, could not reach the database. Those lines of text are its log. Our lab app, hello-devops, is a tiny web app that answers every visit with a greeting and a count of visits so far. It logs every visit and every error.
+S1 = """Every program can write short notes about its work: started, served a page, could not reach the database. Those lines are its log. Our lab app, hello-devops, is a tiny web app that answers every visit with a greeting and a count of visits so far. It logs each visit and each error.
 
-In Part 5 you read those lines with `docker logs`. Docker runs each app in a container, a sealed box with the app and all it needs. Now picture hello-devops on Kubernetes, the system that runs containers across many machines. It runs as three pods (Kubernetes' wrapper around a container) on three nodes (the machines), and every deploy replaces all three. A customer says a payment failed at 14:02. Which pod handled it? That pod may be gone, and its logs with it, like the clipboard with the bed.
+In Part 5 you read those lines with `docker logs`. Docker runs each app in a container, a sealed box with the app and all it needs. Now put hello-devops on Kubernetes, the system that runs containers across many machines. It runs as three pods (Kubernetes' wrapper around a container) on three nodes (machines), all replaced on every deploy. A customer says a payment failed at 14:02. Which pod handled it? It may be gone, and its logs with it, like the clipboard with the bed.
 
-Centralized logging is the hospital's central chart: every line every container prints is copied, as it is written, to one store you can search. Metrics from Part 12 (numbers measured over time) tell you that errors went up. Logs tell you which request failed and why.
+Centralized logging is the hospital's central chart: every line every container prints is copied, as it is written, to one store you can search. Metrics from Part 12 say that errors went up. Logs say which request failed and why.
 
 A log pipeline has four jobs, and the lab gives each one to a different program:
 1. The app prints one event per line to stdout, the standard place where a program writes its text.
@@ -23,19 +23,19 @@ A log pipeline has four jobs, and the lab gives each one to a different program:
 3. A store, Elasticsearch, indexes every field so search is fast.
 4. A web page, Kibana, lets people search and draw charts.
 
-Docker carries each line to Fluent Bit. Whatever a container prints goes first to the Docker engine, the background program that runs containers. A logging driver decides where the engine sends it. The default, `json-file`, writes a file that `docker logs` reads. The lab's compose file (the list of containers that Docker Compose starts together) sets the `fluentd` driver on the web container. Now the engine sends every line to port 24224 and still keeps a local copy.
+Docker carries each line to Fluent Bit. Whatever a container prints goes first to the Docker engine, the background program that runs containers. A logging driver decides where the engine sends it. The default, `json-file`, writes a file that `docker logs` reads. The lab's compose file (the list of containers Docker Compose starts) gives the web container the `fluentd` driver instead. It sends every line to port 24224 and keeps a local copy.
 
-A port is a numbered door on a computer that a program listens behind. The engine opens this connection, not a container, so the address is `localhost:24224`. Localhost means this same computer, where Fluent Bit publishes that port. The lab also sets `fluentd-async`. Without it, a container stops at once when it cannot reach its log collector.
+A port is a numbered door that a program listens behind. The engine, not a container, opens this connection, so the address is `localhost:24224` (localhost means this same computer). The lab also sets `fluentd-async`. Without it, a container stops at once when it cannot reach its log collector.
 
 Fluent Bit's settings file, `fluent-bit.yaml`, is YAML (plain text with one name and value per line). It has one block per stage:
 - Inputs take records in. `forward` listens on port 24224 for the Docker driver.
-- Filters change records. `multiline` glues a traceback, Python's many-line error report, into one record.
+- Filters change records. `multiline` glues a traceback (a many-line error report from Python, the app's language) into one record.
 - `parser`, another filter, turns a JSON line (named fields in curly braces) into fields.
 - Outputs send records on. `es` writes to Elasticsearch, and `stdout` prints a copy.
 
-Python is the language hello-devops is written in. Each record carries a tag, here `hello.` plus the container name. Every filter and output has a `match` pattern and handles only the records whose tag fits it, like a mail room sorting by the name on the envelope.
+Each record carries a tag, here `hello.` plus the container name. Every filter and output handles only the records whose tag fits its `match` pattern, like a mail room sorting by name.
 
-The road is ready. Next, we'll look at what a good line looks like before it sets out."""
+Next, we'll look at what a good line looks like before it sets out."""
 
 S2 = """Compare two lines from the lab. Gunicorn, the web server program that receives visits and hands them to hello-devops, prints this when it starts a worker:
 
@@ -45,9 +45,9 @@ And this is one line of the access log the lab turns on, which has one line per 
 
 `{"level":"INFO","logger":"access","method":"GET","path":"/","status":200,"duration_ms":8}`
 
-The first is fine for a person. A machine has to guess where the level ends and the message starts, and every program formats it a little differently. The second line is JSON, a text format of names and values inside curly braces. That makes it a structured log: data with named fields. Fluent Bit turns each name into a field, so you can ask for `status >= 500` or the slowest `path`. You never need a regular expression, a fragile text pattern for cutting lines apart.
+A machine has to guess where the level ends and the message starts, and every program formats it a little differently. The second line is JSON, a text format of names and values inside curly braces. That makes it a structured log: data with named fields. Fluent Bit turns each name into a field, so you can ask for `status >= 500` or the slowest `path`. You never need a regular expression, a fragile text pattern for cutting lines apart.
 
-You did not change `app.py`, the app's code, to get this. The lab's compose file gives gunicorn an `--access-logformat` that prints JSON. In your own services, use a JSON logging library and write one event per line. Fields pay off most when every service uses the same names, such as `order_id` and `trace_id`. Then one filter on an `order_id` reads a failed payment's whole story across all of them.
+You did not change `app.py`, the app's code, to get this. The lab's compose file gives gunicorn an `--access-logformat` that prints JSON. In your own services, use a JSON logging library and write one event per line.
 
 Every event also carries a level. Most teams use these four:
 - DEBUG: detail for developers. Usually off in production (the real system customers use), because it is loud.
@@ -65,15 +65,15 @@ Tokens and session IDs are secret values that prove who you are, like a key card
 
 Next, we'll see what Elasticsearch does with these clean lines."""
 
-S3 = """Elasticsearch is a program that stores data and finds it again fast, a search engine for your own records. It stores JSON documents. A document is one JSON object, and in logging one document is one log event. Each gets an `_id`, and Elasticsearch keeps the exact JSON you sent in a field called `_source`.
+S3 = """Elasticsearch is a search engine for your own data. It stores JSON documents. A document is one JSON object, and in logging one document is one log event. Each gets an `_id`, and Elasticsearch keeps the exact JSON you sent in a field called `_source`.
 
 Documents live in an index, a named collection such as `hello-logs-2026.10.30`. You write to one index and can search many at once with a pattern like `hello-logs-*` (the star matches anything). The lab makes one index per day, which keeps old days easy to delete.
 
-Why not just search the text? The grep command, typed in the terminal (the window for typed commands), prints every line that contains some text. It reads every line again on every search. That is fine for one file, and far too slow for a week of logs from fifty pods. Elasticsearch does the reading once, when a document arrives, and builds an inverted index. A part called the analyzer splits each text field into words, called tokens, and lowercases them. Then Elasticsearch records which documents contain each token. It works like the index at the back of a book: to find "declined" you look it up once instead of reading every page.
+Why not just search the text? The grep command, typed in the terminal (the window for typed commands), prints every line that contains some text. It reads every line again on every search, which is far too slow for a week of logs from fifty pods. Elasticsearch does the reading once, when a document arrives, and builds an inverted index. A part called the analyzer splits each text field into words, called tokens, and lowercases them. Then Elasticsearch records which documents contain each token. It works like the index at the back of a book: to find "declined" you look it up once instead of reading every page.
 
 In the worked example, the analyzer turned `Payment FAILED for order 42: card declined` into `payment`, `failed`, `for`, `order`, `42`, `card` and `declined`.
 
-Now search the way grep taught us, by any piece of text, and watch two searches fail:
+Now watch two grep-style searches, by a piece of text, fail:
 - `payments` finds nothing. Only `payment` was stored, and the default analyzer does not reduce words to a common stem.
 - `redis.exceptions.ConnectionError` stays one token, because dots between letters do not split words. Search for `ConnectionError` and you get zero hits. Search for the phrase `"service not known"` from the same error and you find it at once.
 
@@ -81,15 +81,15 @@ That second failure answers the guess. The error means hello-devops could not re
 
 New documents are not searchable in the same instant. Elasticsearch makes them visible within about one second, in a step called a refresh. The Elastic docs call this near real-time search.
 
-Next, we'll see how Elasticsearch decides which fields are text at all."""
+Next, we'll see who decides which fields are text."""
 
-S4 = """Each index has a mapping: the type of every field (text, number, date and so on) and how it is indexed. You can write one yourself, or let Elasticsearch guess from the first document that contains a field. That guess is called dynamic mapping, and it sticks. Every stored document was indexed for that type, so Elasticsearch never changes a field's type in place. You create a new index with the right mapping and copy the documents over, a reindex.
+S4 = """Each index has a mapping: the type of every field (text, number, date...) and how it is indexed. You write one yourself, or let Elasticsearch guess from the first document that contains a field. That guess is called dynamic mapping, and it sticks. Every stored document was indexed for that type, so Elasticsearch never changes a field's type in place. You create a new index with the right mapping and copy the documents over, a reindex.
 
 The two types you will meet most in logs are:
 - `text`: split into tokens for full-text search. Good for `message` or `log`.
 - `keyword`: stored whole, for exact filters, sorting and counting. Good for `level`, `path` or `service`.
 
-A keyword is matched exactly, capitals included. In the worked example the `level` field held `ERROR`, so a search for `error` on it found nothing. Text forgets capitals, and keyword remembers every one.
+A keyword is matched exactly, capitals included. In the worked example the `level` field held `ERROR`, so a search for `error` on it found nothing.
 
 For strings (pieces of text), dynamic mapping makes both: a `text` field plus a `.keyword` sub-field. That is why the lab's index shows `path` and also `path.keyword`. Whole numbers become `long`, so `status` and `duration_ms` are numbers you can compare and average.
 
@@ -100,25 +100,25 @@ The guess is only as good as the first document:
 
 The fix is an explicit mapping. On Day 56 you put one into an index template, so every new daily index starts with the right types.
 
-The word "cluster" just slipped in. Next, we'll see what it means, and why yours shows yellow."""
+Next, we'll see what a cluster is, and why yours shows yellow."""
 
 S5 = """One running Elasticsearch program is a node. Nodes that work together form a cluster. Your lab is a cluster of one node.
 
-An index is split into shards. Each shard is a complete small Lucene index holding part of the documents. Lucene is the search library under Elasticsearch, ready-made Java code that builds and reads inverted indices. Shards let one index spread over many nodes, so more machines can store and search it in parallel.
+An index is split into shards. Each shard is a complete small Lucene index holding part of the documents. Lucene is the Java search library under Elasticsearch. Shards let one index spread over many nodes, so more machines can store and search it in parallel.
 
 There are two kinds:
 - A primary shard holds the original documents. Each document belongs to exactly one primary.
 - A replica shard is a copy of a primary on another node. If that node dies, the copy takes over. Replicas also answer searches.
 
-Two rules follow from this:
+Two rules follow:
 1. The number of primary shards is fixed when the index is created. Elasticsearch picks each document's shard from a hash of its `_id` (a number always worked out the same way from it) and the number of primaries. A new number would send lookups to the wrong shard. Replicas can change at any time.
 2. Elasticsearch never puts a replica on the same node as its primary, because a copy on the same machine would die with it.
 
-Cluster health works like a traffic light. Green means every shard is placed. Yellow means all data is there, but a copy is missing. Red means a primary is missing, so some data cannot be searched. Rule 2 makes an index with one replica yellow on your laptop. The lab's daily index starts yellow for exactly this reason, because new indices get one replica by default. On Day 56 you set replicas to 0 for it. On one node, yellow is normal: the cluster is only telling the truth.
+Cluster health works like a traffic light. Green means every shard is placed. Yellow means all data is there, but a copy is missing. Red means a primary is missing, so some data cannot be searched. Rule 2 makes an index with one replica yellow on your laptop. The lab's daily index starts yellow for exactly this reason, because new indices get one replica by default. On Day 56 you set replicas to 0 for it. On one node, yellow is normal.
 
 More shards are not free. Each search runs on one thread per shard (a thread is one line of work the computer runs), and every shard costs memory. The Elastic sizing guide suggests shards between 10 GB and 50 GB. A lab that stores a few megabytes a day needs one shard per index.
 
-Next, we'll meet the family of tools around Elasticsearch, and the names you will see in tutorials."""
+Next, we'll meet the family of tools around Elasticsearch."""
 
 S6 = """ELK is the classic name for three products of Elastic, the company behind Elasticsearch, used together:
 - Elasticsearch stores and searches.
@@ -131,13 +131,13 @@ EFK swaps the L for an F: Fluentd or Fluent Bit. Both are open source (anyone ma
 - Memory: Fluentd needs more than 60 MB, Fluent Bit about 450 KB.
 - Plugins (add-ons): Fluentd has over 1,000 external plugins, Fluent Bit over 100 built in.
 
-For this course you need neither Logstash nor Fluentd, because Fluent Bit sends straight to Elasticsearch. On Kubernetes a shipper runs on every node, so you pay for its memory once on every node. That is the job Fluent Bit was built for.
+This course needs neither Logstash nor Fluentd, because Fluent Bit sends straight to Elasticsearch. On Kubernetes a shipper runs on every node, so you pay for its memory once on every node. Fluent Bit was built for that job.
 
 You will also meet OpenSearch, which looks and works much like Elasticsearch. The box below tells where it came from. None of this changes the lab, and today's ideas carry over to OpenSearch.
 
 Next, we'll open Kibana and find our failed requests."""
 
-S7 = """Kibana is Elastic's web page for reading and charting what Elasticsearch stores. You read logs on its Discover page, which has two query modes. A query is a question you ask the data.
+S7 = """Kibana is Elastic's web page for reading and charting what Elasticsearch stores. You read logs on its Discover page, which has two modes for queries (questions you ask the data).
 
 Classic mode needs a data view: a saved name pattern such as `hello-logs-*` plus the time field `@timestamp`. You type KQL, the Kibana Query Language, into the search bar. Each condition is a field, an operator and a value:
 - `status >= 500` shows failed requests (500 is the code for a server failure). It works because `status` is a number.
@@ -149,7 +149,7 @@ ES|QL mode, the Elasticsearch Query Language, needs no data view. You write a pi
 
 `FROM hello-logs-* | WHERE status >= 500 | STATS errors = COUNT(*) BY path | SORT errors DESC`
 
-Read it left to right: take the daily indices, keep the failures, count them per path, biggest count first. On the lab it returned 5 for `/readyz` and 3 for `/`.
+It takes the daily indices, keeps the failures, counts them per path and puts the biggest count first. On the lab it returned 5 for `/readyz` and 3 for `/`.
 
 My rule of thumb: KQL to narrow down what you are looking at, ES|QL when the question needs counting, grouping or math. You can even mix them, because ES|QL accepts KQL inside `WHERE KQL("status >= 500")`.
 

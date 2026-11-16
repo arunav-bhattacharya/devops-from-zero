@@ -62,7 +62,7 @@ Two facts about CI on pull requests explain our kitchen. First, GitHub builds a 
 
 So a new commit on main is not an event on your PR, and nothing reruns. A PR that was green yesterday may be red against today's main, like a soup card written before the pots moved. The Update branch button brings main into your branch and runs CI again. While a PR has a merge conflict (changes to the same lines that Git cannot combine alone), GitHub cannot build that temporary merge, so CI does not run at all.
 
-A green tick only proves what the tests check. Next, we'll see what a human reviewer adds."""
+Next, we'll see what a human reviewer adds that a green tick cannot."""
 
 L["aside"] = {
     "title": "What exactly does the Files changed tab show?",
@@ -71,7 +71,7 @@ L["aside"] = {
 }
 
 S[1]["h"] = "What a reviewer catches that tests miss"
-S[1]["body"] = """The kitchen taster checks only what it was told to check, such as salt. The head chef notices the card that never says how much stock to use. In code, CI runs the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a confusing name.
+S[1]["body"] = """The kitchen taster checks the salt, because that is its job. The head chef notices the card that never says how much stock to use. In code, CI runs the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a confusing name.
 
 As the author:
 
@@ -93,7 +93,7 @@ Our lab app, hello-devops, is a tiny web app that greets every visitor and count
 Mark polish with a "Nit:" prefix, so the author knows it can wait. [Google's code review guide](https://google.github.io/eng-practices/review/) gives a simple rule: approve a change once it clearly improves the code, even if it isn't perfect. Be kind to the person and strict about the code. GitHub never lets you approve your own pull request, so on a team someone else always approves. Next, we'll let GitHub pick that someone for each file."""
 
 S[2]["h"] = "Sending each change to the people who know that code"
-S[2]["body"] = """In a big kitchen, every new dessert goes past the pastry chef, and nobody has to remember to ask. In software, a new teammate who edits `infra/`, the folder that describes the servers, may not know a platform team exists. The change merges without the people who know that code.
+S[2]["body"] = """In a big kitchen, every new dessert goes past the pastry chef, and nobody has to remember to ask. In software, a new teammate who edits `infra/`, the folder that describes the servers, may not know a platform team exists, so the change merges without them.
 
 A `CODEOWNERS` file writes the rule down. It maps paths (files and folders in the repository) to the people or teams responsible for them. When a PR changes a file that has an owner, GitHub requests that owner's review automatically, except while the PR is a draft. The rules:
 
@@ -136,7 +136,7 @@ Continuous integration (CI), which Day 1 sketched, means everyone merges small c
 
 On GitHub, that server is a fresh virtual machine (a computer simulated in software) that GitHub starts for the test and deletes afterwards (Day 24). [Martin Fowler's article on continuous integration](https://martinfowler.com/articles/continuousIntegration.html) is the classic description and worth an evening.
 
-CD has two meanings, and people mix them up:
+CD has two meanings, often mixed up:
 
 - Continuous delivery: every change that passes is ready to release. A person decides when it goes to production, often with one click.
 - Continuous deployment: every change that passes goes to production on its own. Nobody clicks anything.
@@ -148,9 +148,9 @@ The steps a change goes through form a pipeline. A typical one runs in this orde
 3. Publish: build a container image and push it to a registry.
 4. Deploy: release that image to staging (a copy of production for a last check), then to production.
 
-Dependencies are other people's code that your app needs, and linters are programs that check code for style and common mistakes. An image, from Part 5, is your app packed with everything it needs to run; a registry is an online store for images. Production is the real system your users use.
+Dependencies are other people's code your app needs; linters are programs that check code for style and common mistakes. An image, from Part 5, is your app packed with everything it needs to run; a registry is an online store for images. Production is the real system your users use.
 
-Build the image once, at the publish step. This rule is called **build once, deploy many**: the very same image, with the same digest from Day 18, moves from staging to production. A digest is a fingerprint of the image's exact contents. If you rebuilt it for production, the build could pull newer packages, and what you ship would no longer be what you tested. Serve the dish that was tasted, never a fresh copy.
+Build the image once, at the publish step. This rule is called **build once, deploy many**: the very same image, with the same digest from Day 18, moves from staging to production. A digest is a fingerprint of the image's exact contents. If you rebuilt it for production, the build could pull newer packages, and what you ship would no longer be what you tested.
 
 Automating these steps also moves the DORA metrics from Day 1, which measure how teams deliver: how often you deploy, how long a change takes to reach users, and more. Next: how the new version replaces the old one while users keep clicking."""
 
@@ -179,11 +179,11 @@ S[6]["body"] = """A reprinted menu marked "second printing" tells regulars that 
 
 Compatible means code that worked with the old version still works with the new one. A pre-release adds a label after a dash, as in `1.3.0-rc.1`, and counts as older than `1.3.0`.
 
-A tag, from Day 9, is a fixed name for one commit, and an annotated tag such as `git tag -a v1.2.0 -m "..."` also stores a message. `git push origin v1.2.0` sends it, because a plain push does not.
+A tag, from Day 9, is a fixed name for one commit. An annotated tag such as `git tag -a v1.2.0 -m "..."` also stores a message. The command `git push origin v1.2.0` sends it, because a plain push does not.
 
 In this course a tag is what starts a release. On Day 27, pushing the tag `v1.0.0` starts a workflow (a list of automated steps that GitHub runs) that builds and publishes the image `1.0.0`. The git tag, the image tag and the app's `version` field then all match. Tag `main` after the PR is merged, never a feature branch, so the release points at a commit CI already tested on main.
 
-This lesson has one gap. Every green tick we talked about assumes that something runs the checks, and in your repository nothing does yet. A pull request alone is a head chef's desk with no taster."""
+One gap remains. Every green tick we talked about assumes something runs the checks, and in your repository nothing does yet. A pull request alone is a chef's desk with no taster."""
 
 L["closing"] = """We started with two cooks whose changes were each fine and who broke lunch together. You now have the pieces that stop that: small branches, pull requests, reviewers chosen by CODEOWNERS, and the habit of testing what two changes do together. The worked example replayed that failure in real code.
 
