@@ -200,8 +200,8 @@ def labs():
 
 
 ICON = ('<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E'
-        '%3Crect x=%223%22 y=%2214%22 width=%225%22 height=%227%22 fill=%22%230a6a7e%22/%3E%3Crect x=%2210%22 y=%228%22 width=%225%22 height=%2213%22 fill=%22%23c84410%22/%3E'
-        '%3Crect x=%2217%22 y=%222%22 width=%225%22 height=%2219%22 fill=%22%23e8ad00%22/%3E%3C/svg%3E">')
+        '%3Crect x=%223%22 y=%2214%22 width=%225%22 height=%227%22 fill=%22%230b5563%22/%3E%3Crect x=%2210%22 y=%228%22 width=%225%22 height=%2213%22 fill=%22%230b5563%22/%3E'
+        '%3Crect x=%2217%22 y=%222%22 width=%225%22 height=%2219%22 fill=%22%23d3921a%22/%3E%3C/svg%3E">')
 
 
 def render(course):

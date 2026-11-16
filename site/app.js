@@ -329,13 +329,13 @@ function viewHome() {
   const stage = (s, i, inner) => `<div class="stage${isSecOpen(i) ? "" : " shut"}">${stageHead(s, i)}${isSecOpen(i) ? inner : ""}</div>`;
   const pipe = SECS.map((s, i) => stage(s, i, `<div class="pipe">${s.parts.map((n) => job(partOf(n))).join("")}</div>`)).join("");
   const partsList = SECS.map((s, i) => stage(s, i, `<div class="parts">${s.parts.map((n) => prow(partOf(n))).join("")}</div>`)).join("");
-  const allBtns = `<span class="row" style="gap:6px"><button class="btn ghost sm" data-act="secall" data-v="1">Open all</button><button class="btn ghost sm" data-act="secall" data-v="0">Fold all</button></span>`;
+  const allBtns = `<span class="row tight"><button class="btn ghost sm" data-act="secall" data-v="1">Open all</button><button class="btn ghost sm" data-act="secall" data-v="0">Fold all</button></span>`;
 
   return `<div class="page">
   <section class="hero">
     <span class="label">${tot} lessons · about 45 minutes each · at your own pace</span>
     <h1>DevOps,<em>from zero</em></h1>
-    <p class="sub">Linux, Git, networking, hands-on AWS, Python scripts, Docker, GitHub Actions, Gradle, Terraform, Ansible and Kubernetes, then how teams run things today: GitOps with Argo CD, Prometheus, Grafana, ELK and EFK, OpenTelemetry, service mesh, Dynatrace, supply-chain security and AI in DevOps. You ship a real app, <span style="white-space:nowrap">hello-devops</span>, from your laptop to a cluster.</p>
+    <p class="sub">Linux, Git, networking, hands-on AWS, Python scripts, Docker, GitHub Actions, Gradle, Terraform, Ansible and Kubernetes, then how teams run things today: GitOps with Argo CD, Prometheus, Grafana, ELK and EFK, OpenTelemetry, service mesh, Dynatrace, supply-chain security and AI in DevOps. You ship a real app, <span class="nowrap">hello-devops</span>, from your laptop to a cluster.</p>
     <div class="meta"><span>${C.parts.length} parts</span><span>${tot} lessons</span><span>${new Set(C.labs.map((f) => f.proj)).size} lab projects</span><span>Free tools, runs on your laptop</span></div>
   </section>
   ${term}
@@ -343,10 +343,10 @@ function viewHome() {
     <div class="stat"><span class="n tnum">${dn}<small>/${tot}</small></span><span class="label">lessons passed</span></div>
     <div class="stat"><span class="n tnum">${streak()}</span><span class="label">day streak</span></div>
     <div class="stat"><span class="n tnum">${learned}</span><span class="label">cards remembered</span></div>
-    <div class="stat"><span class="n tnum" style="font-size:34px;line-height:46px">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label"><a href="#plan">projected finish</a></span></div>
+    <div class="stat"><span class="n tnum sm">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label"><a href="#plan">projected finish</a></span></div>
   </section>
   <section class="block"><div class="sec-h"><h2>Your run</h2><span class="label">${SECS.length} stages · each part a job · each lesson a step</span></div>
-    <div class="row" style="justify-content:space-between;gap:10px"><span class="muted" style="font-size:15px">${ICON.vid} marks a lesson with a narrated video. Click a section to open or fold it.</span>${allBtns}</div>
+    <div class="row between"><span class="muted note">${ICON.vid} marks a lesson with a narrated video. Click a section to open or fold it.</span>${allBtns}</div>
     ${pipe}</section>
   <section class="block"><div class="sec-h"><h2>How each day works</h2><span class="label">40 to 50 focused minutes</span></div>
     <ol class="day-plan">
@@ -405,7 +405,7 @@ function viewLesson(id) {
   if (l.guess) {
     QUIZ["g-" + id] = { qs: [l.guess] };
     const st = QS["g-" + id] || (QS["g-" + id] = { ans: [null], shown: false });
-    h += `<section class="card warm" id="warm"><span class="label">Warm-up · guess before you read</span><div id="quiz-g-${id}">${qHTML("g-" + id, l.guess, 0, st, true)}</div>${st.ans[0] == null ? `<span class="muted" style="font-size:15px">No score. Guessing first, even wrongly, helps the answer stick.</span>` : ""}</section>`;
+    h += `<section class="card warm" id="warm"><span class="label">Warm-up · guess before you read</span><div id="quiz-g-${id}">${qHTML("g-" + id, l.guess, 0, st, true)}</div>${st.ans[0] == null ? `<span class="muted note">No score. Guessing first, even wrongly, helps the answer stick.</span>` : ""}</section>`;
   }
   if (l.terms.length) h += `<section class="block" id="words"><span class="label">Words you'll meet</span><dl class="terms">${l.terms.map((t) => `<div><dt>${esc(t.term)}</dt><dd>${t.plain}</dd></div>`).join("")}</dl></section>`;
   l.sections.forEach((s, si) => {
@@ -444,7 +444,7 @@ function viewLesson(id) {
     toc.push(["check", "Quick check"]);
     const key = "c-" + id;
     QUIZ[key] = { qs: l.check, result: (s) => (s >= 2 ? (isDone(id) ? "Passed. This day is marked done." : "Passed.") : "You need 2. Read the explanations, then try again."), onDone: (s) => { P.scores[id] = Math.max(P.scores[id] || 0, s); if (s >= 2 && !isDone(id)) setDone(id, true); else commit(); } };
-    h += `<section class="block" id="check"><div class="block-h"><span class="num">3Q</span><h2>Quick check</h2></div><p class="muted" style="margin:0">New cases, same idea. 2 of 3 right marks Day ${pad(l.day)} passed and adds its words to your review deck.</p>${quizBlock(key)}</section>`;
+    h += `<section class="block" id="check"><div class="block-h"><span class="num">3Q</span><h2>Quick check</h2></div><p class="muted">New cases, same idea. 2 of 3 right marks Day ${pad(l.day)} passed and adds its words to your review deck.</p>${quizBlock(key)}</section>`;
   }
   if (l.interview.length) {
     toc.push(["interview", "Interview corner"]);
@@ -452,7 +452,7 @@ function viewLesson(id) {
   }
   if (l.deeper) {
     toc.push(["deeper", "Go deeper"]);
-    h += `<details class="deeper" id="deeper"><summary><span><span class="label">Optional · about ${l.deeper.minutes} minutes</span><h2>Go deeper</h2></span></summary><div class="inner"><div class="prose">${l.deeper.html}</div>${l.sources.length ? `<div class="refs" style="margin-top:16px"><span class="label">Sources</span><ul>${l.sources.map((s) => `<li><span class="kind docs">src</span><span><a href="${esc(s.url)}" target="_blank" rel="noopener">${s.title}</a><span class="host">${esc(host(s.url))}</span></span></li>`).join("")}</ul></div>` : ""}</div></details>`;
+    h += `<details class="deeper" id="deeper"><summary><span><span class="label">Optional · about ${l.deeper.minutes} minutes</span><h2>Go deeper</h2></span></summary><div class="inner"><div class="prose">${l.deeper.html}</div>${l.sources.length ? `<div class="refs gap"><span class="label">Sources</span><ul>${l.sources.map((s) => `<li><span class="kind docs">src</span><span><a href="${esc(s.url)}" target="_blank" rel="noopener">${s.title}</a><span class="host">${esc(host(s.url))}</span></span></li>`).join("")}</ul></div>` : ""}</div></details>`;
   }
   h += `<section class="block" id="tutor" hidden></section>`;
   h += pager;
@@ -464,21 +464,21 @@ function viewPart(n) {
   const p = partOf(n);
   if (!p) return viewHome();
   const nDone = p.lessons.filter(isDone).length;
-  const list = p.lessons.map((id) => `<a class="prow" href="#${id}"><span class="pn">${pad(L(id).day)}</span><span><span class="pt" style="font-size:19px">${esc(L(id).title)}${vmark(id)}</span><span class="pd">${L(id).pending ? "being written" : `${L(id).minutes} min${P.scores[id] != null ? ` · check ${P.scores[id]}/3` : ""}`}</span></span><span class="pp" style="justify-items:end">${glyph(id)}</span></a>`).join("");
-  let h = `<div class="page" style="max-width:960px">${p.art ? `<figure class="part-art">${p.art}</figure>` : ""}<header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${secOf(p.part) >= 0 ? `Section ${secOf(p.part) + 1} · ${esc(SECS[secOf(p.part)].title)} · ` : ""}${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
+  const list = p.lessons.map((id) => `<a class="prow" href="#${id}"><span class="pn">${pad(L(id).day)}</span><span><span class="pt">${esc(L(id).title)}${vmark(id)}</span><span class="pd">${L(id).pending ? "being written" : `${L(id).minutes} min${P.scores[id] != null ? ` · check ${P.scores[id]}/3` : ""}`}</span></span><span class="pp end">${glyph(id)}</span></a>`).join("");
+  let h = `<div class="page w960">${p.art ? `<figure class="part-art">${p.art}</figure>` : ""}<header class="lhead"><div class="plate"><span class="pd">PART ${p.part}</span><span class="pp">${secOf(p.part) >= 0 ? `Section ${secOf(p.part) + 1} · ${esc(SECS[secOf(p.part)].title)} · ` : ""}${nDone}/${p.lessons.length} passed</span></div><h1>${esc(p.title)}</h1>${p.intro ? `<p class="goal">${p.intro}</p>` : ""}</header><section class="parts">${list}</section>`;
   if (!p.ready) return h + `<p class="muted">This part is still being written. It will appear here when it's ready.</p></div>`;
-  if (p.resources && p.resources.length) h += `<section class="block"><div class="sec-h"><h2>Go deeper</h2><a class="label" href="#library">the full library</a></div><p class="muted" style="margin:0">Hand-picked for this part: official docs, the best free courses and videos, and the books people keep recommending.</p>${resList(p.resources)}</section>`;
+  if (p.resources && p.resources.length) h += `<section class="block"><div class="sec-h"><h2>Go deeper</h2><a class="label" href="#library">the full library</a></div><p class="muted">Hand-picked for this part: official docs, the best free courses and videos, and the books people keep recommending.</p>${resList(p.resources)}</section>`;
   if (p.recap.length) h += `<section class="recap"><span class="label">Part recap</span><ul>${p.recap.map((r) => `<li>${r}</li>`).join("")}</ul></section>`;
   const cmds = p.lessons.filter(ready).flatMap((id) => L(id).commands);
   if (cmds.length) h += `<section class="block"><div class="sec-h"><h2>Cheat sheet</h2><a class="label" href="#commands">all commands</a></div>${cmdRows(cmds)}</section>`;
   if (p.flashcards.length) {
     const all = p.lessons.every(isDone);
-    h += `<section class="block"><div class="sec-h"><h2>Flashcards</h2><span class="label">${p.flashcards.length} cards</span></div><p class="muted" style="margin:0">${all ? "These cards are in your review deck. Practise them here any time." : "Pass every lesson in this part and these cards join your spaced review deck. You can practise them here now."}</p>${deckHTML("p" + p.part, p.flashcards)}</section>`;
+    h += `<section class="block"><div class="sec-h"><h2>Flashcards</h2><span class="label">${p.flashcards.length} cards</span></div><p class="muted">${all ? "These cards are in your review deck. Practise them here any time." : "Pass every lesson in this part and these cards join your spaced review deck. You can practise them here now."}</p>${deckHTML("p" + p.part, p.flashcards)}</section>`;
   }
   if (p.quiz.length) {
     const key = "q-p" + p.part;
     QUIZ[key] = { qs: p.quiz, result: (s) => `Best so far: ${Math.max(P.quiz["p" + p.part] || 0, s)}/${p.quiz.length}.`, onDone: (s) => { P.quiz["p" + p.part] = Math.max(P.quiz["p" + p.part] || 0, s); activity(); commit(); } };
-    h += `<section class="block"><div class="sec-h"><h2>Part quiz</h2><span class="label">${p.quiz.length} questions${P.quiz["p" + p.part] != null ? ` · best ${P.quiz["p" + p.part]}/${p.quiz.length}` : ""}</span></div><p class="muted" style="margin:0">Practice only. Questions marked with a part number revisit earlier parts, which helps you keep them.</p>${quizBlock(key)}</section>`;
+    h += `<section class="block"><div class="sec-h"><h2>Part quiz</h2><span class="label">${p.quiz.length} questions${P.quiz["p" + p.part] != null ? ` · best ${P.quiz["p" + p.part]}/${p.quiz.length}` : ""}</span></div><p class="muted">Practice only. Questions marked with a part number revisit earlier parts, which helps you keep them.</p>${quizBlock(key)}</section>`;
   }
   return h + "</div>";
 }
@@ -487,8 +487,8 @@ const DECK = {};
 function deckHTML(key, cards) {
   const d = DECK[key] || (DECK[key] = { i: 0, flip: false, order: cards.map((_, k) => k) });
   const c = cards[d.order[d.i]];
-  return `<div class="grid-deck" id="deck-${key}" style="display:grid;gap:12px;max-width:640px">
-    <div class="fc${d.flip ? " flip" : ""}" role="button" tabindex="0" aria-label="Flip card" data-act="dflip" data-key="${key}"><div class="fc-in"><div class="fc-face"><span class="label">Question</span><div class="fb" style="font-weight:700;font-size:21px">${c.front}</div></div><div class="fc-face fc-back"><span class="label">Answer</span><div class="fb">${c.back}</div></div></div></div>
+  return `<div class="grid-deck" id="deck-${key}">
+    <div class="fc${d.flip ? " flip" : ""}" role="button" tabindex="0" aria-label="Flip card" data-act="dflip" data-key="${key}"><div class="fc-in"><div class="fc-face"><span class="label">Question</span><div class="fb fq">${c.front}</div></div><div class="fc-face fc-back"><span class="label">Answer</span><div class="fb">${c.back}</div></div></div></div>
     <div class="row"><button class="btn ghost sm" data-act="dmove" data-key="${key}" data-d="-1">Previous</button><button class="btn sm" data-act="dmove" data-key="${key}" data-d="1">Next</button><button class="btn ghost sm" data-act="dshuffle" data-key="${key}">Shuffle</button><span class="label tnum">${d.i + 1} / ${cards.length}</span></div></div>`;
 }
 const deckCards = (key) => partOf(+key.slice(1)).flashcards;
@@ -511,16 +511,16 @@ function viewReview() {
     const c = byId[review.queue[review.i]];
     const src = c.src.startsWith("d") ? `Day ${pad(L(c.src).day)} · ${esc(L(c.src).title)}` : `Part ${c.src.slice(1)} flashcards`;
     const pv = preview(c.id);
-    body = `<section class="block" style="max-width:680px"><div class="row" style="justify-content:space-between"><span class="label tnum">Card ${review.i + 1} of ${review.queue.length}</span><a class="label" href="#${c.src}">${src}</a></div>
-      <div class="fc${review.flip ? " flip" : ""}" role="button" tabindex="0" aria-label="Flip card" data-act="rflip"><div class="fc-in"><div class="fc-face"><span class="label">${c.src.startsWith("d") ? "What does this mean?" : "Question"}</span><div class="${c.src.startsWith("d") ? "ft" : "fb"}" ${c.src.startsWith("d") ? "" : 'style="font-weight:700;font-size:21px"'}>${c.front}</div><span class="muted" style="font-size:14px">Say the answer out loud, then flip (space bar).</span></div><div class="fc-face fc-back"><span class="label">Answer</span><div class="fb">${c.back}</div></div></div></div>
-      ${review.flip ? `<div class="rate">${["Again", "Hard", "Good", "Easy"].map((t, r) => `<button class="btn ${r === 2 ? "" : "ghost"} sm" data-act="rate" data-r="${r}"><span>${t}</span><small>${pv[r]}</small></button>`).join("")}</div><p class="muted" style="font-size:14px;margin:0">Keys 1 to 4. Be honest: "Again" brings it back soon, which is how it sticks.</p>` : `<div><button class="btn" data-act="rflip">Show answer</button></div>`}</section>`;
+    body = `<section class="block narrow"><div class="row between"><span class="label tnum">Card ${review.i + 1} of ${review.queue.length}</span><a class="label" href="#${c.src}">${src}</a></div>
+      <div class="fc${review.flip ? " flip" : ""}" role="button" tabindex="0" aria-label="Flip card" data-act="rflip"><div class="fc-in"><div class="fc-face"><span class="label">${c.src.startsWith("d") ? "What does this mean?" : "Question"}</span><div class="${c.src.startsWith("d") ? "ft" : "fb fq"}">${c.front}</div><span class="muted">Say the answer out loud, then flip (space bar).</span></div><div class="fc-face fc-back"><span class="label">Answer</span><div class="fb">${c.back}</div></div></div></div>
+      ${review.flip ? `<div class="rate">${["Again", "Hard", "Good", "Easy"].map((t, r) => `<button class="btn ${r === 2 ? "" : "ghost"} sm" data-act="rate" data-r="${r}"><span>${t}</span><small>${pv[r]}</small></button>`).join("")}</div><p class="muted note">Keys 1 to 4. Be honest: "Again" brings it back soon, which is how it sticks.</p>` : `<div><button class="btn" data-act="rflip">Show answer</button></div>`}</section>`;
   } else if (review.active) {
-    body = `<section class="card" style="max-width:680px"><span class="label">Session done</span><h2 style="font:600 26px/1.2 var(--f-display)">${review.seen} cards reviewed</h2><p class="muted" style="margin:0">Cards you knew come back in a few days, then in a week, then later. Come back tomorrow for the next batch.</p><div class="row"><a class="btn" href="#${nextUp() || "home"}">${nextUp() ? `Go to Day ${pad(L(nextUp()).day)}` : "Back to Today"} ${ICON.arrow}</a></div></section>`;
+    body = `<section class="card narrow"><span class="label">Session done</span><h2 class="card-h">${review.seen} cards reviewed</h2><p class="muted">Cards you knew come back in a few days, then in a week, then later. Come back tomorrow for the next batch.</p><div class="row"><a class="btn" href="#${nextUp() || "home"}">${nextUp() ? `Go to Day ${pad(L(nextUp()).day)}` : "Back to Today"} ${ICON.arrow}</a></div></section>`;
   } else {
     const d = dueCards(), n = d.due.length + Math.min(d.fresh.length, NEW_PER_SESSION);
-    body = `<section class="card" style="max-width:680px"><span class="label">${n ? "Ready" : "All caught up"}</span><h2 style="font:600 26px/1.2 var(--f-display)">${n ? `${n} card${n === 1 ? "" : "s"} to review` : "Nothing due right now"}</h2><p class="muted" style="margin:0">${n ? "About 5 minutes. Read the front, answer in your head, flip, then rate how well you knew it." : d.total ? "Pass the next lesson to add its words, or come back tomorrow when older cards are due again." : "Pass your first lesson and its key words become review cards here."}</p>${n ? `<div><button class="btn" data-act="rstart">Start review ${ICON.arrow}</button></div>` : ""}</section>`;
+    body = `<section class="card narrow"><span class="label">${n ? "Ready" : "All caught up"}</span><h2 class="card-h">${n ? `${n} card${n === 1 ? "" : "s"} to review` : "Nothing due right now"}</h2><p class="muted">${n ? "About 5 minutes. Read the front, answer in your head, flip, then rate how well you knew it." : d.total ? "Pass the next lesson to add its words, or come back tomorrow when older cards are due again." : "Pass your first lesson and its key words become review cards here."}</p>${n ? `<div><button class="btn" data-act="rstart">Start review ${ICON.arrow}</button></div>` : ""}</section>`;
   }
-  return `<div class="page" style="max-width:860px"><header class="lhead"><div class="plate"><span class="pd">REVIEW</span><span class="pp">spaced repetition</span></div><h1>Remember it</h1><p class="goal">Every term from the lessons you pass becomes a card. Each time you know a card, it waits longer before it comes back: 1 day, 3, 7, 14, then 30. ${locked ? `${locked} more cards unlock as you pass lessons.` : ""}</p></header>${body}<section class="block"><span class="label">Your deck</span>${boxes}</section></div>`;
+  return `<div class="page w860"><header class="lhead"><div class="plate"><span class="pd">REVIEW</span><span class="pp">spaced repetition</span></div><h1>Remember it</h1><p class="goal">Every term from the lessons you pass becomes a card. Each time you know a card, it waits longer before it comes back: 1 day, 3, 7, 14, then 30. ${locked ? `${locked} more cards unlock as you pass lessons.` : ""}</p></header>${body}<section class="block"><span class="label">Your deck</span>${boxes}</section></div>`;
 }
 
 let cmdFilter = "all", cmdQ = "";
@@ -533,12 +533,12 @@ function viewCommands() {
     for (const id of p.lessons) {
       if (!ready(id)) continue;
       const cmds = L(id).commands.filter((c) => !q || (c.cmd + " " + c.what).toLowerCase().includes(q));
-      if (cmds.length) body += `<section class="block"><div class="sec-h" style="border:0;padding:0"><a href="#${id}" style="color:inherit;text-decoration:none"><span class="label">Day ${pad(L(id).day)} · ${esc(p.tool)}</span><h3 style="font:600 20px/1.2 var(--f-display)">${esc(L(id).title)}</h3></a></div>${cmdRows(cmds)}</section>`;
+      if (cmds.length) body += `<section class="block"><div class="sec-h plain"><a href="#${id}"><span class="label">Day ${pad(L(id).day)} · ${esc(p.tool)}</span><h3>${esc(L(id).title)}</h3></a></div>${cmdRows(cmds)}</section>`;
     }
   }
-  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">$_</span><span class="pp">cheat sheet</span></div><h1>Commands</h1><p class="goal">Every command from the lessons, with what it does. Search it when you forget a flag.</p></header>
+  return `<div class="page w920"><header class="lhead"><div class="plate"><span class="pd">$_</span><span class="pp">cheat sheet</span></div><h1>Commands</h1><p class="goal">Every command from the lessons, with what it does. Search it when you forget a flag.</p></header>
     <div class="filter"><input class="field" id="cmdq" type="search" placeholder="Search, for example: logs, apply, port" value="${esc(cmdQ)}" data-act="cmdq">${chips.map(([k, t]) => `<button class="chip${cmdFilter === k ? " on" : ""}" data-act="cmdf" data-f="${k}">${esc(t)}</button>`).join("")}</div>
-    <div id="cmdBody" style="display:grid;gap:34px">${body || `<p class="muted">No commands match yet.</p>`}</div></div>`;
+    <div id="cmdBody" class="stack">${body || `<p class="muted">No commands match yet.</p>`}</div></div>`;
 }
 
 let glQ = "";
@@ -554,8 +554,8 @@ function viewGlossary() {
     if (L0 !== letter) { letter = L0; body += `<div class="letter">${esc(/[A-Z]/.test(letter) ? letter : "#")}</div>`; }
     body += `<div><dt>${esc(t.term)}</dt><dd>${t.plain}<a class="src" href="#${t.lid}">Day ${pad(L(t.lid).day)} · ${esc(L(t.lid).title)}</a></dd></div>`;
   }
-  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">A–Z</span><span class="pp">${terms.length} terms</span></div><h1>Glossary</h1><p class="goal">Every term the course defines, in plain words, with the day it comes from.</p></header>
-    <div class="filter"><input class="field" id="glq" type="search" placeholder="Search terms" value="${esc(glQ)}" data-act="glq"></div><dl class="gl" id="glBody" style="margin:0">${body || `<p class="muted">No terms match.</p>`}</dl></div>`;
+  return `<div class="page w920"><header class="lhead"><div class="plate"><span class="pd">A–Z</span><span class="pp">${terms.length} terms</span></div><h1>Glossary</h1><p class="goal">Every term the course defines, in plain words, with the day it comes from.</p></header>
+    <div class="filter"><input class="field" id="glq" type="search" placeholder="Search terms" value="${esc(glQ)}" data-act="glq"></div><dl class="gl" id="glBody">${body || `<p class="muted">No terms match.</p>`}</dl></div>`;
 }
 
 function resList(items) {
@@ -572,11 +572,11 @@ function viewLibrary() {
     for (const id of p.lessons) if (ready(id)) for (const s of L(id).sections) for (const r of s.refs) if (!seen.has(r.url)) { seen.add(r.url); items.push({ ...r, from: id }); }
     const shown = items.filter((r) => (libKind === "all" || r.kind === libKind) && (!q || (r.title + " " + (r.why || "") + " " + r.url).toLowerCase().includes(q)));
     total += shown.length;
-    if (shown.length) body += `<section class="block"><div class="sec-h" style="border:0;padding:0"><a href="#p${p.part}" style="color:inherit;text-decoration:none"><span class="label">Part ${p.part}</span><h3 style="font:600 21px/1.2 var(--f-display);margin:0">${esc(p.title)}</h3></a><span class="label tnum">${shown.length}</span></div>${resList(shown)}</section>`;
+    if (shown.length) body += `<section class="block"><div class="sec-h plain"><a href="#p${p.part}"><span class="label">Part ${p.part}</span><h3>${esc(p.title)}</h3></a><span class="label tnum">${shown.length}</span></div>${resList(shown)}</section>`;
   }
-  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">LIB</span><span class="pp">${total} links</span></div><h1>Library</h1><p class="goal">Every link and video in the course in one place, grouped by part. Official docs first, then the best free courses, talks and books.</p></header>
+  return `<div class="page w920"><header class="lhead"><div class="plate"><span class="pd">LIB</span><span class="pp">${total} links</span></div><h1>Library</h1><p class="goal">Every link and video in the course in one place, grouped by part. Official docs first, then the best free courses, talks and books.</p></header>
     <div class="filter"><input class="field" id="libq" type="search" placeholder="Search, for example: PromQL, Helm, grep" value="${esc(libQ)}" data-act="libq">${kinds.map(([k, t]) => `<button class="chip${libKind === k ? " on" : ""}" data-act="libk" data-k="${k}">${esc(t)}</button>`).join("")}</div>
-    <div style="display:grid;gap:34px">${body || `<p class="muted">Nothing matches yet.</p>`}</div></div>`;
+    <div class="stack">${body || `<p class="muted">Nothing matches yet.</p>`}</div></div>`;
 }
 let labSel = null;
 const LABDESC = {
@@ -598,9 +598,9 @@ function viewLabs() {
   return `<div class="page"><header class="lhead"><div class="plate"><span class="pd">LAB</span><span class="pp">finished reference · ${all.length} files</span></div><h1>Lab files</h1><p class="goal">The finished lab repos, every file checked. Build yours by following the lessons, then come here to compare. Copy a file only when you are truly stuck.</p></header>
     <div class="code"><div class="code-bar"><span class="fn">Get every lab file at once</span><button class="copy" data-act="copy" data-target="clonecmd">Copy</button></div><pre id="clonecmd"><code>git clone --depth 1 https://github.com/arunav-bhattacharya/devops-from-zero ~/code/devops-from-zero</code></pre></div>
     <div class="filter">${projs.map((x) => `<button class="chip${x === labProj ? " on" : ""}" data-act="labp" data-p="${esc(x)}">${esc(x)}</button>`).join("")}</div>
-    <p class="muted" style="margin:0">${esc(LABDESC[labProj] || "")}</p>
+    <p class="muted">${esc(LABDESC[labProj] || "")}</p>
     <div class="labgrid"><div class="labtree" role="list">${files.map((x) => `<button class="${x.path === labSel ? "on" : ""}" data-act="lab" data-p="${esc(x.path)}" role="listitem"><span>${esc(rel(x))}</span><small>D${pad(x.day)}</small></button>`).join("")}</div>
-    <div style="min-width:0;display:grid;gap:10px"><span class="label">Final version from Day ${pad(f.day)}${dl ? ` · <a href="#${dl.id}">${esc(dl.title)}</a>` : ""} · ${f.lines} lines</span>${codeBox({ title: f.path, lang: f.lang, html: f.html })}</div></div></div>`;
+    <div class="labmain"><span class="label">Final version from Day ${pad(f.day)}${dl ? ` · <a href="#${dl.id}">${esc(dl.title)}</a>` : ""} · ${f.lines} lines</span>${codeBox({ title: f.path, lang: f.lang, html: f.html })}</div></div></div>`;
 }
 
 function viewPlan() {
@@ -614,9 +614,9 @@ function viewPlan() {
     return `${head}<tr><td>${glyph(id)}</td><td class="dt tnum">D${pad(l.day)}</td><td><a href="#${id}">${esc(l.title)}</a>${vmark(id)}</td><td class="dt">${fmt(planned)}</td><td class="dt">${when}</td></tr>`;
   }).join("");
   const behind = C.order.filter((id, k) => !isDone(id) && addDays(st, k) < today()).length;
-  return `<div class="page" style="max-width:920px"><header class="lhead"><div class="plate"><span class="pd">PLAN</span><span class="pp">one lesson a day</span></div><h1>Plan and pace</h1><p class="goal">One lesson a day takes ${C.order.length} days, about ${Math.round(C.order.length / 7)} weeks. Long lessons split well over two sittings, and short ones pair well on a weekend. The plan moves with you.</p></header>
-    <section class="stats"><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(st, { month: "short", day: "numeric" })}</span><span class="label">start date</span></div><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(pr.planned, { month: "short", day: "numeric" })}</span><span class="label">planned finish</span></div><div class="stat"><span class="n tnum" style="font-size:34px">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label">projected finish</span></div><div class="stat"><span class="n tnum" style="font-size:34px;${behind ? "color:var(--orange)" : ""}">${behind}</span><span class="label">behind plan</span></div></section>
-    <div class="row"><label class="label" for="startIn">Start date</label><input class="field" id="startIn" type="date" value="${st}" style="max-width:200px" data-act="start"><span class="muted" style="font-size:15px">Your start is set the day you pass your first lesson. Change it any time.</span></div>
+  return `<div class="page w920"><header class="lhead"><div class="plate"><span class="pd">PLAN</span><span class="pp">one lesson a day</span></div><h1>Plan and pace</h1><p class="goal">One lesson a day takes ${C.order.length} days, about ${Math.round(C.order.length / 7)} weeks. Long lessons split well over two sittings, and short ones pair well on a weekend. The plan moves with you.</p></header>
+    <section class="stats"><div class="stat"><span class="n tnum sm">${fmt(st, { month: "short", day: "numeric" })}</span><span class="label">start date</span></div><div class="stat"><span class="n tnum sm">${fmt(pr.planned, { month: "short", day: "numeric" })}</span><span class="label">planned finish</span></div><div class="stat"><span class="n tnum sm">${fmt(pr.finish, { month: "short", day: "numeric" })}</span><span class="label">projected finish</span></div><div class="stat"><span class="n tnum sm${behind ? " late" : ""}">${behind}</span><span class="label">behind plan</span></div></section>
+    <div class="row"><label class="label" for="startIn">Start date</label><input class="field date" id="startIn" type="date" value="${st}" data-act="start"><span class="muted note">Your start is set the day you pass your first lesson. Change it any time.</span></div>
     <div class="tablewrap"><table class="plan-t"><thead><tr><th></th><th>Day</th><th>Lesson</th><th>Planned</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
     <section class="block"><span class="label">Start over</span><div class="row" id="resetRow"><button class="btn ghost sm" data-act="reset">Reset all progress</button></div></section></div>`;
 }
@@ -648,11 +648,11 @@ function renderTutor(id) {
   const box = $("#tutor"); if (!box) return;
   const c = chat[id] || (chat[id] = { msgs: [], busy: false, err: "" });
   const chips = ["Explain it more simply", "I'm stuck on the hands-on", "Quiz me on this lesson", "How is this used at work?"];
-  box.innerHTML = `<div class="block-h"><span class="num">AI</span><h2>Ask the tutor</h2></div><p class="muted" style="margin:0">It knows this lesson. It helps you find the answer yourself, one step at a time.</p>
+  box.innerHTML = `<div class="block-h"><span class="num">AI</span><h2>Ask the tutor</h2></div><p class="muted">It knows this lesson. It helps you find the answer yourself, one step at a time.</p>
     <div class="tutor-msgs">${c.msgs.map((m) => `<div class="${m.role === "user" ? "u" : "a prose"}">${m.role === "user" ? esc(m.content) : m.content ? mdLite(m.content) : '<span class="muted">Thinking...</span>'}</div>`).join("")}</div>
     ${c.msgs.length ? "" : `<div class="row">${chips.map((t) => `<button class="chip" data-act="ask" data-q="${esc(t)}">${esc(t)}</button>`).join("")}</div>`}
     <textarea class="field" id="tq-${id}" rows="2" placeholder="Ask anything about this lesson (Ctrl or Cmd + Enter to send)"></textarea>
-    <div class="row"><button class="btn sm" data-act="ask"${c.busy ? " disabled" : ""}>Ask</button>${c.msgs.length ? `<button class="btn ghost sm" data-act="askreset">Start over</button>` : ""}${c.err ? `<span style="color:var(--red)">${esc(c.err)}</span>` : ""}</div>`;
+    <div class="row"><button class="btn sm" data-act="ask"${c.busy ? " disabled" : ""}>Ask</button>${c.msgs.length ? `<button class="btn ghost sm" data-act="askreset">Start over</button>` : ""}${c.err ? `<span class="err">${esc(c.err)}</span>` : ""}</div>`;
 }
 async function ask(id, text) {
   text = (text || "").trim();
@@ -862,7 +862,7 @@ document.addEventListener("click", async (e) => {
   } else if (a === "hint") {
     const id = b.dataset.id, box = $("#hints-" + id), n = +box.dataset.shown + 1, hints = L(id).task.hints;
     box.dataset.shown = n;
-    box.innerHTML = hints.slice(0, n).map((h, k) => `<div class="hint"><span class="label">Hint ${k + 1}</span>${h}</div>`).join("") + (n < hints.length ? `<button class="linkbtn" data-act="hint" data-id="${id}" style="margin-top:8px">Show another hint</button>` : "");
+    box.innerHTML = hints.slice(0, n).map((h, k) => `<div class="hint"><span class="label">Hint ${k + 1}</span>${h}</div>`).join("") + (n < hints.length ? `<button class="linkbtn more" data-act="hint" data-id="${id}">Show another hint</button>` : "");
     box.style.display = "grid"; box.style.gap = "8px";
   } else if (a === "model") {
     const m = $("#model-" + b.dataset.id); m.hidden = !m.hidden; b.textContent = m.hidden ? "Compare with a model answer" : "Hide the model answer";
