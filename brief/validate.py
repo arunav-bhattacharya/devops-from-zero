@@ -136,8 +136,30 @@ def lesson(L, ref, part):
         err(w, f"id should be {ref['id']}")
     if L.get("title") != ref["title"]:
         err(w, f"title should be {ref['title']!r}")
-    need = ["minutes", "goal", "guess", "terms", "sections", "analogy", "diagram", "diagram_caption", "worked", "code",
-            "commands", "mistake", "real_world", "task", "explain_back", "recap", "check", "interview", "deeper", "sources"]
+    need = ["minutes", "goal", "guess", "terms", "sections", "diagram", "diagram_caption", "worked", "code",
+            "commands", "task", "explain_back", "recap", "check", "interview", "deeper", "sources"]
+    # analogy, mistake and real_world are optional once a lesson has a book-voice opening (brief/VOICE.md)
+    if not L.get("opening"):
+        need += ["analogy", "mistake", "real_world"]
+    if L.get("opening"):
+        ow = words(L["opening"])
+        if not 90 <= ow <= 200:
+            warn(w, f"opening is {ow} words (want 90..180)")
+        text_checks(w + ".opening", L["opening"])
+        if not L.get("closing"):
+            err(w, "a lesson with an opening needs a closing")
+    if L.get("closing"):
+        cw = words(L["closing"])
+        if not 50 <= cw <= 140:
+            warn(w, f"closing is {cw} words (want 60..120)")
+        text_checks(w + ".closing", L["closing"])
+    if L.get("aside"):
+        a = L["aside"]
+        if not a.get("title") or not a.get("body"):
+            err(w, "aside needs title and body")
+        if not 0 <= int(a.get("after", 0)) < len(L.get("sections", [])):
+            err(w, "aside.after must be a section index")
+        text_checks(w + ".aside", a.get("body", ""))
     for k in need:
         if k not in L:
             err(w, f"missing {k}")
@@ -177,7 +199,7 @@ def lesson(L, ref, part):
                 err(sw, "section figure needs a caption")
             text_checks(sw + ".figure.caption", s["figure"].get("caption", ""))
         total += words(s.get("body", ""))
-    lo, hi = 1400, 2200
+    lo, hi = (1400, 2600) if L.get("opening") else (1400, 2200)
     if lid == "d02":
         lo = 600
     if not lo <= total <= hi:

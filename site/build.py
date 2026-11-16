@@ -134,6 +134,9 @@ def lesson(L, R, part, k):
                   "run": c.get("run", "")} for c in L.get("code", [])],
         "commands": [{"cmd": c["cmd"], "html": hl("bash", c["cmd"]), "what": inline(c["what"])} for c in L.get("commands", [])],
         "mistake": md(L.get("mistake", "")), "realWorld": md(L.get("real_world", "")),
+        # book-voice fields (optional): a scene that opens the lesson, a look-back that closes it, one sidebar
+        "opening": md(L.get("opening", "")), "closing": md(L.get("closing", "")),
+        "aside": {"title": inline(L["aside"]["title"]), "html": md(L["aside"]["body"]), "after": int(L["aside"].get("after", len(L["sections"]) - 1))} if L.get("aside") else None,
         "task": {"title": inline(L["task"]["title"]), "steps": [inline(x) for x in L["task"]["steps"]],
                  "hints": [inline(x) for x in L["task"].get("hints", [])], "doneWhen": inline(L["task"].get("done_when", ""))},
         "explain": {"prompt": inline(L["explain_back"]["prompt"]), "answer": md(L["explain_back"]["answer"]),
@@ -225,12 +228,16 @@ def main():
     course["renum"] = json.loads(renum.read_text()) if renum.exists() else {}
     # narrated videos (videos/manifest/*.json): {lesson id: [{slug, title, after, ...}]}; files live in public/video/
     vids = {}
-    for mf in sorted((ROOT / "videos/manifest").glob("*.json")):
-        for lid, vs in json.loads(mf.read_text()).items():
+    manifests = [json.loads(mf.read_text()) for mf in sorted((ROOT / "videos/manifest").glob("*.json"))]
+    # a remade video names the old slug it replaces; once the remake is rendered, the old one is hidden
+    replaced = {v["replaces"] for m in manifests for vs in m.values() for v in vs
+                if v.get("replaces") and (WEB / "video" / f"{v['slug']}.mp4").exists()}
+    for m in manifests:
+        for lid, vs in m.items():
             for v in vs:
                 mp4 = WEB / "video" / f"{v['slug']}.mp4"
-                if not mp4.exists():
-                    continue  # not rendered yet
+                if not mp4.exists() or v["slug"] in replaced:
+                    continue  # not rendered yet, or replaced by a remake
                 dur = None
                 try:
                     import subprocess

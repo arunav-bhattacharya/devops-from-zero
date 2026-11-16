@@ -20,9 +20,9 @@ PATTERNS = {
     "'not just X, but/it's Y'": r"\bnot (just|only|merely) [^.]{1,50}?(, but|; it|\. it)",
     "'the good news / the bad news'": r"\bthe (good|bad) news\b",
     "'simply put / in short / in a nutshell'": r"\b(simply put|in short|in a nutshell|put simply)\b",
-    "'let's' run-up": r"\blet's (look|see|start|walk|dive|break|take a look)\b",
+    "'let's' run-up": r"\blet's (look at|walk through|dive|break down|take a look)\b",
 }
-PROSE = ("goal", "analogy", "mistake", "real_world")
+PROSE = ("goal", "opening", "closing", "analogy", "mistake", "real_world")
 
 
 def lessons_of(path):
