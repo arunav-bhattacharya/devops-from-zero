@@ -206,7 +206,7 @@ def lesson(L, ref, part):
         warn(w, f"section text is {total} words (want {lo}..{hi})")
     for k in ("analogy", "mistake", "real_world"):
         text_checks(f"{w}.{k}", L.get(k, ""))
-        if not L.get(k):
+        if not L.get(k) and not L.get("opening"):
             err(w, f"{k} empty")
     svg_checks(w + ".diagram", L.get("diagram", ""))
     wk = L.get("worked") or {}

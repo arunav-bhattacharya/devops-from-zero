@@ -109,3 +109,16 @@ book's or a speaker's.
 4. Read each lesson from the top as the newcomer before moving on. Check the skill's "Before you hand it in"
    list.
 5. No git commands. The lead commits.
+
+## Lead's notes from the pilots (read before each lesson)
+
+- Pace new words. At most one new term per sentence, and no more than three new terms in one paragraph. If a
+  paragraph needs more, split it, or ask whether the reader needs that word today.
+- Trivia that the intuition doesn't need (an acronym's expansion, an interface's name, history, a removed
+  feature) moves to `deeper` or an `aside`, or goes. Moving a fact is fine; changing one is not.
+- Prefer a short story over a bullet list of facts. A list is fine for steps, or for three or more parallel
+  items the reader will come back to.
+- Link to the previous lesson in natural words ("Last time, a careful checklist set up our servers..."), not
+  by pasting its full title.
+- `analogy`, `real_world` and `mistake` may be removed when the opening and sections already carry them
+  (validate.py now allows that).
