@@ -38,22 +38,23 @@ for t in L["terms"]:
 S = L["sections"]
 
 S[0]["h"] = "When the checklist outgrows Bash"
-S[0]["body"] = r"""Our helper's checklist will be a script. On Day 7 you wrote scripts in Bash, the language of the terminal (the text window where you type commands). That lesson ended with a rule of thumb: once a script needs real data structures or grows past about a hundred lines, write it in Python.
+S[0]["body"] = r"""Let's give the helper its first job in Bash, the language of the terminal (the text window where you type commands). The job: read a web server's log and count the visits to each page.
 
-Bash is good at starting programs and wiring their output together. It gets painful once you need to keep data around and make decisions about it. Move to Python when a script needs any of these:
+On Day 5 you did that with a pipeline, a chain of small tools joined by `|`: `awk '{print $7}' access.log | sort | uniq -c | sort -rn | head -n 2`. It prints `34 /api/products` and `24 /api/products?page=3`. That's one page split across two lines. The second line carries a query string, the `?page=3` part of an address, and the tools treat it as a different page.
 
-- Lookup data, such as a count for each page of a website. The bash 3.2 on your Mac has no associative arrays (lookup tables) at all.
-- JSON, a common text format for data. One `jq` call is fine (jq reads JSON), but five glued together are a program in disguise.
-- An HTTP API, a web address that programs ask for data.
-- Different handling for a missing file, a timeout or a 404 ("page not found").
-- Tests. pytest (Day 16) is far easier than testing a shell script.
-- The same behaviour on macOS and Linux. `sed -i` and `date -d` differ between the two; Python's `re` and `datetime` do not.
+You could add one more tool to cut the query string off. Then you also want the error rate, a limit, and a report another program can read. Each wish adds a step, and the script gets hard to read and harder to test. A count per page needs a lookup table, and the bash 3.2 on a Mac has none.
 
-Keep Bash for short glue: a five-line CI step, a `RUN` line in a Dockerfile (Part 5), or `healthcheck.sh` from Day 7. CI is a service that runs your checks on every change. Keep the Day 7 habits too: a clear exit code, messages on stderr and a loud failure. Most of today is about doing those well in Python.
+This is where Python helps. Day 7 ended with a rule of thumb: once a script needs real data structures or grows past about a hundred lines, switch to Python. Three reasons:
 
-Python is already installed on GitHub's Ubuntu runners (the machines that run CI jobs) and on Ubuntu and Amazon Linux servers. Its standard library, the toolbox that comes with it, covers files, JSON, CSV, regular expressions, time zones and running other programs. Today uses nothing else. Day 16 adds the two outside packages most ops scripts need: requests and boto3.
+- It keeps data around. A count per page takes one line, and one pass over the log can answer many questions.
+- It can tell failures apart: a missing file, a timeout and a bad answer each get their own handling.
+- It is easy to test, as Day 16 shows.
 
-So Python it is. But which Python, and where do its add-ons live?"""
+Its standard library, the toolbox that comes with Python, covers files, data formats, time zones and running other programs. Today's scripts use nothing else.
+
+Bash keeps a place for short glue, such as `healthcheck.sh` from Day 7. Keep its habits too: a clear exit code (the number a program hands back when it ends), messages on stderr (a separate channel for people) and a loud failure. Most of today is about doing those well in Python.
+
+So which Python, and where do its add-ons live?"""
 
 S[1]["h"] = "One tool for Python, its packages and one-file scripts: uv"
 S[1]["body"] = r"""On Day 2 you set up hello-devops, the course's tiny web app that answers every visit with a greeting and a count of visits so far. You did it the classic way: Homebrew's Python, `python3 -m venv .venv`, `source .venv/bin/activate`, then `pip install -r requirements-dev.txt`. That still works, and hello-devops keeps it, because its Dockerfile and its CI (Day 25) use pip.
@@ -62,7 +63,7 @@ The `.venv` folder is a virtual environment: a private home for one project's pa
 
 For new tools this course uses uv, one program from Astral, the company that also makes ruff (a checker for Python code). It does the jobs of Homebrew's Python, venv and pip, and a few more:
 
-- `uv python install 3.14` downloads a Python version, so you stop depending on what Homebrew has.
+- `uv python install 3.14` downloads a Python version, so you no longer depend on Homebrew's.
 - `uv init` starts a project with a `pyproject.toml`, the standard file for a project's name, Python version and the packages it needs.
 - `uv add requests` adds a dependency (a package the project needs) and writes the exact version of every package to `uv.lock`. Commit that file (save it in Git), so CI and teammates get the versions you tested.
 - `uv run <command>` first makes `.venv` match the lock file, then starts the command with `.venv/bin` at the front of its PATH (Day 7), the list of folders searched for programs. That is most of what `activate` does, so you never activate anything.
@@ -116,7 +117,7 @@ Write the pattern as a raw string, `r"..."`, so Python leaves its backslashes al
 
 Then, the counting. A plain dictionary fails: `paths[path] += 1` raises `KeyError`, because that path is not in it yet. `collections.Counter` is a dictionary made for counting. A missing key reads as 0, so the same line works, and `paths.most_common(5)` returns the top five. One pass over the file now collects everything: requests per path, per status class and per server error.
 
-How does that compare with Day 5's awk pipeline? It prints the same three server error lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. Python pays off once you want several answers from one pass, a time window, JSON output, a limit and tests. It also counts more honestly, because it strips the query string (such as `?page=3`) before counting a path. The worked example shows how far apart the two top lists end up.
+How does that compare with Day 5's awk pipeline? It prints the same three server error lines as the summarizer, starting with `6 500 /api/checkout`. For one question, awk is shorter and much faster. Python pays off once you want several answers from one pass, a time window, JSON output, a limit and tests. It also counts more honestly. Remember the page split in two in the first section? The summarizer strips the query string before counting a path. The worked example shows how far apart the two top lists end up.
 
 Every log line also carries a time, and times hide the next trap."""
 
@@ -257,7 +258,9 @@ Speed is the other cost. Both runs took 11 to 12 seconds for a million lines. Th
 1. Access logs are written in time order, so you only need to parse the first and the last timestamp, not every one.
 2. On a busy server many lines share the same second, so caching parsed values with `functools.lru_cache` avoids parsing the same text twice.
 
-That is the general pattern for Python ops scripts. Write the clear version first, measure on realistic data, and fix the one hot spot the profile shows. The command `uv run python -m cProfile -s cumtime scripts/logsum.py access big.log` prints which functions used the time."""
+That is the general pattern for Python ops scripts. Write the clear version first, measure on realistic data, and fix the one hot spot the profile shows. The command `uv run python -m cProfile -s cumtime scripts/logsum.py access big.log` prints which functions used the time.
+
+Finally, a few more signs that a Bash script wants to become Python. One `jq` call (jq reads JSON, a common text format for data) is fine, but five glued together are a program in disguise. The same goes for an HTTP API, a web address that programs ask for data. Scripts that must behave the same on macOS and Linux gain too: `sed -i` and `date -d` differ between the two, while Python's `re` and `datetime` do not. Python is already installed on GitHub's Ubuntu runners (the machines that run CI jobs) and on Ubuntu and Amazon Linux servers. Keep Bash for a five-line CI step or a `RUN` line in a Dockerfile. Day 16 adds the two outside packages most ops scripts need, requests and boto3, and tests with pytest."""
 
 L["closing"] = r"""We started with a helper whose note said "done" while the stock room key was still stuck. Our summarizer can't do that. It counts 238 requests, finds 11 server errors, says why on stderr, and exits with 1, so CI turns red. Look through any script you own, or the lab's `scripts/` folder, for two things: an `except Exception: pass`, and a `subprocess.run(` without `check=True`. Each one is a helper that carries on after a failed step.
 

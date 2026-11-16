@@ -76,7 +76,7 @@ As the author:
 
 - Keep the PR small. Fifty lines tend to get careful comments; two thousand tend to get a quick "looks good".
 - Say why in the description, and how you tested it. The PR template in today's Files section asks both questions.
-- Read your own diff on GitHub before you ask anyone. You will catch the stray debug line yourself.
+- Read your own diff on GitHub before you ask anyone. You will catch the stray debug line (a print you added while hunting a bug) yourself.
 - Answer every comment, even with "done", and re-request the review once you have pushed the changes.
 
 The easy trap is a branch that lives for a week and ends as one huge PR. Reviewers can only skim it, and conflicts pile up while it waits. When a test fails, you can't tell which change broke it. Make one small branch per change, open the PR early (as a draft if it is not ready), and merge within a day or two.
