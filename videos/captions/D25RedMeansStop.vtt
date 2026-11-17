@@ -1,421 +1,421 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:04.906
+00:00:02.700 --> 00:00:04.872
 A test fails on your pull request.
 
 2
-00:00:04.906 --> 00:00:07.525
+00:00:04.872 --> 00:00:07.492
 There's the red cross, right on the page.
 
 3
-00:00:07.667 --> 00:00:09.491
+00:00:07.700 --> 00:00:09.524
 So, can it still be merged?
 
 4
-00:00:09.491 --> 00:00:12.599
+00:00:09.524 --> 00:00:12.633
 Most of us would say: of course not, it's red.
 
 5
-00:00:12.599 --> 00:00:13.748
+00:00:12.633 --> 00:00:13.781
 Keep your answer.
 
 6
-00:00:13.748 --> 00:00:15.437
+00:00:13.781 --> 00:00:15.471
 We'll test it at the end.
 
 7
-00:00:16.200 --> 00:00:20.660
+00:00:16.300 --> 00:00:20.760
 Picture our kitchen on its first Saturday with a real taster at the pass.
 
 8
-00:00:20.660 --> 00:00:23.104
+00:00:20.760 --> 00:00:23.204
 She is careful, and that is the problem.
 
 9
-00:00:23.267 --> 00:00:26.324
+00:00:23.433 --> 00:00:26.491
 Plates pile up, while every dish waits its turn.
 
 10
-00:00:26.467 --> 00:00:32.127
+00:00:26.700 --> 00:00:32.360
 Each morning the stock is boiled again from bones, because the fridge is emptied every night.
 
 11
-00:00:32.267 --> 00:00:36.620
+00:00:32.567 --> 00:00:36.920
 Then a waiter in a hurry carries one plate out before the taster reaches it.
 
 12
-00:00:36.620 --> 00:00:39.427
+00:00:36.920 --> 00:00:39.727
 Of course, that's the plate with the wrong sauce.
 
 13
-00:00:39.600 --> 00:00:41.521
+00:00:39.933 --> 00:00:41.854
 It's easy to blame the waiter.
 
 14
-00:00:41.521 --> 00:00:46.388
+00:00:41.854 --> 00:00:46.721
 But a check that is slow gets skipped, and so does a check that is optional.
 
 15
-00:00:46.388 --> 00:00:47.861
+00:00:46.721 --> 00:00:48.194
 People aren't careless.
 
 16
-00:00:47.861 --> 00:00:48.693
+00:00:48.194 --> 00:00:49.027
 They're busy.
 
 17
-00:00:48.867 --> 00:00:51.590
+00:00:49.233 --> 00:00:51.957
 Three troubles: slow, forgetful, optional.
 
 18
-00:00:51.590 --> 00:00:54.768
+00:00:51.957 --> 00:00:55.135
 Let's fix them one at a time, starting with slow.
 
 19
-00:00:55.667 --> 00:00:58.517
+00:00:56.067 --> 00:00:58.917
 A good pass doesn't taste every plate first.
 
 20
-00:00:58.517 --> 00:00:59.230
+00:00:58.917 --> 00:00:59.630
 It glances.
 
 21
-00:00:59.230 --> 00:01:01.498
+00:00:59.630 --> 00:01:01.898
 Right table, right dish, still hot?
 
 22
-00:01:01.498 --> 00:01:04.867
+00:01:01.898 --> 00:01:05.267
 Only plates that pass the glance get the slow taste.
 
 23
-00:01:05.000 --> 00:01:07.490
+00:01:05.467 --> 00:01:07.956
 So the lab's pipeline starts with lint.
 
 24
-00:01:07.490 --> 00:01:12.724
+00:01:07.956 --> 00:01:13.191
 Ruff reads your code without running it, and flags style problems and likely bugs.
 
 25
-00:01:12.724 --> 00:01:13.809
+00:01:13.191 --> 00:01:14.276
 It takes seconds.
 
 26
-00:01:14.000 --> 00:01:17.140
+00:01:14.500 --> 00:01:17.640
 At the same moment, the tests run with pytest.
 
 27
-00:01:17.140 --> 00:01:21.373
+00:01:17.640 --> 00:01:21.873
 Jobs run in parallel by default, each on its own fresh runner.
 
 28
-00:01:21.533 --> 00:01:26.843
+00:01:22.100 --> 00:01:27.409
 And with a matrix, one job written once runs twice, once per Python version.
 
 29
-00:01:26.843 --> 00:01:29.428
+00:01:27.409 --> 00:01:29.994
 Like testing one recipe in two ovens.
 
 30
-00:01:29.428 --> 00:01:31.943
+00:01:29.994 --> 00:01:32.509
 Two checks, almost no extra waiting.
 
 31
-00:01:32.133 --> 00:01:36.009
+00:01:32.733 --> 00:01:36.609
 Building the Docker image is the slowest check, so it waits.
 
 32
-00:01:36.009 --> 00:01:40.531
+00:01:36.609 --> 00:01:41.131
 needs: [lint, test] means build starts only after all of them succeed.
 
 33
-00:01:40.667 --> 00:01:42.537
+00:01:41.333 --> 00:01:43.203
 If lint fails, build is skipped.
 
 34
-00:01:42.537 --> 00:01:46.803
+00:01:43.203 --> 00:01:47.469
 You hear about the failure in seconds, without waiting for the slow part.
 
 35
-00:01:47.000 --> 00:01:49.033
+00:01:47.700 --> 00:01:49.733
 Remember that skipped box.
 
 36
-00:01:49.033 --> 00:01:50.128
+00:01:49.733 --> 00:01:50.828
 It comes back.
 
 37
-00:01:51.000 --> 00:01:52.595
+00:01:51.733 --> 00:01:53.329
 Trouble two, forgetful.
 
 38
-00:01:52.595 --> 00:01:58.699
+00:01:53.329 --> 00:01:59.433
 Every job starts on an empty machine, so pip downloads every package again on every run.
 
 39
-00:01:58.699 --> 00:02:00.364
+00:01:59.433 --> 00:02:01.097
 Stock boiled from bones.
 
 40
-00:02:00.533 --> 00:02:01.962
+00:02:01.300 --> 00:02:02.779
 A cache is the fridge.
 
 41
-00:02:01.962 --> 00:02:05.795
-It saves files from one run, and restores them in the next.
+00:02:02.779 --> 00:02:08.695
+It saves files from one run, such as downloaded packages, and restores them in the next.
 
 42
-00:02:05.933 --> 00:02:10.265
+00:02:08.900 --> 00:02:13.232
 Each entry is stored under a cache key, a label for what's inside.
 
 43
-00:02:10.265 --> 00:02:13.678
+00:02:13.232 --> 00:02:16.645
 A good fridge label says which recipe and which day.
 
 44
-00:02:13.678 --> 00:02:17.025
+00:02:16.645 --> 00:02:19.992
 This one says: the system, the Python version, pip.
 
 45
-00:02:17.200 --> 00:02:23.671
+00:02:20.200 --> 00:02:26.671
 And a hash, a short fingerprint computed from your requirements files, the lists of packages to install.
 
 46
-00:02:23.867 --> 00:02:26.174
+00:02:26.900 --> 00:02:29.207
 Next run, same files, same key.
 
 47
-00:02:26.174 --> 00:02:29.001
+00:02:29.207 --> 00:02:32.035
 The log says: Cache restored from key.
 
 48
-00:02:29.001 --> 00:02:30.564
+00:02:32.035 --> 00:02:33.597
 Seconds, not minutes.
 
 49
-00:02:30.733 --> 00:02:33.914
+00:02:33.800 --> 00:02:36.981
 Now change one letter in a requirements file.
 
 50
-00:02:33.914 --> 00:02:35.045
+00:02:36.981 --> 00:02:38.112
 Pause and guess.
 
 51
-00:02:35.045 --> 00:02:36.812
+00:02:38.112 --> 00:02:39.879
 Same label, or a new one?
 
 52
-00:02:39.000 --> 00:02:39.711
+00:02:42.100 --> 00:02:42.811
 A new one.
 
 53
-00:02:39.711 --> 00:02:42.344
+00:02:42.811 --> 00:02:45.444
 The hash changes, so the key changes.
 
 54
-00:02:42.344 --> 00:02:48.604
+00:02:45.444 --> 00:02:51.704
 GitHub restores an older entry with the same start, and pip downloads only what changed.
 
 55
-00:02:48.604 --> 00:02:50.952
+00:02:51.704 --> 00:02:54.052
 Then the job saves a fresh entry.
 
 56
-00:02:51.133 --> 00:02:52.552
+00:02:54.267 --> 00:02:55.686
 One rule for fridges.
 
 57
-00:02:52.552 --> 00:02:55.863
+00:02:55.686 --> 00:02:58.996
 GitHub deletes caches nobody used for seven days.
 
 58
-00:02:55.863 --> 00:02:58.633
+00:02:58.996 --> 00:03:01.767
 So a cache is a speed-up that can vanish.
 
 59
-00:02:58.633 --> 00:03:01.741
+00:03:01.767 --> 00:03:04.875
 Never rely on it, and never put secrets in it.
 
 60
-00:03:02.667 --> 00:03:04.252
+00:03:05.800 --> 00:03:07.385
 Trouble three, optional.
 
 61
-00:03:04.252 --> 00:03:05.903
+00:03:07.385 --> 00:03:09.036
 Our pipeline is fast now.
 
 62
-00:03:05.903 --> 00:03:09.535
+00:03:09.036 --> 00:03:12.668
 But a red check still stops nobody from clicking merge.
 
 63
-00:03:09.733 --> 00:03:18.508
+00:03:12.900 --> 00:03:21.675
 On GitHub, the fix is a ruleset on main: a named list of rules, such as: these checks must pass before a pull request can merge.
 
 64
-00:03:18.667 --> 00:03:20.558
+00:03:21.900 --> 00:03:23.792
 Here's a tempting shortcut.
 
 65
-00:03:20.558 --> 00:03:24.482
+00:03:23.792 --> 00:03:27.715
 Build waits for everything, so let's require only build.
 
 66
-00:03:24.482 --> 00:03:26.934
+00:03:27.715 --> 00:03:30.168
 If build passed, everything passed.
 
 67
-00:03:26.934 --> 00:03:27.355
+00:03:30.168 --> 00:03:30.588
 Right?
 
 68
-00:03:27.533 --> 00:03:28.742
+00:03:30.800 --> 00:03:32.009
 Now a test fails.
 
 69
-00:03:28.742 --> 00:03:31.941
+00:03:32.009 --> 00:03:35.208
 Pause and guess: can this pull request merge?
 
 70
-00:03:34.133 --> 00:03:37.005
+00:03:37.433 --> 00:03:40.305
 Build needs the tests, so build is skipped.
 
 71
-00:03:37.005 --> 00:03:38.541
+00:03:40.305 --> 00:03:41.841
 That skipped box again.
 
 72
-00:03:38.733 --> 00:03:43.133
+00:03:42.067 --> 00:03:46.467
 And a job skipped because a job it needs failed counts as passed.
 
 73
-00:03:43.133 --> 00:03:45.096
+00:03:46.467 --> 00:03:48.430
 The ruleset sees build: fine.
 
 74
-00:03:45.096 --> 00:03:46.924
+00:03:48.430 --> 00:03:50.257
 The merge button lights up.
 
 75
-00:03:47.067 --> 00:03:47.406
+00:03:50.467 --> 00:03:50.806
 Well.
 
 76
-00:03:47.406 --> 00:03:51.415
+00:03:50.806 --> 00:03:54.815
 The waiter just carried out the plate with the wrong sauce.
 
 77
-00:03:51.415 --> 00:03:52.774
+00:03:54.815 --> 00:03:56.174
 Nobody broke a rule.
 
 78
-00:03:52.774 --> 00:03:54.133
+00:03:56.174 --> 00:03:57.533
 The rule had a hole.
 
 79
-00:03:54.333 --> 00:03:57.863
+00:03:57.767 --> 00:04:01.296
 The fix: require every check by its exact name.
 
 80
-00:03:57.863 --> 00:04:00.717
+00:04:01.296 --> 00:04:04.150
 lint, test 3.13, test 3.14, and build.
 
 81
-00:04:00.717 --> 00:04:05.148
+00:04:04.150 --> 00:04:08.581
 Now the failed test itself is required, and red means stop.
 
 82
-00:04:05.333 --> 00:04:08.457
+00:04:08.800 --> 00:04:11.923
 Each of those is called a required status check.
 
 83
-00:04:08.457 --> 00:04:10.409
+00:04:11.923 --> 00:04:13.876
 Two more details catch people.
 
 84
-00:04:10.409 --> 00:04:13.923
+00:04:13.876 --> 00:04:17.389
 A new ruleset starts as Disabled, so set it to Active.
 
 85
-00:04:13.923 --> 00:04:18.608
+00:04:17.389 --> 00:04:22.075
 And on the Free plan, rulesets are only enforced on public repositories.
 
 86
-00:04:19.533 --> 00:04:20.606
+00:04:23.000 --> 00:04:24.073
 Last guardrail.
 
 87
-00:04:20.606 --> 00:04:28.400
+00:04:24.073 --> 00:04:31.867
 A slow pipeline brings back trouble one: people stop waiting, or pile many changes into one big pull request.
 
 88
-00:04:28.600 --> 00:04:33.330
+00:04:32.100 --> 00:04:36.830
 Concurrency with cancel-in-progress cancels a stale run when you push again.
 
 89
-00:04:33.330 --> 00:04:37.189
+00:04:36.830 --> 00:04:40.689
 The table changed its order, so you stop cooking the old dish.
 
 90
-00:04:37.333 --> 00:04:39.772
+00:04:40.900 --> 00:04:43.339
 timeout-minutes stops a hung job early.
 
 91
-00:04:39.933 --> 00:04:44.489
+00:04:43.567 --> 00:04:48.122
 And never put a path filter on pull_request when its checks are required.
 
 92
-00:04:44.489 --> 00:04:51.104
+00:04:48.122 --> 00:04:54.737
 A docs-only pull request never runs the workflow, so its checks stay Pending forever, and block the merge.
 
 93
-00:04:52.000 --> 00:04:52.938
+00:04:55.667 --> 00:04:56.605
 So, the moral.
 
 94
-00:04:52.938 --> 00:04:55.953
+00:04:56.605 --> 00:04:59.620
 Slow gets skipped, so put quick checks first.
 
 95
-00:04:55.953 --> 00:04:58.968
+00:04:59.620 --> 00:05:02.635
 Forgetful costs minutes, so give it a fridge.
 
 96
-00:04:58.968 --> 00:05:02.587
+00:05:02.635 --> 00:05:06.253
 Optional gets skipped, so require every check by name.
 
 97
-00:05:02.733 --> 00:05:04.690
+00:05:06.467 --> 00:05:08.423
 And the question from the start?
 
 98
-00:05:04.690 --> 00:05:08.357
+00:05:08.423 --> 00:05:12.091
 A red pull request can merge, if your rule has a hole in it.
 
 99
-00:05:08.533 --> 00:05:09.400
+00:05:12.300 --> 00:05:13.166
 Quick check.
 
 100
-00:05:09.400 --> 00:05:14.958
+00:05:13.166 --> 00:05:18.724
 Next year you add Python 3.15 to the matrix, and forget to touch the ruleset.
 
 101
-00:05:14.958 --> 00:05:16.834
+00:05:18.724 --> 00:05:20.601
 Is the new check required?
 
 102
-00:05:16.834 --> 00:05:17.989
+00:05:20.601 --> 00:05:21.756
 Pause and think.
 
 103
-00:05:20.133 --> 00:05:20.343
+00:05:23.967 --> 00:05:24.176
 No.
 
 104
-00:05:20.343 --> 00:05:23.483
+00:05:24.176 --> 00:05:27.316
 The ruleset only knows the names you gave it.
 
 105
-00:05:23.483 --> 00:05:26.553
+00:05:27.316 --> 00:05:30.387
 A new check stays optional until you add it.

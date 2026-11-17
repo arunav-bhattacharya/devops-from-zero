@@ -20,5 +20,16 @@
    "poster_at": 247.4,
    "replaces": "d24-push"
   }
+ ],
+ "d25": [
+  {
+   "slug": "d25-red-means-stop",
+   "title": "When red does not mean stop: quick checks first, a cache, and a ruleset with every check",
+   "after": 5,
+   "file": "p6/d25_red_means_stop.py",
+   "scene": "D25RedMeansStop",
+   "poster_at": 281.4,
+   "replaces": "d25-pipeline"
+  }
  ]
 }
