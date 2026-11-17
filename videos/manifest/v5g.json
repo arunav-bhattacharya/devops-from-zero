@@ -31,5 +31,16 @@
    "poster_at": 281.4,
    "replaces": "d25-pipeline"
   }
+ ],
+ "d26": [
+  {
+   "slug": "d26-hidden-success",
+   "title": "The rule nobody wrote down: every if gets a hidden success()",
+   "after": 2,
+   "file": "p6/d26_hidden_success.py",
+   "scene": "D26HiddenSuccess",
+   "poster_at": 214.2,
+   "replaces": "d26-workflow-logic"
+  }
  ]
 }

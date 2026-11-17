@@ -42,5 +42,16 @@
    "poster_at": 288.0,
    "replaces": "d63-supply-chain"
   }
+ ],
+ "d64": [
+  {
+   "slug": "d64-safe-order",
+   "title": "Who can really read a Secret: the safe, the cook and one order slip",
+   "after": 0,
+   "file": "p17/d64_safe_order.py",
+   "scene": "D64SafeOrder",
+   "poster_at": 241.0,
+   "replaces": "d64-access"
+  }
  ]
 }

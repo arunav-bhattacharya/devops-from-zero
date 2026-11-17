@@ -1,329 +1,329 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:06.239
+00:00:02.700 --> 00:00:06.205
 Here's a step condition: run only on the main branch.
 
 2
-00:00:06.400 --> 00:00:07.845
+00:00:06.433 --> 00:00:07.879
 The run is on main.
 
 3
-00:00:07.845 --> 00:00:11.192
+00:00:07.879 --> 00:00:11.225
 So the condition is true, and the step runs.
 
 4
-00:00:11.192 --> 00:00:11.648
+00:00:11.225 --> 00:00:11.682
 Right?
 
 5
-00:00:11.648 --> 00:00:12.485
+00:00:11.682 --> 00:00:12.519
 Not always.
 
 6
-00:00:12.485 --> 00:00:15.756
+00:00:12.519 --> 00:00:15.789
 And the reason is a rule nobody wrote down.
 
 7
-00:00:16.533 --> 00:00:19.191
+00:00:16.600 --> 00:00:19.258
 Picture the closing routine in our kitchen.
 
 8
-00:00:19.191 --> 00:00:23.395
+00:00:19.258 --> 00:00:23.461
 A note on the wall says: on Saturdays, the last cook mops the floor.
 
 9
-00:00:23.533 --> 00:00:24.652
+00:00:23.667 --> 00:00:24.786
 It's Saturday.
 
 10
-00:00:24.652 --> 00:00:26.491
+00:00:24.786 --> 00:00:26.624
 The evening runs along.
 
 11
-00:00:26.667 --> 00:00:29.489
+00:00:26.833 --> 00:00:29.656
 At nine o'clock, a pot of oil tips over.
 
 12
-00:00:29.667 --> 00:00:33.258
+00:00:29.867 --> 00:00:33.458
 The house rule says everyone stops at the first problem.
 
 13
-00:00:33.258 --> 00:00:36.016
+00:00:33.458 --> 00:00:36.216
 So the evening ends early, and nobody mops.
 
 14
-00:00:36.200 --> 00:00:38.895
+00:00:36.433 --> 00:00:39.128
 It was the one night the floor really needed it.
 
 15
-00:00:39.067 --> 00:00:40.369
+00:00:39.333 --> 00:00:40.636
 The note was clear.
 
 16
-00:00:40.369 --> 00:00:43.112
+00:00:40.636 --> 00:00:43.379
 Its condition was true: it was Saturday.
 
 17
-00:00:43.267 --> 00:00:46.572
+00:00:43.600 --> 00:00:46.906
 What nobody read was the unwritten rule underneath.
 
 18
-00:00:46.572 --> 00:00:49.424
+00:00:46.906 --> 00:00:49.757
 And only if everything has gone well so far.
 
 19
-00:00:49.600 --> 00:00:55.751
+00:00:49.967 --> 00:00:56.117
 Workflow conditions carry the same invisible rule, written, if you like, in invisible ink.
 
 20
-00:00:56.667 --> 00:00:58.546
+00:00:57.033 --> 00:00:58.913
 Now the same story in a job.
 
 21
-00:00:58.546 --> 00:01:02.440
+00:00:58.913 --> 00:01:02.807
 A job is a list of steps that run in order on one machine.
 
 22
-00:01:02.600 --> 00:01:06.916
+00:01:03.033 --> 00:01:07.349
 The third step has our note: upload the report, but only on main.
 
 23
-00:01:07.067 --> 00:01:08.618
+00:01:07.567 --> 00:01:09.118
 The run is on main.
 
 24
-00:01:08.618 --> 00:01:09.924
+00:01:09.118 --> 00:01:10.424
 Checkout passes.
 
 25
-00:01:09.924 --> 00:01:11.394
+00:01:10.424 --> 00:01:11.894
 Then a test fails.
 
 26
-00:01:11.394 --> 00:01:12.619
+00:01:11.894 --> 00:01:13.119
 That's the oil.
 
 27
-00:01:12.800 --> 00:01:14.315
+00:01:13.333 --> 00:01:14.849
 The condition is true.
 
 28
-00:01:14.315 --> 00:01:17.208
+00:01:14.849 --> 00:01:17.741
 Pause and guess: does the upload step run?
 
 29
-00:01:19.400 --> 00:01:19.696
+00:01:19.967 --> 00:01:20.262
 No.
 
 30
-00:01:19.696 --> 00:01:20.977
+00:01:20.262 --> 00:01:21.544
 It's skipped.
 
 31
-00:01:20.977 --> 00:01:23.047
+00:01:21.544 --> 00:01:23.613
 Exactly like the mop.
 
 32
-00:01:23.200 --> 00:01:23.932
+00:01:23.833 --> 00:01:24.565
 Here's why.
 
 33
-00:01:23.932 --> 00:01:30.253
+00:01:24.565 --> 00:01:30.887
 Every if that doesn't mention a status function gets an invisible success() added to the front.
 
 34
-00:01:30.400 --> 00:01:34.405
+00:01:31.100 --> 00:01:35.105
 success() asks one question: did everything before this succeed?
 
 35
-00:01:34.405 --> 00:01:36.908
+00:01:35.105 --> 00:01:37.608
 After the failed test, the answer is no.
 
 36
-00:01:36.908 --> 00:01:38.911
+00:01:37.608 --> 00:01:39.611
 So the whole condition is false.
 
 37
-00:01:39.067 --> 00:01:42.206
+00:01:39.833 --> 00:01:42.973
 A step with no if at all behaves the same way.
 
 38
-00:01:42.206 --> 00:01:45.209
+00:01:42.973 --> 00:01:45.975
 That's how a job stops at its first failure.
 
 39
-00:01:45.209 --> 00:01:47.870
+00:01:45.975 --> 00:01:48.637
 Every later step asks, so far, so good?
 
 40
-00:01:47.870 --> 00:01:48.757
+00:01:48.637 --> 00:01:49.524
 And hears no.
 
 41
-00:01:48.933 --> 00:01:52.260
+00:01:49.733 --> 00:01:53.060
 Honestly, success() could have been named so far so good.
 
 42
-00:01:52.260 --> 00:01:53.427
+00:01:53.060 --> 00:01:54.227
 That's all it means.
 
 43
-00:01:54.333 --> 00:01:56.789
+00:01:55.133 --> 00:01:57.589
 Now that you've met one, here's the family.
 
 44
-00:01:56.789 --> 00:02:01.472
+00:01:57.589 --> 00:02:02.272
 They're called status functions: questions about what happened earlier in the run.
 
 45
-00:02:01.667 --> 00:02:04.315
+00:02:02.500 --> 00:02:05.148
 success(): everything before succeeded.
 
 46
-00:02:04.315 --> 00:02:05.605
+00:02:05.148 --> 00:02:06.439
 That's the default.
 
 47
-00:02:05.800 --> 00:02:08.004
+00:02:06.667 --> 00:02:08.871
 failure(): something before failed.
 
 48
-00:02:08.200 --> 00:02:10.340
+00:02:09.100 --> 00:02:11.240
 cancelled(): the run was cancelled.
 
 49
-00:02:10.533 --> 00:02:14.849
+00:02:11.467 --> 00:02:15.783
 And always(): true no matter what, even while the run is being cancelled.
 
 50
-00:02:15.000 --> 00:02:21.343
+00:02:16.000 --> 00:02:22.343
 So when you mean something other than so far so good, you say so, by writing the status function yourself.
 
 51
-00:02:22.267 --> 00:02:23.533
+00:02:23.267 --> 00:02:24.533
 Back to the report.
 
 52
-00:02:23.533 --> 00:02:27.263
+00:02:24.533 --> 00:02:28.263
 A test report is most useful exactly when a test failed.
 
 53
-00:02:27.263 --> 00:02:32.527
+00:02:28.263 --> 00:02:33.527
 So write !cancelled(): run whatever happened, unless someone cancelled the run.
 
 54
-00:02:32.667 --> 00:02:35.478
+00:02:33.733 --> 00:02:36.545
 Now the upload runs after the failed test.
 
 55
-00:02:35.478 --> 00:02:39.763
+00:02:36.545 --> 00:02:40.829
 That's the condition the Day 25 pipeline put on its upload step.
 
 56
-00:02:39.933 --> 00:02:46.788
+00:02:41.033 --> 00:02:47.888
 And to run only when one particular step failed, combine them: failure(), and that step's outcome is failure.
 
 57
-00:02:47.667 --> 00:02:49.776
+00:02:48.800 --> 00:02:50.910
 The same rule works between jobs.
 
 58
-00:02:49.776 --> 00:02:54.763
+00:02:50.910 --> 00:02:55.896
 In the lesson's practice workflow, build needs version, and report needs both.
 
 59
-00:02:54.933 --> 00:03:00.807
+00:02:56.100 --> 00:03:01.973
 The report job only reads and prints the other jobs' results, so it carries if: always().
 
 60
-00:03:01.000 --> 00:03:03.865
+00:03:02.200 --> 00:03:05.065
 Now tick the box that breaks the build on purpose.
 
 61
-00:03:04.000 --> 00:03:05.039
+00:03:05.267 --> 00:03:06.305
 Version passes.
 
 62
-00:03:05.039 --> 00:03:06.354
+00:03:06.305 --> 00:03:07.621
 Build exits with 1.
 
 63
-00:03:06.354 --> 00:03:12.724
+00:03:07.621 --> 00:03:13.991
 And report still runs, thanks to always(), and prints what it saw: one success, one failure.
 
 64
-00:03:12.867 --> 00:03:19.871
+00:03:14.200 --> 00:03:21.204
 Without always(), report would have been skipped, quietly, and the one job that tells you what went wrong would say nothing.
 
 65
-00:03:20.800 --> 00:03:24.129
+00:03:22.133 --> 00:03:25.463
 So should we sprinkle always() everywhere, to be safe?
 
 66
-00:03:24.129 --> 00:03:24.931
+00:03:25.463 --> 00:03:26.264
 Please don't.
 
 67
-00:03:25.067 --> 00:03:28.856
+00:03:26.467 --> 00:03:30.256
 An always() step also runs while the run is being cancelled.
 
 68
-00:03:28.856 --> 00:03:31.698
+00:03:30.256 --> 00:03:33.098
 If it gets stuck, it hangs until the timeout.
 
 69
-00:03:31.698 --> 00:03:34.793
+00:03:33.098 --> 00:03:36.193
 GitHub's docs warn against it on important steps.
 
 70
-00:03:34.933 --> 00:03:38.007
+00:03:36.400 --> 00:03:39.474
 To run whatever happened, prefer !cancelled().
 
 71
-00:03:38.007 --> 00:03:41.816
+00:03:39.474 --> 00:03:43.283
 Keep always() for small jobs that only report, like ours.
 
 72
-00:03:42.733 --> 00:03:43.919
+00:03:44.200 --> 00:03:45.386
 So here's the moral.
 
 73
-00:03:43.919 --> 00:03:45.876
+00:03:45.386 --> 00:03:47.342
 Every if gets a hidden success().
 
 74
-00:03:45.876 --> 00:03:49.729
+00:03:47.342 --> 00:03:51.196
 When you mean something else, write the status function yourself.
 
 75
-00:03:49.867 --> 00:03:52.903
+00:03:51.400 --> 00:03:54.436
 And the floor gets mopped, whatever happened at nine.
 
 76
-00:03:53.067 --> 00:03:53.979
+00:03:54.667 --> 00:03:55.579
 Quick check.
 
 77
-00:03:53.979 --> 00:03:55.957
+00:03:55.579 --> 00:03:57.557
 A step says if: failure().
 
 78
-00:03:55.957 --> 00:03:58.543
+00:03:57.557 --> 00:04:00.143
 An earlier step in the job failed.
 
 79
-00:03:58.543 --> 00:03:59.456
+00:04:00.143 --> 00:04:01.056
 Does it run?
 
 80
-00:03:59.456 --> 00:04:00.673
+00:04:01.056 --> 00:04:02.273
 Pause and think.
 
 81
-00:04:02.867 --> 00:04:03.150
+00:04:04.500 --> 00:04:04.783
 Yes.
 
 82
-00:04:03.150 --> 00:04:09.024
+00:04:04.783 --> 00:04:10.657
 It names a status function, so no hidden success() is added, and failure() is true.
