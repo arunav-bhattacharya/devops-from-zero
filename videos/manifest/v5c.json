@@ -53,5 +53,16 @@
    "poster_at": 170.0,
    "replaces": "d33-state"
   }
+ ],
+ "d34": [
+  {
+   "slug": "d34-one-plan",
+   "title": "One module, two stacks, and a separate book for each environment",
+   "after": 0,
+   "file": "p8/d34_one_plan.py",
+   "scene": "D34OnePlan",
+   "poster_at": 228.0,
+   "replaces": "d34-modules"
+  }
  ]
 }

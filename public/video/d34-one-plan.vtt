@@ -1,0 +1,301 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.482
+A builder puts up the same small house twice.
+
+2
+00:00:05.482 --> 00:00:08.450
+One is a show home that visitors poke around in.
+
+3
+00:00:08.450 --> 00:00:11.232
+The other is where a family will really live.
+
+4
+00:00:11.433 --> 00:00:14.805
+The architect copies the drawing for the second plot.
+
+5
+00:00:14.805 --> 00:00:16.396
+For a while, all is well.
+
+6
+00:00:16.600 --> 00:00:18.670
+Then a tap in the show home drips.
+
+7
+00:00:18.670 --> 00:00:21.349
+The architect fixes the show home's drawing,
+
+8
+00:00:21.567 --> 00:00:23.485
+and forgets the family's copy.
+
+9
+00:00:23.485 --> 00:00:29.111
+A month later, the family's tap drips too, and nobody can say why the two houses differ.
+
+10
+00:00:29.333 --> 00:00:33.299
+Copies only stay the same if every change is made twice.
+
+11
+00:00:33.299 --> 00:00:34.573
+And people forget.
+
+12
+00:00:35.300 --> 00:00:39.999
+Wouldn't it be nice to keep one drawing, and just fill in a few options per plot?
+
+13
+00:00:39.999 --> 00:00:42.378
+Builders call that a standard house plan.
+
+14
+00:00:42.378 --> 00:00:44.003
+Terraform calls it a module.
+
+15
+00:00:44.233 --> 00:00:47.145
+A module is simply a folder of Terraform files.
+
+16
+00:00:47.145 --> 00:00:51.297
+You have written modules since the first lesson without knowing it.
+
+17
+00:00:51.297 --> 00:00:54.643
+The folder where you run terraform is the root module.
+
+18
+00:00:54.867 --> 00:01:00.602
+When the root uses another folder through a module block, that folder becomes a child module.
+
+19
+00:01:00.602 --> 00:01:03.501
+Its variables are the options each buyer picks.
+
+20
+00:01:03.501 --> 00:01:06.215
+Its outputs are what the builder hands back.
+
+21
+00:01:07.033 --> 00:01:12.137
+In the lab, the infra/local root calls the hello-stack module twice.
+
+22
+00:01:12.137 --> 00:01:15.964
+Once called dev, with the name hello and port 8080.
+
+23
+00:01:16.167 --> 00:01:21.176
+And once called test, with the name hello-test and port 8082.
+
+24
+00:01:21.176 --> 00:01:22.900
+Same plan, two plots.
+
+25
+00:01:23.133 --> 00:01:26.952
+Every name inside the module is built from the name option.
+
+26
+00:01:26.952 --> 00:01:31.936
+So Docker gets hello-web and hello-test-web, two containers that never clash.
+
+27
+00:01:32.467 --> 00:01:36.885
+In the state, each call's resources get a module prefix.
+
+28
+00:01:36.885 --> 00:01:39.489
+module.dev, docker_container.app.
+
+29
+00:01:39.489 --> 00:01:42.172
+module.test, docker_container.app.
+
+30
+00:01:42.700 --> 00:01:45.500
+Now the tap drips again, in the show home.
+
+31
+00:01:45.500 --> 00:01:47.833
+You fix it inside the module, once.
+
+32
+00:01:48.067 --> 00:01:50.527
+How many stacks change on their next apply?
+
+33
+00:01:53.167 --> 00:01:53.518
+Both.
+
+34
+00:01:53.518 --> 00:01:58.574
+Change a module, and every stack that uses it changes on its next apply.
+
+35
+00:01:58.574 --> 00:02:02.787
+The family's tap gets fixed too, and nobody had to remember.
+
+36
+00:02:03.000 --> 00:02:06.543
+That is the one way a module differs from a paper plan.
+
+37
+00:02:06.543 --> 00:02:09.893
+Paper never reaches back into a house already built.
+
+38
+00:02:09.893 --> 00:02:12.663
+A module does, and that is the whole point.
+
+39
+00:02:13.867 --> 00:02:20.124
+Now a real team has a dev environment and a prod environment, the real one your users depend on.
+
+40
+00:02:20.124 --> 00:02:22.536
+Remember the state, Terraform's book?
+
+41
+00:02:22.536 --> 00:02:24.361
+Where does each one keep it?
+
+42
+00:02:24.567 --> 00:02:27.581
+The tempting shortcut is a workspace.
+
+43
+00:02:27.581 --> 00:02:33.529
+Say a folder called envs/dev runs one small site, site-dev, on port 8201.
+
+44
+00:02:33.529 --> 00:02:40.373
+In that folder, terraform workspace new qa gives the same code a second, empty book.
+
+45
+00:02:40.600 --> 00:02:44.962
+The book is empty, so the plan wants to create everything again.
+
+46
+00:02:44.962 --> 00:02:45.985
+Read the names.
+
+47
+00:02:45.985 --> 00:02:46.871
+Will it work?
+
+48
+00:02:49.533 --> 00:02:49.771
+No.
+
+49
+00:02:49.771 --> 00:02:56.182
+It plans the same name, site-dev, and the same port, 8201, that dev already uses.
+
+50
+00:02:56.182 --> 00:03:01.564
+Applying would fail, because the code never uses the workspace name.
+
+51
+00:03:01.767 --> 00:03:03.622
+And there is a deeper reason.
+
+52
+00:03:03.622 --> 00:03:07.270
+Workspaces share one backend, the place the book is kept.
+
+53
+00:03:07.270 --> 00:03:13.669
+HashiCorp's docs call that unsuitable when environments need different credentials and access rules.
+
+54
+00:03:13.900 --> 00:03:17.405
+The show home's keys should not open the family's front door.
+
+55
+00:03:18.633 --> 00:03:24.731
+So most teams give each long-lived environment its own folder: envs/dev and envs/prod.
+
+56
+00:03:24.731 --> 00:03:31.041
+Each is a short root that calls the shared module, with its own backend and its own book.
+
+57
+00:03:31.267 --> 00:03:32.558
+One plan, shared.
+
+58
+00:03:32.558 --> 00:03:34.230
+Two books, kept apart.
+
+59
+00:03:34.230 --> 00:03:37.345
+An apply in prod has no way to touch dev.
+
+60
+00:03:37.567 --> 00:03:43.189
+Workspaces still have a use: short-lived copies, such as one stack per feature branch.
+
+61
+00:03:43.189 --> 00:03:47.308
+Then build names from terraform.workspace, so they never clash.
+
+62
+00:03:47.933 --> 00:03:49.169
+A few guardrails.
+
+63
+00:03:49.169 --> 00:03:55.712
+After you add a module block, run terraform init, or plan stops with Module not installed.
+
+64
+00:03:55.933 --> 00:04:02.617
+Pin every module that comes from elsewhere, because an unpinned one can change your infrastructure on the next init.
+
+65
+00:04:02.833 --> 00:04:10.648
+Keep modules focused and roots thin: a root sets up providers, calls modules, and connects outputs to inputs.
+
+66
+00:04:10.867 --> 00:04:15.519
+And since a bug in a shared module now reaches every environment, test it.
+
+67
+00:04:15.519 --> 00:04:21.995
+terraform test with a mock provider creates nothing real, so it is cheap enough for every pull request.
+
+68
+00:04:22.600 --> 00:04:24.271
+So the moral of the story.
+
+69
+00:04:24.271 --> 00:04:28.191
+Write the shape once, as a module, so a fix lands everywhere.
+
+70
+00:04:28.191 --> 00:04:32.625
+And give each environment its own folder, so each keeps its own book.
+
+71
+00:04:33.233 --> 00:04:34.147
+A quick check.
+
+72
+00:04:34.147 --> 00:04:38.909
+Inside the module call named test there is a docker_container called app.
+
+73
+00:04:38.909 --> 00:04:41.061
+What is its address in the state?
+
+74
+00:04:43.700 --> 00:04:46.074
+module.test.docker_container.app.
+
+75
+00:04:46.074 --> 00:04:49.815
+The call's name goes in front of the normal address.

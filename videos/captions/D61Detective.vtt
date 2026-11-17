@@ -1,381 +1,381 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:06.982
+00:00:02.700 --> 00:00:06.949
 Picture a detective, called to an office building at ten in the morning.
 
 2
-00:00:06.982 --> 00:00:09.107
+00:00:06.949 --> 00:00:09.074
 Tenants are waiting with complaints.
 
 3
-00:00:09.107 --> 00:00:11.113
+00:00:09.074 --> 00:00:11.080
 A wet ceiling on the fourth floor.
 
 4
-00:00:11.113 --> 00:00:12.943
+00:00:11.080 --> 00:00:12.910
 Flickering lights on the third.
 
 5
-00:00:12.943 --> 00:00:14.713
+00:00:12.910 --> 00:00:14.680
 A smell of damp on the second.
 
 6
-00:00:14.867 --> 00:00:19.090
+00:00:14.900 --> 00:00:19.123
 A tidy detective writes one report per complaint, and goes home.
 
 7
-00:00:19.090 --> 00:00:20.607
+00:00:19.123 --> 00:00:20.641
 It feels like progress.
 
 8
-00:00:20.607 --> 00:00:24.039
+00:00:20.641 --> 00:00:24.072
 Each complaint is real, and each one gets an answer.
 
 9
-00:00:24.200 --> 00:00:30.692
+00:00:24.300 --> 00:00:30.792
 A good detective walks upstairs, and finds one cracked pipe on the fifth floor, which explains all of them.
 
 10
-00:00:30.867 --> 00:00:34.038
+00:00:31.000 --> 00:00:34.171
 What nobody asked was how the complaints connect.
 
 11
-00:00:34.038 --> 00:00:35.591
+00:00:34.171 --> 00:00:35.724
 Hold on to that picture.
 
 12
-00:00:35.591 --> 00:00:38.439
+00:00:35.724 --> 00:00:38.572
 Today's tool tries to be the good detective.
 
 13
-00:00:39.200 --> 00:00:40.503
+00:00:39.400 --> 00:00:40.703
 Now a made-up shop.
 
 14
-00:00:40.503 --> 00:00:47.087
+00:00:40.703 --> 00:00:47.287
 Web calls checkout, checkout calls payments, and payments keeps its data in a Postgres database.
 
 15
-00:00:47.087 --> 00:00:50.036
+00:00:47.287 --> 00:00:50.236
 At 10:02, four alerts fire within a minute.
 
 16
-00:00:50.200 --> 00:00:51.408
+00:00:50.467 --> 00:00:51.675
 Every alert is true.
 
 17
-00:00:51.408 --> 00:00:54.368
+00:00:51.675 --> 00:00:54.634
 And not one of them says which caused the others.
 
 18
-00:00:54.368 --> 00:00:57.388
+00:00:54.634 --> 00:00:57.655
 Which one is the cause, and which are just echoes?
 
 19
-00:00:57.533 --> 00:01:00.717
+00:00:57.867 --> 00:01:01.050
 With the stack we built ourselves, we go digging.
 
 20
-00:01:00.717 --> 00:01:04.030
+00:01:01.050 --> 00:01:04.363
 A dashboard shows three services went bad together.
 
 21
-00:01:04.030 --> 00:01:07.343
+00:01:04.363 --> 00:01:07.677
 A trace shows a long database span inside payments.
 
 22
-00:01:07.343 --> 00:01:09.357
+00:01:07.677 --> 00:01:09.691
 A log search for that trace ID.
 
 23
-00:01:09.357 --> 00:01:12.671
+00:01:09.691 --> 00:01:13.004
 We get there, in three tools, matching IDs by hand.
 
 24
-00:01:12.867 --> 00:01:16.843
+00:01:13.233 --> 00:01:17.209
 You might be thinking: easy, the cause is whatever went bad first.
 
 25
-00:01:16.843 --> 00:01:19.915
+00:01:17.209 --> 00:01:20.282
 Let's be fair, that's where most of us would start.
 
 26
-00:01:19.915 --> 00:01:22.385
+00:01:20.282 --> 00:01:22.752
 But all four went bad in the same minute.
 
 27
-00:01:22.385 --> 00:01:25.096
+00:01:22.752 --> 00:01:25.463
 Timing alone can't tell a cause from an echo.
 
 28
-00:01:25.267 --> 00:01:28.217
+00:01:25.667 --> 00:01:28.617
 What we need is the plumbing plan: who calls whom.
 
 29
-00:01:29.200 --> 00:01:31.639
+00:01:29.633 --> 00:01:32.073
 Dynatrace draws that plan by itself.
 
 30
-00:01:31.639 --> 00:01:37.466
+00:01:32.073 --> 00:01:37.900
 Its agent, OneAgent, runs on every machine and records each call as it passes through.
 
 31
-00:01:37.466 --> 00:01:40.719
+00:01:37.900 --> 00:01:41.152
 Dynatrace calls each thing it watches an entity.
 
 32
-00:01:40.867 --> 00:01:44.539
+00:01:41.367 --> 00:01:45.039
 The calls become links on a live map, called Smartscape.
 
 33
-00:01:44.539 --> 00:01:48.998
+00:01:45.039 --> 00:01:49.498
 Web calls checkout, checkout calls payments, payments uses Postgres.
 
 34
-00:01:48.998 --> 00:01:52.343
+00:01:49.498 --> 00:01:52.843
 The building's plumbing plan, redrawn every minute.
 
 35
-00:01:52.533 --> 00:01:59.900
+00:01:53.067 --> 00:02:00.434
 An engine called Davis watches every entity against its own baseline, what normal looks like for it at this time.
 
 36
-00:01:59.900 --> 00:02:03.747
+00:02:00.434 --> 00:02:04.280
 At 10:02, web, checkout and payments leave their baselines.
 
 37
-00:02:03.933 --> 00:02:07.837
+00:02:04.500 --> 00:02:08.403
 Davis starts at the affected entity and walks down the links.
 
 38
-00:02:07.837 --> 00:02:09.436
+00:02:08.403 --> 00:02:10.003
 Where will the trail end?
 
 39
-00:02:09.436 --> 00:02:10.460
+00:02:10.003 --> 00:02:11.027
 Pause and guess.
 
 40
-00:02:13.667 --> 00:02:14.828
+00:02:14.233 --> 00:02:15.394
 Start at web.
 
 41
-00:02:14.828 --> 00:02:15.721
+00:02:15.394 --> 00:02:16.287
 Unhealthy.
 
 42
-00:02:15.721 --> 00:02:17.775
+00:02:16.287 --> 00:02:18.342
 What does it depend on?
 
 43
-00:02:17.775 --> 00:02:18.579
+00:02:18.342 --> 00:02:19.145
 Checkout.
 
 44
-00:02:18.733 --> 00:02:21.280
+00:02:19.367 --> 00:02:21.913
 Is checkout unhealthy too?
 
 45
-00:02:21.280 --> 00:02:21.672
+00:02:21.913 --> 00:02:22.305
 Yes.
 
 46
-00:02:21.672 --> 00:02:23.239
+00:02:22.305 --> 00:02:23.872
 Keep going down.
 
 47
-00:02:23.239 --> 00:02:24.120
+00:02:23.872 --> 00:02:24.753
 Payments?
 
 48
-00:02:24.120 --> 00:02:25.589
+00:02:24.753 --> 00:02:26.223
 Also unhealthy.
 
 49
-00:02:25.589 --> 00:02:26.667
+00:02:26.223 --> 00:02:27.300
 Keep going.
 
 50
-00:02:26.867 --> 00:02:27.566
+00:02:27.533 --> 00:02:28.233
 Postgres?
 
 51
-00:02:27.566 --> 00:02:30.208
+00:02:28.233 --> 00:02:30.875
 The obvious guess is the database.
 
 52
-00:02:30.208 --> 00:02:33.783
+00:02:30.875 --> 00:02:34.449
 The slow spans were database calls, after all.
 
 53
-00:02:33.783 --> 00:02:34.637
+00:02:34.449 --> 00:02:35.304
 Let's look.
 
 54
-00:02:34.800 --> 00:02:36.293
+00:02:35.533 --> 00:02:37.026
 Postgres looks healthy.
 
 55
-00:02:36.293 --> 00:02:43.110
+00:02:37.026 --> 00:02:43.843
 The waiting happens inside payments, in its connection pool, the fixed set of open connections it shares.
 
 56
-00:02:43.110 --> 00:02:45.252
+00:02:43.843 --> 00:02:45.985
 Every call queues for a free one.
 
 57
-00:02:45.400 --> 00:02:51.007
+00:02:46.200 --> 00:02:51.807
 So the trail ends at payments: an unhealthy component whose own dependencies look fine.
 
 58
-00:02:51.007 --> 00:02:53.392
+00:02:51.807 --> 00:02:54.192
 That is the most probable root cause.
 
 59
-00:02:53.533 --> 00:02:56.718
+00:02:54.400 --> 00:02:57.584
 The database was the alibi everybody believed.
 
 60
-00:02:56.718 --> 00:02:58.795
+00:02:57.584 --> 00:02:59.661
 The pipe cracked one floor up.
 
 61
-00:02:59.267 --> 00:03:02.821
+00:03:00.167 --> 00:03:03.721
 Dynatrace calls this walk a fault-tree analysis.
 
 62
-00:03:02.821 --> 00:03:14.448
+00:03:03.721 --> 00:03:15.348
 Instead of four alerts, it opens one problem: an ID like P-12345, the category SLOWDOWN, payments as the root cause, and web and checkout listed as affected.
 
 63
-00:03:14.600 --> 00:03:16.832
+00:03:15.567 --> 00:03:17.799
 Four complaints, one cracked pipe.
 
 64
-00:03:16.832 --> 00:03:21.888
+00:03:17.799 --> 00:03:22.855
 And notice how Davis linked them: by following recorded calls, not by timing.
 
 65
-00:03:22.600 --> 00:03:24.605
+00:03:23.567 --> 00:03:25.572
 Now let's break it on purpose.
 
 66
-00:03:24.605 --> 00:03:27.413
+00:03:25.572 --> 00:03:28.380
 Picture payments running without OneAgent.
 
 67
-00:03:27.413 --> 00:03:28.951
+00:03:28.380 --> 00:03:29.917
 Nobody instrumented it.
 
 68
-00:03:28.951 --> 00:03:30.822
+00:03:29.917 --> 00:03:31.789
 Where does the walk end now?
 
 69
-00:03:30.822 --> 00:03:31.892
+00:03:31.789 --> 00:03:32.859
 Pause and guess.
 
 70
-00:03:35.133 --> 00:03:35.944
+00:03:36.067 --> 00:03:36.877
 At checkout.
 
 71
-00:03:35.944 --> 00:03:39.794
+00:03:36.877 --> 00:03:40.727
 Davis can't follow a call into something nobody measures.
 
 72
-00:03:39.794 --> 00:03:42.833
+00:03:40.727 --> 00:03:43.767
 So it names checkout, which is only a victim.
 
 73
-00:03:43.000 --> 00:03:47.436
+00:03:44.000 --> 00:03:48.436
 So the point really is: Davis can only follow what something measured.
 
 74
-00:03:47.436 --> 00:03:50.287
+00:03:48.436 --> 00:03:51.287
 An unwatched service is where its trail ends.
 
 75
-00:03:50.287 --> 00:03:51.681
+00:03:51.287 --> 00:03:52.681
 A pipe with no sensor.
 
 76
-00:03:52.600 --> 00:03:53.863
+00:03:53.600 --> 00:03:54.863
 A few honest limits.
 
 77
-00:03:53.863 --> 00:03:56.894
+00:03:54.863 --> 00:03:57.894
 Davis doesn't know what you promised your users.
 
 78
-00:03:56.894 --> 00:04:02.956
+00:03:57.894 --> 00:04:03.956
 It compares each service with its own past, so a service that has always been slow looks normal.
 
 79
-00:04:02.956 --> 00:04:06.429
+00:04:03.956 --> 00:04:07.429
 Your service level objectives are still yours to write.
 
 80
-00:04:06.600 --> 00:04:15.268
+00:04:07.633 --> 00:04:16.301
 The one-agent, one-map approach is paid for in money, in lock-in, and in control: your data lives on Dynatrace's servers.
 
 81
-00:04:15.467 --> 00:04:18.462
+00:04:16.533 --> 00:04:19.528
 And OneAgent only sees a program from its start.
 
 82
-00:04:18.462 --> 00:04:24.888
+00:04:19.528 --> 00:04:25.955
 A process that was already running when you installed it shows up with no traces, until you restart it.
 
 83
-00:04:25.667 --> 00:04:27.328
+00:04:26.767 --> 00:04:28.428
 So the moral of the story.
 
 84
-00:04:27.328 --> 00:04:29.117
+00:04:28.428 --> 00:04:30.217
 Don't answer each complaint.
 
 85
-00:04:29.117 --> 00:04:39.468
+00:04:30.217 --> 00:04:40.568
 Follow the pipes to the one that cracked: start at the symptom, walk down what it depends on, and stop at the first broken thing whose own dependencies look fine.
 
 86
-00:04:39.667 --> 00:04:40.625
+00:04:40.800 --> 00:04:41.758
 A quick check.
 
 87
-00:04:40.625 --> 00:04:43.293
+00:04:41.758 --> 00:04:44.427
 Davis names checkout as the root cause.
 
 88
-00:04:43.293 --> 00:04:47.605
+00:04:44.427 --> 00:04:48.738
 But you know checkout calls a service that nobody instrumented.
 
 89
-00:04:47.605 --> 00:04:48.973
+00:04:48.738 --> 00:04:50.106
 What do you suspect?
 
 90
-00:04:48.973 --> 00:04:50.068
+00:04:50.106 --> 00:04:51.201
 Pause and think.
 
 91
-00:04:53.333 --> 00:04:55.744
+00:04:54.433 --> 00:04:56.844
 That the trail ended at the blind spot.
 
 92
-00:04:55.744 --> 00:04:59.947
+00:04:56.844 --> 00:05:01.047
 The real cause may sit one step further down, where nobody measured.
 
 93
-00:04:59.947 --> 00:05:01.801
+00:05:01.047 --> 00:05:02.901
 Instrument it, or go and look.
 
 94
-00:05:02.000 --> 00:05:07.040
+00:05:03.133 --> 00:05:08.173
 Next, we get our own data into Dynatrace, and learn the language that reads it.
 
 95
-00:05:07.040 --> 00:05:11.123
+00:05:08.173 --> 00:05:12.256
 How do you ask one question of metrics, logs and traces at once?

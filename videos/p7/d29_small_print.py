@@ -68,7 +68,8 @@ class D29SmallPrint(VoiceScene):
         self.beat("Two paths, two versions, and the kitchen stocks only one jar. Pause and guess. Which version runs?",
                   FadeIn(q2), Indicate(l17[1], color=TEAL_M), Indicate(l18[1], color=TEAL_M), run_time=2.0)
         self.wait(2.0)
-        hw = M("commons-lang3:3.17.0 -> 3.18.0", 24, TEAL_M).move_to(l17)
+        hw = M("commons-lang3:3.17.0 -> 3.18.0", 24, TEAL_M).move_to(l17).set_z_index(2)
+        l17[1].set_z_index(2)
         self.beat("3.18.0. Your own declaration gets no extra weight. When versions clash, Gradle's rule is simple: the highest version wins.",
                   FadeOut(q2), Transform(l17[1], hw), l17[0].animate.stretch_to_fit_width(hw.width + 0.5), run_time=2.2)
         arw = T("the arrow means: asked for one version, got another", 24, GREY_B).move_to([0.2, -2.0, 0])

@@ -18,11 +18,11 @@ def tint(c, k=0.14):
     return interpolate_color(ManimColor("#000000"), ManimColor(c), k)
 
 
-def step_row(name, cond, y, color=WHITE, w=9.6):
+def step_row(name, cond, y, color=WHITE, w=11.2):
     r = RoundedRectangle(corner_radius=0.1, width=w, height=0.8, stroke_color=color, stroke_width=2.5).set_fill(tint(color, 0.06), 1)
-    r.move_to([-0.6, y, 0])
-    n = T(name, 26).move_to(r.get_left() + RIGHT * 0.3, aligned_edge=LEFT)
-    c = M(cond, 22, BLUE_M).next_to(n, RIGHT, buff=0.5) if cond else VMobject()
+    r.move_to([-0.4, y, 0])
+    n = T(name, 26).move_to(r.get_left() + RIGHT * 0.3, aligned_edge=LEFT).set_z_index(2)
+    c = (M(cond, 22, BLUE_M).next_to(n, RIGHT, buff=0.35) if cond else VMobject()).set_z_index(2)
     return VGroup(r, n, c)
 
 
@@ -80,7 +80,7 @@ class D26HiddenSuccess(VoiceScene):
         q2 = T("does the upload step run?", 30, YELLOW_M).move_to([-0.6, -1.6, 0])
         self.beat("The condition is true. Pause and guess: does the upload step run?", FadeIn(q2), run_time=1.4)
         self.wait(2.0)
-        sk = T("skipped", 26, GREY_B).move_to(s3[0].get_right() + RIGHT * 0.75)
+        sk = T("skipped", 26, GREY_B).next_to(s3[0], DOWN, buff=0.15).align_to(s3[0], RIGHT)
         self.beat("No. It's skipped. Exactly like the mop.", FadeOut(q2), s3.animate.set_opacity(0.45), FadeIn(sk), run_time=1.4)
 
         # reveal the hidden success()
@@ -143,6 +143,8 @@ class D26HiddenSuccess(VoiceScene):
         jv = box("version", TEAL_M, w=2.4).move_to([-4.6, 0.8, 0])
         jb = box("build", PURPLE_M, w=2.4).move_to([-0.6, 0.8, 0])
         jr = box("report", GOLD_M, w=2.4).move_to([3.6, 0.8, 0])
+        for b in (jv, jb, jr):
+            b[1].set_z_index(2)
         a1, a2 = edge_arrow(jv, jb), edge_arrow(jb, jr)
         a3 = CurvedArrow(jv.get_top() + UP * 0.05, jr.get_top() + UP * 0.05, angle=-0.6, color=GREY_B, stroke_width=3)
         nl = M("needs", 22, GREY_B).next_to(a1, UP, buff=0.1)

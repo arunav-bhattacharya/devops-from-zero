@@ -64,5 +64,16 @@
    "poster_at": 164.0,
    "replaces": "d60-choose-mesh"
   }
+ ],
+ "d61": [
+  {
+   "slug": "d61-cracked-pipe",
+   "title": "One cracked pipe, not four alarms: how Davis walks the map to a root cause",
+   "after": 4,
+   "file": "p16/d61_detective.py",
+   "scene": "D61Detective",
+   "poster_at": 195.0,
+   "replaces": "d61-davis"
+  }
  ]
 }

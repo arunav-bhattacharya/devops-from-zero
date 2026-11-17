@@ -56,8 +56,8 @@ class D34OnePlan(VoiceScene):
         h2 = house(GREEN_M).move_to(HR)
         l1 = T("show home", 26, TEAL_M).next_to(h1, DOWN, buff=0.25)
         l2 = T("family home", 26, GREEN_M).next_to(h2, DOWN, buff=0.25)
-        d1 = panel(2.4, 1.2, GREY_B, 0.05).move_to([-3.6, 2.2, 0])
-        d2 = panel(2.4, 1.2, GREY_B, 0.05).move_to([3.6, 2.2, 0])
+        d1 = panel(3.1, 1.2, GREY_B, 0.05).move_to([-3.6, 2.2, 0])
+        d2 = panel(3.1, 1.2, GREY_B, 0.05).move_to([3.6, 2.2, 0])
         dt1 = T("drawing", 26, GREY_B).move_to(d1)
         dt2 = T("copy of the drawing", 24, GREY_B).move_to(d2)
         self.beat("A builder puts up the same small house twice. One is a show home that visitors poke around in. The other is where a family will really live.",
@@ -97,12 +97,12 @@ class D34OnePlan(VoiceScene):
         self.beat("In the lab, the infra/local root calls the hello-stack module twice. Once called dev, with the name hello and port 8080.",
                   GrowArrow(ad), FadeIn(call_d), run_time=2.6)
         self.beat("And once called test, with the name hello-test and port 8082. Same plan, two plots.", GrowArrow(at), FadeIn(call_t), run_time=2.4)
-        n1 = M("hello-web", 22, TEAL_M).next_to(l1, DOWN, buff=0.12)
-        n2 = M("hello-test-web", 22, GREEN_M).next_to(l2, DOWN, buff=0.12)
+        n1 = M("hello-web", 24, TEAL_M).move_to([-3.6, -0.8, 0])
+        n2 = M("hello-test-web", 24, GREEN_M).move_to([3.6, -0.8, 0])
         self.beat("Every name inside the module is built from the name option. So Docker gets hello-web and hello-test-web, two containers that never clash.",
                   FadeIn(n1), FadeIn(n2), run_time=2.6)
-        ad1 = M("module.dev.docker_container.app", 22, TEAL_M).move_to([-3.4, -3.2, 0])
-        ad2 = M("module.test.docker_container.app", 22, GREEN_M).move_to([3.4, -3.2, 0])
+        ad1 = M("module.dev.docker_container.app", 22, TEAL_M).move_to([-3.4, -0.8, 0])
+        ad2 = M("module.test.docker_container.app", 22, GREEN_M).move_to([3.4, -0.8, 0])
         self.play(FadeOut(n1), FadeOut(n2), run_time=0.3)
         self.beat("In the state, each call's resources get a module prefix. module.dev, docker_container.app. module.test, docker_container.app.",
                   FadeIn(ad1), Succession(Wait(1.4), FadeIn(ad2)), run_time=3.0)

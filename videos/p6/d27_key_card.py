@@ -30,7 +30,7 @@ def key(color, s=1.0):
 
 def door(label, color=GREY_B):
     r = Rectangle(width=1.3, height=1.9, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.08), 1)
-    knob = Dot(radius=0.06, color=color).move_to(r.get_right() + LEFT * 0.22)
+    knob = Dot(radius=0.06, color=color).move_to(r.get_right() + LEFT * 0.22).set_z_index(2)
     t = T(label, 24, color).next_to(r, DOWN, buff=0.15)
     return VGroup(r, knob, t)
 

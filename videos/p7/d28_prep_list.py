@@ -73,6 +73,8 @@ class D28PrepList(VoiceScene):
         col = {"build": PURPLE_M, "assemble": PURPLE_M, "check": PURPLE_M, "jar": GOLD_M, "test": GREEN_M, "classes": TEAL_M,
                "compileTestKotlin": BLUE_M, "compileKotlin": BLUE_M}
         nodes = {k: mbox(k, col[k], h=0.7, size=22).move_to(p) for k, p in pos.items()}
+        for nd in nodes.values():
+            nd[1].set_z_index(2)
         deps = [("build", "assemble"), ("build", "check"), ("assemble", "jar"), ("check", "test"), ("jar", "classes"),
                 ("test", "compileTestKotlin"), ("classes", "compileKotlin"), ("compileTestKotlin", "compileKotlin")]
         arrs = {d: edge_arrow(nodes[d[0]], nodes[d[1]], GREY_B) for d in deps}
