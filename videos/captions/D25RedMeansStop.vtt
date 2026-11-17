@@ -1,0 +1,421 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:04.906
+A test fails on your pull request.
+
+2
+00:00:04.906 --> 00:00:07.525
+There's the red cross, right on the page.
+
+3
+00:00:07.667 --> 00:00:09.491
+So, can it still be merged?
+
+4
+00:00:09.491 --> 00:00:12.599
+Most of us would say: of course not, it's red.
+
+5
+00:00:12.599 --> 00:00:13.748
+Keep your answer.
+
+6
+00:00:13.748 --> 00:00:15.437
+We'll test it at the end.
+
+7
+00:00:16.200 --> 00:00:20.660
+Picture our kitchen on its first Saturday with a real taster at the pass.
+
+8
+00:00:20.660 --> 00:00:23.104
+She is careful, and that is the problem.
+
+9
+00:00:23.267 --> 00:00:26.324
+Plates pile up, while every dish waits its turn.
+
+10
+00:00:26.467 --> 00:00:32.127
+Each morning the stock is boiled again from bones, because the fridge is emptied every night.
+
+11
+00:00:32.267 --> 00:00:36.620
+Then a waiter in a hurry carries one plate out before the taster reaches it.
+
+12
+00:00:36.620 --> 00:00:39.427
+Of course, that's the plate with the wrong sauce.
+
+13
+00:00:39.600 --> 00:00:41.521
+It's easy to blame the waiter.
+
+14
+00:00:41.521 --> 00:00:46.388
+But a check that is slow gets skipped, and so does a check that is optional.
+
+15
+00:00:46.388 --> 00:00:47.861
+People aren't careless.
+
+16
+00:00:47.861 --> 00:00:48.693
+They're busy.
+
+17
+00:00:48.867 --> 00:00:51.590
+Three troubles: slow, forgetful, optional.
+
+18
+00:00:51.590 --> 00:00:54.768
+Let's fix them one at a time, starting with slow.
+
+19
+00:00:55.667 --> 00:00:58.517
+A good pass doesn't taste every plate first.
+
+20
+00:00:58.517 --> 00:00:59.230
+It glances.
+
+21
+00:00:59.230 --> 00:01:01.498
+Right table, right dish, still hot?
+
+22
+00:01:01.498 --> 00:01:04.867
+Only plates that pass the glance get the slow taste.
+
+23
+00:01:05.000 --> 00:01:07.490
+So the lab's pipeline starts with lint.
+
+24
+00:01:07.490 --> 00:01:12.724
+Ruff reads your code without running it, and flags style problems and likely bugs.
+
+25
+00:01:12.724 --> 00:01:13.809
+It takes seconds.
+
+26
+00:01:14.000 --> 00:01:17.140
+At the same moment, the tests run with pytest.
+
+27
+00:01:17.140 --> 00:01:21.373
+Jobs run in parallel by default, each on its own fresh runner.
+
+28
+00:01:21.533 --> 00:01:26.843
+And with a matrix, one job written once runs twice, once per Python version.
+
+29
+00:01:26.843 --> 00:01:29.428
+Like testing one recipe in two ovens.
+
+30
+00:01:29.428 --> 00:01:31.943
+Two checks, almost no extra waiting.
+
+31
+00:01:32.133 --> 00:01:36.009
+Building the Docker image is the slowest check, so it waits.
+
+32
+00:01:36.009 --> 00:01:40.531
+needs: [lint, test] means build starts only after all of them succeed.
+
+33
+00:01:40.667 --> 00:01:42.537
+If lint fails, build is skipped.
+
+34
+00:01:42.537 --> 00:01:46.803
+You hear about the failure in seconds, without waiting for the slow part.
+
+35
+00:01:47.000 --> 00:01:49.033
+Remember that skipped box.
+
+36
+00:01:49.033 --> 00:01:50.128
+It comes back.
+
+37
+00:01:51.000 --> 00:01:52.595
+Trouble two, forgetful.
+
+38
+00:01:52.595 --> 00:01:58.699
+Every job starts on an empty machine, so pip downloads every package again on every run.
+
+39
+00:01:58.699 --> 00:02:00.364
+Stock boiled from bones.
+
+40
+00:02:00.533 --> 00:02:01.962
+A cache is the fridge.
+
+41
+00:02:01.962 --> 00:02:05.795
+It saves files from one run, and restores them in the next.
+
+42
+00:02:05.933 --> 00:02:10.265
+Each entry is stored under a cache key, a label for what's inside.
+
+43
+00:02:10.265 --> 00:02:13.678
+A good fridge label says which recipe and which day.
+
+44
+00:02:13.678 --> 00:02:17.025
+This one says: the system, the Python version, pip.
+
+45
+00:02:17.200 --> 00:02:23.671
+And a hash, a short fingerprint computed from your requirements files, the lists of packages to install.
+
+46
+00:02:23.867 --> 00:02:26.174
+Next run, same files, same key.
+
+47
+00:02:26.174 --> 00:02:29.001
+The log says: Cache restored from key.
+
+48
+00:02:29.001 --> 00:02:30.564
+Seconds, not minutes.
+
+49
+00:02:30.733 --> 00:02:33.914
+Now change one letter in a requirements file.
+
+50
+00:02:33.914 --> 00:02:35.045
+Pause and guess.
+
+51
+00:02:35.045 --> 00:02:36.812
+Same label, or a new one?
+
+52
+00:02:39.000 --> 00:02:39.711
+A new one.
+
+53
+00:02:39.711 --> 00:02:42.344
+The hash changes, so the key changes.
+
+54
+00:02:42.344 --> 00:02:48.604
+GitHub restores an older entry with the same start, and pip downloads only what changed.
+
+55
+00:02:48.604 --> 00:02:50.952
+Then the job saves a fresh entry.
+
+56
+00:02:51.133 --> 00:02:52.552
+One rule for fridges.
+
+57
+00:02:52.552 --> 00:02:55.863
+GitHub deletes caches nobody used for seven days.
+
+58
+00:02:55.863 --> 00:02:58.633
+So a cache is a speed-up that can vanish.
+
+59
+00:02:58.633 --> 00:03:01.741
+Never rely on it, and never put secrets in it.
+
+60
+00:03:02.667 --> 00:03:04.252
+Trouble three, optional.
+
+61
+00:03:04.252 --> 00:03:05.903
+Our pipeline is fast now.
+
+62
+00:03:05.903 --> 00:03:09.535
+But a red check still stops nobody from clicking merge.
+
+63
+00:03:09.733 --> 00:03:18.508
+On GitHub, the fix is a ruleset on main: a named list of rules, such as: these checks must pass before a pull request can merge.
+
+64
+00:03:18.667 --> 00:03:20.558
+Here's a tempting shortcut.
+
+65
+00:03:20.558 --> 00:03:24.482
+Build waits for everything, so let's require only build.
+
+66
+00:03:24.482 --> 00:03:26.934
+If build passed, everything passed.
+
+67
+00:03:26.934 --> 00:03:27.355
+Right?
+
+68
+00:03:27.533 --> 00:03:28.742
+Now a test fails.
+
+69
+00:03:28.742 --> 00:03:31.941
+Pause and guess: can this pull request merge?
+
+70
+00:03:34.133 --> 00:03:37.005
+Build needs the tests, so build is skipped.
+
+71
+00:03:37.005 --> 00:03:38.541
+That skipped box again.
+
+72
+00:03:38.733 --> 00:03:43.133
+And a job skipped because a job it needs failed counts as passed.
+
+73
+00:03:43.133 --> 00:03:45.096
+The ruleset sees build: fine.
+
+74
+00:03:45.096 --> 00:03:46.924
+The merge button lights up.
+
+75
+00:03:47.067 --> 00:03:47.406
+Well.
+
+76
+00:03:47.406 --> 00:03:51.415
+The waiter just carried out the plate with the wrong sauce.
+
+77
+00:03:51.415 --> 00:03:52.774
+Nobody broke a rule.
+
+78
+00:03:52.774 --> 00:03:54.133
+The rule had a hole.
+
+79
+00:03:54.333 --> 00:03:57.863
+The fix: require every check by its exact name.
+
+80
+00:03:57.863 --> 00:04:00.717
+lint, test 3.13, test 3.14, and build.
+
+81
+00:04:00.717 --> 00:04:05.148
+Now the failed test itself is required, and red means stop.
+
+82
+00:04:05.333 --> 00:04:08.457
+Each of those is called a required status check.
+
+83
+00:04:08.457 --> 00:04:10.409
+Two more details catch people.
+
+84
+00:04:10.409 --> 00:04:13.923
+A new ruleset starts as Disabled, so set it to Active.
+
+85
+00:04:13.923 --> 00:04:18.608
+And on the Free plan, rulesets are only enforced on public repositories.
+
+86
+00:04:19.533 --> 00:04:20.606
+Last guardrail.
+
+87
+00:04:20.606 --> 00:04:28.400
+A slow pipeline brings back trouble one: people stop waiting, or pile many changes into one big pull request.
+
+88
+00:04:28.600 --> 00:04:33.330
+Concurrency with cancel-in-progress cancels a stale run when you push again.
+
+89
+00:04:33.330 --> 00:04:37.189
+The table changed its order, so you stop cooking the old dish.
+
+90
+00:04:37.333 --> 00:04:39.772
+timeout-minutes stops a hung job early.
+
+91
+00:04:39.933 --> 00:04:44.489
+And never put a path filter on pull_request when its checks are required.
+
+92
+00:04:44.489 --> 00:04:51.104
+A docs-only pull request never runs the workflow, so its checks stay Pending forever, and block the merge.
+
+93
+00:04:52.000 --> 00:04:52.938
+So, the moral.
+
+94
+00:04:52.938 --> 00:04:55.953
+Slow gets skipped, so put quick checks first.
+
+95
+00:04:55.953 --> 00:04:58.968
+Forgetful costs minutes, so give it a fridge.
+
+96
+00:04:58.968 --> 00:05:02.587
+Optional gets skipped, so require every check by name.
+
+97
+00:05:02.733 --> 00:05:04.690
+And the question from the start?
+
+98
+00:05:04.690 --> 00:05:08.357
+A red pull request can merge, if your rule has a hole in it.
+
+99
+00:05:08.533 --> 00:05:09.400
+Quick check.
+
+100
+00:05:09.400 --> 00:05:14.958
+Next year you add Python 3.15 to the matrix, and forget to touch the ruleset.
+
+101
+00:05:14.958 --> 00:05:16.834
+Is the new check required?
+
+102
+00:05:16.834 --> 00:05:17.989
+Pause and think.
+
+103
+00:05:20.133 --> 00:05:20.343
+No.
+
+104
+00:05:20.343 --> 00:05:23.483
+The ruleset only knows the names you gave it.
+
+105
+00:05:23.483 --> 00:05:26.553
+A new check stays optional until you add it.

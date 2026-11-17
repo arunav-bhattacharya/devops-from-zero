@@ -104,8 +104,9 @@ class D25RedMeansStop(VoiceScene):
                   run_time=None)
         fridge = RoundedRectangle(corner_radius=0.15, width=3.0, height=3.6, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.08), 1).move_to([-4.3, 0.2, 0])
         fl = T("cache", 28, TEAL_M).next_to(fridge, UP, buff=0.15)
-        self.beat("A cache is the fridge. It saves files from one run, and restores them in the next.",
-                  Create(fridge), FadeIn(fl), run_time=1.6)
+        jars = VGroup(*[chip(t, TEAL_M, 22) for t in ("pytest", "ruff", "flask")]).arrange(DOWN, buff=0.3).move_to(fridge)
+        self.beat("A cache is the fridge. It saves files from one run, such as downloaded packages, and restores them in the next.",
+                  Create(fridge), FadeIn(fl), LaggedStart(*[FadeIn(j) for j in jars], lag_ratio=0.3), run_time=2.0)
         label = VGroup(M("Linux-x64", 22), M("python-3.14", 22), M("pip", 22), M("hash: 9c41", 22, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         lbox = SurroundingRectangle(label, color=WHITE, buff=0.2, corner_radius=0.08).set_fill(BLACK, 1)
         lab = VGroup(lbox, label).move_to([1.0, 0.6, 0])

@@ -1,405 +1,405 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:03.831
+00:00:02.700 --> 00:00:03.798
 Friday afternoon.
 
 2
-00:00:03.831 --> 00:00:07.384
+00:00:03.798 --> 00:00:07.351
 Your new script for the shop's nightly job won't start.
 
 3
-00:00:07.384 --> 00:00:09.580
+00:00:07.351 --> 00:00:09.547
 The screen says Permission denied.
 
 4
-00:00:09.733 --> 00:00:14.145
+00:00:09.767 --> 00:00:14.179
 Down the hall, an old worker program is still running, and won't stop.
 
 5
-00:00:14.145 --> 00:00:15.784
+00:00:14.179 --> 00:00:15.817
 Everyone wants to go home.
 
 6
-00:00:15.933 --> 00:00:17.817
+00:00:16.033 --> 00:00:17.917
 Two shortcuts are right there.
 
 7
-00:00:17.817 --> 00:00:20.141
+00:00:17.917 --> 00:00:20.241
 Borrow the master key for everything.
 
 8
-00:00:20.141 --> 00:00:23.847
+00:00:20.241 --> 00:00:23.947
 Or call security, and have the worker dragged out mid-task.
 
 9
-00:00:24.000 --> 00:00:27.091
+00:00:24.167 --> 00:00:27.257
 In the terminal, those are sudo and kill -9.
 
 10
-00:00:27.091 --> 00:00:30.392
+00:00:27.257 --> 00:00:30.559
 Both work at once, which is why they feel safe.
 
 11
-00:00:30.533 --> 00:00:32.557
+00:00:30.767 --> 00:00:32.791
 And both leave a mess for Monday.
 
 12
-00:00:32.557 --> 00:00:35.133
+00:00:32.791 --> 00:00:35.367
 Let's take the two problems one at a time.
 
 13
-00:00:35.867 --> 00:00:41.274
+00:00:36.167 --> 00:00:41.574
 In our office building, everyone wears a badge, and every drawer belongs to someone.
 
 14
-00:00:41.274 --> 00:00:45.459
+00:00:41.574 --> 00:00:45.759
 In Linux, every file and every running program belongs to a user.
 
 15
-00:00:45.600 --> 00:00:53.095
+00:00:45.967 --> 00:00:53.461
 When a program opens a file, the kernel, the core of the operating system, checks the badge against the sign on the drawer.
 
 16
-00:00:53.267 --> 00:00:57.742
+00:00:53.667 --> 00:00:58.142
 The building manager with the master key is called root, user ID zero.
 
 17
-00:00:57.742 --> 00:01:00.619
+00:00:58.142 --> 00:01:01.019
 The kernel skips almost every check for root.
 
 18
-00:01:01.400 --> 00:01:03.986
+00:01:01.833 --> 00:01:04.419
 So let's read the sign, with ls -l.
 
 19
-00:01:03.986 --> 00:01:06.128
+00:01:04.419 --> 00:01:06.561
 It looks like noise at first.
 
 20
-00:01:06.267 --> 00:01:11.073
+00:01:06.767 --> 00:01:11.573
 The first character is the type: a dash for a file, d for a directory.
 
 21
-00:01:11.267 --> 00:01:12.881
+00:01:11.800 --> 00:01:13.414
 Then three groups of three.
 
 22
-00:01:12.881 --> 00:01:17.424
+00:01:13.414 --> 00:01:17.957
 What the owner may do, what the group may do, and what everyone else may do.
 
 23
-00:01:17.600 --> 00:01:21.653
+00:01:18.167 --> 00:01:22.220
 R is read, W is write, X is execute, which means run.
 
 24
-00:01:21.653 --> 00:01:23.565
+00:01:22.220 --> 00:01:24.132
 A dash means not allowed.
 
 25
-00:01:23.733 --> 00:01:25.927
+00:01:24.333 --> 00:01:26.527
 Then come the owner and the group.
 
 26
-00:01:25.927 --> 00:01:27.992
+00:01:26.527 --> 00:01:28.592
 A group is a named set of users.
 
 27
-00:01:28.133 --> 00:01:37.196
+00:01:28.800 --> 00:01:37.862
 For each check, the kernel picks exactly one group of three: the owner's if you own the file, else the group's if you're in it, else everyone else's.
 
 28
-00:01:37.196 --> 00:01:38.899
+00:01:37.862 --> 00:01:39.565
 The first that fits decides.
 
 29
-00:01:39.467 --> 00:01:40.706
+00:01:40.167 --> 00:01:41.406
 Now back to Friday.
 
 30
-00:01:40.706 --> 00:01:44.945
+00:01:41.406 --> 00:01:45.645
 You are the owner, and running the script says Permission denied.
 
 31
-00:01:44.945 --> 00:01:46.249
+00:01:45.645 --> 00:01:46.949
 Which slot is empty?
 
 32
-00:01:49.533 --> 00:01:50.699
+00:01:50.167 --> 00:01:51.332
 The owner's X.
 
 33
-00:01:50.699 --> 00:01:52.780
+00:01:51.332 --> 00:01:53.414
 Nobody may run this file.
 
 34
-00:01:52.780 --> 00:01:53.863
+00:01:53.414 --> 00:01:54.496
 Not even you.
 
 35
-00:01:54.000 --> 00:01:55.003
+00:01:54.700 --> 00:01:55.703
 That's normal.
 
 36
-00:01:55.003 --> 00:02:04.534
+00:01:55.703 --> 00:02:05.234
 Programs usually ask for six six six, read and write for everyone, and a setting called the umask removes write for group and others.
 
 37
-00:02:04.534 --> 00:02:07.759
+00:02:05.234 --> 00:02:08.459
 So a fresh file is 644, with no X for anyone.
 
 38
-00:02:07.933 --> 00:02:09.948
+00:02:08.667 --> 00:02:10.681
 Where does 644 come from?
 
 39
-00:02:09.948 --> 00:02:12.365
+00:02:10.681 --> 00:02:13.098
 R is worth four, W two, X one.
 
 40
-00:02:12.365 --> 00:02:14.460
+00:02:13.098 --> 00:02:15.193
 Add the slots that are on.
 
 41
-00:02:14.460 --> 00:02:16.313
+00:02:15.193 --> 00:02:17.046
 Read plus write is six.
 
 42
-00:02:16.313 --> 00:02:17.844
+00:02:17.046 --> 00:02:18.577
 Read alone is four.
 
 43
-00:02:18.000 --> 00:02:26.220
+00:02:18.800 --> 00:02:27.020
 Three you'll meet all the time: seven five five for scripts and folders, six four four for files, six oh oh for secrets.
 
 44
-00:02:26.800 --> 00:02:28.221
+00:02:27.633 --> 00:02:29.054
 Now the shortcuts.
 
 45
-00:02:28.221 --> 00:02:33.903
+00:02:29.054 --> 00:02:34.736
 sudo hides the real cause, and leaves behind files only root can change.
 
 46
-00:02:33.903 --> 00:02:38.401
+00:02:34.736 --> 00:02:39.234
 chmod 777 lets every user on the machine change the file.
 
 47
-00:02:38.401 --> 00:02:40.532
+00:02:39.234 --> 00:02:41.365
 That's not fixing the lock.
 
 48
-00:02:40.532 --> 00:02:42.663
+00:02:41.365 --> 00:02:43.496
 That's taking the door off.
 
 49
-00:02:42.800 --> 00:02:45.457
+00:02:43.700 --> 00:02:46.357
 The real fix is one missing bit.
 
 50
-00:02:45.457 --> 00:02:48.778
+00:02:46.357 --> 00:02:49.678
 chmod, U plus X: give the owner execute.
 
 51
-00:02:48.778 --> 00:02:50.521
+00:02:49.678 --> 00:02:51.421
 Nothing else changes.
 
 52
-00:02:50.667 --> 00:02:53.899
+00:02:51.633 --> 00:02:54.866
 Fix the one bit that is missing.
 
 53
-00:02:53.899 --> 00:02:56.525
+00:02:54.866 --> 00:02:57.492
 Never reach for chmod 777.
 
 54
-00:02:57.267 --> 00:02:58.924
+00:02:58.300 --> 00:02:59.958
 Now the second problem.
 
 55
-00:02:58.924 --> 00:03:03.176
+00:02:59.958 --> 00:03:04.210
 A program is a job description in a drawer: a file on disk.
 
 56
-00:03:03.176 --> 00:03:10.023
+00:03:04.210 --> 00:03:11.056
 A process is one running copy, a worker on shift, with a number called its PID, its process ID.
 
 57
-00:03:10.200 --> 00:03:13.961
+00:03:11.267 --> 00:03:15.027
 The lesson's worker.sh is a pretend background worker.
 
 58
-00:03:13.961 --> 00:03:18.000
+00:03:15.027 --> 00:03:19.067
 Every two seconds it processes one job, and writes a line.
 
 59
-00:03:20.533 --> 00:03:22.623
+00:03:21.667 --> 00:03:23.757
 There are two ways to end a shift.
 
 60
-00:03:22.623 --> 00:03:25.389
+00:03:23.757 --> 00:03:26.523
 Knock, and say: please finish up and go home.
 
 61
-00:03:25.533 --> 00:03:29.268
+00:03:26.733 --> 00:03:30.468
 Or call security, and have them carried out mid-sentence.
 
 62
-00:03:29.268 --> 00:03:30.710
+00:03:30.468 --> 00:03:31.910
 One leaves tidy desks.
 
 63
-00:03:30.710 --> 00:03:33.724
+00:03:31.910 --> 00:03:34.924
 The other leaves half-filed papers everywhere.
 
 64
-00:03:33.867 --> 00:03:38.757
+00:03:35.133 --> 00:03:40.024
 That knock is a signal: a short message the kernel delivers to a process.
 
 65
-00:03:38.757 --> 00:03:41.571
+00:03:40.024 --> 00:03:42.837
 The polite one is SIGTERM, number fifteen.
 
 66
-00:03:41.571 --> 00:03:42.911
+00:03:42.837 --> 00:03:44.177
 Plain kill sends it.
 
 67
-00:03:43.067 --> 00:03:46.888
+00:03:44.400 --> 00:03:48.221
 Security is SIGKILL, number nine, sent with kill -9.
 
 68
-00:03:46.888 --> 00:03:49.828
+00:03:48.221 --> 00:03:51.161
 It cannot be caught, so no cleanup runs.
 
 69
-00:03:49.828 --> 00:03:52.473
+00:03:51.161 --> 00:03:53.807
 And Ctrl+C sends SIGINT, number two.
 
 70
-00:03:52.667 --> 00:03:56.589
+00:03:54.033 --> 00:03:57.956
 worker.sh catches SIGTERM with a shell command called trap.
 
 71
-00:03:56.589 --> 00:03:59.980
+00:03:57.956 --> 00:04:01.346
 It's on job three, and you knock with a plain kill.
 
 72
-00:03:59.980 --> 00:04:01.775
+00:04:01.346 --> 00:04:03.141
 What does the log say next?
 
 73
-00:04:05.067 --> 00:04:08.173
+00:04:06.367 --> 00:04:09.473
 It finishes job three, says so, and leaves.
 
 74
-00:04:08.173 --> 00:04:10.485
+00:04:09.473 --> 00:04:11.785
 Stopped cleanly after job three.
 
 75
-00:04:10.485 --> 00:04:12.724
+00:04:11.785 --> 00:04:14.024
 Exit code zero, a clean ending.
 
 76
-00:04:13.267 --> 00:04:17.169
+00:04:14.633 --> 00:04:18.535
 Run it again, and on job three, send kill -9.
 
 77
-00:04:17.169 --> 00:04:19.597
+00:04:18.535 --> 00:04:20.963
 The log just stops, mid-job.
 
 78
-00:04:19.597 --> 00:04:21.765
+00:04:20.963 --> 00:04:23.131
 Nobody finished anything.
 
 79
-00:04:21.765 --> 00:04:22.979
+00:04:23.131 --> 00:04:24.345
 Exit code 137.
 
 80
-00:04:23.133 --> 00:04:29.285
+00:04:24.567 --> 00:04:30.718
 When a signal kills a process, the exit code is 128 plus the signal number.
 
 81
-00:04:29.285 --> 00:04:31.007
+00:04:30.718 --> 00:04:32.440
 137 is 128 plus nine.
 
 82
-00:04:31.007 --> 00:04:38.471
+00:04:32.440 --> 00:04:39.904
 You'll meet it again when Docker or Kubernetes kills a container that used too much memory.
 
 83
-00:04:39.267 --> 00:04:41.391
+00:04:40.733 --> 00:04:42.858
 The same pair stops containers.
 
 84
-00:04:41.391 --> 00:04:46.462
+00:04:42.858 --> 00:04:47.928
 docker stop sends SIGTERM, waits ten seconds, and only then sends SIGKILL.
 
 85
-00:04:46.462 --> 00:04:50.231
+00:04:47.928 --> 00:04:51.697
 Kubernetes does the same, with a thirty second default.
 
 86
-00:04:50.400 --> 00:04:53.630
+00:04:51.900 --> 00:04:55.130
 The knock comes first, and the guard waits outside.
 
 87
-00:04:53.630 --> 00:04:57.304
+00:04:55.130 --> 00:04:58.804
 So a program that handles SIGTERM gets to finish its work.
 
 88
-00:04:57.467 --> 00:04:59.327
+00:04:59.033 --> 00:05:00.894
 Knock with SIGTERM first.
 
 89
-00:04:59.327 --> 00:05:03.048
+00:05:00.894 --> 00:05:04.615
 Keep kill -9 for a process that ignores the knock.
 
 90
-00:05:03.800 --> 00:05:05.033
+00:05:05.433 --> 00:05:06.666
 So, back to Friday.
 
 91
-00:05:05.033 --> 00:05:07.564
+00:05:06.666 --> 00:05:09.197
 The script was missing one execute bit.
 
 92
-00:05:07.564 --> 00:05:11.717
+00:05:09.197 --> 00:05:13.350
 The worker deserved a polite knock, and a few seconds to finish.
 
 93
-00:05:11.717 --> 00:05:14.442
+00:05:13.350 --> 00:05:16.075
 Neither needed the master key or security.
 
 94
-00:05:14.442 --> 00:05:18.660
+00:05:16.075 --> 00:05:20.293
 The moral: name the real cause before you reach for the shortcut.
 
 95
-00:05:19.333 --> 00:05:20.437
+00:05:21.000 --> 00:05:22.103
 A quick check.
 
 96
-00:05:20.437 --> 00:05:24.456
+00:05:22.103 --> 00:05:26.122
 A file shows R W dash, R dash dash, dash dash dash.
 
 97
-00:05:24.456 --> 00:05:27.371
+00:05:26.122 --> 00:05:29.038
 It belongs to user app and group ops.
 
 98
-00:05:27.371 --> 00:05:30.208
+00:05:29.038 --> 00:05:31.875
 Dana is in ops, but isn't the owner.
 
 99
-00:05:30.208 --> 00:05:31.548
+00:05:31.875 --> 00:05:33.215
 What can Dana do?
 
 100
-00:05:34.867 --> 00:05:35.762
+00:05:36.433 --> 00:05:37.329
 Read it only.
 
 101
-00:05:35.762 --> 00:05:42.859
+00:05:37.329 --> 00:05:44.425
 Dana is not the owner but is in the group, so the group's three slots decide, and they say R dash dash.

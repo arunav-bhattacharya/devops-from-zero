@@ -881,7 +881,7 @@
       "lang": "console"
      },
      {
-      "say": "Count requests per IP. Without sort, uniq only merges neighbours, so every count is 1. After sort, identical IPs sit together and `uniq -c` counts them. Note that sort orders text, so `10.0.0.2` comes first.",
+      "say": "Count requests per IP. Without sort, uniq only merges neighbours, so the same IP shows up again and again, mostly with a count of 1. After sort, identical IPs sit together and `uniq -c` counts them. Note that sort orders text, so `10.0.0.2` comes first.",
       "code": "$ awk '{print $1}' access.log | uniq -c | head -n 4\n      1 203.0.113.7\n      1 10.0.0.2\n      1 198.51.100.23\n      1 203.0.113.99\n$ awk '{print $1}' access.log | sort | uniq -c\n     18 10.0.0.2\n     12 192.0.2.101\n     37 192.0.2.15\n     44 198.51.100.23\n      7 198.51.100.77\n     21 198.51.100.8\n     29 203.0.113.42\n     61 203.0.113.7\n      9 203.0.113.99",
       "lang": "console"
      },

@@ -1,0 +1,345 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.089
+Here's a question worth asking before anything leaks.
+
+2
+00:00:06.089 --> 00:00:13.559
+You keep a database password in a Kubernetes Secret, the cluster's place for passwords, in the namespace called hello.
+
+3
+00:00:13.559 --> 00:00:14.572
+Who can read it?
+
+4
+00:00:14.733 --> 00:00:19.440
+Kubernetes is the system that runs your containers on a group of machines.
+
+5
+00:00:19.440 --> 00:00:21.856
+A namespace is a named room inside it.
+
+6
+00:00:21.856 --> 00:00:25.354
+And most of us would answer: only the people I allowed.
+
+7
+00:00:25.354 --> 00:00:27.389
+Let's see if that's really true.
+
+8
+00:00:28.333 --> 00:00:30.375
+First, look inside the envelope.
+
+9
+00:00:30.375 --> 00:00:33.948
+Read the Secret back, and the value comes out like this.
+
+10
+00:00:33.948 --> 00:00:35.735
+Looks scrambled, doesn't it?
+
+11
+00:00:35.933 --> 00:00:36.542
+It isn't.
+
+12
+00:00:36.542 --> 00:00:41.009
+It's base64, which only writes the same bytes in another alphabet.
+
+13
+00:00:41.009 --> 00:00:44.935
+One more command turns it straight back into the password.
+
+14
+00:00:45.133 --> 00:00:49.476
+The Kubernetes docs call such a value obscured, but not secret.
+
+15
+00:00:49.476 --> 00:00:54.438
+And by default the cluster's database, etcd, stores Secrets unencrypted.
+
+16
+00:00:54.438 --> 00:00:56.782
+A spy novel would be disappointed.
+
+17
+00:00:56.782 --> 00:00:59.539
+So the envelope itself protects nothing.
+
+18
+00:01:00.533 --> 00:01:02.463
+So the obvious fix is a lock.
+
+19
+00:01:02.463 --> 00:01:09.315
+Every request to Kubernetes goes through one front desk, the API server, and it checks who may do what.
+
+20
+00:01:09.315 --> 00:01:12.841
+That check is called RBAC, role-based access control.
+
+21
+00:01:13.000 --> 00:01:15.189
+Here's a developer identity, dev.
+
+22
+00:01:15.189 --> 00:01:18.440
+It may create Pods, the running copies of an app.
+
+23
+00:01:18.440 --> 00:01:20.828
+It has no rule about Secrets at all.
+
+24
+00:01:21.000 --> 00:01:24.672
+Ask the API server what dev may do.
+
+25
+00:01:24.672 --> 00:01:25.931
+Get secrets?
+
+26
+00:01:25.931 --> 00:01:26.245
+No.
+
+27
+00:01:26.245 --> 00:01:27.504
+Create Pods?
+
+28
+00:01:27.504 --> 00:01:27.924
+Yes.
+
+29
+00:01:28.067 --> 00:01:32.420
+So dev asks for the Secret directly, and gets refused.
+
+30
+00:01:32.420 --> 00:01:33.227
+Forbidden.
+
+31
+00:01:33.227 --> 00:01:34.436
+So far so good.
+
+32
+00:01:34.436 --> 00:01:35.645
+The lock works.
+
+33
+00:01:36.600 --> 00:01:38.243
+Now back to the jam shop.
+
+34
+00:01:38.243 --> 00:01:41.462
+A new helper may not open the safe in the office.
+
+35
+00:01:41.462 --> 00:01:42.251
+Fair enough.
+
+36
+00:01:42.251 --> 00:01:45.011
+But the helper may send the cook an order.
+
+37
+00:01:45.200 --> 00:01:47.852
+And the order says: bring me what's in the safe.
+
+38
+00:01:48.000 --> 00:01:52.897
+The front desk checks one thing: may this helper send orders to the kitchen?
+
+39
+00:01:52.897 --> 00:01:53.155
+Yes.
+
+40
+00:01:53.155 --> 00:01:57.215
+The cook, trusting the order, opens the safe and brings it out.
+
+41
+00:01:57.400 --> 00:02:01.291
+Nobody ever asked whether the helper was allowed in the safe.
+
+42
+00:02:01.291 --> 00:02:02.630
+Each check was right.
+
+43
+00:02:02.630 --> 00:02:04.161
+The gap is between them.
+
+44
+00:02:04.733 --> 00:02:05.614
+Let's map it.
+
+45
+00:02:05.614 --> 00:02:07.851
+The front desk is the API server.
+
+46
+00:02:07.851 --> 00:02:12.527
+The cook is the kubelet, the helper on each machine that starts Pods.
+
+47
+00:02:12.527 --> 00:02:14.424
+And the order slip is a Pod.
+
+48
+00:02:14.600 --> 00:02:16.434
+dev writes a Pod called peek.
+
+49
+00:02:16.434 --> 00:02:20.608
+It loads the Secret into a setting called PASSWORD, and prints it.
+
+50
+00:02:20.800 --> 00:02:22.465
+dev can't read Secrets.
+
+51
+00:02:22.465 --> 00:02:23.913
+dev can create Pods.
+
+52
+00:02:23.913 --> 00:02:26.303
+Will this one print the password?
+
+53
+00:02:26.303 --> 00:02:27.461
+Pause and guess.
+
+54
+00:02:29.600 --> 00:02:33.614
+The API server checks: may dev create Pods here?
+
+55
+00:02:33.614 --> 00:02:33.949
+Yes.
+
+56
+00:02:33.949 --> 00:02:35.956
+pod slash peek, created.
+
+57
+00:02:36.133 --> 00:02:40.321
+Then the kubelet starts it, and fetches the Secret on the Pod's behalf.
+
+58
+00:02:40.467 --> 00:02:42.101
+dev reads the Pod's log.
+
+59
+00:02:42.101 --> 00:02:43.191
+And there it is.
+
+60
+00:02:43.191 --> 00:02:46.119
+The password the rule was meant to protect.
+
+61
+00:02:46.267 --> 00:02:46.788
+Well...
+
+62
+00:02:46.788 --> 00:02:48.128
+the lock was fine.
+
+63
+00:02:48.128 --> 00:02:50.809
+We just ordered the cook to open it.
+
+64
+00:02:51.000 --> 00:02:53.893
+Nobody checks the creator's rights to Secrets.
+
+65
+00:02:53.893 --> 00:02:57.414
+The API server only checked that dev may create the Pod.
+
+66
+00:02:57.414 --> 00:03:03.073
+The same holds for anyone who may create a Deployment, the object that keeps Pods running.
+
+67
+00:03:03.800 --> 00:03:05.609
+So who can read that Secret?
+
+68
+00:03:05.609 --> 00:03:09.616
+Anyone who may read Secrets, or create Pods, in its namespace.
+
+69
+00:03:09.616 --> 00:03:14.721
+The namespace is the real boundary, and the Secret rule alone protects nothing.
+
+70
+00:03:15.733 --> 00:03:17.813
+So protect Secrets in layers.
+
+71
+00:03:17.813 --> 00:03:25.197
+One: on a real cluster, turn on encryption at rest, so etcd and its backups hold only encrypted values.
+
+72
+00:03:25.333 --> 00:03:30.624
+Two: keep the list of people and programs who can create Pods in a namespace short.
+
+73
+00:03:30.624 --> 00:03:32.600
+That's who holds the order pad.
+
+74
+00:03:32.800 --> 00:03:40.733
+Three: keep the real values in a secrets manager, one logged place that stores them, and copy them in only where needed.
+
+75
+00:03:40.733 --> 00:03:44.568
+Four: never put the value in git, not even for one commit.
+
+76
+00:03:44.733 --> 00:03:47.568
+And test a rule before you rely on it.
+
+77
+00:03:47.568 --> 00:03:52.939
+kubectl auth can-i asks the API server directly what an identity may do.
+
+78
+00:03:53.933 --> 00:03:55.547
+So the moral of the story.
+
+79
+00:03:55.547 --> 00:04:00.016
+A lock on the safe means little if anyone may order the cook to open it.
+
+80
+00:04:00.016 --> 00:04:02.188
+Guard the order pad, the namespace.
+
+81
+00:04:03.267 --> 00:04:04.308
+A quick check.
+
+82
+00:04:04.308 --> 00:04:06.762
+A Secret sits in namespace hello.
+
+83
+00:04:06.762 --> 00:04:08.845
+By default, who can read it?
+
+84
+00:04:08.845 --> 00:04:10.035
+Pause and think.
+
+85
+00:04:12.200 --> 00:04:16.408
+Anyone who may read Secrets, or create Pods, in that namespace.
+
+86
+00:04:16.408 --> 00:04:20.683
+Base64 hides nothing, and the cook opens the safe for any order.

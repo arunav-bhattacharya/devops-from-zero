@@ -1,0 +1,381 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.982
+Picture a detective, called to an office building at ten in the morning.
+
+2
+00:00:06.982 --> 00:00:09.107
+Tenants are waiting with complaints.
+
+3
+00:00:09.107 --> 00:00:11.113
+A wet ceiling on the fourth floor.
+
+4
+00:00:11.113 --> 00:00:12.943
+Flickering lights on the third.
+
+5
+00:00:12.943 --> 00:00:14.713
+A smell of damp on the second.
+
+6
+00:00:14.867 --> 00:00:19.090
+A tidy detective writes one report per complaint, and goes home.
+
+7
+00:00:19.090 --> 00:00:20.607
+It feels like progress.
+
+8
+00:00:20.607 --> 00:00:24.039
+Each complaint is real, and each one gets an answer.
+
+9
+00:00:24.200 --> 00:00:30.692
+A good detective walks upstairs, and finds one cracked pipe on the fifth floor, which explains all of them.
+
+10
+00:00:30.867 --> 00:00:34.038
+What nobody asked was how the complaints connect.
+
+11
+00:00:34.038 --> 00:00:35.591
+Hold on to that picture.
+
+12
+00:00:35.591 --> 00:00:38.439
+Today's tool tries to be the good detective.
+
+13
+00:00:39.200 --> 00:00:40.503
+Now a made-up shop.
+
+14
+00:00:40.503 --> 00:00:47.087
+Web calls checkout, checkout calls payments, and payments keeps its data in a Postgres database.
+
+15
+00:00:47.087 --> 00:00:50.036
+At 10:02, four alerts fire within a minute.
+
+16
+00:00:50.200 --> 00:00:51.408
+Every alert is true.
+
+17
+00:00:51.408 --> 00:00:54.368
+And not one of them says which caused the others.
+
+18
+00:00:54.368 --> 00:00:57.388
+Which one is the cause, and which are just echoes?
+
+19
+00:00:57.533 --> 00:01:00.717
+With the stack we built ourselves, we go digging.
+
+20
+00:01:00.717 --> 00:01:04.030
+A dashboard shows three services went bad together.
+
+21
+00:01:04.030 --> 00:01:07.343
+A trace shows a long database span inside payments.
+
+22
+00:01:07.343 --> 00:01:09.357
+A log search for that trace ID.
+
+23
+00:01:09.357 --> 00:01:12.671
+We get there, in three tools, matching IDs by hand.
+
+24
+00:01:12.867 --> 00:01:16.843
+You might be thinking: easy, the cause is whatever went bad first.
+
+25
+00:01:16.843 --> 00:01:19.915
+Let's be fair, that's where most of us would start.
+
+26
+00:01:19.915 --> 00:01:22.385
+But all four went bad in the same minute.
+
+27
+00:01:22.385 --> 00:01:25.096
+Timing alone can't tell a cause from an echo.
+
+28
+00:01:25.267 --> 00:01:28.217
+What we need is the plumbing plan: who calls whom.
+
+29
+00:01:29.200 --> 00:01:31.639
+Dynatrace draws that plan by itself.
+
+30
+00:01:31.639 --> 00:01:37.466
+Its agent, OneAgent, runs on every machine and records each call as it passes through.
+
+31
+00:01:37.466 --> 00:01:40.719
+Dynatrace calls each thing it watches an entity.
+
+32
+00:01:40.867 --> 00:01:44.539
+The calls become links on a live map, called Smartscape.
+
+33
+00:01:44.539 --> 00:01:48.998
+Web calls checkout, checkout calls payments, payments uses Postgres.
+
+34
+00:01:48.998 --> 00:01:52.343
+The building's plumbing plan, redrawn every minute.
+
+35
+00:01:52.533 --> 00:01:59.900
+An engine called Davis watches every entity against its own baseline, what normal looks like for it at this time.
+
+36
+00:01:59.900 --> 00:02:03.747
+At 10:02, web, checkout and payments leave their baselines.
+
+37
+00:02:03.933 --> 00:02:07.837
+Davis starts at the affected entity and walks down the links.
+
+38
+00:02:07.837 --> 00:02:09.436
+Where will the trail end?
+
+39
+00:02:09.436 --> 00:02:10.460
+Pause and guess.
+
+40
+00:02:13.667 --> 00:02:14.828
+Start at web.
+
+41
+00:02:14.828 --> 00:02:15.721
+Unhealthy.
+
+42
+00:02:15.721 --> 00:02:17.775
+What does it depend on?
+
+43
+00:02:17.775 --> 00:02:18.579
+Checkout.
+
+44
+00:02:18.733 --> 00:02:21.280
+Is checkout unhealthy too?
+
+45
+00:02:21.280 --> 00:02:21.672
+Yes.
+
+46
+00:02:21.672 --> 00:02:23.239
+Keep going down.
+
+47
+00:02:23.239 --> 00:02:24.120
+Payments?
+
+48
+00:02:24.120 --> 00:02:25.589
+Also unhealthy.
+
+49
+00:02:25.589 --> 00:02:26.667
+Keep going.
+
+50
+00:02:26.867 --> 00:02:27.566
+Postgres?
+
+51
+00:02:27.566 --> 00:02:30.208
+The obvious guess is the database.
+
+52
+00:02:30.208 --> 00:02:33.783
+The slow spans were database calls, after all.
+
+53
+00:02:33.783 --> 00:02:34.637
+Let's look.
+
+54
+00:02:34.800 --> 00:02:36.293
+Postgres looks healthy.
+
+55
+00:02:36.293 --> 00:02:43.110
+The waiting happens inside payments, in its connection pool, the fixed set of open connections it shares.
+
+56
+00:02:43.110 --> 00:02:45.252
+Every call queues for a free one.
+
+57
+00:02:45.400 --> 00:02:51.007
+So the trail ends at payments: an unhealthy component whose own dependencies look fine.
+
+58
+00:02:51.007 --> 00:02:53.392
+That is the most probable root cause.
+
+59
+00:02:53.533 --> 00:02:56.718
+The database was the alibi everybody believed.
+
+60
+00:02:56.718 --> 00:02:58.795
+The pipe cracked one floor up.
+
+61
+00:02:59.267 --> 00:03:02.821
+Dynatrace calls this walk a fault-tree analysis.
+
+62
+00:03:02.821 --> 00:03:14.448
+Instead of four alerts, it opens one problem: an ID like P-12345, the category SLOWDOWN, payments as the root cause, and web and checkout listed as affected.
+
+63
+00:03:14.600 --> 00:03:16.832
+Four complaints, one cracked pipe.
+
+64
+00:03:16.832 --> 00:03:21.888
+And notice how Davis linked them: by following recorded calls, not by timing.
+
+65
+00:03:22.600 --> 00:03:24.605
+Now let's break it on purpose.
+
+66
+00:03:24.605 --> 00:03:27.413
+Picture payments running without OneAgent.
+
+67
+00:03:27.413 --> 00:03:28.951
+Nobody instrumented it.
+
+68
+00:03:28.951 --> 00:03:30.822
+Where does the walk end now?
+
+69
+00:03:30.822 --> 00:03:31.892
+Pause and guess.
+
+70
+00:03:35.133 --> 00:03:35.944
+At checkout.
+
+71
+00:03:35.944 --> 00:03:39.794
+Davis can't follow a call into something nobody measures.
+
+72
+00:03:39.794 --> 00:03:42.833
+So it names checkout, which is only a victim.
+
+73
+00:03:43.000 --> 00:03:47.436
+So the point really is: Davis can only follow what something measured.
+
+74
+00:03:47.436 --> 00:03:50.287
+An unwatched service is where its trail ends.
+
+75
+00:03:50.287 --> 00:03:51.681
+A pipe with no sensor.
+
+76
+00:03:52.600 --> 00:03:53.863
+A few honest limits.
+
+77
+00:03:53.863 --> 00:03:56.894
+Davis doesn't know what you promised your users.
+
+78
+00:03:56.894 --> 00:04:02.956
+It compares each service with its own past, so a service that has always been slow looks normal.
+
+79
+00:04:02.956 --> 00:04:06.429
+Your service level objectives are still yours to write.
+
+80
+00:04:06.600 --> 00:04:15.268
+The one-agent, one-map approach is paid for in money, in lock-in, and in control: your data lives on Dynatrace's servers.
+
+81
+00:04:15.467 --> 00:04:18.462
+And OneAgent only sees a program from its start.
+
+82
+00:04:18.462 --> 00:04:24.888
+A process that was already running when you installed it shows up with no traces, until you restart it.
+
+83
+00:04:25.667 --> 00:04:27.328
+So the moral of the story.
+
+84
+00:04:27.328 --> 00:04:29.117
+Don't answer each complaint.
+
+85
+00:04:29.117 --> 00:04:39.468
+Follow the pipes to the one that cracked: start at the symptom, walk down what it depends on, and stop at the first broken thing whose own dependencies look fine.
+
+86
+00:04:39.667 --> 00:04:40.625
+A quick check.
+
+87
+00:04:40.625 --> 00:04:43.293
+Davis names checkout as the root cause.
+
+88
+00:04:43.293 --> 00:04:47.605
+But you know checkout calls a service that nobody instrumented.
+
+89
+00:04:47.605 --> 00:04:48.973
+What do you suspect?
+
+90
+00:04:48.973 --> 00:04:50.068
+Pause and think.
+
+91
+00:04:53.333 --> 00:04:55.744
+That the trail ended at the blind spot.
+
+92
+00:04:55.744 --> 00:04:59.947
+The real cause may sit one step further down, where nobody measured.
+
+93
+00:04:59.947 --> 00:05:01.801
+Instrument it, or go and look.
+
+94
+00:05:02.000 --> 00:05:07.040
+Next, we get our own data into Dynatrace, and learn the language that reads it.
+
+95
+00:05:07.040 --> 00:05:11.123
+How do you ask one question of metrics, logs and traces at once?

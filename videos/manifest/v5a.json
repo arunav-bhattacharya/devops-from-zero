@@ -53,5 +53,16 @@
    "poster_at": 266.0,
    "replaces": "d05-pipes"
   }
+ ],
+ "d06": [
+  {
+   "slug": "d06-knock",
+   "title": "The master key and the security guard: one missing bit, and a polite SIGTERM",
+   "after": 4,
+   "file": "p1/d06_knock.py",
+   "scene": "D06Knock",
+   "poster_at": 303.0,
+   "replaces": "d06-perms-signals"
+  }
  ]
 }

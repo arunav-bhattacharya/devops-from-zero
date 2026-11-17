@@ -114,6 +114,7 @@ class D17Lunchbox(VoiceScene):
                    (0.8, FadeIn(kern, shift=UP * 0.1)), (1.4, Wait(1.4)), (1.4, LaggedStart(*[GrowFromCenter(p) for p in host], lag_ratio=0.08)))
         me = proc(GOLD_M, 0.26).move_to([0.3, -0.3, 0])
         mel = M("PID 1", 22, GOLD_M).next_to(me, DOWN, buff=0.15)
+        me.set_z_index(3); mel.set_z_index(3)
         self.beat("A container is one more of those. A normal Linux process. No second computer, no second kernel.",
                   GrowFromCenter(me), run_time=1.2)
         walls = lunchbox(GOLD_M, 2.3, 1.8).move_to([0.3, -0.25, 0])
@@ -144,7 +145,7 @@ class D17Lunchbox(VoiceScene):
         lines = VGroup(*[DashedLine(m.get_bottom(), kern.get_top() + RIGHT * (m.get_x() - kern.get_x()) * 0.9, stroke_width=2, color=TEAL_M) for m in (others[0][0], walls[0], others[1][0])])
         self.steps("Start two more containers, and here is the twist. They all use the same kernel, like lunches that all go through one office microwave.",
                    (1.0, FadeOut(host), FadeOut(VGroup(ns, bud, cap, bl)), LaggedStart(Create(others[0]), Create(others[1]), lag_ratio=0.3), FadeIn(ops)), (2.0, Wait(2.0)), (1.2, LaggedStart(*[Create(l) for l in lines], lag_ratio=0.25)))
-        fast = T("no kernel to boot: starts in about a second", 26, TEAL_M).next_to(kern, UP, buff=0.15)
+        fast = T("no kernel to boot: starts in about a second", 26, TEAL_M).move_to([0.6, 2.6, 0])
         self.beat("Nothing has to boot. So a container starts in about a second.", FadeIn(fast, shift=UP * 0.1), run_time=1.2)
         self.play(FadeOut(fast), run_time=0.4)
 
@@ -154,7 +155,7 @@ class D17Lunchbox(VoiceScene):
         self.beat("Now a puzzle for Mac users. A Mac has its own kernel, and it is not Linux. So which kernel runs these containers? Pause and guess.",
                   FadeOut(image), Create(mac), FadeIn(macl), run_time=2.0)
         self.wait(2.0)
-        vm2 = DashedVMobject(RoundedRectangle(corner_radius=0.15, width=11.8, height=4.6, stroke_color=TEAL_M, stroke_width=2.5), num_dashes=70).move_to([0.4, -0.6, 0])
+        vm2 = DashedVMobject(RoundedRectangle(corner_radius=0.15, width=11.8, height=5.0, stroke_color=TEAL_M, stroke_width=2.5), num_dashes=70).move_to([0.4, -0.75, 0])
         vml2 = T("one small Linux VM, run by Docker Desktop", 26, TEAL_M).move_to([0.9, 2.15, 0])
         self.steps("The Linux kernel of one small VM. Docker Desktop, the Mac app that installs Docker, quietly starts it in the background, and every container shares its kernel.",
                    (1.0, Create(vm2)), (0.8, FadeIn(vml2, shift=DOWN * 0.1)), (2.0, Wait(2.0)), (1.0, Indicate(kern[1], color=TEAL_M)))

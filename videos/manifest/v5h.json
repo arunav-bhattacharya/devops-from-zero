@@ -53,5 +53,16 @@
    "poster_at": 141.0,
    "replaces": "d59-ambient"
   }
+ ],
+ "d60": [
+  {
+   "slug": "d60-mesh-bill",
+   "title": "Do you need a mesh? One proxy hop measured, multiplied, and weighed against a checklist",
+   "after": 5,
+   "file": "p15/d60_bill.py",
+   "scene": "D60Bill",
+   "poster_at": 164.0,
+   "replaces": "d60-choose-mesh"
+  }
  ]
 }

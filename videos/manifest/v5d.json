@@ -31,5 +31,16 @@
    "poster_at": 250.0,
    "replaces": "d37-precedence"
   }
+ ],
+ "d63": [
+  {
+   "slug": "d63-moving-tag",
+   "title": "A sticky note can move, a fingerprint can't: why we pin actions to a commit SHA",
+   "after": 2,
+   "file": "p17/d63_moving_tag.py",
+   "scene": "D63MovingTag",
+   "poster_at": 288.0,
+   "replaces": "d63-supply-chain"
+  }
  ]
 }
