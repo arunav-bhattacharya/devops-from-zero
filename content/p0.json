@@ -1,7 +1,7 @@
 {
  "part": 0,
  "title": "Start here",
- "intro": "Two days of groundwork come before the real tools. Day 1 draws a map of DevOps and of the 68 lessons ahead. When a new tool shows up later, you will already know which job it does. Day 2 sets up your Mac, a Linux practice box, and hello-devops, the small app you ship for the rest of the course.",
+ "intro": "Before any real tool, you need a map and a stocked kitchen. Day 1 follows one change from a developer's laptop to real users, names each step, and shows which of the 68 lessons teaches it. When a new tool shows up later, you will already know which job it does. Day 2 sets up your Mac, a Linux practice box, and hello-devops, the small app you ship for the rest of the course.",
  "lessons": [
   {
    "id": "d01",
@@ -296,7 +296,7 @@
    "minutes": 60,
    "goal": "By the end you can install and check every tool this course uses, open a Linux practice box, and push a tested hello-devops repo to your GitHub account.",
    "guess": {
-    "q": "You install a tool with Homebrew, but the terminal says 'command not found'. What is the most likely cause?",
+    "q": "You install a tool with Homebrew, an app that installs other tools, but the terminal says 'command not found'. What is the most likely cause?",
     "options": [
      "PATH does not include Homebrew's folder",
      "The download was corrupted on the way",
@@ -304,12 +304,12 @@
      "The tool only works on Intel Macs"
     ],
     "answer": 0,
-    "why": "The shell finds programs by searching the folders listed in PATH. On Apple Silicon, Homebrew lives in /opt/homebrew, and its installer tells you how to add that folder to PATH."
+    "why": "The shell, the program that runs what you type, finds programs by searching the folders listed in PATH. On Apple Silicon, Homebrew lives in /opt/homebrew, and its installer tells you how to add that folder to PATH."
    },
    "terms": [
     {
      "term": "Homebrew",
-     "plain": "A package manager for macOS that installs command-line tools and apps with one command, such as `brew install jq`."
+     "plain": "A tool for macOS that installs other tools and apps with one command, such as `brew install jq`."
     },
     {
      "term": "PATH",
@@ -317,33 +317,33 @@
     },
     {
      "term": "Docker Desktop",
-     "plain": "A Mac app that runs a small Linux virtual machine in the background so you can run containers."
+     "plain": "A Mac app that runs a small, hidden Linux computer in the background so you can run containers."
     },
     {
      "term": "Container",
-     "plain": "A program running in its own isolated corner of a Linux machine, started from an image."
+     "plain": "A program running in its own walled-off corner of a Linux machine, started from a packed copy of its files called an image."
     },
     {
      "term": "Virtual environment (venv)",
-     "plain": "A private folder of Python packages for one project, so projects cannot clash."
+     "plain": "A private folder of Python packages (add-on code) for one project, so two projects cannot clash."
     },
     {
      "term": "JDK",
-     "plain": "The Java Development Kit: the compiler and runtime you need to build and run JVM apps such as Kotlin."
+     "plain": "The Java Development Kit: the tools you need to build and run apps written in Java or Kotlin."
     },
     {
      "term": "GitHub CLI (gh)",
-     "plain": "A command-line tool for GitHub that logs you in, creates repos and opens pull requests."
+     "plain": "A tool you type commands to, which logs you in to GitHub and creates and manages your projects there."
     },
     {
      "term": "Remote",
-     "plain": "A named link from your local git repo to a copy on a server; the usual name is origin."
+     "plain": "A saved name for another copy of your git project, such as the copy on GitHub; the usual name is origin."
     }
    ],
    "sections": [
     {
-     "h": "What you install today, and why",
-     "body": "Today takes longer than other days, but you only do it once. This is what you install, and when you first need it:\n\n- Homebrew: the installer for almost everything else (today).\n- git and the GitHub CLI (`gh`): git records your code's history, and gh works with GitHub from the terminal (today).\n- Python 3.14: runs the app and its tests, and matches the course's Docker image (today).\n- jq, tree, watch and htop: small helpers for JSON, folder trees, repeating a command and watching processes (Part 1).\n- VS Code with a few extensions: a free code editor, plus add-ons that check Dockerfiles, YAML, Terraform, Kubernetes and Python files (today).\n- Docker Desktop: runs containers (programs walled off inside Linux), such as your Linux practice box (today, and Part 5).\n- Multipass: starts a full Ubuntu virtual machine, a whole Linux computer simulated on your Mac (Day 6).\n- A JDK 21: builds the Kotlin app in the Gradle part (Day 28).\n- terraform: creates servers, networks and other infrastructure from code files (Day 31).\n- kubectl, kind and helm: run and manage a practice Kubernetes cluster on your laptop (Part 10).\n\nAfter each install, run the tool's version check. If it prints a version, the tool works. Install commands change over time, so if one fails, check the current docs linked in this lesson and follow those.",
+     "h": "A shopping list for the kitchen: what you install today",
+     "body": "Before a new kitchen opens, someone writes a list: what to buy, and on which day you will first need it. Today is that day for your laptop. It takes longer than other lessons, but you only do it once.\n\nMost of these tools have no window. You use them from the terminal, an app where you type commands instead of clicking. A command is one line of text that tells the computer what to do, such as `brew --version`. Here is the list, with the day each tool first matters:\n\n- Homebrew: the installer for almost everything else (today).\n- git and the GitHub CLI (`gh`): git records your code's history, and gh works with GitHub from the terminal (today).\n- Python 3.14: runs the app and its tests, and matches the course's Docker image (today).\n- jq, tree, watch and htop: small helpers for JSON data, folder trees, repeating a command and watching running programs (Part 1).\n- VS Code with a few extensions: a free code editor, plus add-ons that understand the kinds of files this course writes (today).\n- Docker Desktop: runs containers (programs walled off inside Linux), such as your Linux practice box (today, and Part 5).\n- Multipass: starts a full Ubuntu virtual machine, a whole Linux computer simulated on your Mac (Day 6).\n- A JDK 21: builds the Kotlin app in the Gradle part (Day 28).\n- terraform: creates servers, networks and other infrastructure from code files (Day 31).\n- kubectl, kind and helm: run and manage a practice Kubernetes cluster on your laptop (Part 10).\n\nMany of those names mean nothing yet, and that is fine: each gets its own lesson. GitHub is the website where your code will live online.\n\nAfter each install, run the tool's version check, such as `git --version`. If it prints a version number, the tool works. If it prints an error, fix it before you go on. Install commands change over time, so if one fails, check the current docs linked in this lesson and follow those.\n\nThe first tool on the list installs all the others. Next, we'll install it, and meet the reason many first days go wrong.",
      "refs": [
       {
        "title": "Homebrew",
@@ -358,8 +358,8 @@
      ]
     },
     {
-     "h": "Homebrew and your PATH",
-     "body": "Homebrew (the `brew` command) is a package manager for macOS. A package manager downloads a tool, puts it in the right folder, and later updates or removes it. You install Homebrew itself with one command from [brew.sh](https://brew.sh/). It asks for your password, and it may also install Apple's Command Line Tools, which include git.\n\nOn Apple Silicon Macs, Homebrew lives in `/opt/homebrew` and puts its commands in `/opt/homebrew/bin`. Your shell is the program in the terminal window that runs what you type. When you type `brew`, it looks in each folder on your **PATH**, in order, and runs the first match. The PATH that macOS starts with does not include that folder, so the shell cannot find `brew` yet.\n\nWhen the installer finishes, it prints \"Next steps\" with two or three commands that add that folder. Most people get stuck right here: skip them, and every `brew` command fails with \"command not found\". Run exactly what the installer prints. The lines also save the change in `~/.zprofile`, a file each new shell reads when it starts, so open a new terminal tab, then run `brew --version`.\n\nPython needs one extra step. Homebrew's default Python is now newer than the one this course uses, so you install `python@3.14` and type `python3.14` when you create the project's virtual environment. Inside the venv, plain `python` is then the right one.",
+     "h": "Homebrew, and why the shell can't find it at first",
+     "body": "Say you put the new flour in a cupboard by the back door. The next morning you check your usual shelves, one by one, and find no flour. It is in the kitchen. It is just not on any shelf you check.\n\nHomebrew (the `brew` command) is a package manager for macOS. A package manager downloads a tool, puts it in the right folder, and later updates or removes it. You install Homebrew itself with one command from [brew.sh](https://brew.sh/). It asks for your password. It may also install Apple's Command Line Tools, which include git.\n\nOn Apple Silicon Macs, Homebrew lives in `/opt/homebrew` and puts its commands in `/opt/homebrew/bin`. Your shell is the program inside the terminal window that runs what you type. When you type `brew`, the shell looks in each folder on a list called your PATH, in order, and runs the first match. The PATH that macOS starts with does not include Homebrew's folder. So, like the flour, `brew` is on your Mac, but the shell cannot find it yet.\n\nWhen the installer finishes, it prints \"Next steps\" with two or three commands that add that folder. Skip them, and every `brew` command fails with \"command not found\". The step is easy to miss, because the installer has just printed a wall of text that looks like success. Run exactly what it prints. The lines also save the change in `~/.zprofile`, a file each new shell reads when it starts. So open a new terminal tab, then run `brew --version`.\n\n**When a tool is installed but \"not found\", check PATH first.**\n\nPython needs one extra step. Homebrew's default Python is now newer than the one this course uses, so you install `python@3.14`. When you create the project's virtual environment later, you type `python3.14`. Inside it, plain `python` is then the right one.\n\nWith Homebrew working, the next install is the biggest one: Docker Desktop.",
      "refs": [
       {
        "title": "Homebrew installation docs",
@@ -374,8 +374,8 @@
      ]
     },
     {
-     "h": "Docker Desktop, and its licence",
-     "body": "A container is a program that runs in its own walled-off corner of a Linux machine, with its own files. It starts from an image, a packed copy of those files (Day 17 shows both). Containers are built from features of the Linux kernel, the core of the operating system, and macOS has a different kernel. So Docker Desktop runs a small Linux virtual machine (VM) in the background. A VM is a computer simulated in software. Your `docker` commands on the Mac send requests to the Docker engine inside that VM: a background program, or daemon, that starts and stops containers.\n\nInstall it with `brew install --cask docker-desktop`, or from [Docker's install page](https://docs.docker.com/desktop/setup/install/mac-install/). A cask is Homebrew's name for a Mac app with a window. Docker supports the current and the two previous major macOS versions, so update macOS first if yours is older. Open Docker from Applications once and accept the terms.\n\nThen change one setting. In Settings, Advanced, turn on \"Allow the default Docker socket to be used\" (it asks for your password). This creates `/var/run/docker.sock`, a socket: a special file that other programs open to send requests to the Docker engine. New installs leave it off, but Terraform's Docker provider (the plugin that lets Terraform manage Docker) on Day 31 looks for it at that path.\n\nDocker Desktop is free for personal use, education and non-commercial open source. It is also free for small businesses: fewer than 250 employees and less than $10 million in yearly revenue. Larger companies need a paid plan. Learning on your own laptop counts as personal use. On a work laptop, ask your employer first.\n\nIf you can't use Docker Desktop, Colima is a free, open-source alternative that runs the same `docker` commands. OrbStack is another fast option; check its licence before you use it for work.",
+     "h": "Docker Desktop: a small Linux computer inside your Mac",
+     "body": "Some breads need a stone oven, and your kitchen only has an electric one. The fix is to put a small stone oven inside your kitchen. Docker Desktop does the same thing for your Mac.\n\nA container is a program that runs in its own walled-off corner of a Linux machine, with its own files. It starts from an image, a packed copy of those files (Day 17 shows both). Containers are built from features of the Linux kernel, the core of the operating system. macOS has a different kernel.\n\nSo Docker Desktop runs a small Linux virtual machine (VM) in the background. A VM is a computer simulated in software: the stone oven inside your kitchen. Your `docker` commands on the Mac send requests to the Docker engine inside that VM. The engine is a daemon, a program that runs quietly in the background, and it starts and stops containers.\n\nInstall it with `brew install --cask docker-desktop`, or from [Docker's install page](https://docs.docker.com/desktop/setup/install/mac-install/). A cask is Homebrew's name for a Mac app with a window. Docker supports the current and the two previous major macOS versions, so update macOS first if yours is older. Open Docker from Applications once and accept the terms.\n\nThen change one setting. In Settings, Advanced, turn on \"Allow the default Docker socket to be used\" (it asks for your password). This creates `/var/run/docker.sock`. A socket is a special file that other programs open to send requests to the Docker engine. New installs leave it off. But on Day 31, Terraform's Docker provider (the plugin that lets Terraform manage Docker) looks for it at that path.\n\nDocker Desktop is free for personal use, education and non-commercial open source (software anyone may read, change and share). It is also free for small businesses: fewer than 250 employees and less than $10 million in yearly revenue. Larger companies need a paid plan. Learning on your own laptop counts as personal use. On a work laptop, ask your employer first.\n\nIf you can't use Docker Desktop, Colima is a free, open-source alternative that runs the same `docker` commands. OrbStack is another fast option; check its licence before you use it for work.\n\nThe big oven is in. Next come the small tools, and one of them comes from an unusual shelf.",
      "refs": [
       {
        "title": "Install Docker Desktop on Mac",
@@ -395,8 +395,8 @@
      ]
     },
     {
-     "h": "Command-line tools and a JDK",
-     "body": "Homebrew installs the rest with one short command per group. The small helpers first:\n\n- jq: reads and filters JSON. `curl ... | jq .message` pulls one field out of an API answer.\n- tree: prints a folder and everything in it as a tree.\n- watch: reruns a command every two seconds, so you can watch something change.\n- htop: a live, colourful list of running processes, CPU and memory.\n\nThen the bigger tools for later parts:\n\n- kubectl: sends your commands to a Kubernetes cluster, the group of machines that runs your containers.\n- kind: creates a small Kubernetes cluster inside Docker containers (\"Kubernetes in Docker\"), so you can practise without servers.\n- helm: installs ready-made Kubernetes apps from packages called charts, much as brew installs tools on your Mac.\n- terraform: creates infrastructure from code files.\n\nTerraform is the odd one out. Homebrew's main collection only accepts open-source software. In 2023 HashiCorp, the company behind Terraform, moved it to a licence that is not open source. So Homebrew stopped updating its terraform formula (Homebrew's word for a package recipe). Install it from HashiCorp's own tap instead: an extra collection of Homebrew packages, which HashiCorp keeps current. `brew install hashicorp/tap/terraform` names the tap and the package together.\n\nThe Gradle part needs a JDK 21. If you already have one from work, for example through SDKMAN, keep it and check it with `java -version`. Otherwise, `brew install openjdk@21`. Homebrew keeps versioned JDKs out of your PATH on purpose (it calls them keg-only), so they cannot clash with its main `openjdk`. The `java` command that comes with macOS is only a launcher. It looks for JDKs in `/Library/Java/JavaVirtualMachines` and runs one from there. The install prints a `sudo ln -sfn ...` command that puts a link (a shortcut) to the new JDK in that folder. Run that line, then `java -version` should print 21. If a newer JDK is also installed, macOS picks the newest; `/usr/libexec/java_home -V` lists them all.\n\nVS Code is a cask too, and the cask also adds the `code` command to your terminal. You add extensions with `code --install-extension` and an extension ID. Each extension teaches the editor one kind of file, with colours, error checks and suggestions as you type.",
+     "h": "The small tools, the Kubernetes tools and a JDK",
+     "body": "Homebrew installs the rest of your tools with one short command per group. The small helpers first:\n\n- jq: reads and filters JSON, a common text format for data. `curl ... | jq .message` pulls one field out of the answer a web app sends back.\n- tree: prints a folder and everything in it as a tree.\n- watch: reruns a command every two seconds, so you can watch something change.\n- htop: a live, colourful list of running programs (processes), with CPU and memory use.\n\nThen the bigger tools for later parts:\n\n- kubectl: sends your commands to a Kubernetes cluster, the group of machines that runs your containers.\n- kind: creates a small Kubernetes cluster inside Docker containers (\"Kubernetes in Docker\"), so you can practise without servers.\n- helm: installs ready-made Kubernetes apps from packages called charts, much as brew installs tools on your Mac.\n- terraform: creates infrastructure from code files.\n\nTerraform is the odd one out. Homebrew's main collection no longer updates it, so you install it from HashiCorp's tap instead. A tap is an extra collection of Homebrew packages. HashiCorp, the company behind Terraform, keeps its tap current. `brew install hashicorp/tap/terraform` names the tap and the package together.\n\nThe Gradle part needs a JDK 21, the toolkit for building Java and Kotlin apps. If you already have one, for example through SDKMAN, keep it and check it with `java -version`. Otherwise, run `brew install openjdk@21`. Homebrew keeps versioned JDKs out of your PATH on purpose, so they cannot clash with its main `openjdk`. It calls them keg-only.\n\nThat leaves a gap. The `java` command that comes with macOS is only a launcher. It looks for JDKs in `/Library/Java/JavaVirtualMachines` and runs one from there. The install prints a `sudo ln -sfn ...` command that puts a link (a shortcut) to the new JDK in that folder. The `sudo` at its start runs it with administrator rights, so it asks for your password. Run that line, and `java -version` should print 21. If a newer JDK is also installed, macOS picks the newest; `/usr/libexec/java_home -V` lists them all.\n\nVS Code is a cask too, and the cask also adds the `code` command to your terminal. You add extensions with `code --install-extension` and an extension ID. Each extension teaches the editor one kind of file, with colours, error checks and suggestions as you type.\n\nEverything so far runs on macOS, and servers don't. Next, we'll set up a small piece of real Linux.",
      "refs": [
       {
        "title": "Install Terraform (HashiCorp)",
@@ -416,8 +416,8 @@
      ]
     },
     {
-     "h": "Your Linux practice box",
-     "body": "Servers, containers and CI runners (the machines that run automated tests) run Linux with the bash shell and the GNU versions of tools like `sed` and `grep`. Your Mac runs zsh and the BSD versions: the same names, written by a different project, with small, annoying differences. For example, `sed -i 's/a/b/' notes.txt` edits a file in place on Linux. The Mac's `sed` reads the word after `-i` as the ending for a backup copy, and fails.\n\nSo Part 1 has you practise inside real Linux. The quickest way is a throwaway Ubuntu container:\n\n`docker run -it --rm --hostname box -v \"$PWD\":/work -w /work ubuntu:24.04 bash`\n\nEach part has a job:\n\n- `-it` gives you an interactive terminal.\n- `--rm` deletes the container when you exit, so every session starts clean.\n- `--hostname box` gives it a short name, which shows up in the prompt.\n- `-v \"$PWD\":/work` shares your current Mac folder into the container at `/work`.\n- `-w /work` starts you in that folder.\n- `ubuntu:24.04` is the image to start from, and `bash` is the program to run inside it.\n\nThree surprises are normal. You are root, the all-powerful user, because a container starts as root unless you tell it otherwise. The image is minimized, so tools like `less` are missing and `man` pages are stripped out; `apt install` adds what you need. And anything you install is gone after you exit, because `--rm` throws the container away. Files in `/work` survive, because they live on your Mac.\n\nOne thing a container cannot do is run systemd, the program that starts and supervises services on a real Linux machine. Day 6 needs it, so it uses Multipass to start a small Ubuntu VM instead. Install Multipass today with `brew install --cask multipass` and check it with `multipass version`, or wait until Day 6.",
+     "h": "Your Linux practice box, and why you need one",
+     "body": "A recipe from another country can use the same words as yours and still mean different amounts. A \"cup\" in one country is not quite a cup in another. Your Mac and a Linux server have the same problem with their tools.\n\nServers, containers and CI runners (the machines that run automated tests) run Linux with the bash shell and the GNU versions of tools like `sed` and `grep`. Your Mac runs the zsh shell and the BSD versions. The names match, but a different project wrote them, and they have small, annoying differences. For example, `sed -i 's/a/b/' notes.txt` edits a file in place on Linux. The Mac's `sed` reads the word after `-i` as the ending for a backup copy, and fails.\n\nSo Part 1 has you practise inside real Linux. The quickest way is a throwaway container running Ubuntu, a popular version of Linux. One line starts it:\n\n`docker run -it --rm --hostname box -v \"$PWD\":/work -w /work ubuntu:24.04 bash`\n\nEach part has a job:\n\n- `-it` gives you an interactive terminal.\n- `--rm` deletes the container when you exit, so every session starts clean.\n- `--hostname box` gives it a short name, which shows up in the prompt.\n- `-v \"$PWD\":/work` shares your current Mac folder into the container at `/work`.\n- `-w /work` starts you in that folder.\n- `ubuntu:24.04` is the image to start from, and `bash` is the program to run inside it.\n\nOnce you are inside, your prompt (the text before the cursor) says `root@box`. Three surprises are normal, and none of them means you did something wrong:\n\n1. You are root, the all-powerful user, because a container starts as root unless you tell it otherwise.\n2. The image is minimized, so tools like `less` are missing and `man` pages (the built-in manuals) are stripped out. `apt install` adds what you need.\n3. Anything you install is gone after you exit, because `--rm` throws the container away. Files in `/work` survive, because they live on your Mac.\n\n**The box is disposable. Your folder is not.**\n\nOne thing a container cannot do is run systemd, the program that starts and looks after services on a real Linux machine. Day 6 needs it, so it uses Multipass to start a small Ubuntu VM instead. Install Multipass today with `brew install --cask multipass` and check it with `multipass version`, or wait until Day 6.\n\nNext, we'll make the first thing you will ship.",
      "refs": [
       {
        "title": "Course overview and the shell (MIT Missing Semester 2026)",
@@ -432,8 +432,8 @@
      ]
     },
     {
-     "h": "Your repo and a Python virtual environment",
-     "body": "The last part creates the project you ship all course. It starts as five files in `~/code/hello-devops`, given in full below:\n\n- `app.py`: the web app.\n- `test_app.py`: three tests for the app.\n- `requirements.txt`: the Python packages the app needs to run.\n- `requirements-dev.txt`: those packages plus the tools for development.\n- `.gitignore`: files git should never commit.\n\nYou install packages into a Python virtual environment (venv): a private folder of packages for one project. Activating it puts the venv's `bin` folder first on your PATH, so `python` and `pip` now mean the copies inside it. This project's Flask then cannot clash with another project's. You never commit the `.venv` folder, because anyone can rebuild it from the requirements files.\n\nThe requirements files install six packages:\n\n- Flask: a small Python web framework, which `app.py` uses to answer web requests.\n- gunicorn: a production web server that runs the app inside containers (Day 19).\n- redis: lets the app keep its visit count in Redis, a small, fast database (Day 20).\n- prometheus-client: publishes the app's counters on its `/metrics` page (Day 50).\n- pytest: finds and runs the tests in `test_app.py`.\n- ruff: a linter, which flags style problems and likely bugs (Day 25).\n\nThen `gh repo create` makes the GitHub repo and pushes to it in one step. The flag `--source=.` means \"use this folder\", and `--push` sends your commits. The command also adds the new repo as a remote called origin: a saved name for the GitHub copy, so a later `git push` knows where to send your commits.",
+     "h": "Your repo, and a private shelf for Python packages",
+     "body": "The last step creates the project you ship all course. A repo, short for repository, is a project folder that git tracks. Yours starts as five files in `~/code/hello-devops`, given in full below:\n\n- `app.py`: the web app.\n- `test_app.py`: three tests for the app.\n- `requirements.txt`: the Python packages the app needs to run.\n- `requirements-dev.txt`: those packages plus the tools for development.\n- `.gitignore`: files git should never commit.\n\nA baker who makes rye and white bread keeps a separate starter jar for each. Share one jar, and the rye ends up in the white loaf. Python projects have the same risk, because two projects may want different versions of the same package.\n\nSo you install packages into a Python virtual environment (venv): a private folder of packages for one project. Activating it puts the venv's `bin` folder first on your PATH. Then `python` and `pip` (Python's package installer) mean the copies inside it, and this project's Flask cannot clash with another project's. You never commit the `.venv` folder, because anyone can rebuild it from the requirements files.\n\nThe tempting shortcut is `sudo pip` with no venv. Packages from different projects then fight over versions, and Homebrew's Python refuses anyway with \"externally-managed-environment\". Before any `pip install`, activate the venv and check that your prompt starts with `(.venv)`.\n\nThe requirements files install six packages:\n\n- Flask: a small Python web framework, which `app.py` uses to answer web requests.\n- gunicorn: a production web server that runs the app inside containers (Day 19).\n- redis: lets the app keep its visit count in Redis, a small, fast database (Day 20).\n- prometheus-client: publishes the app's counters on its `/metrics` page (Day 50).\n- pytest: finds and runs the tests in `test_app.py`.\n- ruff: a linter, which flags style problems and likely bugs (Day 25).\n\nThen `gh repo create` makes the GitHub repo and pushes to it in one step. A flag is an extra word that changes what a command does. The flag `--source=.` means \"use this folder\", and `--push` sends your commits. The command also adds the new repo as a remote called origin. A remote is a saved name for the GitHub copy, so a later `git push` knows where to send your commits.\n\nWhen something fails, the error message usually names the cause. Next, we'll read the common ones.",
      "refs": [
       {
        "title": "Virtual environments and packages (Python tutorial)",
@@ -449,7 +449,7 @@
     },
     {
      "h": "When something goes wrong",
-     "body": "When setup fails, it is usually one of these:\n\n- `brew: command not found`: run the installer's \"Next steps\" lines, then open a new terminal tab.\n- \"Cannot connect to the Docker daemon\": the engine only runs while Docker Desktop is open, so open it and wait until it says it is running.\n- `code: command not found`: in VS Code, press Cmd+Shift+P, type \"shell command\" and run the install command.\n- \"Unable to locate a Java Runtime\": run the `sudo ln -sfn` line that `brew install openjdk@21` printed.\n- \"externally-managed-environment\" from pip: your venv is not active, so pip tried Homebrew's own Python, which refuses. Run `source .venv/bin/activate`.\n- `git push` asks for a password: run `gh auth setup-git`, so git uses your gh login.\n- `multipass launch` hangs on Day 6: the Multipass README says you may need to turn off the macOS firewall while it starts.\n\nOn Windows, install WSL2 (Windows Subsystem for Linux) first: run `wsl --install` in PowerShell as administrator, then restart. It gives you Ubuntu, a Linux system inside Windows. Install Docker Desktop for Windows with the WSL 2 engine, then run this course's commands inside Ubuntu.\n\nOn Linux, install Docker Engine and use your package manager for the rest. You are already in Linux, so your practice box is optional.",
+     "body": "Even a well-stocked kitchen has mornings when the oven won't light. The fix is usually small, once you know where to look. When setup fails, it is usually one of these:\n\n- `brew: command not found`: run the installer's \"Next steps\" lines, then open a new terminal tab.\n- \"Cannot connect to the Docker daemon\": the engine only runs while Docker Desktop is open, so open it and wait until it says it is running.\n- `code: command not found`: in VS Code, press Cmd+Shift+P, type \"shell command\" and run the install command.\n- \"Unable to locate a Java Runtime\": run the `sudo ln -sfn` line that `brew install openjdk@21` printed.\n- \"externally-managed-environment\" from pip: your venv is not active, so pip tried Homebrew's own Python, which refuses. Run `source .venv/bin/activate`.\n- `git push` asks for a password: run `gh auth setup-git`, so git uses your gh login.\n- `multipass launch` hangs on Day 6: the Multipass README says you may need to turn off the macOS firewall while it starts.\n\nOn Windows, install WSL2 (Windows Subsystem for Linux) first: run `wsl --install` in PowerShell as administrator, then restart. It gives you Ubuntu, a Linux system inside Windows. Install Docker Desktop for Windows with the WSL 2 engine, then run this course's commands inside Ubuntu.\n\nOn Linux, install Docker Engine and use your package manager for the rest. You are already in Linux, so your practice box is optional.\n\nOnce every tool answers its version check, the kitchen is ready, and the real lessons can start.",
      "refs": [
       {
        "title": "Install and set up kubectl on macOS",
@@ -464,14 +464,13 @@
      ]
     }
    ],
-   "analogy": "Setting up your laptop is like stocking a new kitchen before you cook. Homebrew is the delivery service that brings each tool and puts it on the right shelf. PATH is the list of shelves you check when you reach for something. If a shelf is not on the list, you cannot find the tool, even though it is in the room. The practice box is a camping stove you set up in the garden, use, and pack away each time. Unlike kitchen knives, your tools need updates, so run `brew upgrade` now and then.",
    "diagram": "<svg viewBox=\"0 0 560 236\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"From the terminal, git and gh talk to GitHub, docker talks to the Linux VM inside Docker Desktop, and kubectl and helm talk to containers that run inside that VM, such as the ubuntu practice box and the kind cluster nodes.\"><rect x=\"8\" y=\"96\" width=\"112\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"64\" y=\"114\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">Terminal</text><text x=\"64\" y=\"131\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">zsh</text><rect x=\"160\" y=\"16\" width=\"152\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"236\" y=\"43\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">git, gh</text><rect x=\"160\" y=\"96\" width=\"152\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"236\" y=\"123\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">docker, kind</text><rect x=\"160\" y=\"176\" width=\"152\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"236\" y=\"203\" font-size=\"13\" text-anchor=\"middle\" class=\"tk\">kubectl, helm</text><rect x=\"352\" y=\"16\" width=\"196\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"450\" y=\"34\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">GitHub</text><text x=\"450\" y=\"51\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">hello-devops repo</text><rect x=\"352\" y=\"96\" width=\"196\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"450\" y=\"114\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">Linux VM</text><text x=\"450\" y=\"131\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">Docker Desktop</text><rect x=\"352\" y=\"176\" width=\"196\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"450\" y=\"194\" font-size=\"13\" text-anchor=\"middle\" class=\"t\">Containers</text><text x=\"450\" y=\"211\" font-size=\"11\" text-anchor=\"middle\" class=\"ts\">ubuntu box, kind nodes</text><line x1=\"120\" y1=\"108\" x2=\"158\" y2=\"46\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"120\" y1=\"118\" x2=\"158\" y2=\"118\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"120\" y1=\"128\" x2=\"158\" y2=\"190\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"312\" y1=\"38\" x2=\"350\" y2=\"38\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"312\" y1=\"118\" x2=\"350\" y2=\"118\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"312\" y1=\"198\" x2=\"350\" y2=\"198\" class=\"ln\" marker-end=\"url(#ar)\"/><line x1=\"450\" y1=\"140\" x2=\"450\" y2=\"174\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"458\" y=\"161\" font-size=\"11\" text-anchor=\"start\" class=\"ts\">runs</text></svg>",
    "diagram_caption": "Homebrew installs the tools. Each tool talks to a different place: GitHub, Docker's Linux VM, or the containers inside it.",
    "worked": {
     "title": "Your first visit to the Linux practice box",
     "steps": [
      {
-      "say": "Make a throwaway folder with one file in it, then start the box from there. The first run downloads the `ubuntu:24.04` image, which takes a few seconds. Your prompt changes: you are now root on a machine called box, in the folder /work.",
+      "say": "Make a throwaway folder with one file in it, then start the box from there. The first run downloads the `ubuntu:24.04` image, which takes a few seconds. Then your prompt changes: you are now root on a machine called box, in the folder /work.",
       "code": "$ mkdir -p ~/code/box-demo && cd ~/code/box-demo\n$ echo \"hello from the Mac\" > note.txt\n$ docker run -it --rm --hostname box -v \"$PWD\":/work -w /work ubuntu:24.04 bash\nroot@box:/work#",
       "lang": "console"
      },
@@ -481,12 +480,12 @@
       "lang": "console"
      },
      {
-      "say": "Now the minimized image shows itself. `less` is not installed at all, and `man` exists but its pages were removed to keep the image small.",
+      "say": "Now the minimized image shows itself. `less` is not installed at all. `man` exists, but its pages were removed to keep the image small.",
       "code": "root@box:/work# less note.txt\nbash: less: command not found\nroot@box:/work# man ls\nThis system has been minimized by removing packages and content that are\nnot required on a system that users do not log into.",
       "lang": "console"
      },
      {
-      "say": "Install what you need with apt, Ubuntu's package manager. `apt update` refreshes the list of packages, and `apt install -y` installs without asking. The output is long; these are the last lines.",
+      "say": "Install what you need with apt, Ubuntu's package manager. `apt update` refreshes the list of packages, and `apt install -y` installs without asking you to confirm. The output is long; these are the last lines.",
       "code": "root@box:/work# apt update && apt install -y less tree\nSetting up less (590-2ubuntu2.1) ...\nSetting up tree (2.1.1-2ubuntu3.24.04.2) ...\nroot@box:/work# tree\n.\n`-- note.txt\n\n1 directory, 1 file",
       "lang": "console"
      },
@@ -600,8 +599,7 @@
      "what": "Update everything Homebrew installed."
     }
    ],
-   "mistake": "Don't install Python packages outside a venv, and never with `sudo pip`. Packages from different projects then fight over versions, and Homebrew's Python refuses anyway with \"externally-managed-environment\". Before any `pip install`, activate the project's `.venv` and check that your prompt starts with `(.venv)`.",
-   "real_world": "A test that passes on one laptop and fails on another often comes down to a different tool version. So some teams hand new engineers one setup script on day one, which installs the same versions everyone else uses. Python packages are pinned in requirements files and the JDK version is pinned in the build, so CI runs the same versions too. Others go further with dev containers, where the whole toolbox runs inside a container.",
+   "real_world": "A test that passes on one laptop and fails on another often comes down to a different tool version. So some teams hand new engineers one setup script on their first day, which installs the same versions everyone else uses. Python packages are pinned (fixed to exact versions) in requirements files, and the JDK version is pinned in the build, so CI runs the same versions too. Other teams go further with dev containers, where the whole toolbox runs inside a container.",
    "task": {
     "title": "Install your toolbox and ship hello-devops",
     "steps": [
@@ -613,31 +611,31 @@
      "Install `kubectl`, `kind`, `helm` and `hashicorp/tap/terraform` with brew, and a JDK 21 (unless you already have one). Check them with `kubectl version --client`, `kind version`, `helm version`, `terraform version` and `java -version`.",
      "Open the practice box once from any folder, run `grep PRETTY /etc/os-release`, and exit.",
      "Create `~/code/hello-devops`, run `git init -b main` inside it, and save the five starter files from this lesson there.",
-     "Create and activate a venv with Python 3.14, install `requirements-dev.txt`, and run the tests. Then start the app with `python app.py`, open http://localhost:8000, reload a few times, and stop it with Ctrl+C.",
+     "Create and activate a venv with Python 3.14, install `requirements-dev.txt`, and run the tests. Then start the app with `python app.py`, open http://localhost:8000 in your browser, reload a few times, and stop it with Ctrl+C.",
      "If git does not know your name and email yet, set them with `git config --global user.name \"Your Name\"` and `git config --global user.email you@example.com` (Day 8 explains this). Commit the five files, then publish them with `gh repo create hello-devops --public --source=. --push`. Open the repo on GitHub to see them."
     ],
     "hints": [
      "If a version check fails right after an install, open a new terminal tab and try again.",
-     "Before you commit, `git status` should not list `.venv/` or `__pycache__/`; if it does, check the name of your `.gitignore` file.",
+     "Before you commit, `git status` should not list `.venv/` or `__pycache__/`. If it does, check the name of your `.gitignore` file.",
      "If `java -version` says it cannot find a Java runtime, scroll up in the `brew install openjdk@21` output for the `sudo ln -sfn` line."
     ],
     "done_when": "You are done when `pytest -q` shows 3 passed, the practice box prints Ubuntu 24.04, and your hello-devops repo with its five files is on GitHub."
    },
    "explain_back": {
     "prompt": "Explain in 3 to 4 sentences why this course installs tools on your Mac but has you practise Linux inside a container. Mention what is different about macOS and what `--rm` does.",
-    "answer": "Servers, containers and CI runners run Linux with bash and the GNU tools, while my Mac runs zsh and BSD tools whose flags differ. If I practise on Linux, what I learn works the same on a real server. The Ubuntu container starts in a second and `--rm` throws it away when I exit, so I can break things freely and start clean next time. My files survive because the folder is shared from the Mac with `-v`."
+    "answer": "Servers, containers and CI runners run Linux with bash and the GNU tools, while my Mac runs zsh and BSD tools whose options differ. If I practise on Linux, what I learn works the same on a real server. The Ubuntu container starts in a second, and `--rm` throws it away when I exit, so I can break things freely and start clean next time. My files survive because the folder is shared from the Mac with `-v`."
    },
    "recap": [
     "Homebrew installs your tools; run its \"Next steps\" so `brew` is on your PATH.",
     "Docker Desktop runs a small Linux VM for containers, and it is free for personal use.",
     "Install Terraform from HashiCorp's tap, and link openjdk@21 so `java -version` finds it.",
-    "The ubuntu:24.04 practice box is real Linux, disposable with `--rm`, and Day 6 adds a Multipass VM.",
+    "The ubuntu:24.04 practice box is real Linux and disposable with `--rm`, but it can't run systemd, so Day 6 adds a Multipass VM.",
     "A venv keeps the project's packages private, and `.venv` is never committed.",
     "`gh repo create hello-devops --public --source=. --push` puts your repo on GitHub."
    ],
    "check": [
     {
-     "q": "A teammate runs `brew install terraform` and Homebrew says the formula is disabled. What should they run instead?",
+     "q": "A teammate runs `brew install terraform`, and Homebrew says the formula is disabled. What should they run instead?",
      "options": [
       "`brew install terraform --force`",
       "`brew install hashicorp/tap/terraform`",
@@ -667,7 +665,7 @@
       "Your GitHub login token has expired"
      ],
      "answer": 2,
-     "why": "pytest lives inside `.venv`, and each new terminal starts without the venv active, so run `source .venv/bin/activate` first."
+     "why": "pytest lives inside `.venv`, and each new terminal starts without the venv active. Run `source .venv/bin/activate` first."
     }
    ],
    "interview": [
@@ -677,12 +675,12 @@
     },
     {
      "q": "Why do container tools on a Mac need a virtual machine?",
-     "a": "Containers use features of the Linux kernel to isolate processes. macOS has a different kernel, so it cannot run Linux containers directly. Docker Desktop, Colima and similar tools start a small Linux VM and run the containers inside it. The `docker` command on the Mac only sends requests to the Docker engine in that VM."
+     "a": "Containers use features of the Linux kernel to keep processes apart. macOS has a different kernel, so it cannot run Linux containers directly. Docker Desktop, Colima and similar tools start a small Linux VM and run the containers inside it. The `docker` command on the Mac only sends requests to the Docker engine in that VM."
     }
    ],
    "deeper": {
     "minutes": 12,
-    "body": "When you run `brew install jq`, Homebrew does four things:\n\n1. It reads the formula, a small Ruby file that describes the package and its versions.\n2. It downloads a bottle, which is a prebuilt, compressed copy of the package for your Mac.\n3. It unpacks the bottle into its own folder, such as `/opt/homebrew/Cellar/jq/` plus the version.\n4. It links the command into `/opt/homebrew/bin`, a folder that is on your PATH.\n\nThat is why two versions can sit side by side in the Cellar while only the linked one runs. Some formulae skip step 4 on purpose. Homebrew calls them keg-only. Versioned formulae such as `openjdk@21` are keg-only, so they cannot clash with the main `openjdk` formula. That is why it asks you to make the `/Library/Java/JavaVirtualMachines` link yourself. Casks work differently again: they install an app into `/Applications`. A tap is an extra git repository of formulae, which is how `hashicorp/tap` works.\n\nThe \"Next steps\" lines from the Homebrew installer run `brew shellenv`. That command prints `export` lines for PATH and a few other variables, and `eval` runs them in your shell. One of the lines also appends the same `eval` command to `~/.zprofile`, so every new terminal runs it.\n\nActivating a venv is even simpler. The command `source .venv/bin/activate` runs a small script inside your current shell, and the script does three things:\n\n- It sets `VIRTUAL_ENV` to the venv folder.\n- It puts `.venv/bin` at the front of PATH.\n- It adds `(.venv)` to your prompt.\n\nThat is why `which python` points into `.venv` after activation, and why `deactivate` can put PATH back. You can also skip activation and run `.venv/bin/python app.py` directly. The final Dockerfile on Day 22 uses the PATH trick: it puts a venv's `bin` folder first on PATH.\n\nThe shell always runs the first match it finds on PATH. Run `which -a python3` to list every `python3` on your PATH, in the order the shell tries them. When the wrong version of a tool runs, that is the first command I would try."
+    "body": "When you run `brew install jq`, Homebrew does four things:\n\n1. It reads the formula, a small Ruby file that describes the package and its versions.\n2. It downloads a bottle, which is a prebuilt, compressed copy of the package for your Mac.\n3. It unpacks the bottle into its own folder, such as `/opt/homebrew/Cellar/jq/` plus the version.\n4. It links the command into `/opt/homebrew/bin`, a folder that is on your PATH.\n\nThat is why two versions can sit side by side in the Cellar while only the linked one runs. Some formulae skip step 4 on purpose, and Homebrew calls them keg-only. Versioned formulae such as `openjdk@21` are keg-only, so they cannot clash with the main `openjdk` formula. That is why it asks you to make the `/Library/Java/JavaVirtualMachines` link yourself. Casks work differently again: they install an app into `/Applications`. A tap is an extra git repository of formulae, which is how `hashicorp/tap` works.\n\nThe \"Next steps\" lines from the Homebrew installer run `brew shellenv`. That command prints `export` lines for PATH and a few other variables, and `eval` runs them in your shell. One of the lines also adds the same `eval` command to the end of `~/.zprofile`, so every new terminal runs it.\n\nActivating a venv is even simpler. The command `source .venv/bin/activate` runs a small script inside your current shell, and the script does three things:\n\n- It sets `VIRTUAL_ENV` to the venv folder.\n- It puts `.venv/bin` at the front of PATH.\n- It adds `(.venv)` to your prompt.\n\nThat is why `which python` points into `.venv` after activation, and why `deactivate` can put PATH back. You can also skip activation and run `.venv/bin/python app.py` directly. The final Dockerfile on Day 22 uses the same PATH trick: it puts a venv's `bin` folder first on PATH.\n\nThe shell always runs the first match it finds on PATH. Run `which -a python3` to list every `python3` on your PATH, in the order the shell tries them. When the wrong version of a tool runs, that is the first command I would try."
    },
    "sources": [
     {
@@ -701,13 +699,20 @@
      "title": "gh repo create (GitHub CLI manual)",
      "url": "https://cli.github.com/manual/gh_repo_create"
     }
-   ]
+   ],
+   "opening": "Picture moving into a bigger kitchen the night before the café's first order. The ovens are in, but the flour is still in a box in the hall, the mixer has no plug, and nobody has said which drawer holds the knives. At five in the morning you will reach for something and find nothing there.\n\nSetting up a computer for this work feels the same. It is tempting to rush it, because installing tools feels like the dull part before the real lessons. But many strange errors in week three were planted on day two, by one skipped step.\n\nLast time, we followed one change from the kitchen to the customer and named each step on the road. In this lesson, we'll stock the kitchen. We'll install every tool the course uses, check each one, open a small Linux practice box, and put the first copy of hello-devops online. Before we start, make a guess, and keep it in mind.",
+   "aside": {
+    "title": "Why does Terraform come from a different shelf?",
+    "after": 3,
+    "body": "Homebrew's main collection only accepts open-source software. In 2023 HashiCorp moved Terraform to a licence that is not open source. So Homebrew stopped updating its terraform formula, which is Homebrew's word for a package recipe. HashiCorp's own tap still carries current versions, which is why the course installs it from there."
+   },
+   "closing": "We started in a new kitchen the night before opening, with the flour in the hall and the knives in an unknown drawer. Now every tool answers its version check, the practice box opens in a second, and the first copy of hello-devops is on GitHub with three passing tests.\n\nOne habit is worth keeping from today. Before every `pip install`, look at the start of your prompt. If it does not say `(.venv)`, stop and activate the venv first.\n\nNext, we'll step inside the practice box and learn to find our way around it. The question it answers: how do you move around a computer when there is no mouse, only a line of text?"
   }
  ],
  "recap": [
   "In DevOps, the people who build software also share the work of running it.",
-  "Every change takes the same path: code, build, test, package, release, deploy, run, observe and feedback.",
-  "The 20 parts of this course each own a piece of that path, with Linux and networking underneath.",
+  "Every change takes the same road: code, build, test, package, release, deploy, run, observe and feedback.",
+  "The 20 parts of this course each own a piece of that road, with Linux and networking underneath.",
   "Automate what repeats, keep everything as code, ship small changes and get feedback fast.",
   "DORA's five metrics measure speed and stability together, and the best teams do well on both.",
   "Homebrew installs your tools, and Docker Desktop runs a small Linux VM for containers.",
@@ -720,23 +725,23 @@
    "back": "Culture, practices and tools, so the people who build software also share running it."
   },
   {
-   "front": "List the steps a change passes through on its way to users.",
+   "front": "Name the steps a change passes through on its way to users.",
    "back": "Code, build, test, package, release, deploy, run, observe, feedback."
   },
   {
    "front": "Which tool packages the app, and which runs it across many machines?",
-   "back": "Docker packages it into an image. Kubernetes runs the containers across machines."
+   "back": "Docker packs it into an image. Kubernetes runs the containers across many machines."
   },
   {
    "front": "What does Argo CD do?",
    "back": "It watches a git repo and changes the cluster until it matches what the repo says."
   },
   {
-   "front": "Which DORA metrics measure throughput?",
+   "front": "Which DORA metrics measure throughput, meaning how fast changes flow?",
    "back": "Change lead time, deployment frequency and failed deployment recovery time."
   },
   {
-   "front": "Which DORA metrics measure instability?",
+   "front": "Which DORA metrics measure instability, meaning how often changes cause harm?",
    "back": "Change fail rate and deployment rework rate."
   },
   {
@@ -749,11 +754,11 @@
   },
   {
    "front": "What do `--rm` and `-v \"$PWD\":/work` do in the practice box command?",
-   "back": "`--rm` deletes the container when you exit; `-v` shares your current Mac folder into it at /work."
+   "back": "`--rm` deletes the container when you exit. `-v` shares your current Mac folder into it at /work."
   },
   {
    "front": "Why does Day 6 use a Multipass VM instead of the container?",
-   "back": "A plain container cannot run systemd, the service manager that Day 6 teaches."
+   "back": "A plain container cannot run systemd, the program that starts and looks after services, which Day 6 teaches."
   },
   {
    "front": "What does activating a Python venv change?",
@@ -761,7 +766,7 @@
   },
   {
    "front": "What does `gh repo create hello-devops --public --source=. --push` do?",
-   "back": "Creates the GitHub repo from this folder, adds it as the origin remote, and pushes your commits."
+   "back": "It creates the GitHub repo from this folder, adds it as the origin remote, and pushes your commits."
   }
  ],
  "resources": [
@@ -775,19 +780,19 @@
    "title": "DORA's software delivery performance metrics",
    "url": "https://dora.dev/guides/dora-metrics/",
    "kind": "docs",
-   "why": "The official definitions of the five delivery metrics, straight from the research team."
+   "why": "The official definitions of the five delivery metrics, from the research team itself."
   },
   {
    "title": "Site Reliability Engineering, the free book (Google)",
    "url": "https://sre.google/sre-book/table-of-contents/",
    "kind": "read",
-   "why": "Google's free book on running production; read the first part to see where SRE came from."
+   "why": "Google's free book on running live systems; read the first part to see where SRE came from."
   },
   {
    "title": "CNCF Platforms white paper",
    "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/",
    "kind": "read",
-   "why": "A short, vendor-neutral paper on why companies build internal platforms."
+   "why": "A short paper, written for no single company, on why companies build internal platforms."
   },
   {
    "title": "Course overview and the shell (MIT Missing Semester 2026)",
@@ -799,19 +804,19 @@
    "title": "Command-line environment (MIT Missing Semester 2026)",
    "url": "https://www.youtube.com/watch?v=ccBGsPedE9Q",
    "kind": "watch",
-   "why": "Explains environment variables, PATH and dotfiles, which is what makes today's setup work."
+   "why": "Explains environment variables, PATH and the settings files your shell reads, which is what makes today's setup work."
   },
   {
    "title": "Homebrew installation docs",
    "url": "https://docs.brew.sh/Installation",
    "kind": "docs",
-   "why": "What the Homebrew installer needs and what its 'Next steps' really do."
+   "why": "What the Homebrew installer needs, and what its 'Next steps' lines really do."
   },
   {
    "title": "Install Docker Desktop on Mac",
    "url": "https://docs.docker.com/desktop/setup/install/mac-install/",
    "kind": "docs",
-   "why": "Docker's own install guide for Apple Silicon, with the system requirements."
+   "why": "Docker's own install guide for Apple Silicon Macs, with the system requirements."
   },
   {
    "title": "Virtual environments and packages (Python tutorial)",
@@ -823,7 +828,7 @@
    "title": "Multipass README (Canonical)",
    "url": "https://github.com/canonical/multipass",
    "kind": "docs",
-   "why": "The commands for launching, entering and deleting the Ubuntu VM you use on Day 6."
+   "why": "The commands for starting, entering and deleting the Ubuntu VM you use on Day 6."
   }
  ],
  "quiz": [
@@ -836,10 +841,10 @@
     "Release only on Fridays"
    ],
    "answer": 1,
-   "why": "Small, frequent changes are easier to test and undo. When one breaks, you only have a small diff to search."
+   "why": "Small, frequent changes are easier to test and undo. When one breaks, there is only a small change to search."
   },
   {
-   "q": "Which part of this course teaches the tool that keeps a Kubernetes cluster in sync with what is in git?",
+   "q": "Which part of this course teaches the tool that keeps a Kubernetes cluster matching what is in git?",
    "options": [
     "Part 11, Argo CD",
     "Part 8, Terraform",
@@ -872,7 +877,7 @@
    "why": "Those lines put `/opt/homebrew/bin` on your PATH. Open a new terminal tab after you run them."
   },
   {
-   "q": "You want to try `systemctl status ssh` in the ubuntu:24.04 practice box, and it fails. What is the fix?",
+   "q": "You try `systemctl status ssh` in the ubuntu:24.04 practice box, and it fails. What is the fix?",
    "options": [
     "Run the command again with sudo",
     "Use a Multipass VM, which runs systemd",
@@ -880,7 +885,7 @@
     "Add the --privileged flag to docker run"
    ],
    "answer": 1,
-   "why": "A plain container does not boot systemd as its first process, so systemctl cannot work there; a full VM does."
+   "why": "A plain container does not start systemd as its first program, so systemctl cannot work there. A full VM does start it."
   },
   {
    "q": "Which of these should never be committed to the hello-devops repo?",
@@ -891,7 +896,7 @@
     ".gitignore"
    ],
    "answer": 2,
-   "why": "The venv is large and machine-specific, so `.gitignore` keeps it out of git."
+   "why": "The venv is large and built for one machine, so `.gitignore` keeps it out of git. Anyone can rebuild it from the requirements files."
   }
  ]
 }

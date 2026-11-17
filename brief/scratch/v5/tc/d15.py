@@ -40,19 +40,19 @@ S = L["sections"]
 S[0]["h"] = "When the checklist outgrows Bash"
 S[0]["body"] = r"""Let's give the helper its first job in Bash, the language of the terminal (the text window where you type commands). The job: read a web server's log and count the visits to each page.
 
-On Day 5 you did that with a pipeline, a chain of small tools joined by `|`: `awk '{print $7}' access.log | sort | uniq -c | sort -rn | head -n 2`. It prints `34 /api/products` and `24 /api/products?page=3`. That's one page split across two lines. The second line carries a query string, the `?page=3` part of an address, and the tools treat it as a different page.
+On Day 5 you did that with a pipeline, a chain of small tools joined by `|`: `awk '{print $7}' access.log | sort | uniq -c | sort -rn | head -n 2`. It prints `34 /api/products` and `24 /api/products?page=3`. That's one page split across two lines. The second line carries a query string, the `?page=3` part of an address, so the tools see a different page.
 
-You could add one more tool to cut the query string off. Then you also want the error rate, a limit, and a report another program can read. Each wish adds a step, and the script gets hard to read and harder to test. A count per page needs a lookup table, and the bash 3.2 on a Mac has none.
+You could add one more tool to cut the query string off. Then you want the error rate, a limit, and a report another program can read. Each wish adds a step, and the script gets hard to read and harder to test. A count per page needs a lookup table, and the bash 3.2 on a Mac has none.
 
 This is where Python helps. Day 7 ended with a rule of thumb: once a script needs real data structures or grows past about a hundred lines, switch to Python. Three reasons:
 
-- It keeps data around. A count per page takes one line, and one pass over the log can answer many questions.
+- It keeps data around. A count per page takes one line, and one pass answers many questions.
 - It can tell failures apart: a missing file, a timeout and a bad answer each get their own handling.
 - It is easy to test, as Day 16 shows.
 
-Its standard library, the toolbox that comes with Python, covers files, data formats, time zones and running other programs. Today's scripts use nothing else.
+Its standard library, the toolbox that ships with Python, covers files, data formats, time zones and running other programs. Today's scripts use nothing else.
 
-Bash keeps a place for short glue, such as `healthcheck.sh` from Day 7. Keep its habits too: a clear exit code (the number a program hands back when it ends), messages on stderr (a separate channel for people) and a loud failure. Most of today is about doing those well in Python.
+Bash stays for short glue, such as `healthcheck.sh` from Day 7. Keep its habits too: a clear exit code (the number a program hands back when it ends), messages on stderr (a separate channel for people) and a loud failure. Most of today is about doing those well in Python.
 
 So which Python, and where do its add-ons live?"""
 
@@ -85,7 +85,7 @@ S[2]["h"] = "The shape every helper script shares"
 S[2]["body"] = r"""Open `scripts/logsum.py` in the Files section. It is our running example, a log summarizer, and every lab script has the same shape:
 
 1. The shebang and the PEP 723 block.
-2. A docstring (a note in quotes) with examples and the exit codes, the first thing a tired person reads.
+2. A docstring (a note in quotes) with examples and the exit codes, for the tired person reading it at night.
 3. Imports, which load parts of the standard library, then constants such as the pattern for one log line.
 4. Small functions (named blocks of steps) that each do one job and return data. `parse_access` never prints.
 5. `main(argv=None) -> int`, which reads the arguments, calls the functions, prints, and returns the exit code.
@@ -171,7 +171,7 @@ S[6]["body"] = r"""Often a script calls another program, such as `git` or the cl
 - `capture_output=True, text=True`, to get stdout and stderr back as strings (pieces of text).
 - `timeout=30`, so a hung command raises `TimeoutExpired` instead of hanging your script.
 
-Here is a loud failure. In `/tmp`, `subprocess.run(["git", "log", "-1"], check=True, capture_output=True, text=True)` raised `CalledProcessError(128, ['git', 'log', '-1'])`, and `err.stderr` held `fatal: not a git repository`. That message is what to log before you exit with 2.
+A loud failure looks like this. In `/tmp`, `subprocess.run(["git", "log", "-1"], check=True, capture_output=True, text=True)` raised `CalledProcessError(128, ['git', 'log', '-1'])`, and `err.stderr` held `fatal: not a git repository`. That message is what to log before you exit with 2.
 
 Now the dangerous version. A shell, such as Bash, is the program that reads a command line and splits it into commands. `shell=True` with outside input is how scripts get hijacked. With it, Python passes one string to `/bin/sh`, and the shell reads a `;` inside it as the start of a second command. With `name = "x; echo pwned"`, the call `subprocess.run(f"ls {name}", shell=True)` printed `pwned`, proof that a second command ran. The list form passed the whole string to `ls` as one argument, and `ls` answered `cannot access 'x; echo pwned'`.
 

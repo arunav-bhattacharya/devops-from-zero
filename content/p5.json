@@ -8,8 +8,9 @@
    "title": "Containers: your first docker run",
    "minutes": 45,
    "goal": "By the end you can explain what a container is and how it differs from a VM, and run, inspect, stop and remove containers made from public images.",
+   "opening": "Picture cooking your best dish for a friend's party. At home it comes out perfect every time. At your friend's house the oven runs hotter, there is no fresh garlic, and the salt is a different kind. The dish fails, and you stand in their kitchen saying, \"But it works at home.\"\n\nSoftware has the same problem, and it is easy to miss, because the code itself never changed. Everything around it did. Last time, our Python helper learned to talk to GitHub and AWS, but every machine that runs it still needs the right Python and packages first. In this lesson, we'll pack an app like a lunchbox: the meal plus its own fork, salt and napkin, sealed so it opens the same way anywhere. You'll run your first boxes, look inside them, and follow one from start to finish.\n\nBefore we start, make a guess, and keep it in mind.",
    "guess": {
-    "q": "You run `docker run -p 8080:80 nginx` on your Mac. Which kernel runs the nginx process?",
+    "q": "The kernel is the core of an operating system, the part that runs every program. You run `docker run -p 8080:80 nginx` (a web server) on your Mac. Which kernel runs the nginx process?",
     "options": [
      "Its own Debian kernel, booted inside the container",
      "The macOS kernel, directly",
@@ -17,46 +18,46 @@
      "No kernel: Docker interprets the image like a JVM"
     ],
     "answer": 2,
-    "why": "A container never boots a kernel of its own; it uses the host's Linux kernel. A Mac has no Linux kernel, so Docker Desktop runs one small Linux VM, and every container shares that VM's kernel."
+    "why": "A container never boots a kernel of its own; it uses the Linux kernel of the machine it runs on. A Mac has no Linux kernel, so Docker Desktop runs one small Linux VM (a pretend computer), and every container shares that VM's kernel."
    },
    "terms": [
     {
      "term": "Image",
-     "plain": "A read-only package of an app and everything it needs to run: files, libraries and settings."
+     "plain": "A read-only package of an app and everything it needs to run: files, ready-made code and settings."
     },
     {
      "term": "Container",
-     "plain": "A running, isolated process started from an image."
+     "plain": "A running program started from an image and fenced off from the rest of the computer."
     },
     {
      "term": "Kernel",
-     "plain": "The core of an operating system. It runs processes, hands out memory and talks to the hardware."
+     "plain": "The core of an operating system. It runs programs, hands out memory and talks to the hardware."
     },
     {
      "term": "Namespace",
-     "plain": "A Linux kernel feature that gives a process its own private view of processes, network, hostname or files."
+     "plain": "A Linux kernel feature that gives a program its own private view of other programs, the network, its name and its files."
     },
     {
      "term": "cgroup",
-     "plain": "A Linux kernel feature (control group) that caps how much CPU and memory a group of processes can use."
+     "plain": "A Linux kernel feature (control group) that caps how much processor time and memory a group of programs can use."
     },
     {
      "term": "Docker Engine",
-     "plain": "The background service that pulls images and creates, runs and stops containers."
+     "plain": "The background program that downloads images and creates, runs and stops containers."
     },
     {
      "term": "Port mapping",
-     "plain": "A rule that sends traffic from a port on your computer to a port inside a container."
+     "plain": "A rule that sends traffic from a port (a numbered door) on your computer to a port inside a container."
     },
     {
      "term": "Exit code",
-     "plain": "The number a process returns when it ends. 0 means success; anything else means something went wrong."
+     "plain": "The number a program hands back when it ends. 0 means success; anything else means something went wrong."
     }
    ],
    "sections": [
     {
-     "h": "The problem: it works on my machine",
-     "body": "Your code is only one part of what runs in production. The app also needs:\n\n- a language runtime, such as Python 3.14\n- libraries, such as Flask and gunicorn\n- system packages from the operating system, such as OpenSSL\n- settings, such as environment variables\n\nYour laptop has one mix of these. The CI server has another, and the production server a third. So a test can pass on your Mac with Python 3.14 and fail in CI, where the runner has Python 3.12, without anyone touching the code.\n\nDocker ships the setup together with the code. You build one package that holds the app and everything it needs, and that exact package runs on your Mac, on a CI runner and on a cloud server. On the Day 1 map, this is the package step.\n\nThe package is called an **image**: your app, its files and its settings, frozen and read-only. A running copy of an image is a **container**. Today you run images other people built. On Day 19 you build your own.",
+     "h": "It works in my kitchen",
+     "body": "Your code is only one part of what runs in production, the real servers your users reach. The app also needs:\n\n- a language runtime, the program that runs your code, such as Python 3.14\n- libraries, ready-made code such as Flask and gunicorn\n- system packages from the operating system, such as OpenSSL\n- settings, such as environment variables\n\nThat is the kitchen around the dish. Your laptop has one mix of these. The CI server, which runs your tests on every change, has another, and the production server a third. So a test can pass on your Mac with Python 3.14 and fail in CI, where the runner (the CI machine) has Python 3.12. Nobody touched the code.\n\nDocker ships the kitchen together with the dish. You build one package that holds the app and everything it needs, and that exact package runs on your Mac, on a CI runner and on a cloud server. On the Day 1 map, this is the package step.\n\nThe package is called an image: your app, its files and its settings, frozen and read-only, like a lunchbox packed and sealed. A running copy of an image is a container, the lunchbox opened and in use. Today you run images other people built. On Day 19 you build your own.\n\nSo what is actually running when a container runs? Less than you might expect.",
      "refs": [
       {
        "title": "Docker concepts: What is a container?",
@@ -71,8 +72,8 @@
      ]
     },
     {
-     "h": "A container is a process with blinkers and a budget",
-     "body": "A virtual machine (VM) pretends to be a whole computer. It has virtual hardware and boots a full operating system with its own kernel. The kernel is the core of an operating system: it starts processes, hands out memory and talks to the hardware. Booting all of that takes many seconds, and each VM holds on to its own share of memory.\n\nA container has none of that. It is a normal Linux process, the same kind you listed with `ps` on Day 6. The kernel gives it two extra things:\n\n- Namespaces give the process a private view of the system: its own process list, network, hostname and files.\n- cgroups (control groups) give it a budget: a cap on CPU and memory. Past the memory cap, the kernel kills it.\n\nNamespaces work like the blinkers on a horse, the flaps that stop it seeing to the side. You can watch them work with Alpine, a tiny Linux image. The command `docker run --rm alpine ps` lists a single process, `ps` itself, running as PID 1, the number a system gives its first process (Day 6). The machine runs hundreds of processes, and the container sees none of them. In the same way, `docker run --rm alpine ls /` lists Alpine's own folders. Those files come from the image, and none of the VM's files show up.\n\nNo second kernel has to boot, so a container starts in about a second. You pay for that speed by sharing: every container on a host uses the same kernel, so a kernel bug can affect all of them. A container can also only run programs built for that kernel and that CPU.",
+     "h": "A container is a program with walls and a budget",
+     "body": "The older way to give an app a clean kitchen of its own is a virtual machine (VM). A VM pretends to be a whole computer. It has virtual hardware and boots a full operating system with its own kernel. The kernel is the core of an operating system: it starts processes (running programs), hands out memory and talks to the hardware. Booting all of that takes many seconds, and each VM holds on to its own share of memory.\n\nA container has none of that. It is a normal Linux process, the same kind you listed with `ps` on Day 6. The kernel gives it two extra things:\n\n- Namespaces give the process a private view of the system: its own process list, network, hostname (the machine's name) and files.\n- cgroups (control groups) give it a budget: a cap on CPU and memory. Past the memory cap, the kernel kills it.\n\nNamespaces work like the walls of a lunchbox: the food inside can't see the other boxes in the fridge. You can watch them work with Alpine, a tiny Linux image. The command `docker run --rm alpine ps` lists a single process, `ps` itself, running as PID 1. A PID is the number Linux gives each process, and 1 goes to the first one (Day 6). The machine runs hundreds of processes, and the container sees none of them. In the same way, `docker run --rm alpine ls /` lists Alpine's own folders. Those files come from the image, and none of the VM's files show up.\n\nNo second kernel has to boot, so a container starts in about a second. You pay for that speed by sharing. Every container on a host (the machine it runs on) uses the same kernel, like lunches that all go through one office microwave. A kernel bug can affect all of them. A container can also only run programs built for that kernel and that CPU, the computer's processor.\n\nThat raises a question for Mac users, because a Mac has no Linux kernel at all.",
      "refs": [
       {
        "title": "Julia Evans: what even is a container?",
@@ -87,8 +88,8 @@
      ]
     },
     {
-     "h": "On a Mac, Docker runs a small Linux VM",
-     "body": "macOS has its own kernel, and it is not Linux. So Docker Desktop starts one small Linux VM in the background, and every container you run lives inside it. Three pieces work together:\n\n1. The `docker` command runs on your Mac. It is only a client that sends requests.\n2. Docker Engine, a background program called `dockerd`, runs inside the VM. It pulls images and creates, starts and stops containers.\n3. The VM's Linux kernel runs the container processes.\n\nThe client reaches the engine through a socket, the connection you set up on Day 2. Run `docker version` and it prints both halves: a Client section for the command on your Mac and a Server section that says `linux/arm64`.\n\nThat `arm64` is your CPU type, which Linux calls `aarch64`. Most cloud servers use amd64, also called `x86_64`. Popular images carry a variant for each CPU, and Docker picks the one that matches yours. An amd64-only image still runs on your Mac through emulation, only slower. On an amd64 server, an image with only arm64 code fails with `exec format error`. Day 18 shows how one image name can hold both variants.\n\nDocker Desktop is free for personal use, education and small businesses. Companies with more than 250 employees or more than $10 million in yearly revenue need a paid subscription. Sign in with a free Docker account anyway: Docker Hub then lets you pull 200 images every 6 hours instead of 100.",
+     "h": "On a Mac, Docker quietly runs a small Linux VM",
+     "body": "macOS has its own kernel, and it is not Linux. So Docker Desktop, the Mac app that installs Docker, starts one small Linux VM in the background, and every container you run lives inside it. Three pieces work together:\n\n1. The `docker` command runs on your Mac. It is only a client: it sends requests and shows the answers.\n2. Docker Engine, a background program called `dockerd`, runs inside the VM. It pulls (downloads) images and creates, starts and stops containers.\n3. The VM's Linux kernel runs the container processes.\n\nThe client reaches the engine through a socket, the connection you set up on Day 2. Run `docker version` and it prints both halves: a Client section for the command on your Mac and a Server section that says `linux/arm64`.\n\nThat `arm64` is your CPU type, which Linux calls `aarch64`. Most cloud servers use amd64, also called `x86_64`. A program is built for one CPU type, the way a recipe is written in one language. Popular images carry a variant for each CPU, and Docker picks the one that matches yours. An amd64-only image still runs on your Mac through emulation (software that translates the code as it runs), only slower. On an amd64 server, an image with only arm64 code fails with `exec format error`. Day 18 shows how one image name can hold both variants.\n\nDocker Desktop is free for personal use, education and small businesses. Companies with more than 250 employees or more than $10 million in yearly revenue need a paid subscription. Sign in with a free Docker account anyway: Docker Hub, the public store of images, then lets you pull 200 images every 6 hours instead of 100.\n\nThe machinery is in place. Now for the two words you'll use every day: image and container.",
      "refs": [
       {
        "title": "Install Docker Desktop on Mac",
@@ -103,8 +104,8 @@
      ]
     },
     {
-     "h": "Images and containers: a class and its objects",
-     "body": "An image and a container relate like a class and an object in Kotlin. The image is the class, a read-only definition. A container is an object made from it, with its own state. You can start ten containers from one image, and they do not affect each other.\n\nEach container gets a thin writable layer on top of its image, and every file the app writes lands there. Remove the container and that layer goes with it. The image itself never changes. Day 18 opens an image up and shows how the layers stack.\n\nImages live in a registry, a server that stores images and hands them out. Docker Hub is the default one. When you run an image you do not have yet, Docker pulls (downloads) it first. An image name looks like `redis:8-alpine`: a name, a colon, and a tag that names a version. Leave the tag out and Docker uses `latest`, which is only a default label and does not promise the newest version.\n\nPut together, `docker run nginx` does five things, in this order:\n\n1. The `docker` command on your Mac sends the request to Docker Engine in the VM.\n2. The engine checks whether it already has the image, and pulls it if not.\n3. It puts a fresh writable layer on top of the image's files. That merged folder tree becomes the container's `/`.\n4. It asks the kernel for new namespaces and a cgroup.\n5. It starts the image's default command inside them, as PID 1. For nginx that is the nginx server, for Alpine the shell `/bin/sh`.\n\nThe engine hands steps 3 to 5 to two helper programs, containerd and runc. Their names show up in error messages, as the next section shows.",
+     "h": "Images and containers: the sealed box and the opened one",
+     "body": "Picture a shop that sells one kind of sealed lunchbox. Every box is packed from the same list, and ten people can each open one without touching anyone else's lunch. An image is the sealed, read-only box. A container is one opened copy, with its own state. You can start ten containers from one image, and they do not affect each other.\n\nEach container gets a thin writable layer on top of its image, and every file the app writes lands there. It is the ketchup you add after opening: it belongs to your copy only. Remove the container and that layer goes with it. The image itself never changes. Day 18 opens an image up and shows how the layers stack.\n\nImages live in a registry, a server that stores images and hands them out, like the shop. Docker Hub is the default one. When you run an image you do not have yet, Docker pulls it first. An image name looks like `redis:8-alpine`: a name, a colon, and a tag that names a version. Leave the tag out and Docker uses `latest`, which is only a default label and does not promise the newest version.\n\nPut together, `docker run nginx` does five things, in this order:\n\n1. The `docker` command on your Mac sends the request to Docker Engine in the VM.\n2. The engine checks whether it already has the image, and pulls it if not.\n3. It puts a fresh writable layer on top of the image's files. That merged folder tree becomes the container's `/`, its top folder.\n4. It asks the kernel for new namespaces and a cgroup.\n5. It starts the image's default command inside them, as PID 1. For nginx that is the nginx web server, for Alpine the shell `/bin/sh`, a program that reads typed commands.\n\nThe engine hands steps 3 to 5 to two helper programs, containerd and runc. Their names show up in error messages, as the next section shows.",
      "refs": [
       {
        "title": "Docker concepts: What is an image?",
@@ -119,8 +120,8 @@
      ]
     },
     {
-     "h": "The docker run command, flag by flag",
-     "body": "`docker run` creates a container from an image and starts it. Its shape is `docker run [options] image [command]`. Take `docker run -d --name web -p 8080:80 -e TZ=UTC nginx`. Each option changes one thing:\n\n- `-d` (detached) runs it in the background and prints its ID, instead of tying your terminal to the app's output.\n- `--name web` names it, so later commands can say `web` instead of an ID.\n- `-p 8080:80` publishes a port, explained in the next section.\n- `-e TZ=UTC` sets an environment variable inside the container.\n- `--rm` deletes the container when it stops, so one-off runs do not pile up in `docker ps -a`.\n- `-it` connects your keyboard and a terminal, so you can type into a shell.\n\nAnything after the image name replaces the image's default command. `docker run --rm alpine uname -m` runs `uname -m` instead of Alpine's shell. `docker run -it --rm ubuntu:24.04 bash` gives you the Ubuntu practice box from Part 1. The program you name must exist inside the image, because the container sees only the image's files. Alpine has no bash, so `docker run --rm alpine bash` fails. The error says `runc create failed` and ends with `executable file not found in $PATH`.\n\nOnce a container runs, three commands answer most questions:\n\n- `docker ps` lists running containers.\n- `docker logs web` shows what the main process printed, and `-f` keeps following it.\n- `docker exec web <command>` runs an extra command inside the running container. `docker exec -it web sh` opens a shell there.",
+     "h": "The docker run command, one option at a time",
+     "body": "`docker run` creates a container from an image and starts it. Its shape is `docker run [options] image [command]`. Take `docker run -d --name web -p 8080:80 -e TZ=UTC nginx`. Each option changes one thing:\n\n- `-d` (detached) runs it in the background and prints its ID, instead of tying your terminal to the app's output.\n- `--name web` names it, so later commands can say `web` instead of an ID.\n- `-p 8080:80` publishes a port, explained in the next section.\n- `-e TZ=UTC` sets an environment variable (a named setting) inside the container.\n- `--rm` deletes the container when it stops, so one-off runs do not pile up in `docker ps -a`.\n- `-it` connects your keyboard and a terminal, so you can type into a shell.\n\nAnything after the image name replaces the image's default command. `docker run --rm alpine uname -m` runs `uname -m` instead of Alpine's shell. `docker run -it --rm ubuntu:24.04 bash` gives you the Ubuntu practice box from Part 1.\n\nNow a run that fails in public. The program you name must exist inside the image, because the container sees only the image's files. Alpine has no bash, so `docker run --rm alpine bash` fails. The error says `runc create failed` and ends with `executable file not found in $PATH`. That's runc, one of the helpers from the last section, telling you it searched the image's `$PATH` folders (Day 7) and found no `bash`.\n\nOnce a container runs, three commands answer most questions:\n\n- `docker ps` lists running containers.\n- `docker logs web` shows what the main process printed, and `-f` keeps following it.\n- `docker exec web <command>` runs an extra command inside the running container. `docker exec -it web sh` opens a shell there.\n\nThe nginx in that example listens on port 80. Yet you reach it on 8080. Why the two numbers?",
      "refs": [
       {
        "title": "docker container run reference",
@@ -135,8 +136,8 @@
      ]
     },
     {
-     "h": "Port mapping, explained",
-     "body": "Each container has its own network namespace, and with it its own set of ports. Inside its container, nginx listens on port 80, where nothing on your Mac can reach it yet.\n\n`-p 8080:80` connects the two. Read it as host first, then container: traffic to port 8080 on your Mac goes to port 80 in the container. Docker Desktop carries that traffic into the VM, and the engine forwards it to the container's own network address. Most people get this order backwards at first, so say it out loud a few times. `docker ps` shows the rule in its PORTS column as `0.0.0.0:8080->80/tcp`.\n\nA few rules follow from this:\n\n- Two containers can both use port 80 inside, because each has its own namespace.\n- A port on your Mac can belong to only one container at a time.\n- The app inside must listen on `0.0.0.0` (Day 10). Forwarded traffic arrives at the container's address, never at its `127.0.0.1`.\n\nThat `0.0.0.0` in the PORTS column means Docker publishes the port on every network address of your Mac, so other devices on your Wi-Fi might reach it. On a laptop, `-p 127.0.0.1:8080:80` is the safer habit, because it keeps the port private to your Mac.",
+     "h": "Port mapping: two numbers, read from your side",
+     "body": "A port is a numbered door that a program listens behind, like an apartment number in a building (Part 3). Each container has its own network namespace, and with it its own set of ports: a building of its own. Inside its container, nginx listens on port 80, where nothing on your Mac can reach it yet.\n\n`-p 8080:80` connects the two. Read it as host first, then container: traffic to port 8080 on your Mac goes to port 80 in the container. Docker Desktop carries that traffic into the VM, and the engine forwards it to the container's own network address. Most people get this order backwards at first, so say it out loud a few times. `docker ps` shows the rule in its PORTS column as `0.0.0.0:8080->80/tcp`.\n\n**The left number is on your Mac. The right number is where the app listens.**\n\nA few rules follow from this:\n\n- Two containers can both use port 80 inside, because each has its own namespace.\n- A port on your Mac can belong to only one container at a time.\n- The app inside must listen on `0.0.0.0`, meaning every address it has (Day 10). Forwarded traffic arrives at the container's address, never at its `127.0.0.1`, the address that means \"this machine only\".\n\nThat `0.0.0.0` in the PORTS column means Docker publishes the port on every network address of your Mac, so other devices on your Wi-Fi might reach it. On a laptop, `-p 127.0.0.1:8080:80` is the safer habit, because it keeps the port private to your Mac.\n\nYou can start a container and reach it now. What happens when it ends?",
      "refs": [
       {
        "title": "Docker concepts: Publishing and exposing ports",
@@ -151,8 +152,8 @@
      ]
     },
     {
-     "h": "The container lifecycle",
-     "body": "A container moves through a few states:\n\n1. Created: Docker has set it up but not started its process (`docker create`).\n2. Running: its main process is alive.\n3. Paused: the kernel has frozen its processes (`docker pause`). You will rarely need this.\n4. Exited: the main process ended, by itself or because you stopped it.\n5. Removed: `docker rm` deleted it and its writable layer.\n\nA container lives exactly as long as its main process, PID 1. That follows from what a container is: when PID 1 ends, the kernel also ends every other process in its namespace. So the container exits, and the exit code of PID 1 tells you how. 0 means success. `docker ps -a` shows any other number, as in `Exited (3)`, and `docker logs` still shows what the process printed before it died.\n\n`docker stop` sends SIGTERM to PID 1, waits 10 seconds, then sends SIGKILL. You met these signals on Day 6, and Kubernetes stops containers the same way. A process killed by SIGKILL exits with 137, which is 128 plus 9, the number of SIGKILL. In the worked example, `sleep` runs as PID 1 and ignores SIGTERM, for reasons Day 19 explains, so it ends with that code after 10 seconds.\n\nStopping deletes nothing. An exited container keeps its files, and `docker start` runs it again. Only `docker rm` throws it away.",
+     "h": "The life of a container, from created to removed",
+     "body": "A container moves through a few states:\n\n1. Created: Docker has set it up but not started its process (`docker create`).\n2. Running: its main process is alive.\n3. Paused: the kernel has frozen its processes (`docker pause`). You will rarely need this.\n4. Exited: the main process ended, by itself or because you stopped it.\n5. Removed: `docker rm` deleted it and its writable layer.\n\nA container lives exactly as long as its main process, PID 1. That follows from what a container is: when PID 1 ends, the kernel also ends every other process in its namespace. So the container exits, and the exit code of PID 1 tells you how. 0 means success. `docker ps -a` shows any other number, as in `Exited (3)`, and `docker logs` still shows what the process printed before it died.\n\n**A container lives as long as its main process. Watch PID 1.**\n\n`docker stop` sends SIGTERM to PID 1, waits 10 seconds, then sends SIGKILL. You met these signals on Day 6: SIGTERM politely asks a program to finish, and SIGKILL ends it at once. Kubernetes, which runs containers across many machines, stops containers the same way. A process killed by SIGKILL exits with 137, which is 128 plus 9, the number of SIGKILL. In the worked example, `sleep` runs as PID 1 and ignores SIGTERM, for reasons Day 19 explains, so it ends with that code after 10 seconds.\n\nStopping deletes nothing. An exited container keeps its files, and `docker start` runs it again. Only `docker rm` throws it away.\n\nThat is today's limit: whatever a container writes lives only in its own thin layer, and `docker rm` takes it away (Day 20 keeps data on purpose). Every image you ran was also built by someone else. Next, we open one up to see how it is made.",
      "refs": [
       {
        "title": "docker container stop reference",
@@ -167,7 +168,6 @@
      ]
     }
    ],
-   "analogy": "A container is like an apartment in a big building. Its walls and its own front door keep the people inside from seeing their neighbours; those are the namespaces. Its water and power meters have a limit; those are the cgroups. Every apartment stands on one foundation and shares the building's pipes, and that shared plumbing is the kernel. A real apartment takes a long time to build, though. Docker makes a container in about a second because it builds nothing new: it only puts fences around a process.",
    "diagram": "<svg viewBox=\"0 0 560 262\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"The docker command on your Mac talks through a socket to Docker Engine inside a Linux VM; the engine starts containers, which share the VM's Linux kernel; -p 8080:80 connects localhost:8080 to the web container\"><line class=\"lnd\" x1=\"168\" y1=\"24\" x2=\"552\" y2=\"24\"/><line class=\"lnd\" x1=\"168\" y1=\"252\" x2=\"552\" y2=\"252\"/><line class=\"lnd\" x1=\"168\" y1=\"24\" x2=\"168\" y2=\"252\"/><line class=\"lnd\" x1=\"552\" y1=\"24\" x2=\"552\" y2=\"252\"/><text class=\"ts\" x=\"360\" y=\"246\" font-size=\"11\" text-anchor=\"middle\">Linux VM (Docker Desktop)</text><text class=\"ts\" x=\"76\" y=\"32\" font-size=\"11\" text-anchor=\"middle\">your Mac</text><rect class=\"bx\" x=\"8\" y=\"44\" width=\"136\" height=\"46\" rx=\"10\"/><text class=\"t\" x=\"76\" y=\"72\" font-size=\"13\" text-anchor=\"middle\">docker CLI</text><rect class=\"bx\" x=\"8\" y=\"110\" width=\"136\" height=\"46\" rx=\"10\"/><text class=\"t\" x=\"76\" y=\"138\" font-size=\"13\" text-anchor=\"middle\">localhost:8080</text><rect class=\"bxp\" x=\"186\" y=\"44\" width=\"140\" height=\"46\" rx=\"10\"/><text class=\"tk\" x=\"256\" y=\"72\" font-size=\"13\" text-anchor=\"middle\">Docker Engine</text><rect class=\"bxt\" x=\"396\" y=\"44\" width=\"140\" height=\"46\" rx=\"10\"/><text class=\"tk\" x=\"466\" y=\"72\" font-size=\"13\" text-anchor=\"middle\">cache (redis)</text><rect class=\"bxt\" x=\"396\" y=\"110\" width=\"140\" height=\"46\" rx=\"10\"/><text class=\"tk\" x=\"466\" y=\"138\" font-size=\"13\" text-anchor=\"middle\">web (nginx)</text><rect class=\"bxg\" x=\"186\" y=\"184\" width=\"350\" height=\"40\" rx=\"10\"/><text class=\"tk\" x=\"361\" y=\"209\" font-size=\"13\" text-anchor=\"middle\">Linux kernel, shared by all</text><line class=\"ln\" x1=\"144\" y1=\"67\" x2=\"182\" y2=\"67\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"163\" y=\"104\" font-size=\"11\" text-anchor=\"middle\">socket</text><line class=\"ln\" x1=\"326\" y1=\"67\" x2=\"392\" y2=\"67\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"360\" y=\"60\" font-size=\"11\" text-anchor=\"middle\">starts</text><line class=\"ln\" x1=\"326\" y1=\"86\" x2=\"392\" y2=\"122\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"144\" y1=\"148\" x2=\"392\" y2=\"148\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"268\" y=\"168\" font-size=\"11\" text-anchor=\"middle\">-p 8080:80</text></svg>",
    "diagram_caption": "The docker command talks to Docker Engine in a Linux VM; every container shares that VM's kernel.",
    "worked": {
@@ -184,7 +184,7 @@
       "lang": "console"
      },
      {
-      "say": "Send a request through the mapped port, then read the last log line. nginx writes each request to its standard output, and `docker logs` shows that output. The address at the start will differ on your Mac.",
+      "say": "Send a request through the mapped port with curl, then read the last log line. The nginx server writes each request to its standard output (stdout, its normal output), and `docker logs` shows that output. The address at the start will differ on your Mac.",
       "code": "$ curl -s localhost:8080 | grep title\n<title>Welcome to nginx!</title>\n$ docker logs --tail 1 web\n172.17.0.1 - - [30/Oct/2026:04:58:52 +0000] \"GET / HTTP/1.1\" 200 896 \"-\" \"curl/8.5.0\" \"-\"",
       "lang": "console"
      },
@@ -276,17 +276,16 @@
      "what": "Show the client on your Mac and the engine in the VM, with their CPU types."
     }
    ],
-   "mistake": "Writing `-p 80:8080` for an app that listens on port 80 inside gets the mapping backwards. The rule is `-p HOST:CONTAINER`: the left number is on your Mac, and the right number is where the app listens in the container. If curl gets no answer, run `docker ps` and read the PORTS column from left to right.",
-   "real_world": "When a bug shows up only in production, an engineer pulls the exact image tag that production runs and reproduces the bug on a laptop. That works because laptops, CI runners and production all run the same images. New engineers also start Postgres and Redis on their first day with `docker run`, instead of installing them by hand.",
+   "real_world": "When a bug shows up only in production, an engineer pulls the exact image tag that production runs and reproduces the bug on a laptop. That works because laptops, CI runners and production all run the same images. New engineers also start databases such as Postgres and Redis on their first day with `docker run`, instead of installing them by hand.",
    "task": {
     "title": "Run Redis and follow a container's life",
     "steps": [
-     "Pull `redis:8-alpine` and list your images. Note its size.",
+     "Pull `redis:8-alpine` (Redis is a small database that keeps data in memory) and list your images. Note its size.",
      "Start it in the background with the name `cache`. Skip `-p`: you will talk to Redis from inside the container.",
      "Use `docker exec` to run `redis-cli ping`, then store a value with `redis-cli SET color blue` and read it back with `GET`.",
      "Stop the container, start it again with `docker start`, and read the key. Is it still there?",
      "Remove the container, run a new one with the same name, and read the key again.",
-     "Start an nginx on Mac port 8081, bound to 127.0.0.1 only, with an env var of your choice. Find the variable inside with `docker exec` and `env`.",
+     "Start an nginx on Mac port 8081, bound to 127.0.0.1 only, with an environment variable of your choice. Find the variable inside with `docker exec` and `env`.",
      "Run a container that exits with code 7 on purpose, then find that code with `docker ps -a`.",
      "Run `check-docker.sh` from the Files section and note which CPU type your containers use.",
      "Clean up: remove every container you created, then check that `docker ps -a` no longer lists them."
@@ -303,12 +302,12 @@
     "answer": "Docker looks for the nginx image on my machine and, if it is missing, pulls it from Docker Hub, the default registry. Docker Engine then starts a container inside the small Linux VM that Docker Desktop runs, because containers need a Linux kernel. The container is just an nginx process that namespaces fence off and cgroups can limit. The `-d` flag runs it in the background, and `-p 8080:80` sends traffic from port 8080 on my Mac to port 80 inside the container, where nginx listens."
    },
    "recap": [
-    "A container is an isolated Linux process made from an image, and it shares the host's kernel.",
+    "A container is a fenced-off Linux process made from an image, and it shares the host's kernel.",
     "Namespaces decide what a process can see; cgroups decide how much CPU and memory it can use.",
     "On a Mac, Docker Desktop runs one Linux VM, and the docker command talks to the engine inside it.",
-    "Image is to container as class is to object: one image, many independent containers.",
+    "One read-only image can start many independent containers, like one packing list and many lunchboxes.",
     "`-p HOST:CONTAINER` publishes a port; `-p 127.0.0.1:8080:80` keeps it private to your Mac.",
-    "`docker stop` sends SIGTERM, then SIGKILL after 10 seconds; exit code 137 means the process was killed."
+    "`docker stop` sends SIGTERM, then SIGKILL after 10 seconds (exit code 137); and what a container writes is lost with `docker rm`."
    ],
    "check": [
     {
@@ -323,7 +322,7 @@
      "why": "Each host port belongs to one container, while both containers can use port 80 inside their own network namespace."
     },
     {
-     "q": "A teammate edits a config file inside a running container with `docker exec`, then runs `docker rm` and a fresh `docker run` from the same image. Where is the edit?",
+     "q": "A teammate edits a settings file inside a running container with `docker exec`, then runs `docker rm` and a fresh `docker run` from the same image. Where is the edit?",
      "options": [
       "In the image, because exec writes to the image",
       "On Docker Hub, because Docker syncs changes",
@@ -361,7 +360,7 @@
    ],
    "deeper": {
     "minutes": 12,
-    "body": "You can see the process namespace with one command: `docker run --rm alpine ps`. The output lists one process: `ps` itself, as PID 1. Your Mac and the Linux VM run hundreds of processes, but the container cannot see any of them. Now run `docker run --rm alpine hostname`. You get a random-looking name such as `89851d1cc476`, the container's short ID. The container has its own hostname namespace too. Then `docker run --rm alpine ip addr` shows a third namespace: the container has its own loopback and its own `eth0` with a private address such as `172.17.0.3`.\n\nFor cgroups, start Redis with a memory limit: `docker run -d --name capped -m 64m redis:8-alpine`. Then run `docker stats --no-stream capped`. When we ran it, the MEM USAGE / LIMIT column said `8.633MiB / 64MiB`. If Redis tried to use more than 64 MB, the kernel would stop it. Remove it with `docker rm -f capped`. The Kubernetes memory limits on Day 43 use this same kernel feature.\n\nFor CPU types, run `docker run --rm --platform linux/amd64 alpine uname -m` on your Mac. It prints `x86_64`. The container really runs amd64 code, translated as it runs by an emulator inside Docker Desktop. That is fine for a quick test and too slow for heavy work. Without an emulator, the same trick fails. On an amd64 Linux server with no emulator installed, `docker run --platform linux/arm64 alpine uname -m` printed `exec /bin/uname: exec format error`. A server shows the same error when someone ships it an arm64-only image.\n\nDocker Desktop has two related settings. Under Settings, General, you can choose the virtual machine manager. Another setting uses Apple's Rosetta to speed up amd64 emulation. Docker Desktop is also not your only choice. OrbStack and Colima run a Linux VM too and give you the same `docker` command, so this course works with them as well. For a friendly tour of the kernel features behind all this, read [Julia Evans' post on containers](https://jvns.ca/blog/2016/10/10/what-even-is-a-container/)."
+    "body": "You can see the process namespace with one command: `docker run --rm alpine ps`. The output lists one process: `ps` itself, as PID 1. Your Mac and the Linux VM run hundreds of processes, but the container cannot see any of them. Now run `docker run --rm alpine hostname`. You get a random-looking name such as `89851d1cc476`, the container's short ID. The container has its own hostname namespace too. Then `docker run --rm alpine ip addr` shows a third namespace: the container has its own loopback (the \"this machine only\" address) and its own `eth0` network card with a private address such as `172.17.0.3`.\n\nFor cgroups, start Redis with a memory limit: `docker run -d --name capped -m 64m redis:8-alpine`. Then run `docker stats --no-stream capped`. When we ran it, the MEM USAGE / LIMIT column said `8.633MiB / 64MiB`. If Redis tried to use more than 64 MB, the kernel would stop it. Remove it with `docker rm -f capped`. The Kubernetes memory limits on Day 43 use this same kernel feature.\n\nFor CPU types, run `docker run --rm --platform linux/amd64 alpine uname -m` on your Mac. It prints `x86_64`. The container really runs amd64 code, translated as it runs by an emulator inside Docker Desktop. That is fine for a quick test and too slow for heavy work. Without an emulator, the same trick fails. On an amd64 Linux server with no emulator installed, `docker run --platform linux/arm64 alpine uname -m` printed `exec /bin/uname: exec format error`. A server shows the same error when someone ships it an arm64-only image.\n\nDocker Desktop has two related settings. Under Settings, General, you can choose the virtual machine manager. Another setting uses Apple's Rosetta to speed up amd64 emulation. Docker Desktop is also not your only choice. OrbStack and Colima run a Linux VM too and give you the same `docker` command, so this course works with them as well. For a friendly tour of the kernel features behind all this, read [Julia Evans' post on containers](https://jvns.ca/blog/2016/10/10/what-even-is-a-container/)."
    },
    "sources": [
     {
@@ -380,15 +379,17 @@
      "title": "Julia Evans: what even is a container?",
      "url": "https://jvns.ca/blog/2016/10/10/what-even-is-a-container/"
     }
-   ]
+   ],
+   "closing": "We started with a dish that only worked at home. A container packs the kitchen with the dish, so the same nginx image runs on your Mac today and on a server tomorrow. Before you move on, run `docker ps -a` and read the STATUS column. Every `Exited` line is a container that still holds its files, waiting for `docker rm`, and its exit code says how it ended.\n\nNext, we'll open an image and look at the layers inside. How can two images share most of their files, and where do images live when they are not on your laptop?"
   },
   {
    "id": "d18",
    "title": "Images, layers and registries",
    "minutes": 45,
    "goal": "By the end you can explain what an image is made of, inspect its layers with docker history and dive, and pull, tag and push images by tag and by digest.",
+   "opening": "Picture packing a stacked lunchbox, the kind with several tiers that click together. You put a heavy jar of soup in the bottom tier. Then you change your mind, so you add a tier on top with a sticker that says \"no soup\". Your friend lifts the box and frowns: it is just as heavy as before.\n\nThat sounds silly with soup, yet software images work exactly this way, and smart people get caught. Deleting a file feels like removing it. Last time, you ran containers from images and treated each image as one sealed box. In this lesson, we'll open the box. You'll see its tiers (layers), the fingerprints that name every part, and why a deleted file still costs space. You'll also see how a name such as `nginx` can mean one image today and another tomorrow.\n\nBefore we start, make a guess, and keep it in mind.",
    "guess": {
-    "q": "A Dockerfile has `RUN curl -o /big.bin ...` (a 50 MB download), then `RUN rm /big.bin`. How big is the image compared with the same image without the download?",
+    "q": "A Dockerfile is the recipe that builds an image, one step per line. One step downloads a 50 MB file with `RUN curl -o /big.bin ...`, and the next step deletes it with `RUN rm /big.bin`. How big is the image compared with the same image without the download?",
     "options": [
      "The same size, because the file is gone",
      "Smaller, because rm also cleans the cache",
@@ -396,7 +397,7 @@
      "About 50 MB bigger, even though the file is deleted"
     ],
     "answer": 3,
-    "why": "Each RUN adds a read-only layer. The rm only adds a marker that hides the file, while the 50 MB stay in the earlier layer and ship with the image."
+    "why": "Each RUN adds a read-only layer. The rm only adds a marker that hides the file, while the 50 MB stay in the earlier layer and ship with the image: the soup jar under the sticker."
    },
    "terms": [
     {
@@ -405,15 +406,15 @@
     },
     {
      "term": "Image config",
-     "plain": "A JSON file in an image with its settings: default command, environment variables, user and the list of layers."
+     "plain": "A small settings file inside an image: default command, environment variables, user and the list of layers."
     },
     {
      "term": "Manifest",
-     "plain": "A JSON file that lists an image's config and layers by their digests."
+     "plain": "A small file that lists an image's config and layers by their digests."
     },
     {
      "term": "Digest",
-     "plain": "A sha256 hash of some content, such as a layer or a manifest; the same content always has the same digest."
+     "plain": "A sha256 fingerprint of some content, such as a layer or a manifest; the same content always has the same digest."
     },
     {
      "term": "Copy-on-write",
@@ -434,8 +435,8 @@
    ],
    "sections": [
     {
-     "h": "What is inside an image",
-     "body": "An image holds a whole small Linux system: `python:3.14-slim` unpacks to about 135 MB of Debian and Python files. If that were one big archive, each change to your app would mean shipping all of it again. Ten Python images would also store Python ten times. So an image looks like one thing when you pull it, but inside it is a small bundle of parts:\n\n- Layers: each layer is an archive of file changes compared with the layer below. Files can be added, changed or deleted.\n- A config: a JSON file with the image's settings, such as the default command, environment variables, working folder and user. It also lists the layers in order.\n- A manifest: a JSON file that points to the config and to every layer by their digest, which the next section explains.\n\nImages are built from a Dockerfile, a text file of build steps that Day 19 covers in full. Two kinds of steps matter today. Steps that change files each create a layer: `RUN` runs a shell command during the build, and `COPY` copies files in from your laptop. Steps that only change settings, such as `CMD` (the default command), `ENV` (a variable) and `EXPOSE` (a port note), only edit the config. In `docker history` they show a size of 0B.\n\nTry it on the base image you will use on Day 19. The command `docker image inspect python:3.14-slim --format '{{json .RootFS.Layers}}'` printed four layer digests on the day we checked. Then `docker history python:3.14-slim` shows which instruction made each one: 87.7 MB of Debian files at the bottom, 42.1 MB for the Python build, and two small layers.\n\nThe manifest works much like a git commit from Day 8: it names its parts by their hashes, so it cannot point at the wrong ones. One difference: a layer holds only the changes its step made, while a git commit points at a full snapshot.",
+     "h": "Opening the sealed box: what an image holds",
+     "body": "An image holds a whole small Linux system: `python:3.14-slim` unpacks to about 135 MB of Debian and Python files. Debian is one of the popular flavours of Linux. If all of that were one big archive (a single packed file), each change to your app would mean shipping all of it again. Ten Python images would also store Python ten times. So an image looks like one thing when you pull it, but inside it is a small bundle of parts:\n\n- Layers: each layer is an archive of file changes compared with the layer below. Files can be added, changed or deleted. These are the tiers of the lunchbox.\n- A config: a JSON file with the image's settings, such as the default command, environment variables, working folder and user. It also lists the layers in order.\n- A manifest: a JSON file that points to the config and to every layer by their digest, which the next section explains.\n\nImages are built from a Dockerfile, a text file of build steps that Day 19 covers in full. Two kinds of steps matter today. Steps that change files each create a layer: `RUN` runs a shell command during the build, and `COPY` copies files in from your laptop. Steps that only change settings, such as `CMD` (the default command), `ENV` (a variable) and `EXPOSE` (a note about a port), only edit the config. In `docker history` they show a size of 0B.\n\nTry it on the base image you will use on Day 19. The command `docker image inspect python:3.14-slim --format '{{json .RootFS.Layers}}'` printed four layer digests on the day we checked. Then `docker history python:3.14-slim` shows which step made each one: 87.7 MB of Debian files at the bottom, 42.1 MB for the Python build, and two small layers.\n\nThe manifest works much like a git commit from Day 8: it names its parts by their fingerprints, so it cannot point at the wrong ones. One difference: a layer holds only the changes its step made, while a git commit points at a full snapshot.\n\nThose fingerprints do more work than you might guess.",
      "refs": [
       {
        "title": "Docker concepts: Understanding the image layers",
@@ -455,8 +456,8 @@
      ]
     },
     {
-     "h": "Layers are named by their content",
-     "body": "A digest is a sha256 hash of some bytes, written as `sha256:` followed by 64 hexadecimal characters. Docker names every layer, config and manifest by its digest. This is called content addressing: the name comes from the content itself. Three things follow:\n\n- The same content gets the same name on every machine.\n- Change one byte, and the name changes.\n- Docker can check a download by hashing it again and comparing.\n\nContent addressing also lets images share layers. Two images built `FROM python:3.14-slim` start with the same four layers, so your disk and the registry store those layers once. We built two such images, each adding one small file. `docker system df -v` listed each at about 178 MB, but only 16.84 kB of each was unique. The other 178.3 MB were shared.\n\nPushes and pulls skip shared layers too. In the worked example you will see `Already exists` and `Layer already exists` instead of a download.\n\nThe same rule makes the order of a Dockerfile matter, as Day 19 shows: Docker reuses a layer only when everything below it is identical.",
+     "h": "Every part is named by its fingerprint",
+     "body": "A hash is a short fingerprint computed from a pile of bytes. A digest is a sha256 hash, one common kind, written as `sha256:` followed by 64 hexadecimal characters (the digits 0 to 9 and the letters a to f). Docker names every layer, config and manifest by its digest. This is called content addressing: the name comes from the content itself. Three things follow:\n\n- The same content gets the same name on every machine.\n- Change one byte, and the name changes.\n- Docker can check a download by hashing it again and comparing.\n\nContent addressing also lets images share layers. Real lunchboxes can't share a tier, but images can. Two images built `FROM python:3.14-slim` start with the same four layers, so your disk and the registry store those layers once. We built two such images, each adding one small file. `docker system df -v` listed each at about 178 MB, but only 16.84 kB of each was unique. The other 178.3 MB were shared.\n\nPushes and pulls skip shared layers too. In the worked example you will see `Already exists` and `Layer already exists` instead of a download.\n\nThe same rule makes the order of a Dockerfile matter, as Day 19 shows: Docker reuses a layer only when everything below it is identical.\n\nThe layers so far are all read-only. Yet a running container writes files all the time. Where do they go?",
      "refs": [
       {
        "title": "Storage drivers: images, layers and the container layer",
@@ -466,8 +467,8 @@
      ]
     },
     {
-     "h": "The container layer and copy-on-write",
-     "body": "Image layers are read-only. When Docker starts a container, it adds one thin writable layer on top. A union filesystem then shows all the layers as one folder tree. On Linux that is OverlayFS: it stacks the image layers under the container layer and shows you the merged view. That merged view is the `/` that the container's process sees, as on Day 17.\n\nReads and writes follow four rules:\n\n1. A read looks from the top layer down and uses the first copy of the file it finds.\n2. The first write to a file from the image copies the whole file up into the container layer. Later writes change that copy. This is **copy-on-write**.\n3. A new file goes straight into the container layer.\n4. A delete adds a small marker called a whiteout, which hides the file below. The bytes below stay where they are.\n\n`docker diff` lists what a container changed, with A for added, C for changed and D for deleted. We edited `nginx.conf`, created a file in `/tmp` and deleted `50x.html` in an nginx container. The diff showed those three changes, plus files nginx wrote at startup, such as `/run/nginx.pid`. Then `docker ps --size` reported that container layer as `106kB (virtual 177MB)`: 106 kB of its own on top of 177 MB of shared image.\n\nCopy-on-write has a cost. Copying a big file up is slow, and the layer dies with the container, so databases keep their files in volumes instead (Day 20).",
+     "h": "The container's own tier: copy-on-write",
+     "body": "Image layers are read-only. When Docker starts a container, it adds one thin writable layer on top, a fresh tier that belongs to this one container. A union filesystem then shows all the layers as one folder tree. On Linux that is OverlayFS: it stacks the image layers under the container layer and shows you the merged view. That merged view is the `/` that the container's process sees, as on Day 17.\n\nReads and writes follow four rules:\n\n1. A read looks from the top layer down and uses the first copy of the file it finds.\n2. The first write to a file from the image copies the whole file up into the container layer. Later writes change that copy. This is copy-on-write.\n3. A new file goes straight into the container layer.\n4. A delete adds a small marker called a whiteout, which hides the file below. The bytes below stay where they are: the \"no soup\" sticker.\n\n`docker diff` lists what a container changed, with A for added, C for changed and D for deleted. We edited `nginx.conf`, created a file in `/tmp` and deleted `50x.html` in an nginx container. The diff showed those three changes, plus files nginx wrote at startup, such as `/run/nginx.pid`. Then `docker ps --size` reported that container layer as `106kB (virtual 177MB)`: 106 kB of its own on top of 177 MB of shared image.\n\nCopy-on-write has a cost. Copying a big file up is slow, and the layer dies with the container, so databases keep their files in volumes instead (Day 20).\n\nRule 4 is the soup jar from the opening. It deserves a closer look, because it costs real megabytes.",
      "refs": [
       {
        "title": "OverlayFS storage driver",
@@ -482,8 +483,8 @@
      ]
     },
     {
-     "h": "Deleting a file never shrinks an image",
-     "body": "Suppose one `RUN` step creates a 50 MB file, and the next `RUN` step deletes it. The second layer only adds a whiteout. The 50 MB still sit in the first layer and ship with every pull.\n\nWe built both versions on `alpine:3.22`. The image that created and deleted the file in two steps had a content size of 53.8 MB. The one that did both in a single `RUN` had 3.8 MB. There are two fixes:\n\n- Create and clean up in the same `RUN`, joined with `&&`.\n- Use a multi-stage build (Day 22) and copy only the results into a fresh stage.\n\n[dive](https://github.com/wagoodman/dive) makes waste visible. It walks an image layer by layer, shows what each layer adds, and estimates wasted space. Install it with `brew install dive`. With `CI=true` it prints a pass or fail report, and for the two-step image it said: efficiency 14%, 50 MB wasted in `/big.bin`, FAIL.\n\n`docker image ls` shows two sizes on current Docker. CONTENT SIZE is the compressed data, close to what you download and push. DISK USAGE also counts the unpacked copy on disk, so it is bigger.\n\nImage size costs you in three places:\n\n- Every deploy and every CI run pulls the image.\n- It takes disk space on every machine that runs it.\n- Every extra package is one more thing to patch.",
+     "h": "Deleting a file never makes the box lighter",
+     "body": "Suppose one `RUN` step creates a 50 MB file, and the next `RUN` step deletes it. The second layer only adds a whiteout. The 50 MB still sit in the first layer and ship with every pull.\n\nWe built both versions on `alpine:3.22`. The image that created and deleted the file in two steps had a content size of 53.8 MB. The one that did both in a single `RUN` had 3.8 MB. That is about fourteen times bigger, for a file nobody can even see. There are two fixes:\n\n- Create and clean up in the same `RUN`, joined with `&&`.\n- Use a multi-stage build (Day 22) and copy only the results into a fresh stage.\n\n**A delete in a later step only hides the file. Clean up in the same step.**\n\n[dive](https://github.com/wagoodman/dive) makes waste visible. It walks an image layer by layer, shows what each layer adds, and estimates wasted space. Install it with `brew install dive`. With `CI=true` it prints a pass or fail report, and for the two-step image it said: efficiency 14%, 50 MB wasted in `/big.bin`, FAIL.\n\n`docker image ls` shows two sizes on current Docker. CONTENT SIZE is the compressed data, close to what you download and push. DISK USAGE also counts the unpacked copy on disk, so it is bigger.\n\nImage size costs you in three places:\n\n- Every deploy and every CI run pulls the image.\n- It takes disk space on every machine that runs it.\n- Every extra package is one more thing to patch.\n\nSo far we have looked at images on your own machine. Most of the time, though, they live somewhere else.",
      "refs": [
       {
        "title": "dive: a tool for exploring image layers (GitHub)",
@@ -498,8 +499,8 @@
      ]
     },
     {
-     "h": "Registries, repositories, tags and digests",
-     "body": "A registry stores images and hands them out. You will meet:\n\n- Docker Hub (`docker.io`), the default\n- GitHub Container Registry (`ghcr.io`), next to your code on GitHub\n- cloud registries: Amazon ECR, Azure Container Registry and Google Artifact Registry\n- a registry you run yourself, such as the `registry:3` image in the worked example\n\nA full image name can have five parts, as in `ghcr.io/ana/hello-devops:1.0.0@sha256:...`: the registry, a namespace (user or organisation), the repository, a tag and a digest. Leave parts out and Docker fills in defaults, so `nginx` means `docker.io/library/nginx:latest`. The `library` namespace holds Docker Official Images.\n\nA tag is a movable label. Anyone who can push can point `1.0` at a different image tomorrow, and the worked example does just that.\n\nAn image's digest is the hash of its manifest, and that one hash pins every byte. The manifest lists the config and each layer by digest. Change one byte in a layer, and that layer's digest changes, so the manifest changes, and so does its digest. `docker pull nginx@sha256:...` gives you the same bytes every time. Teams pin digests in deploy files so the image they tested is the image that runs. A tag works like a git branch name from Day 8, a pointer that moves, and a digest like a commit SHA.\n\nPublishing takes three commands: `docker login` to the registry, `docker tag` to give the image its full name, and `docker push`. The push prints the digest on its last line. Day 22 pushes hello-devops to ghcr.io.\n\nDocker Hub limits pulls per 6 hours: 100 without signing in, counted per IP address, and 200 when you are signed in.",
+     "h": "Registries, tags and digests: the shop and its labels",
+     "body": "A registry stores images and hands them out, like a shop that stocks sealed lunchboxes. You will meet:\n\n- Docker Hub (`docker.io`), the default\n- GitHub Container Registry (`ghcr.io`), next to your code on GitHub\n- cloud registries: Amazon ECR, Azure Container Registry and Google Artifact Registry\n- a registry you run yourself, such as the `registry:3` image in the worked example\n\nA full image name can have five parts, as in `ghcr.io/ana/hello-devops:1.0.0@sha256:...`: the registry, a namespace (user or organisation), the repository (one image's shelf), a tag and a digest. Leave parts out and Docker fills in defaults, so `nginx` means `docker.io/library/nginx:latest`. The `library` namespace holds Docker Official Images.\n\nA tag is a movable label, a sticker on the shelf. Anyone who can push can point `1.0` at a different image tomorrow, and the worked example does just that.\n\nAn image's digest is the hash of its manifest, and that one hash pins every byte. The manifest lists the config and each layer by digest. Change one byte in a layer, and that layer's digest changes, so the manifest changes, and so does its digest. `docker pull nginx@sha256:...` gives you the same bytes every time. Teams pin digests in deploy files so the image they tested is the image that runs. A tag works like a git branch name from Day 8, a pointer that moves, and a digest like a commit SHA.\n\n**Tags move and digests don't. Deploy the digest you tested.**\n\nPublishing takes three commands: `docker login` to the registry, `docker tag` to give the image its full name, and `docker push`. The push prints the digest on its last line. Day 22 pushes hello-devops to ghcr.io.\n\nDocker Hub limits pulls per 6 hours: 100 without signing in, counted per IP address (your internet address), and 200 when you are signed in.\n\nOne name, one image? Not quite. Your Mac and a cloud server can pull the same name and get different bytes.",
      "refs": [
       {
        "title": "Docker concepts: What is a registry?",
@@ -515,7 +516,7 @@
     },
     {
      "h": "One name, many CPUs: the image index",
-     "body": "A multi-platform image adds one more JSON file on top: an image index, also called a manifest list. It lists one manifest per platform, meaning an operating system plus a CPU type. When you pull, the registry sends the index first, and Docker picks the manifest for your machine. On your Mac that is `linux/arm64`.\n\n`docker buildx imagetools inspect python:3.14-slim` reads the index straight from the registry without pulling anything. On the day we checked, it listed eight platforms, among them `linux/amd64`, `linux/arm64/v8`, `linux/arm/v7` and `linux/s390x`. Next to each platform sat an entry marked `unknown/unknown`. Those are attestations: records of how the image was built, which Docker's builder adds by default. Day 63 uses them.\n\nIf your CPU is missing from the index, the image runs only through emulation, or not at all, and fails with `exec format error`. The worked example builds a small two-platform image and shows its index.\n\nDocker Engine 29 also changed where images live. Fresh installs and Docker Desktop use the containerd image store. That means containerd, the helper program from Day 17, keeps the images, and it can hold several platforms of one image. `docker image ls --tree` shows them as a tree under each name.",
+     "body": "Remember from Day 17 that a program is built for one CPU type. A multi-platform image adds one more JSON file on top: an image index, also called a manifest list. It lists one manifest per platform, meaning an operating system plus a CPU type. When you pull, the registry sends the index first, and Docker picks the manifest for your machine. On your Mac that is `linux/arm64`.\n\n`docker buildx imagetools inspect python:3.14-slim` reads the index straight from the registry without pulling anything. On the day we checked, it listed eight platforms, among them `linux/amd64`, `linux/arm64/v8`, `linux/arm/v7` and `linux/s390x`. Next to each platform sat an entry marked `unknown/unknown`. Those are attestations: records of how the image was built, which Docker's builder adds by default. Day 63 uses them.\n\nIf your CPU is missing from the index, the image runs only through emulation, or not at all, and fails with `exec format error`. The worked example builds a small two-platform image and shows its index, so you can watch Docker write one manifest per platform and a list that ties them together.\n\nNow you can read any image. The last question is which ones to trust.",
      "refs": [
       {
        "title": "Multi-platform builds",
@@ -535,8 +536,8 @@
      ]
     },
     {
-     "h": "Official images and Docker Hardened Images",
-     "body": "Every image you build starts from someone else's image, and everything in that base ships inside yours, old packages with known bugs included. So pick bases you can trust. On Docker Hub, look for these labels:\n\n- Docker Official Images, such as `python`, `nginx` and `redis`, in the `library` namespace.\n- Verified Publisher images, which software vendors publish themselves.\n\nDocker Hardened Images (DHI) are a newer option. Docker sold them from May 2025 and made the catalog free and open source, under the Apache 2.0 licence, in December 2025. From Docker's docs:\n\n- They come from `dhi.io`. You run `docker login dhi.io` with a free Docker account, then pull images such as `dhi.io/python:3.13`.\n- Runtime images are distroless: no shell and no package manager, and they run as a non-root user by default.\n- `-dev` variants add a shell and package manager for build stages.\n- Every image comes with signed records of what is inside it and how it was built.\n\nDocker says this approach cuts the attack surface, the code an attacker could try to use, by up to 95%. That figure is Docker's own claim, not an independent measurement. Day 22 shows how a hardened base would change the hello-devops Dockerfile.",
+     "h": "Choosing a base you can trust: official and hardened images",
+     "body": "You would not build a packed lunch on food from an unlabelled jar. Every image you build starts from someone else's image, and everything in that base ships inside yours, old packages with known bugs included. So pick bases you can trust. On Docker Hub, look for these labels:\n\n- Docker Official Images, such as `python`, `nginx` and `redis`, in the `library` namespace.\n- Verified Publisher images, which software vendors publish themselves.\n\nDocker Hardened Images (DHI) are a newer option. Docker sold them from May 2025 and made the catalog free and open source, under the Apache 2.0 licence, in December 2025. From Docker's docs:\n\n- They come from `dhi.io`. You run `docker login dhi.io` with a free Docker account, then pull images such as `dhi.io/python:3.13`.\n- Runtime images are distroless: no shell and no package manager (the tool that installs software). They run as a non-root user by default, not as the all-powerful root account.\n- `-dev` variants add a shell and package manager for build stages.\n- Every image comes with signed records of what is inside it and how it was built.\n\nDocker says this approach cuts the attack surface, the code an attacker could try to use, by up to 95%. That figure is Docker's own claim, not an independent measurement. Day 22 shows how a hardened base would change the hello-devops Dockerfile.\n\nToday's limit is that every image you used was built by someone else. You can open them, weigh them and pin them, but not yet pack your own. Day 19 does exactly that.",
      "refs": [
       {
        "title": "Docker Hardened Images",
@@ -551,9 +552,8 @@
      ]
     }
    ],
-   "analogy": "An image works like a stack of transparent sheets on an overhead projector. Each sheet adds some drawings, and the screen shows all of them at once; the sheets are the layers. A container adds one blank sheet on top for its own notes. To erase a line on a lower sheet, you can only stick a white patch over it on a higher sheet. The line is hidden but still there, and the stack is no lighter. A real sheet can sit in only one stack at a time, though, while Docker puts the same layer into many images at once.",
    "diagram": "<svg viewBox=\"0 0 560 246\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A tag points to an image index, which points to one manifest per CPU type; a manifest lists a config and read-only layers; a running container adds one writable layer on top\"><rect class=\"bx\" x=\"8\" y=\"12\" width=\"200\" height=\"38\" rx=\"10\"/><text class=\"t\" x=\"108\" y=\"36\" font-size=\"13\" text-anchor=\"middle\">tag: nginx:latest</text><line class=\"ln\" x1=\"108\" y1=\"50\" x2=\"108\" y2=\"70\" marker-end=\"url(#ar)\"/><rect class=\"bxp\" x=\"8\" y=\"74\" width=\"200\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"108\" y=\"98\" font-size=\"13\" text-anchor=\"middle\">image index</text><line class=\"ln\" x1=\"108\" y1=\"112\" x2=\"108\" y2=\"132\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"118\" y=\"126\" font-size=\"11\" text-anchor=\"start\">pick arm64</text><rect class=\"bxp\" x=\"8\" y=\"136\" width=\"200\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"108\" y=\"160\" font-size=\"13\" text-anchor=\"middle\">manifest</text><line class=\"ln\" x1=\"108\" y1=\"174\" x2=\"108\" y2=\"194\" marker-end=\"url(#ar)\"/><rect class=\"bx\" x=\"8\" y=\"198\" width=\"200\" height=\"38\" rx=\"10\"/><text class=\"t\" x=\"108\" y=\"222\" font-size=\"13\" text-anchor=\"middle\">config + layers</text><line class=\"ln\" x1=\"208\" y1=\"217\" x2=\"296\" y2=\"190\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"300\" y=\"12\" width=\"240\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"420\" y=\"36\" font-size=\"13\" text-anchor=\"middle\">container layer (writable)</text><rect class=\"bxt\" x=\"300\" y=\"62\" width=\"240\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"420\" y=\"86\" font-size=\"13\" text-anchor=\"middle\">layer: COPY app.py</text><rect class=\"bxt\" x=\"300\" y=\"112\" width=\"240\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"420\" y=\"136\" font-size=\"13\" text-anchor=\"middle\">layer: RUN pip install</text><rect class=\"bxg\" x=\"300\" y=\"162\" width=\"240\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"420\" y=\"186\" font-size=\"13\" text-anchor=\"middle\">layers: base image</text><text class=\"ts\" x=\"420\" y=\"224\" font-size=\"11\" text-anchor=\"middle\">read-only, shared by images</text></svg>",
-   "diagram_caption": "A tag points to an index, the index to one manifest per CPU, and the manifest to read-only layers; a container adds a writable layer.",
+   "diagram_caption": "A tag points to an index, the index to one manifest per CPU, and the manifest to read-only layers; a container adds a writable layer on top.",
    "worked": {
     "title": "Watch a tag move while a digest stays put",
     "steps": [
@@ -568,7 +568,7 @@
       "lang": "console"
      },
      {
-      "say": "Now build v2 and push it under the same tag. The base layer is already in the registry, so the push skips it. The tag `1.0` now points to a new digest.",
+      "say": "Now build v2 and push it under the same tag. The base layer is already in the registry, so the push skips it. The tag `1.0` now points to a new digest: the shop moved the sticker.",
       "code": "$ docker build -q -t localhost:5001/hello:1.0 v2\nsha256:31c88da083896adc01373800d81547da15811c1b99ce59d6fa5f026cfda664ea\n$ docker push localhost:5001/hello:1.0\nThe push refers to repository [localhost:5001/hello]\n63e7e49699e8: Layer already exists\nd61d93a110d9: Pushed\n44136fa355b3: Already exists\n1.0: digest: sha256:31c88da083896adc01373800d81547da15811c1b99ce59d6fa5f026cfda664ea size: 855",
       "lang": "console"
      },
@@ -672,8 +672,7 @@
      "what": "Run a private registry on your Mac for practice."
     }
    ],
-   "mistake": "A `RUN rm -rf /var/lib/apt/lists/*` on its own line looks as if it slims the image, and it saves nothing. The files are hidden but still stored in the earlier layer. Clean up in the same `RUN` that created the files, or build in one stage and copy only the results into a fresh one.",
-   "real_world": "A deploy file that says `payments-api:latest` can run a different build every time it pulls. So CI pushes each build with a version tag, and the deploy file pins the digest that CI printed. What ran in tests is then byte for byte what runs in production. A weekly job rebuilds base images, and a pull request updates the pinned digests, so nobody gets a new base by surprise.",
+   "real_world": "A deploy file that says `payments-api:latest` can run a different build every time it pulls. So CI pushes each build with a version tag, and the deploy file pins the digest that CI printed. What ran in tests is then byte for byte what runs in production. A weekly job rebuilds base images, and a pull request (a proposed change that teammates review) updates the pinned digests, so nobody gets a new base by surprise.",
    "task": {
     "title": "Find the waste in an image, then remove it",
     "steps": [
@@ -703,7 +702,7 @@
     "A container adds one writable layer; the first write to an image file copies it up.",
     "Deleting a file in a later layer hides it but never shrinks the image.",
     "Tags move and digests do not; pin a digest when you need the exact same image.",
-    "An image index holds one manifest per CPU type, and Docker picks yours when it pulls."
+    "An image index holds one manifest per CPU type; so far, though, every image came from someone else."
    ],
    "check": [
     {
@@ -756,7 +755,7 @@
    ],
    "deeper": {
     "minutes": 15,
-    "body": "A registry is just a web server with a small HTTP API, so you can read an image by hand with curl. Day 11's HTTP skills apply directly. Start the registry from the worked example again and push the two-platform `hello:multi` image to it.\n\nFirst ask for the index. The `Accept` header tells the registry which JSON format you want:\n\n`curl -s -H 'Accept: application/vnd.oci.image.index.v1+json' localhost:5001/v2/hello/manifests/multi | jq '.manifests[].platform.architecture'`\n\nWhen we did this, the answer listed `amd64`, `arm64` and two `unknown` entries, which are the attestations. Each entry also has a `digest`. Copy the arm64 digest and ask for that manifest, this time with the header `Accept: application/vnd.oci.image.manifest.v1+json`, at `localhost:5001/v2/hello/manifests/<digest>`. The manifest names one config digest and two layer digests: the Alpine base and the layer that holds `hello.txt`.\n\nFinally fetch the config itself from `localhost:5001/v2/hello/blobs/<config digest>` and pipe it into `jq '{architecture, os}'`. Ours said `\"architecture\": \"arm64\"` and `\"os\": \"linux\"`, with the command `cat /hello.txt`. Every object came from a URL that ends in its own digest, so the client can hash what it got and check it against the name it asked for.\n\nTwo more details explain output you will see on current Docker.\n\n- With the containerd image store, an image's ID is the digest of its index. So `docker build` output ends with `exporting manifest list sha256:...` and `docker history` shows the same first 12 characters.\n- `docker image ls` on Engine 29 hides untagged images and collapses platforms; add `--all` or `--tree` to see everything.\n\nThe [OverlayFS driver page](https://docs.docker.com/engine/storage/drivers/overlayfs-driver/) shows how the layers become one folder tree on disk."
+    "body": "A registry is just a web server with a small HTTP API, so you can read an image by hand with curl. Day 11's HTTP skills apply directly. Start the registry from the worked example again and push the two-platform `hello:multi` image to it.\n\nFirst ask for the index. The `Accept` header tells the registry which JSON format you want:\n\n`curl -s -H 'Accept: application/vnd.oci.image.index.v1+json' localhost:5001/v2/hello/manifests/multi | jq '.manifests[].platform.architecture'`\n\nWhen we did this, the answer listed `amd64`, `arm64` and two `unknown` entries, which are the attestations. Each entry also has a `digest`. Copy the arm64 digest and ask for that manifest, this time with the header `Accept: application/vnd.oci.image.manifest.v1+json`, at `localhost:5001/v2/hello/manifests/<digest>`. The manifest names one config digest and two layer digests: the Alpine base and the layer that holds `hello.txt`.\n\nFinally fetch the config itself from `localhost:5001/v2/hello/blobs/<config digest>` and pipe it into `jq '{architecture, os}'`. Ours said `\"architecture\": \"arm64\"` and `\"os\": \"linux\"`, with the command `cat /hello.txt`. Every object came from a URL that ends in its own digest, so the client can hash what it got and check it against the name it asked for.\n\nA few more details explain output you will see on current Docker.\n\n- Docker Engine 29 changed where images live. Fresh installs and Docker Desktop use the containerd image store. That means containerd, the helper program from Day 17, keeps the images, and it can hold several platforms of one image. `docker image ls --tree` shows them as a tree under each name.\n- With the containerd image store, an image's ID is the digest of its index. So `docker build` output ends with `exporting manifest list sha256:...` and `docker history` shows the same first 12 characters.\n- `docker image ls` on Engine 29 hides untagged images and collapses platforms; add `--all` or `--tree` to see everything.\n\nThe [OverlayFS driver page](https://docs.docker.com/engine/storage/drivers/overlayfs-driver/) shows how the layers become one folder tree on disk."
    },
    "sources": [
     {
@@ -775,15 +774,17 @@
      "title": "Docker Hardened Images",
      "url": "https://docs.docker.com/dhi/"
     }
-   ]
+   ],
+   "closing": "We started with a lunchbox that stayed heavy after the soup was \"removed\". Now you know why: a later layer can hide a file but never take it out, and you saw the 53.8 MB against 3.8 MB to prove it. Before you move on, run `docker history` on an image you use often and look for a big row followed by a small one that deletes something. That pair is wasted space.\n\nNext, we'll stop opening other people's boxes and pack our own. How do you write a Dockerfile that builds fast and stays small?"
   },
   {
    "id": "d19",
    "title": "Dockerfiles: package your own app",
    "minutes": 50,
    "goal": "By the end you can write a Dockerfile for hello-devops, explain every instruction in it, order the steps so rebuilds are fast, and choose between CMD and ENTRYPOINT.",
+   "opening": "Picture packing your lunch every morning from a written list. Cook the rice, which takes forty minutes. Add the curry. Pack a napkin. One morning you want a blue napkin instead of a white one, and your list has a strange rule: change any step, and you must redo every step after it. If the napkin line came first, you would cook the rice again just to swap a napkin.\n\nDocker's recipe for an image has exactly that rule, and the trap is easy to walk into, because the slow way and the fast way contain the same lines. Only the order differs. Last time, you opened other people's images and saw their layers. In this lesson, we'll write our own recipe, a Dockerfile, for hello-devops. That is the course's tiny web app, which answers every visit with a greeting and a count of visits so far. We'll order it so a code change rebuilds in under a second, and make sure the app stops politely when asked.\n\nBefore we start, make a guess, and keep it in mind.",
    "guess": {
-    "q": "A Dockerfile does `COPY . .` and then `RUN pip install -r requirements.txt`. You change one comment in app.py and rebuild. What happens?",
+    "q": "A Dockerfile does `COPY . .` (copy every file in the folder) and then `RUN pip install -r requirements.txt` (install the app's packages, the slow step). You change one comment in app.py and rebuild. What happens?",
     "options": [
      "Only app.py is copied again; pip install is reused",
      "pip install runs again, because a layer above it changed",
@@ -791,7 +792,7 @@
      "Nothing changes until you delete the old image"
     ],
     "answer": 1,
-    "why": "A changed layer invalidates every layer after it, and `COPY . .` changes whenever any file changes. Copy requirements.txt and install first, then copy the code, so code edits skip the slow install."
+    "why": "A changed layer invalidates every layer after it, and `COPY . .` changes whenever any file changes. Copy requirements.txt and install first, then copy the code, so code edits skip the slow install: the napkin goes at the end of the list."
    },
    "terms": [
     {
@@ -812,11 +813,11 @@
     },
     {
      "term": "Exec form",
-     "plain": "Writing CMD or ENTRYPOINT as a JSON list, so the program runs directly as PID 1 with no shell in between."
+     "plain": "Writing CMD or ENTRYPOINT as a list in square brackets, so the program runs directly as PID 1 with no shell in between."
     },
     {
      "term": "ENTRYPOINT",
-     "plain": "The fixed program a container runs; arguments from docker run are added after it."
+     "plain": "The fixed program a container runs; words typed after the image name in docker run are added after it."
     },
     {
      "term": "Build argument",
@@ -825,8 +826,8 @@
    ],
    "sections": [
     {
-     "h": "A Dockerfile is a recipe Docker follows from top to bottom",
-     "body": "Docker builds an image by following a plain text file named `Dockerfile`. It runs the instructions in order, and each one starts from the result of the one before. Each instruction that changes files adds a layer, the same kind of layer you inspected on Day 18.\n\nEach `RUN` step runs in a container of its own. The builder starts a temporary container from the layers built so far, runs the command in it, and saves the files that changed as the next layer. So `RUN pip install -r requirements.txt` sees only what earlier steps put in the image. If no `COPY` brought `requirements.txt` in first, pip cannot find it.\n\nYou build with `docker build -t hello-devops:1.0.0 .`. The `-t` flag names and tags the result, and the final dot is the build context, which has its own section below. The builder behind `docker build` is called BuildKit. It is the default in Docker Desktop and Docker Engine, and it is the program that prints the `[+] Building` progress you will see in the worked example.\n\nToday you write a Dockerfile with one stage that runs as root. It is the right first step, because every line is easy to see. Day 22 turns it into the multi-stage, non-root version that the lab ships.",
+     "h": "A packing list Docker follows from the top",
+     "body": "Docker builds an image by following a plain text file named `Dockerfile`. It runs the instructions in order, and each one starts from the result of the one before. Each instruction that changes files adds a layer, the same kind of read-only layer you inspected on Day 18.\n\nEach `RUN` step runs in a container of its own. The builder starts a temporary container from the layers built so far, runs the command in it, and saves the files that changed as the next layer. So `RUN pip install -r requirements.txt` sees only what earlier steps put in the image. pip is Python's package installer, and `requirements.txt` is the app's list of packages. If no `COPY` brought `requirements.txt` in first, pip cannot find it.\n\nYou build with `docker build -t hello-devops:1.0.0 .`. The `-t` flag names and tags the result, and the final dot is the build context, which has its own section below. The builder behind `docker build` is called BuildKit. It is the default in Docker Desktop and Docker Engine, and it prints the `[+] Building` progress you will see in the worked example.\n\nToday you write a Dockerfile with one stage that runs as root, the all-powerful user. It is the right first step, because every line is easy to see. Day 22 turns it into the multi-stage, non-root version that the lab ships.\n\nFirst, the words you can write on the list.",
      "refs": [
       {
        "title": "Docker concepts: Writing a Dockerfile",
@@ -841,8 +842,8 @@
      ]
     },
     {
-     "h": "The instructions you will use",
-     "body": "Most Dockerfiles use a handful of instructions:\n\n- `FROM` picks the base image to start from, such as `python:3.14-slim`.\n- `WORKDIR` sets and creates the folder later steps work in, so `COPY app.py .` lands in `/app`, not `/`.\n- `COPY` copies files from the build context into the image. `ADD` can also fetch URLs and unpack archives; prefer `COPY` unless you need that.\n- `RUN` runs a command at build time, such as `pip install`, and saves the result as a layer.\n- `ENV` sets an environment variable for later steps and for the running container.\n- `ARG` declares a variable that exists only during the build.\n- `EXPOSE` documents the port the app listens on. It publishes nothing; `-p` does that.\n- `CMD` and `ENTRYPOINT` set what the container runs when it starts.\n\nDay 22 adds `USER`, which picks the user the app runs as, and `HEALTHCHECK`, which tells Docker how to test the app. You will also see `LABEL`, which adds key and value notes to the image, such as a link to its source repo.\n\nRead the Day 19 Dockerfile in the Files section with this list next to it. Every line is one of these instructions, with a comment that says why it is there.",
+     "h": "The handful of instructions you'll use",
+     "body": "Most Dockerfiles use a handful of instructions. Keep this list next to the Day 19 Dockerfile in the Files section, because you will come back to it:\n\n- `FROM` picks the base image to start from, such as `python:3.14-slim`.\n- `WORKDIR` sets and creates the folder later steps work in, so `COPY app.py .` lands in `/app`, not `/`.\n- `COPY` copies files from the build context into the image. `ADD` can also fetch URLs and unpack archives; prefer `COPY` unless you need that.\n- `RUN` runs a command at build time, such as `pip install`, and saves the result as a layer.\n- `ENV` sets an environment variable (a named setting) for later steps and for the running container.\n- `ARG` declares a variable that exists only during the build.\n- `EXPOSE` documents the port the app listens on. It publishes nothing; `-p` does that.\n- `CMD` and `ENTRYPOINT` set what the container runs when it starts.\n\nDay 22 adds `USER`, which picks the user the app runs as, and `HEALTHCHECK`, which tells Docker how to test the app. You will also see `LABEL`, which adds key and value notes to the image, such as a link to its source repo.\n\nEvery line of the Day 19 Dockerfile is one of these instructions, with a comment that says why it is there. The first one to look at closely is `COPY`, because it can only reach so far.",
      "refs": [
       {
        "title": "Dockerfile reference",
@@ -852,8 +853,8 @@
      ]
     },
     {
-     "h": "The build context and .dockerignore",
-     "body": "The dot in `docker build -t hello-devops:1.0.0 .` is the **build context**: the folder whose files the build may use. The builder runs inside Docker's Linux VM, not on your Mac. The `docker` command gives it this one folder, and the builder loads files from it as it needs them. Nothing outside it exists for the build, so `COPY ../secrets.txt .` fails. Docker also looks for the file named `Dockerfile` in that folder, unless you name another one with `-f`.\n\nA `.dockerignore` file in that folder lists files the build must never see, with patterns like `.gitignore`. The lab's file keeps out:\n\n- `.git` and `.github`, the repo's history and workflows\n- `.venv` and Python caches, which belong to your Mac only\n- folders for later days, such as `infra`, `k8s` and `chart`\n- Markdown files, which the app does not need\n\nOur Dockerfile copies two files by name, so for now the ignore file is a safety net. It starts to matter the day someone writes `COPY . .`. In a test, a folder with a 10 MB `.venv` sent `10.00MB` of context to the builder on every build. After adding `.venv` to `.dockerignore`, the same build sent 100 bytes. Without the ignore file, `COPY . .` would also bake your `.git` folder and any local secret files into the image.",
+     "h": "What the builder can see: the build context and .dockerignore",
+     "body": "The dot in `docker build -t hello-devops:1.0.0 .` is the build context: the folder whose files the build may use. The builder runs inside Docker's Linux VM, not on your Mac. The `docker` command gives it this one folder, and the builder loads files from it as it needs them. Nothing outside it exists for the build, so `COPY ../secrets.txt .` fails. Docker also looks for the file named `Dockerfile` in that folder, unless you name another one with `-f`.\n\nA `.dockerignore` file in that folder lists files the build must never see, with patterns like `.gitignore` (Day 8). The lab's file keeps out:\n\n- `.git` and `.github`, the repo's history and workflows\n- `.venv` and Python caches, which belong to your Mac only\n- folders for later days, such as `infra`, `k8s` and `chart`\n- Markdown files, which the app does not need\n\nOur Dockerfile copies two files by name, so for now the ignore file is a safety net. It starts to matter the day someone writes `COPY . .`. In a test, a folder with a 10 MB `.venv` sent `10.00MB` of context to the builder on every build. After adding `.venv` to `.dockerignore`, the same build sent 100 bytes. Without the ignore file, `COPY . .` would also bake your `.git` folder and any local secret files into the image.\n\nThe context decides what the builder sees. The cache decides what it has to redo.",
      "refs": [
       {
        "title": "Build context",
@@ -864,7 +865,7 @@
     },
     {
      "h": "The build cache, and why order matters",
-     "body": "Docker keeps every layer it builds in its build cache. On the next build it checks each instruction in order. If the instruction and everything before it are unchanged, Docker reuses the saved layer and prints `CACHED`. If something changed, Docker rebuilds that layer and every layer after it, even ones whose instructions did not change. The second half has a reason: each layer holds the changes one step made on top of the exact layers below it. If a lower layer changes, Docker cannot know whether a later `RUN pip install` would give the same result without running it again.\n\nWhat counts as changed depends on the instruction:\n\n- For `COPY` and `ADD`, Docker checks the contents of the files. Their modification time is ignored, so `touch app.py` changes nothing.\n- For `RUN`, Docker only compares the command text. `RUN apt-get update` stays cached for months, even if new packages exist.\n\nSo order the steps from rarely changed to often changed:\n\n1. `FROM` the base image.\n2. `COPY requirements.txt` on its own.\n3. `RUN pip install`, the slow step.\n4. `COPY app.py`, which changes all the time.\n\nWith this order, a code edit rebuilds only the last small layer. In the worked example that rebuild takes 0.3 seconds, against about 10 seconds for a fresh pip install.",
+     "body": "Docker keeps every layer it builds in its build cache. On the next build it checks each instruction in order. If the instruction and everything before it are unchanged, Docker reuses the saved layer and prints `CACHED`. If something changed, Docker rebuilds that layer and every layer after it, even ones whose instructions did not change. That is the packing list's strange rule from the opening, and it has a reason. Each layer holds the changes one step made on top of the exact layers below it. If a lower layer changes, Docker cannot know whether a later `RUN pip install` would give the same result without running it again.\n\nWhat counts as changed depends on the instruction:\n\n- For `COPY` and `ADD`, Docker checks the contents of the files. Their modification time is ignored, so `touch app.py` changes nothing.\n- For `RUN`, Docker only compares the command text. `RUN apt-get update` stays cached for months, even if new packages exist.\n\nThe naive order is `COPY . .` and then `RUN pip install`. Every code edit, even a comment, changes the copied files, so pip reinstalls every package. The hands-on task makes you watch it happen. Order the steps from rarely changed to often changed instead:\n\n1. `FROM` the base image.\n2. `COPY requirements.txt` on its own.\n3. `RUN pip install`, the slow step.\n4. `COPY app.py`, which changes all the time.\n\nWith this order, a code edit rebuilds only the last small layer. In the worked example that rebuild takes 0.3 seconds, against about 10 seconds for a fresh pip install, roughly thirty times faster.\n\n**Put what changes least at the top. Copy the code last.**\n\nThe image now builds fast. The next question is what it does when it starts, and when it is asked to stop.",
      "refs": [
       {
        "title": "Docker concepts: Using the build cache",
@@ -885,7 +886,7 @@
     },
     {
      "h": "CMD, ENTRYPOINT and who is PID 1",
-     "body": "`CMD` and `ENTRYPOINT` both say what runs when a container starts. They differ in how `docker run` arguments treat them:\n\n- `CMD` is a default. Anything you type after the image name replaces it.\n- `ENTRYPOINT` is fixed. Anything you type after the image name is added to it as arguments.\n- With both, `ENTRYPOINT` is the program and `CMD` gives its default arguments.\n\nA tiny image with `ENTRYPOINT [\"echo\", \"Hello,\"]` and `CMD [\"world\"]` shows it. `docker run greeter` printed `Hello, world`, and `docker run greeter Ana` printed `Hello, Ana`. `--entrypoint` swaps the program itself. For a web app, `CMD` alone is the simple choice.\n\nWrite both in exec form, a JSON list such as `[\"gunicorn\", \"app:app\"]`. Then your app runs directly as PID 1 and receives the SIGTERM from `docker stop`. In shell form, `CMD gunicorn app:app`, Docker runs `/bin/sh -c \"gunicorn app:app\"`. The shell becomes PID 1 and does not pass SIGTERM on. We measured both. The shell-form container needed 10.2 seconds to stop and ended with code 137. The exec-form one stopped in 0.6 seconds with code 0.\n\nPID 1 is also special in Linux. The kernel drops any signal that PID 1 has no handler for, SIGKILL aside. `sleep` sets up no handler, which is why it ignored SIGTERM on Day 17. So exec form is only half the fix, and the app must also handle SIGTERM itself. Gunicorn does. A bare Python script does not: as PID 1 it waited out the full 10 seconds in our test, just like `sleep`.",
+     "body": "`CMD` and `ENTRYPOINT` both say what runs when a container starts. They differ in how the words you type after the image name in `docker run` treat them:\n\n- `CMD` is a default. Anything you type after the image name replaces it.\n- `ENTRYPOINT` is fixed. Anything you type after the image name is added to it as arguments.\n- With both, `ENTRYPOINT` is the program and `CMD` gives its default arguments.\n\nA tiny image with `ENTRYPOINT [\"echo\", \"Hello,\"]` and `CMD [\"world\"]` shows it. `docker run greeter` printed `Hello, world`, and `docker run greeter Ana` printed `Hello, Ana`. `--entrypoint` swaps the program itself. For a web app, `CMD` alone is the simple choice.\n\nWrite both in exec form, a JSON list such as `[\"gunicorn\", \"app:app\"]`. Then your app runs directly as PID 1 (the container's first process) and receives the SIGTERM from `docker stop`. In shell form, `CMD gunicorn app:app`, Docker runs `/bin/sh -c \"gunicorn app:app\"`. The shell becomes PID 1 and does not pass SIGTERM on. We measured both. The shell-form container needed 10.2 seconds to stop and ended with code 137. The exec-form one stopped in 0.6 seconds with code 0.\n\nPID 1 is also special in Linux. A handler is code that reacts to a signal. The kernel drops any signal that PID 1 has no handler for, SIGKILL aside. `sleep` sets up no handler, which is why it ignored SIGTERM on Day 17. So exec form is only half the fix, and the app must also handle SIGTERM itself. Gunicorn, the web server that runs hello-devops, does. A bare Python script does not: as PID 1 it waited out the full 10 seconds in our test, just like `sleep`.\n\nThe app starts and stops cleanly. What it says when it starts comes from its settings.",
      "refs": [
       {
        "title": "Build check: JSONArgsRecommended",
@@ -900,8 +901,8 @@
      ]
     },
     {
-     "h": "ARG, ENV and config from the environment",
-     "body": "`ARG` and `ENV` both set variables, at different times:\n\n- `ARG` exists only while the image builds. You set it with `--build-arg NAME=value`.\n- `ENV` is stored in the image and is present when the container runs. `docker run -e NAME=value` overrides it.\n\nA test image showed the difference. With `--build-arg BUILD_NOTE=hello`, a `RUN` step printed `at build time: hello`, and the running container printed `at run time: not set`. To keep a build value, copy it: `ARG APP_VERSION` followed by `ENV APP_VERSION=$APP_VERSION`, as our Dockerfile does.\n\nOne warning before you reach for either one: `docker history` shows ARG values in plain text, so never pass passwords or tokens this way. Day 22 shows the safe way.\n\nWhy put settings in the environment at all? [The Twelve-Factor App](https://12factor.net/config) is a well-known set of rules for web apps. Its config rule says to keep settings that change between deploys out of the code, in environment variables. Then one image runs in every environment, and only the variables differ. hello-devops reads four of them:\n\n- `APP_VERSION`, the version it reports\n- `GREETING`, the message it returns\n- `REDIS_HOST`, where Redis runs (empty means count in memory)\n- `PORT`, used only when you run `python app.py`\n\n`PYTHONUNBUFFERED=1` is not one of the app's settings. It makes Python print log lines at once, so `docker logs` shows them as they happen.",
+     "h": "ARG, ENV and settings from the environment",
+     "body": "`ARG` and `ENV` both set variables, at different times:\n\n- `ARG` exists only while the image builds. You set it with `--build-arg NAME=value`.\n- `ENV` is stored in the image and is present when the container runs. `docker run -e NAME=value` overrides it.\n\nA test image showed the difference. With `--build-arg BUILD_NOTE=hello`, a `RUN` step printed `at build time: hello`, and the running container printed `at run time: not set`. To keep a build value, copy it: `ARG APP_VERSION` followed by `ENV APP_VERSION=$APP_VERSION`, as our Dockerfile does.\n\nOne warning before you reach for either one: `docker history` shows ARG values in plain text, so never pass passwords or tokens this way. Day 22 shows the safe way.\n\nWhy put settings in the environment at all? [The Twelve-Factor App](https://12factor.net/config) is a well-known set of rules for web apps. Its config rule says to keep settings that change between deploys out of the code, in environment variables. Then one image runs in every environment, and only the variables differ. It is one lunchbox recipe with a note on top that says \"extra spicy\". hello-devops reads four of them:\n\n- `APP_VERSION`, the version it reports\n- `GREETING`, the message it returns\n- `REDIS_HOST`, where Redis runs (empty means count in memory)\n- `PORT`, used only when you run `python app.py`\n\n`PYTHONUNBUFFERED=1` is not one of the app's settings. It makes Python print log lines at once, so `docker logs` shows them as they happen.\n\nOne last group of habits keeps the finished image easy to find and the recipe easy to trust.",
      "refs": [
       {
        "title": "Build variables (ARG and ENV)",
@@ -917,7 +918,7 @@
     },
     {
      "h": "Tags, build checks and docker init",
-     "body": "Tag your own images with real versions, such as `1.0.0`; Day 23 explains version numbers. Leave the tag out and Docker uses `latest`, which only means whatever was built last. In `FROM`, name a specific base such as `python:3.14-slim`, never bare `python`, or your build gets whatever `latest` points to on the day you build. One image can carry several tags: `docker tag hello-devops:1.0.0 hello-devops:stable` adds a second name and copies nothing.\n\n`docker build --check .` lints a Dockerfile without building it. We ran it on a file with three common slips, and it named each with a line number:\n\n- `FromAsCasing`: `FROM ... as base` mixes upper and lower case\n- `LegacyKeyValueFormat`: `ENV GREETING Hello` should be `ENV GREETING=Hello`\n- `JSONArgsRecommended`: a shell-form `CMD`, with the signal problem from above\n\n`docker init`, which ships with Docker Desktop, writes a starter `Dockerfile`, `.dockerignore`, `compose.yaml` and `README.Docker.md` for a project. It has templates for Python, Go, Java, Node and more. It is a fine way to get a second opinion, but read every line before you keep it. Run it in an empty folder, because it overwrites files and you cannot get them back.",
+     "body": "Tag your own images with real versions, such as `1.0.0`; Day 23 explains version numbers. Leave the tag out and Docker uses `latest`, which only means whatever was built last. In `FROM`, name a specific base such as `python:3.14-slim`, never bare `python`, or your build gets whatever `latest` points to on the day you build. One image can carry several tags: `docker tag hello-devops:1.0.0 hello-devops:stable` adds a second name and copies nothing.\n\n`docker build --check .` lints a Dockerfile, which means it reads it for likely mistakes without building it. We ran it on a file with three common slips, and it named each with a line number:\n\n- `FromAsCasing`: `FROM ... as base` mixes upper and lower case\n- `LegacyKeyValueFormat`: `ENV GREETING Hello` should be `ENV GREETING=Hello`\n- `JSONArgsRecommended`: a shell-form `CMD`, with the signal problem from above\n\n`docker init`, which ships with Docker Desktop, writes a starter `Dockerfile`, `.dockerignore`, `compose.yaml` and `README.Docker.md` for a project. It has templates for Python, Go, Java, Node and more. It is a fine way to get a second opinion, but read every line before you keep it. Run it in an empty folder, because it overwrites files and you cannot get them back.\n\nThis Dockerfile has limits we'll fix later: it runs as root, and the app still runs alone, keeping its visit count in memory. Stop the container and the count is gone. Next, we give containers a place to keep data and a way to find each other.",
      "refs": [
       {
        "title": "Checking your build configuration (build checks)",
@@ -932,7 +933,6 @@
      ]
     }
    ],
-   "analogy": "Picture a layered cake, with the build cache as a fridge full of finished layers. Change only the decoration on top, and every lower layer comes out of the fridge ready. Change the sponge at the bottom, and every layer above it has to be baked again. A real baker could keep an upper layer after changing a lower one. Docker never does: everything after the first change gets rebuilt.",
    "diagram": "<svg viewBox=\"0 0 560 250\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Image layers stacked from FROM at the bottom to COPY app.py at the top; only the top layer is rebuilt after a code edit\"><rect class=\"bxo\" x=\"150\" y=\"16\" width=\"260\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"38\" font-size=\"13\" text-anchor=\"middle\">COPY app.py</text><rect class=\"bxt\" x=\"150\" y=\"62\" width=\"260\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"84\" font-size=\"13\" text-anchor=\"middle\">RUN pip install</text><rect class=\"bxt\" x=\"150\" y=\"108\" width=\"260\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"130\" font-size=\"13\" text-anchor=\"middle\">COPY requirements.txt</text><rect class=\"bxt\" x=\"150\" y=\"154\" width=\"260\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"176\" font-size=\"13\" text-anchor=\"middle\">WORKDIR /app</text><rect class=\"bxp\" x=\"150\" y=\"200\" width=\"260\" height=\"34\" rx=\"10\"/><text class=\"tk\" x=\"280\" y=\"222\" font-size=\"13\" text-anchor=\"middle\">FROM python:3.14-slim</text><text class=\"ts\" x=\"424\" y=\"37\" font-size=\"11\" text-anchor=\"start\">rebuilt</text><text class=\"ts\" x=\"424\" y=\"83\" font-size=\"11\" text-anchor=\"start\">cached</text><text class=\"ts\" x=\"424\" y=\"129\" font-size=\"11\" text-anchor=\"start\">cached</text><text class=\"ts\" x=\"424\" y=\"175\" font-size=\"11\" text-anchor=\"start\">cached</text><text class=\"ts\" x=\"424\" y=\"221\" font-size=\"11\" text-anchor=\"start\">base image</text><line class=\"ln\" x1=\"120\" y1=\"232\" x2=\"120\" y2=\"22\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"64\" y=\"130\" font-size=\"11\" text-anchor=\"middle\">build order</text></svg>",
    "diagram_caption": "Each instruction is a layer; after an edit to app.py, only the top layer is rebuilt.",
    "worked": {
@@ -944,7 +944,7 @@
       "lang": "console"
      },
      {
-      "say": "Run it like any other image: publish port 8000 and call two endpoints. The host field is the container's ID, because each container has its own hostname.",
+      "say": "Run it like any other image: publish port 8000 and call two endpoints (addresses the app answers). The host field is the container's ID, because each container has its own hostname.",
       "code": "$ docker run -d --name hello -p 8000:8000 hello-devops:1.0.0\na475b2e1c6e4632d86201b2adbb99a25ac940e4b8fbb1cb60c6b80a0af8de6cd\n$ curl -s localhost:8000\n{\"host\":\"a475b2e1c6e4\",\"message\":\"Hello, DevOps!\",\"version\":\"1.0.0\",\"visits\":1}\n$ curl -s localhost:8000/healthz\n{\"status\":\"ok\"}",
       "lang": "console"
      },
@@ -1038,7 +1038,6 @@
      "what": "Generate a starter Dockerfile, .dockerignore and compose.yaml (Docker Desktop; run it in an empty folder)."
     }
    ],
-   "mistake": "Putting `COPY . .` before `RUN pip install` ties the slow install to every file in the folder. Every code change, even a comment, then invalidates the cache and reinstalls every package, and any junk in the folder lands in the image. Copy only `requirements.txt` first, install, and copy the code last.",
    "real_world": "One misplaced COPY makes every build reinstall all dependencies, so reviewers check the order of Dockerfile lines closely. Each service keeps its Dockerfile in its own repo, next to the code, and changes to it go through code review. CI builds the image once per commit, and that same image moves from testing to production with only the environment variables changing.",
    "task": {
     "title": "Break the cache, leak a file, then fix both",
@@ -1062,7 +1061,7 @@
    },
    "explain_back": {
     "prompt": "Explain in 3 to 4 sentences why the order of lines in a Dockerfile matters for build speed, and why CMD should use exec form. Mention layers, the cache and PID 1.",
-    "answer": "Each Dockerfile instruction creates a layer, and Docker caches each layer. When an instruction or the files it copies change, Docker rebuilds that layer and every layer after it. So I copy requirements.txt and run pip install before I copy the code. A code change then rebuilds only the last small layer. I write CMD as a JSON list so my app runs as PID 1 and gets the SIGTERM from docker stop. With shell form, a shell sits in between and the container is killed after 10 seconds."
+    "answer": "Each Dockerfile instruction creates a layer, and Docker caches each layer. When an instruction or the files it copies change, Docker rebuilds that layer and every layer after it. So I copy requirements.txt and run pip install before I copy the code, and a code change then rebuilds only the last small layer. I write CMD as a JSON list so my app runs as PID 1 and gets the SIGTERM from docker stop. With shell form, a shell sits in between and the container is killed after 10 seconds."
    },
    "recap": [
     "A Dockerfile lists the steps that build an image; keep it in git next to the app.",
@@ -1070,11 +1069,11 @@
     "COPY checks file contents, not times; RUN only compares the command text.",
     "The build context is the folder you pass to docker build; .dockerignore keeps junk and secrets out.",
     "Use exec form for CMD and ENTRYPOINT, so the app is PID 1 and stops cleanly.",
-    "ARG exists only at build time and shows in the history; ENV reaches the running container."
+    "ARG exists only at build time and shows in the history; ENV reaches the running container. Today's image still runs as root and keeps no data."
    ],
    "check": [
     {
-     "q": "A Kotlin service's Dockerfile copies `build.gradle.kts`, downloads dependencies, then copies `src/` and compiles. Which change makes the next build slowest?",
+     "q": "A service written in Kotlin builds with Gradle, which lists its dependencies in `build.gradle.kts`. Its Dockerfile copies that file, downloads the dependencies, then copies the code folder `src/` and compiles. Which change makes the next build slowest?",
      "options": [
       "Editing one class in src/",
       "Running the same build twice in a row",
@@ -1093,7 +1092,7 @@
       "`curl --help` only"
      ],
      "answer": 0,
-     "why": "Arguments after the image name replace CMD and are added to the fixed ENTRYPOINT."
+     "why": "Words after the image name replace CMD and are added to the fixed ENTRYPOINT."
     },
     {
      "q": "A teammate's container takes exactly 10 seconds to stop every time and exits with 137. Its Dockerfile ends with `CMD python server.py`. What is the most likely fix?",
@@ -1110,7 +1109,7 @@
    "interview": [
     {
      "q": "What is the difference between CMD and ENTRYPOINT?",
-     "a": "Both define what runs when a container starts. ENTRYPOINT sets the program, and arguments given to `docker run` are added after it. CMD sets the default command or default arguments, and anything you type after the image name replaces it. A common pattern is ENTRYPOINT for the binary and CMD for its default flags. Either way, use the exec form, a JSON list, so the app runs as PID 1 and receives signals like SIGTERM."
+     "a": "Both define what runs when a container starts. ENTRYPOINT sets the program, and arguments given to `docker run` are added after it. CMD sets the default command or default arguments, and anything you type after the image name replaces it. A common pattern is ENTRYPOINT for the program and CMD for its default flags. Either way, use the exec form, a JSON list, so the app runs as PID 1 and receives signals like SIGTERM."
     },
     {
      "q": "How do you make Docker builds fast?",
@@ -1142,15 +1141,17 @@
      "title": "The Twelve-Factor App: III. Config",
      "url": "https://12factor.net/config"
     }
-   ]
+   ],
+   "closing": "We started with a packing list that made you cook the rice again to change a napkin. Our Dockerfile puts the napkin last. A code edit rebuilds in 0.3 seconds instead of reinstalling every package, and the app stops in 0.6 seconds instead of being killed after 10. Open any Dockerfile you can find, in the lab or elsewhere, and check two things. Does `COPY . .` come before the install? Is `CMD` written as a list?\n\nNext, we'll give containers somewhere to keep data and a way to talk to each other. Why does the visit counter reset every time the container is replaced?"
   },
   {
    "id": "d20",
    "title": "Volumes and networks",
    "minutes": 50,
    "goal": "By the end you can keep data safe in volumes, choose between volumes, bind mounts and tmpfs, and connect containers on a user-defined network where they find each other by name.",
+   "opening": "Picture a small café that keeps its count of customers on a sticky note stuck to the till. Every night the cleaners swap the till for a fresh one, note and all. Every morning the count starts again at zero. So you move the count into a notebook on the back shelf. The next morning a new cashier arrives, and nobody has told her where the shelf is.\n\nThose are two separate problems, and it is easy to fix one and forget the other: where to keep things that must last, and how helpers find each other. Last time, we packed hello-devops, the course's tiny web app that greets every visit and counts them, into an image. Each fresh container started its count at zero. In this lesson, we'll move the count into Redis, a small database, and keep Redis's data in a volume that outlives any container. Then we'll connect the two on a network where they find each other by name.\n\nBefore we start, make a guess, and keep it in mind.",
    "guess": {
-    "q": "Two containers, `api` and `db`, run on Docker's default network. Inside api, `ping db` runs. What happens?",
+    "q": "Two containers, `api` and `db`, run on Docker's default network. Inside api, `ping db` runs (ping checks whether another machine answers). What happens?",
     "options": [
      "It fails with a bad address: the default network has no lookup by name",
      "It works, because Docker registers every container name",
@@ -1158,7 +1159,7 @@
      "It works on a Mac and fails on Linux"
     ],
     "answer": 0,
-    "why": "Only user-defined networks have Docker's built-in DNS server. On the default bridge, containers can reach each other by IP address only."
+    "why": "Only user-defined networks have Docker's built-in DNS server, the service that turns names into addresses. On the default bridge, containers can reach each other by IP address only: the cashier who was never told where the shelf is."
    },
    "terms": [
     {
@@ -1179,7 +1180,7 @@
     },
     {
      "term": "Bridge network",
-     "plain": "A private virtual network on one Docker host; containers on it get their own IP addresses."
+     "plain": "A private virtual network on one Docker machine; containers on it get their own IP addresses."
     },
     {
      "term": "User-defined network",
@@ -1187,17 +1188,17 @@
     },
     {
      "term": "Embedded DNS server",
-     "plain": "Docker's name server at 127.0.0.11 inside containers on user-defined networks."
+     "plain": "Docker's name lookup service at 127.0.0.11 inside containers on user-defined networks."
     },
     {
      "term": "Publish a port",
-     "plain": "Make a container port reachable from the host with -p; EXPOSE only documents a port."
+     "plain": "Make a container port reachable from your computer with -p; EXPOSE only documents a port."
     }
    ],
    "sections": [
     {
-     "h": "Containers are disposable, so where does data live?",
-     "body": "On Day 18 you saw where a container's own files go: into its thin writable layer, which `docker rm` deletes. You want it that way, because you should be able to throw away any container and start a fresh one, for an upgrade or after a crash.\n\nSo data you care about must live outside the container. Docker gives you three kinds of mounts. A mount places other storage at one folder of the container's file tree, such as `/data`. Pick by asking who owns the data:\n\n- Docker owns it, such as a database's files: use a volume.\n- You own it, such as source code you edit on your Mac: use a bind mount.\n- Nobody should keep it, such as a temporary token: use a tmpfs mount.\n\nVolumes also fix a speed problem. Writes into the container layer go through copy-on-write, which is slow for big, busy files. A volume skips the layers and writes straight to the disk.\n\nhello-devops has a data problem right now. The visit count lives in memory, so every restart resets it to zero. Gunicorn also runs two worker processes, and each keeps its own count, so the number can jump back. Moving the count into Redis fixes both: the workers share one number, and Redis keeps it in a volume.",
+     "h": "Containers get thrown away, so where does data live?",
+     "body": "On Day 18 you saw where a container's own files go: into its thin writable layer, which `docker rm` deletes. That is the sticky note on the till. You want it that way, because you should be able to throw away any container and start a fresh one, for an upgrade or after a crash.\n\n**Treat every container as disposable. Keep the data outside it.**\n\nDocker gives you three kinds of mounts for that. A mount places other storage at one folder of the container's file tree, such as `/data`. Pick by asking who owns the data:\n\n- Docker owns it, such as a database's files: use a volume.\n- You own it, such as source code you edit on your Mac: use a bind mount.\n- Nobody should keep it, such as a temporary token: use a tmpfs mount.\n\nVolumes also fix a speed problem. Writes into the container layer go through copy-on-write (Day 18), which is slow for big, busy files. A volume skips the layers and writes straight to the disk.\n\nhello-devops has a data problem right now. The visit count lives in memory, so every restart resets it to zero. Gunicorn, the web server inside the image, also runs two worker processes, and each keeps its own count, so the number can jump back. Moving the count into Redis fixes both: the workers share one number, and Redis keeps it in a volume.\n\nThe back shelf comes first: volumes.",
      "refs": [
       {
        "title": "Storage overview",
@@ -1212,8 +1213,8 @@
      ]
     },
     {
-     "h": "Volumes: storage Docker manages",
-     "body": "A named volume is created with `docker volume create notes`, or on the fly by `docker run -v notes:/data ...`. The left side of `-v` is the volume name and the right side is the folder inside the container. The same volume can be mounted into a new container later, and the data is still there.\n\nFour behaviours tend to surprise people the first time:\n\n- A new, empty volume mounted over a folder that has files in the image gets a copy of those files. Mount an empty volume at nginx's html folder, and `index.html` and `50x.html` appear in it.\n- `-v /data` with no name creates an anonymous volume with a random 64-character ID. Some images, such as `registry:3`, declare one in their Dockerfile, so you get one without asking.\n- Anonymous volumes stay behind after `docker rm`. Use `--rm`, or `docker rm -v`, to delete them with the container.\n- `docker volume inspect` shows a mount point under `/var/lib/docker/volumes`. On a Mac that path is inside Docker Desktop's VM, and Docker's docs say not to touch it directly.\n\n`--mount type=volume,source=notes,target=/data` is the long form of the same thing. It is wordier and harder to get wrong, so many teams use it in scripts.\n\nTo back up a volume, mount it into a throwaway container next to a folder from your Mac and run `tar` there. The lab's `docker/volume-backup.sh` works this way, and it restores the archive into another volume too.",
+     "h": "Volumes: a shelf that Docker looks after",
+     "body": "A named volume is created with `docker volume create notes`, or on the fly by `docker run -v notes:/data ...`. The left side of `-v` is the volume name and the right side is the folder inside the container. The same volume can be mounted into a new container later, and the data is still there.\n\nFour behaviours tend to surprise people the first time:\n\n- A new, empty volume mounted over a folder that has files in the image gets a copy of those files. Mount an empty volume at nginx's html folder, and `index.html` and `50x.html` appear in it.\n- `-v /data` with no name creates an anonymous volume with a random 64-character ID. Some images, such as `registry:3`, declare one in their Dockerfile, so you get one without asking.\n- Anonymous volumes stay behind after `docker rm`. Use `--rm`, or `docker rm -v`, to delete them with the container.\n- `docker volume inspect` shows a mount point under `/var/lib/docker/volumes`. On a Mac that path is inside Docker Desktop's VM, and Docker's docs say not to touch it directly.\n\n`--mount type=volume,source=notes,target=/data` is the long form of the same thing. It is wordier and harder to get wrong, so many teams use it in scripts.\n\nTo back up a volume, mount it into a throwaway container next to a folder from your Mac. Then run `tar` there, the standard tool for packing files into one archive. The lab's `docker/volume-backup.sh` works this way, and it restores the archive into another volume too.\n\nVolumes belong to Docker. Sometimes, though, you want a folder that belongs to you.",
      "refs": [
       {
        "title": "Volumes",
@@ -1228,8 +1229,8 @@
      ]
     },
     {
-     "h": "Bind mounts, tmpfs and file ownership",
-     "body": "A bind mount shows a folder from your Mac inside the container: `-v \"$PWD/site\":/usr/share/nginx/html`. A path on the left side means a bind mount, and a plain name means a volume. Both sides see every change at once, which is great while you edit code. Add `:ro` to make the mount read-only inside the container.\n\nTwo things often go wrong:\n\n- A bind mount hides whatever the image had at that path. Mount an empty folder over nginx's html folder, and nginx serves nothing.\n- On a Mac, files cross from macOS into Docker's Linux VM through a file sharing layer called VirtioFS. Folders with many small files can be slower than a volume.\n\nFile ownership works by user ID numbers, not names. The kernel stores each file's owner as a number, and the container shares the host's kernel. Names come from `/etc/passwd`, and the image has its own copy, so one name can mean different users on each side.\n\nOn a Linux machine, such as a CI runner, a container running as user 10001 tried to write into a bind-mounted folder owned by root. It failed with `touch: /out/from-10001.txt: Permission denied`. A file written by a root container showed up on the host owned by uid 0. Docker Desktop on a Mac hides most of this, because its file sharing makes files look like yours. So a setup that works on your laptop can still fail in CI. Day 6's permission rules explain every case.\n\nA tmpfs mount, `--tmpfs /scratch`, lives in memory only. We wrote a file to one, restarted the container, and the folder was empty again. Use it for scratch files and secrets that must never reach a disk.",
+     "h": "Bind mounts, tmpfs and who owns a file",
+     "body": "A bind mount shows a folder from your Mac inside the container: `-v \"$PWD/site\":/usr/share/nginx/html`. A path on the left side means a bind mount, and a plain name means a volume. Both sides see every change at once, which is great while you edit code. Add `:ro` to make the mount read-only inside the container.\n\nTwo things often go wrong:\n\n- A bind mount hides whatever the image had at that path. Mount an empty folder over nginx's html folder, and nginx serves nothing.\n- On a Mac, files cross from macOS into Docker's Linux VM through a file sharing layer called VirtioFS. Folders with many small files can be slower than a volume.\n\nFile ownership works by user ID numbers, not names. The kernel stores each file's owner as a number, and the container shares the host's kernel. Names come from the file `/etc/passwd`, and the image has its own copy, so one name can mean different users on each side.\n\nHere is how that fails in public. On a Linux machine, such as a CI runner, a container running as user 10001 tried to write into a bind-mounted folder owned by root. It failed with `touch: /out/from-10001.txt: Permission denied`. A file written by a root container showed up on the host owned by uid 0, root's number. Docker Desktop on a Mac hides most of this, because its file sharing makes files look like yours. So a setup that works on your laptop can still fail in CI. Day 6's permission rules explain every case.\n\nA tmpfs mount, `--tmpfs /scratch`, lives in memory only. We wrote a file to one, restarted the container, and the folder was empty again. Use it for scratch files and secrets that must never reach a disk.\n\nThe data has a home now. The second problem from the opening remains: how does one container find another?",
      "refs": [
       {
        "title": "Bind mounts",
@@ -1244,8 +1245,8 @@
      ]
     },
     {
-     "h": "How containers talk: the default bridge",
-     "body": "Every container gets its own network namespace, so it has its own network card, IP address and `localhost`. Inside a container, `localhost` means that container itself, never your Mac and never another container. To reach a service on your Mac from a container, Docker Desktop offers the special name `host.docker.internal`.\n\nDocker connects containers through a bridge, a virtual network switch inside the Linux VM. Each container gets a virtual cable, called a veth pair: one end is `eth0` inside the container, and the other end plugs into the bridge. Any container you start without `--network` joins the default network, called `bridge`, and gets an address such as `172.17.0.5`.\n\nThe default bridge is old and limited:\n\n- Containers can reach each other only by IP address. `ping b` from container `a` printed `ping: bad address 'b'`, while `ping 172.17.0.5` worked.\n- Those addresses change when containers restart, so you cannot hard-code them.\n- Every container started without `--network` lands on it, so unrelated apps can talk to each other.\n\nFor DNS, containers on the default bridge get a copy of the host's DNS settings. That lets them resolve names on the internet, but not each other. Docker's own docs recommend user-defined networks instead, for the reasons in the next section.",
+     "h": "How containers talk on the default bridge",
+     "body": "Every container gets its own network namespace, so it has its own network card, IP address (its number on the network) and `localhost`. Inside a container, `localhost` means that container itself, never your Mac and never another container. So `REDIS_HOST=localhost` in a web container points the app at itself, where nothing listens on Redis's port. To reach a service on your Mac from a container, Docker Desktop offers the special name `host.docker.internal`.\n\nDocker connects containers through a bridge, a virtual network switch inside the Linux VM, like a phone exchange for one building. Each container gets a virtual cable, called a veth pair: one end is `eth0` inside the container, and the other end plugs into the bridge. Any container you start without `--network` joins the default network, called `bridge`, and gets an address such as `172.17.0.5`.\n\nThe default bridge is old and limited:\n\n- Containers can reach each other only by IP address. `ping b` from container `a` printed `ping: bad address 'b'`, while `ping 172.17.0.5` worked.\n- Those addresses change when containers restart, so you cannot hard-code them.\n- Every container started without `--network` lands on it, so unrelated apps can talk to each other.\n\nFor DNS, the service that turns names into addresses, containers on the default bridge get a copy of the host's DNS settings. That lets them resolve names on the internet, but not each other. It is the new cashier again: she can phone any shop in town, but not the colleague in the back room. Docker's own docs recommend user-defined networks instead, for the reasons in the next section.",
      "refs": [
       {
        "title": "Networking overview",
@@ -1266,7 +1267,7 @@
     },
     {
      "h": "User-defined networks: names that work",
-     "body": "Create a network with `docker network create demo` and start containers with `--network demo`. Three things improve at once:\n\n- Every container gets a DNS server at `127.0.0.11`, Docker's embedded DNS server. It answers with the current IP of any container on the same network, by name.\n- Containers on different user-defined networks cannot reach each other, so each app gets its own private network.\n- You can attach a running container to a network, or detach it, with `docker network connect` and `docker network disconnect`.\n\nThe DNS server knows those names because Docker Engine handed out the addresses in the first place. Names it does not know, such as `github.com`, it passes on to the host's DNS servers.\n\nIn the worked example, `wget http://web` from a container on `demo` returned the page, and `cat /etc/resolv.conf` showed `nameserver 127.0.0.11`. The same request from a container on the default bridge failed with `bad address 'web'`.\n\nA container can sit on several networks, with one network card for each. A proxy uses this to talk to the outside on one network and to private services on another. The flag `--network-alias api` gives a container an extra DNS name on a network, which helps when one name should point at several containers.\n\nDocker picks a private subnet for each network. Ours got `172.23.0.0/16`, while the default bridge used `172.17.0.0/16`. Both sit inside the private `172.16.0.0/12` range from Day 10, so they never clash with addresses on the internet.\n\nContainers on the same network reach each other on any port. They need no `-p` at all, because `-p` is only for traffic from outside. Docker Compose creates one user-defined network per project, so everything in Day 21 gets name lookup for free.",
+     "body": "Create a network with `docker network create demo` and start containers with `--network demo`. Three things improve at once:\n\n- Every container gets a DNS server at `127.0.0.11`, Docker's embedded DNS server. It answers with the current IP of any container on the same network, by name.\n- Containers on different user-defined networks cannot reach each other, so each app gets its own private network.\n- You can attach a running container to a network, or detach it, with `docker network connect` and `docker network disconnect`.\n\nThe DNS server knows those names because Docker Engine handed out the addresses in the first place. Names it does not know, such as `github.com`, it passes on to the host's DNS servers.\n\nIn the worked example, `wget http://web` from a container on `demo` returned the page, and `cat /etc/resolv.conf` showed `nameserver 127.0.0.11`. The same request from a container on the default bridge failed with `bad address 'web'`.\n\n**Containers find each other by name only on a network you create. Create one per app.**\n\nA container can sit on several networks, with one network card for each. A proxy, a program that passes traffic along, uses this to talk to the outside on one network and to private services on another. The flag `--network-alias api` gives a container an extra DNS name on a network, which helps when one name should point at several containers.\n\nDocker picks a private subnet (a block of addresses) for each network. Ours got `172.23.0.0/16`, while the default bridge used `172.17.0.0/16`. Both sit inside the private `172.16.0.0/12` range from Day 10, so they never clash with addresses on the internet.\n\nContainers on the same network reach each other on any port. They need no `-p` at all, because `-p` is only for traffic from outside. Docker Compose creates one user-defined network per project, so everything in Day 21 gets name lookup for free.\n\nBridge networks cover almost everything you'll do. Two other choices, and one confusing pair of words, are worth knowing.",
      "refs": [
       {
        "title": "Bridge network driver",
@@ -1281,8 +1282,8 @@
      ]
     },
     {
-     "h": "The host and none drivers, and publishing versus exposing",
-     "body": "`bridge` is one of several network drivers. Two more matter on day one:\n\n- `--network none` gives a container no network at all. `ip addr` inside showed only the loopback `lo`. Good for batch jobs that must not talk to anything.\n- `--network host` skips the namespace and shares the host's network, so `-p` is ignored. On Docker Desktop it is off by default: you turn it on under Settings, Resources, Network, and you must be signed in.\n\nOthers, such as `overlay`, `macvlan` and `ipvlan`, connect containers across machines or straight onto a physical network. You will not need them for this course.\n\nPublishing and exposing sound alike and do different things:\n\n- `EXPOSE 80` in a Dockerfile is documentation. `docker image inspect nginx` lists `{\"80/tcp\":{}}`, and nothing listens on your Mac because of it.\n- `-p 127.0.0.1:8080:80` publishes: it opens port 8080 on your Mac and forwards it. `docker port` then prints `80/tcp -> 127.0.0.1:8080`.\n- `-P` publishes every exposed port on a random free port of the host.\n\nA common mistake is to publish ports just so two containers can talk. Put them on one user-defined network instead, and publish only what a person or another machine must reach.",
+     "h": "Other network drivers, and publishing versus exposing",
+     "body": "`bridge` is one of several network drivers, the kinds of network Docker can make. Two more matter on day one:\n\n- `--network none` gives a container no network at all. `ip addr` inside showed only the loopback `lo`. Good for batch jobs that must not talk to anything.\n- `--network host` skips the namespace and shares the host's network, so `-p` is ignored. On Docker Desktop it is off by default: you turn it on under Settings, Resources, Network, and you must be signed in.\n\nOthers, such as `overlay`, `macvlan` and `ipvlan`, connect containers across machines or straight onto a physical network. You will not need them for this course.\n\nPublishing and exposing sound alike and do different things:\n\n- `EXPOSE 80` in a Dockerfile is documentation. `docker image inspect nginx` lists `{\"80/tcp\":{}}`, and nothing listens on your Mac because of it.\n- `-p 127.0.0.1:8080:80` publishes: it opens port 8080 on your Mac and forwards it. `docker port` then prints `80/tcp -> 127.0.0.1:8080`.\n- `-P` publishes every exposed port on a random free port of the host.\n\nA common mistake is to publish ports just so two containers can talk. Put them on one user-defined network instead, and publish only what a person or another machine must reach.\n\nToday's tools have limits. A volume lives on the one Docker machine where you made it and does not follow a container to another machine. And running two containers took a network, a volume and a long line of flags each, typed in the right order. Next, Docker Compose writes all of that down in one file.",
      "refs": [
       {
        "title": "Port publishing and mapping",
@@ -1302,9 +1303,8 @@
      ]
     }
    ],
-   "analogy": "Docker networking works like an office building. The default bridge is an open-plan floor with no phone directory: you can call a colleague only if you know their extension, and extensions change when people move desks. A user-defined network is a floor with a receptionist who knows everyone on that floor by name. Volumes are the storage room in the basement, where the boxes stay while people come and go. Nobody in another building can use that room, though. A volume stays on the one Docker host where you made it and does not follow your container to another machine.",
    "diagram": "<svg viewBox=\"0 0 560 262\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"On the demo network, a client reaches the web container by name through Docker's DNS; a container on the default bridge cannot; web serves files from the site volume, which outlives the container\"><line class=\"lnd\" x1=\"8\" y1=\"12\" x2=\"352\" y2=\"12\"/><line class=\"lnd\" x1=\"8\" y1=\"150\" x2=\"352\" y2=\"150\"/><line class=\"lnd\" x1=\"8\" y1=\"12\" x2=\"8\" y2=\"150\"/><line class=\"lnd\" x1=\"352\" y1=\"12\" x2=\"352\" y2=\"150\"/><text class=\"ts\" x=\"180\" y=\"140\" font-size=\"11\" text-anchor=\"middle\">demo network, DNS at 127.0.0.11</text><line class=\"lnd\" x1=\"376\" y1=\"12\" x2=\"552\" y2=\"12\"/><line class=\"lnd\" x1=\"376\" y1=\"150\" x2=\"552\" y2=\"150\"/><line class=\"lnd\" x1=\"376\" y1=\"12\" x2=\"376\" y2=\"150\"/><line class=\"lnd\" x1=\"552\" y1=\"12\" x2=\"552\" y2=\"150\"/><text class=\"ts\" x=\"464\" y=\"140\" font-size=\"11\" text-anchor=\"middle\">default bridge</text><rect class=\"bxt\" x=\"24\" y=\"44\" width=\"104\" height=\"46\" rx=\"10\"/><text class=\"tk\" x=\"76\" y=\"72\" font-size=\"13\" text-anchor=\"middle\">client</text><rect class=\"bxo\" x=\"216\" y=\"44\" width=\"120\" height=\"46\" rx=\"10\"/><text class=\"tk\" x=\"276\" y=\"72\" font-size=\"13\" text-anchor=\"middle\">web</text><rect class=\"bx\" x=\"414\" y=\"44\" width=\"100\" height=\"46\" rx=\"10\"/><text class=\"t\" x=\"464\" y=\"72\" font-size=\"13\" text-anchor=\"middle\">b</text><rect class=\"bxg\" x=\"216\" y=\"196\" width=\"120\" height=\"46\" rx=\"10\"/><text class=\"tk\" x=\"276\" y=\"224\" font-size=\"13\" text-anchor=\"middle\">site volume</text><line class=\"ln\" x1=\"128\" y1=\"67\" x2=\"212\" y2=\"67\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"170\" y=\"60\" font-size=\"11\" text-anchor=\"middle\">http://web</text><line class=\"lnd\" x1=\"414\" y1=\"67\" x2=\"340\" y2=\"67\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"464\" y=\"112\" font-size=\"11\" text-anchor=\"middle\">bad address</text><line class=\"ln\" x1=\"276\" y1=\"90\" x2=\"276\" y2=\"192\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"288\" y=\"176\" font-size=\"11\" text-anchor=\"start\">mounted</text></svg>",
-   "diagram_caption": "On a user-defined network, Docker's DNS turns names into IPs; the default bridge has no names. The volume outlives the container.",
+   "diagram_caption": "On a user-defined network, Docker's DNS turns names into IP addresses; the default bridge has no names. The volume outlives the container.",
    "worked": {
     "title": "Serve a page from a volume, reach it by name",
     "steps": [
@@ -1411,8 +1411,7 @@
      "what": "Remove a container together with its anonymous volumes."
     }
    ],
-   "mistake": "Setting `REDIS_HOST=localhost` in a web container points the app at itself. Inside a container, `localhost` is that container, and nothing there listens on Redis's port. Put both containers on one user-defined network and use the other container's name, such as `REDIS_HOST=redis`.",
-   "real_world": "An upgrade means `docker rm` and a fresh container, so developers run Postgres on their laptops with a named volume that the upgrade never touches. In production the databases are managed cloud services with backups and failover, rather than containers on one machine. CI jobs run integration tests on a fresh user-defined network per job, so parallel jobs on the same runner never see each other's containers.",
+   "real_world": "An upgrade means `docker rm` and a fresh container, so developers run Postgres, a popular database, on their laptops with a named volume that the upgrade never touches. In production the databases are managed cloud services with backups and failover (a standby that takes over), rather than containers on one machine. CI jobs run integration tests on a fresh user-defined network per job, so parallel jobs on the same runner never see each other's containers.",
    "task": {
     "title": "Run hello-devops and Redis by hand, with no Compose",
     "steps": [
@@ -1421,7 +1420,7 @@
      "Start `redis:8-alpine` named `redis` on that network, with the volume at `/data`. Do not publish its port.",
      "Start hello-devops named `web` on the same network, published on port 8000, with `REDIS_HOST` set so it finds Redis.",
      "Call the app five times and check that visits rises by one each time, even with two gunicorn workers.",
-     "Stop and remove the Redis container, then call `/` and `/readyz`. Note the status codes.",
+     "Stop and remove the Redis container, then call `/` and `/readyz` (the app's \"am I ready?\" check). Note the status codes.",
      "Start a brand-new Redis container on the same network and volume. Does the count carry on?",
      "Back up the volume with `docker/volume-backup.sh` and list what is inside the archive with `tar tzf`.",
      "Clean up the containers, the network and the volume."
@@ -1441,13 +1440,13 @@
     "A container's own files die with it; keep data you need in a volume.",
     "Volumes belong to Docker, bind mounts share a folder from your Mac, tmpfs lives in memory.",
     "File ownership in mounts follows user ID numbers, which matters most on Linux and in CI.",
-    "The default bridge has no name lookup; a user-defined network adds DNS at 127.0.0.11.",
-    "Inside a container, localhost is the container itself.",
-    "EXPOSE documents a port; -p publishes it, and containers on one network need no -p."
+    "The default bridge has no name lookup; a user-defined network adds DNS at 127.0.0.11. Inside a container, localhost is the container itself.",
+    "EXPOSE documents a port; -p publishes it, and containers on one network need no -p.",
+    "The limit: a volume stays on one machine, and every container still needs its own long command."
    ],
    "check": [
     {
-     "q": "You want to edit HTML files on your Mac and see each change in an nginx container at once. Which option fits?",
+     "q": "You want to edit HTML files (web pages) on your Mac and see each change in an nginx container at once. Which option fits?",
      "options": [
       "A named volume mounted at the HTML folder",
       "COPY the files in a Dockerfile and rebuild",
@@ -1458,7 +1457,7 @@
      "why": "A bind mount shows your Mac's folder inside the container, so both always see the same files."
     },
     {
-     "q": "An app container and a Postgres container share a user-defined network. Which address should the app use for the database?",
+     "q": "An app container and a Postgres database container share a user-defined network. Which address should the app use for the database?",
      "options": [
       "localhost:5432",
       "the Postgres container's name, port 5432",
@@ -1511,7 +1510,8 @@
      "title": "Networking overview",
      "url": "https://docs.docker.com/engine/network/"
     }
-   ]
+   ],
+   "closing": "We started with a café whose count vanished with the till, and a cashier who couldn't find the shelf. Now the count lives in Redis, Redis keeps it in a volume, and the web container finds Redis by name on its own network. Run `docker volume ls` on your Mac. Any volume with a long random name is an anonymous one that some container left behind; check what it holds, then remove it.\n\nNext, we'll write the whole setup in one file instead of a page of commands. How do you start an app and its database with a single line?"
   },
   {
    "id": "d21",

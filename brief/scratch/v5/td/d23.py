@@ -76,14 +76,14 @@ As the author:
 
 - Keep the PR small. Fifty lines tend to get careful comments; two thousand tend to get a quick "looks good".
 - Say why in the description, and how you tested it. The PR template in today's Files section asks both questions.
-- Read your own diff on GitHub before you ask anyone. You will catch the stray debug line (a print you added while hunting a bug) yourself.
-- Answer every comment, even with "done", and re-request the review once you have pushed the changes.
+- Read your own diff on GitHub first, and catch the stray debug line (a print you added while hunting a bug) yourself.
+- Answer every comment, even with "done", and re-request the review after you push the changes.
 
-The easy trap is a branch that lives for a week and ends as one huge PR. Reviewers can only skim it, and conflicts pile up while it waits. When a test fails, you can't tell which change broke it. Make one small branch per change, open the PR early (as a draft if it is not ready), and merge within a day or two.
+The trap is a branch that lives a week and ends as one huge PR. Reviewers can only skim it, and conflicts pile up while it waits. When a test fails, you can't tell which change broke it. Make one small branch per change, open the PR early (as a draft if it is not ready), and merge within a day or two.
 
 **A small pull request gets a real review. Keep yours small.**
 
-As the reviewer, read the description first, then the tests, then the code. In Files changed, click the blue comment icon next to a line, or drag across several lines. The suggestion button in a comment lets you write the exact replacement, and the author applies it with Commit suggestion. Tick Viewed on each file you finish. When you are done, click Review changes and choose Comment, Approve or Request changes.
+As the reviewer, read the description first, then the tests, then the code. In Files changed, click the blue comment icon next to a line, or drag across several lines. The suggestion button in a comment lets you write the exact replacement, and the author applies it with Commit suggestion. Tick Viewed on each file you finish. Finally, click Review changes and choose Comment, Approve or Request changes.
 
 Request changes only blocks the merge when a ruleset requires pull requests. A ruleset is a set of rules for a branch, such as "main only changes through a reviewed PR", and Day 25 builds one. With that rule on, Request changes blocks until that same reviewer approves.
 
