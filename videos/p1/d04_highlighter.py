@@ -92,8 +92,10 @@ class D04Highlighter(VoiceScene):
             glyphs(tx, txt, lv).set_color(LEVEL_C[lv])
             L.add(VGroup(num, tx).arrange(RIGHT, buff=0.3))
         L.arrange(DOWN, aligned_edge=LEFT, buff=0.1).to_edge(LEFT, buff=0.7).shift(DOWN * 0.2)
+        x_num, x_txt = L.get_left()[0], L.get_left()[0] + 0.62
         for row in L:
-            row[0].align_to(L, LEFT)
+            row[0].move_to([x_num, row.get_center()[1], 0], aligned_edge=LEFT)
+            row[1].move_to([x_txt, row[1].get_center()[1], 0], aligned_edge=LEFT)
         hl = VGroup(*[Rectangle(width=L.get_right()[0] - L.get_left()[0] + 0.3, height=0.32, stroke_width=0).set_fill(YELLOW_M, 0)
                       .move_to([L.get_center()[0], r.get_center()[1], 0]) for r in L])
         cap = T("app.log, lines 6 to 20 (trimmed to fit)", 22, GREY_B).next_to(L, DOWN, buff=0.22).align_to(L, LEFT)
@@ -211,8 +213,8 @@ class D04Highlighter(VoiceScene):
                    (0.6, Transform(c1, c8), FadeOut(VGroup(nothing, lit, litl)), *[r.animate.set_opacity(1) for r in L]), *sweep([0, 2, 7, 8, 11, 14]), (0.5, FadeIn(o8)))
         self.beat("So the first grep did answer. It answered, perfectly, a question you never meant to ask.",
                   Indicate(c1, color=YELLOW_M), run_time=1.6)
-        rule = VGroup(T("An empty result answers your pattern,", 28, YELLOW_M), T("not your question. Check the pattern.", 28, YELLOW_M)).arrange(DOWN, buff=0.12).move_to([RX, -1.7, 0])
-        fit(rule, 4.2)
+        rule = VGroup(T("An empty result answers", 26, YELLOW_M), T("your pattern, not", 26, YELLOW_M), T("your question.", 26, YELLOW_M), T("Check the pattern.", 26, YELLOW_M)).arrange(DOWN, buff=0.1).move_to([RX, -2.0, 0])
+        fit(rule, 4.4)
         self.beat("That's our open question from the start. An empty result answers your pattern, not your question. So check the pattern before you trust the silence. And echo $? tells you whether grep found nothing, or failed.",
                   FadeIn(rule, shift=UP * 0.1), run_time=2.4)
         self.play(*reset(), FadeOut(VGroup(o8, rule)), run_time=0.6)

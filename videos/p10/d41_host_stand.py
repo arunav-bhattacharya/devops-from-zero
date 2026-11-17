@@ -12,7 +12,7 @@ SAY.extend([(r"\b10\.96\.171\.215\b", "ten, ninety six, one seven one, two fifte
             (r"\bCoreDNS\b", "core D N S"), (r"\bgRPC\b", "G R P C")])
 
 PODY, TAGY = -2.45, -1.78
-PXS = [-5.2, -2.6, 0.0, 2.6, 5.2]
+PXS = [-5.4, -2.7, 0.0, 2.7, 5.4]
 IPS = ["10.244.1.3", "10.244.2.4", "10.244.1.5"]
 
 
@@ -21,7 +21,7 @@ def tint(c, k=0.18):
 
 
 def podbox(text, x, color=BLUE_M):
-    r = RoundedRectangle(corner_radius=0.1, width=2.2, height=0.66, stroke_color=color, stroke_width=3).move_to([x, PODY, 0])
+    r = RoundedRectangle(corner_radius=0.1, width=2.0, height=0.66, stroke_color=color, stroke_width=3).move_to([x, PODY, 0])
     r.set_fill(tint(color, 0.22), opacity=1)
     return VGroup(r, M(text, 22).move_to(r))
 
@@ -102,14 +102,14 @@ class D41HostStand(Base):
         self.steps("How does the Service know which waiters are its own? Not by name, since names change. By a label, a key and value tag on each Pod. Take every ready Pod labeled app: hello-devops.",
                    (0.8, FadeIn(sel, shift=DOWN * 0.1)), (2.4, Wait(2.4)),
                    (1.0, *[t.animate.set_color(GOLD_M) for t in tags]))
-        CL, CR, CT, CB = 2.55, 6.45, 1.0, -1.15
+        CL, CR, CT, CB = 2.0, 6.45, 1.0, -1.35
         crect = RoundedRectangle(corner_radius=0.12, width=CR - CL, height=CT - CB, stroke_color=GREEN_M, stroke_width=3).set_fill(tint(GREEN_M, 0.08), 1).move_to([(CL + CR) / 2, (CT + CB) / 2, 0])
         chead = T("EndpointSlice", 26, GREEN_M).move_to([CL + 0.25, CT - 0.3, 0], aligned_edge=LEFT)
 
         def entry(text, i, color=WHITE):
             return M(text, 22, color).move_to([CL + 0.3, CT - 0.78 - 0.4 * i, 0], aligned_edge=LEFT)
 
-        ents = [entry(f"{ip}:8000  ready", i) for i, ip in enumerate(IPS)]
+        ents = [entry(f"{ip}:8000 ready", i) for i, ip in enumerate(IPS)]
         self.play(sel.animate.move_to([-3.3, 1.65, 0]), run_time=0.6)
         self.beat("Now the host's clipboard. A controller watches the Pods and keeps a list, called an EndpointSlice: the address and port of every matching Pod, and whether it is ready.",
                   Create(crect), FadeIn(chead), LaggedStart(*[FadeIn(e, shift=RIGHT * 0.1) for e in ents], lag_ratio=0.3), run_time=2.6)
@@ -145,8 +145,8 @@ class D41HostStand(Base):
 
         # ---------- 4. SHOW: the clipboard follows the floor
         self.beat("Only ready Pods get visitors. Say this Pod starts failing its readiness check. It keeps running, but the controller marks its entry not ready, and the rules skip it.",
-                  pods[0].animate.set_opacity(0.35), Transform(ents[0], entry(f"{IPS[0]}:8000  not ready", 0, RED_M)), run_time=2.4)
-        self.play(pods[0].animate.set_opacity(1), Transform(ents[0], entry(f"{IPS[0]}:8000  ready", 0)), run_time=0.8)
+                  pods[0].animate.set_opacity(0.35), Transform(ents[0], entry(f"{IPS[0]}:8000 not ready", 0, RED_M)), run_time=2.4)
+        self.play(pods[0].animate.set_opacity(1), Transform(ents[0], entry(f"{IPS[0]}:8000 ready", 0)), run_time=0.8)
         more = [podbox("new Pod", PXS[3]), podbox("new Pod", PXS[4])]
         mtags = [tag("app: hello-devops", x, GOLD_M) for x in PXS[3:]]
         plus = entry("+ 2 more", 3, GREEN_M)

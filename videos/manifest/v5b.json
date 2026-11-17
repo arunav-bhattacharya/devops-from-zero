@@ -9,5 +9,16 @@
    "poster_at": 280.2,
    "replaces": "d07-ssh-keys"
   }
+ ],
+ "d08": [
+  {
+   "slug": "d08-sticky-note",
+   "title": "Where did my commit go? Snapshots, sticky notes and the reflog",
+   "after": 6,
+   "file": "p2/d08_sticky_note.py",
+   "scene": "D08StickyNote",
+   "poster_at": 116.0,
+   "replaces": "d08-git-store"
+  }
  ]
 }

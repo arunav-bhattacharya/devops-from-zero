@@ -165,11 +165,11 @@ class D17Lunchbox(VoiceScene):
         self.play(FadeIn(image), run_time=0.5)
         lid = T("one image, many containers", 28, GOLD_M).move_to([0.8, 2.6, 0])
         self.beat("Back to the lunchbox shop. One sealed image can start many containers, and each one is its own opened copy.",
-                  FadeIn(lid), *[Indicate(b[0], color=c) for b, c in ((others[0], BLUE_M), (walls, GOLD_M), (others[1], GREEN_M))], run_time=1.8)
+                  FadeIn(lid), *[Indicate(b[1], color=c) for b, c in ((others[0], BLUE_M), (walls, GOLD_M), (others[1], GREEN_M))], run_time=1.8)
         k = Square(0.32, stroke_width=0).set_fill(RED_M, 0.9).move_to(walls[0].get_corner(UR) + LEFT * 0.35 + DOWN * 0.3)
         kl = T("a file it wrote", 24, RED_M).next_to(walls, UP, buff=0.45)
         self.steps("When the app writes a file, it lands in a thin writable layer that belongs to that copy only. Like ketchup you add after opening. The other boxes never see it.",
-                   (2.0, Wait(2.0)), (0.6, GrowFromCenter(k), FadeIn(kl)), (2.4, Wait(2.4)), (0.6, Indicate(others[0][0], color=BLUE_M)), (0.6, Indicate(others[1][0], color=GREEN_M)))
+                   (2.0, Wait(2.0)), (0.6, GrowFromCenter(k), FadeIn(kl)), (2.4, Wait(2.4)), (0.6, Indicate(others[0][1], color=BLUE_M)), (0.6, Indicate(others[1][1], color=GREEN_M)))
         rm = M("$ docker rm", 24, RED_M).next_to(walls, UP, buff=0.45)
         self.steps("Remove the container, and its ketchup goes with it. The image itself never changes.",
                    (0.6, FadeOut(kl), FadeIn(rm)), (0.8, FadeOut(VGroup(walls, me, mel, k)), FadeOut(lines[1])), (0.8, Indicate(image[0][0], color=GOLD_M)))

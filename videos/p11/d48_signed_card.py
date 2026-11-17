@@ -75,7 +75,7 @@ class D48SignedCard(VoiceScene):
         prod_t = M("hello-prod", 22, GOLD_M).move_to(prod.get_corner(UL) + RIGHT * 0.95 + DOWN * 0.3)
         dpods = VGroup(pod(BLUE_M)).move_to(dev.get_center() + DOWN * 0.25 + LEFT * 1.2)
         dsay = T("Hello from dev!", 24, BLUE_M).next_to(dpods, RIGHT, buff=0.4)
-        ppods = VGroup(*[pod(GOLD_M) for _ in range(4)]).arrange(RIGHT, buff=0.25).move_to(prod.get_center() + DOWN * 0.25 + LEFT * 0.85)
+        ppods = VGroup(*[pod(GOLD_M) for _ in range(4)]).arrange(RIGHT, buff=0.25).move_to(prod.get_center() + DOWN * 0.25 + LEFT * 1.05)
         pmem = T("more memory", 22, GOLD_M).next_to(ppods, RIGHT, buff=0.25)
         self.beat("Software teams keep the same pair of rooms. Each running copy of the app, with one purpose, is called an environment.",
                   Create(clu), Write(clu_t), run_time=1.6)
@@ -185,11 +185,11 @@ class D48SignedCard(VoiceScene):
         self.beat("And you get a clean undo for free. Press Revert on the merged pull request, and a new one puts the old tag back.",
                   ReplacementTransform(same, undo), run_time=1.6)
         same = undo
-        rule = T("Build once, and move that same image.", 30, YELLOW_M).to_edge(UP, buff=0.5)
-        self.play(FadeOut(VGroup(argo, argo_t)), run_time=0.3)
+        rule = T("Build once, and move that same image.", 30, YELLOW_M).move_to([1.5, -2.85, 0])
+        self.play(FadeOut(VGroup(argo, argo_t, same)), run_time=0.3)
         self.beat("So the rule. A rebuilt image is a new soup with an old name. Build once, and move that same image.", Write(rule), run_time=1.8)
         self.wait(0.4)
-        self.play(FadeOut(VGroup(rule, same)), run_time=0.5)
+        self.play(FadeOut(rule), run_time=0.5)
 
         # ---------------- 6. break it: latest
         lt = M('newTag: "latest"', 22, RED_M).move_to(ptag)

@@ -135,7 +135,7 @@ class D50NurseChart(VoiceScene):
 
         # ---------------- 5. a time series is a name plus labels
         val = M("303.0", 26, GREEN_M)
-        self.play(FadeOut(VGroup(cnt, nurse)), VGroup(prom, prom_t).animate.move_to([-4.3, -2.6, 0]),
+        self.play(FadeOut(VGroup(cnt, nurse, prom, prom_t)),
                   FadeOut(get), FadeOut(get_l), FadeOut(VGroup(app, app_t, page_t)), run_time=0.6)
         lines = VGroup(M('hello_responses_total{path="/",status="200"}', 24),
                        M('hello_responses_total{path="/healthz",status="200"}', 24),
@@ -163,7 +163,7 @@ class D50NurseChart(VoiceScene):
         self.beat("That row has a name now. A time series: a metric name, plus one exact set of label values.", Write(three), run_time=1.8)
         jl = T("Prometheus adds two labels itself: job and instance", 24, GREY_B).move_to([0.6, -2.85, 0])
         self.beat("Prometheus adds two labels of its own: job, the name from its config, and instance, the target's address.", FadeIn(jl), run_time=1.8)
-        self.play(FadeOut(VGroup(jl, prom, prom_t)), run_time=0.4)
+        self.play(FadeOut(jl), run_time=0.4)
 
         # ---------------- 6. break it: one careless label
         self.beat("So far so good. Now let's break it with one word. A label looks free.",

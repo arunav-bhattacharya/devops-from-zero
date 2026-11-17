@@ -1,0 +1,393 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.101
+A folder holds two log files.
+
+2
+00:00:05.101 --> 00:00:07.833
+You type rm *.log to delete them.
+
+3
+00:00:07.833 --> 00:00:08.992
+Simple enough.
+
+4
+00:00:09.200 --> 00:00:12.297
+But here's a question most people never ask.
+
+5
+00:00:12.297 --> 00:00:14.409
+What does rm actually receive?
+
+6
+00:00:14.409 --> 00:00:16.943
+Does rm even know what a star means?
+
+7
+00:00:20.167 --> 00:00:21.677
+Hold on to your guess.
+
+8
+00:00:21.677 --> 00:00:23.188
+We'll come back to it.
+
+9
+00:00:23.400 --> 00:00:26.286
+Picture your first day in a big office building.
+
+10
+00:00:26.286 --> 00:00:31.157
+At a small window in the lobby sits a clerk who reads each note you pass through.
+
+11
+00:00:31.367 --> 00:00:33.270
+The clerk doesn't do most jobs.
+
+12
+00:00:33.270 --> 00:00:38.121
+It knows which worker does each one, calls them, and passes back what they say.
+
+13
+00:00:38.333 --> 00:00:39.225
+Let's map it.
+
+14
+00:00:39.225 --> 00:00:42.656
+The terminal is the window: the app you type into.
+
+15
+00:00:42.867 --> 00:00:49.311
+The shell is the clerk: the program inside the window that reads your line and starts other programs.
+
+16
+00:00:49.311 --> 00:00:52.309
+zsh on your Mac, usually bash on Linux servers.
+
+17
+00:00:52.533 --> 00:00:56.851
+A command is the worker, usually a program file on disk.
+
+18
+00:00:56.851 --> 00:01:00.474
+ls, which lists files, is the file /usr/bin/ls.
+
+19
+00:01:00.474 --> 00:01:03.327
+The clerk finds it through your PATH.
+
+20
+00:01:03.533 --> 00:01:07.403
+A few commands, like cd, are jobs the clerk does itself.
+
+21
+00:01:07.403 --> 00:01:09.200
+Those are called builtins.
+
+22
+00:01:09.433 --> 00:01:11.846
+And here's the thing about this clerk.
+
+23
+00:01:11.846 --> 00:01:13.179
+Brilliant at reading.
+
+24
+00:01:13.179 --> 00:01:14.513
+Hopeless at guessing.
+
+25
+00:01:14.513 --> 00:01:16.735
+It does exactly what the note says.
+
+26
+00:01:17.667 --> 00:01:23.903
+So let's watch the clerk read one note: ls -l -h server/var/log.
+
+27
+00:01:24.133 --> 00:01:27.701
+Before any program starts, the clerk takes the note apart.
+
+28
+00:01:27.701 --> 00:01:30.653
+The shell splits the line on spaces, into words.
+
+29
+00:01:30.867 --> 00:01:33.433
+The first word is the program to run.
+
+30
+00:01:33.667 --> 00:01:39.284
+Every other word becomes an argument: a plain piece of text, handed to that program.
+
+31
+00:01:39.500 --> 00:01:42.459
+Notice: the shell doesn't know what -l means.
+
+32
+00:01:42.459 --> 00:01:44.694
+It only cuts the line into pieces.
+
+33
+00:01:44.694 --> 00:01:47.456
+The program decides what each piece means.
+
+34
+00:01:47.667 --> 00:01:51.606
+By habit, words that start with a dash are options, or flags.
+
+35
+00:01:51.606 --> 00:01:54.513
+Short ones are one letter and can be grouped.
+
+36
+00:01:54.513 --> 00:01:56.903
+Long ones are words after two dashes.
+
+37
+00:01:58.233 --> 00:02:02.519
+Now a file called my notes.txt, with a space in its name.
+
+38
+00:02:02.519 --> 00:02:04.399
+You type ls my notes.txt.
+
+39
+00:02:04.399 --> 00:02:07.256
+How many files does ls go looking for?
+
+40
+00:02:10.467 --> 00:02:10.792
+Two.
+
+41
+00:02:10.792 --> 00:02:18.360
+The clerk splits on that space, so ls asks for a file called my, and a file called notes.txt.
+
+42
+00:02:18.360 --> 00:02:19.255
+Two errors.
+
+43
+00:02:19.467 --> 00:02:21.368
+The clerk did a perfect job.
+
+44
+00:02:21.368 --> 00:02:23.405
+Of exactly what the note said.
+
+45
+00:02:23.633 --> 00:02:28.106
+Quote the name, or put a backslash before the space, and it stays one word.
+
+46
+00:02:28.106 --> 00:02:31.028
+Better still, keep spaces out of your file names.
+
+47
+00:02:31.733 --> 00:02:33.674
+Now a different kind of note.
+
+48
+00:02:33.674 --> 00:02:36.952
+Suppose it says: shred every report from October.
+
+49
+00:02:37.167 --> 00:02:43.553
+The clerk walks to the drawer, writes down every October report's name, and hands the worker that list.
+
+50
+00:02:43.553 --> 00:02:46.033
+The worker never hears the word October.
+
+51
+00:02:46.767 --> 00:02:49.898
+A pattern for file names works the same way.
+
+52
+00:02:49.898 --> 00:02:51.890
+In the lab, type echo *.log.
+
+53
+00:02:51.890 --> 00:02:55.448
+The star matches any run of characters, even none.
+
+54
+00:02:55.667 --> 00:02:58.017
+The shell splits the line, as before.
+
+55
+00:02:58.017 --> 00:02:59.669
+But one word is a pattern.
+
+56
+00:02:59.900 --> 00:03:05.261
+So, before the program starts, the clerk reads the folder, and keeps the names that fit.
+
+57
+00:03:05.467 --> 00:03:08.567
+Then it puts them, sorted, in place of the pattern.
+
+58
+00:03:08.800 --> 00:03:12.015
+The program never sees the pattern, only the names.
+
+59
+00:03:12.015 --> 00:03:14.979
+And echo just prints the arguments it receives.
+
+60
+00:03:15.200 --> 00:03:17.929
+So, back to our opening question.
+
+61
+00:03:17.929 --> 00:03:19.583
+What did rm receive?
+
+62
+00:03:19.583 --> 00:03:20.493
+Not a star.
+
+63
+00:03:20.493 --> 00:03:21.733
+Two file names.
+
+64
+00:03:21.967 --> 00:03:25.255
+A pattern like this is called a glob, or a wildcard.
+
+65
+00:03:25.255 --> 00:03:27.468
+Now you know who does the matching.
+
+66
+00:03:27.468 --> 00:03:29.112
+The clerk, not the worker.
+
+67
+00:03:29.833 --> 00:03:34.106
+Quotes switch globbing off: in quotes, echo prints the star itself.
+
+68
+00:03:34.106 --> 00:03:37.932
+And a star skips hidden files, whose names start with a dot.
+
+69
+00:03:38.133 --> 00:03:39.780
+And when nothing matches?
+
+70
+00:03:39.780 --> 00:03:47.619
+In bash the pattern passes on unchanged, as if the clerk found no October reports and handed over the words themselves.
+
+71
+00:03:47.833 --> 00:03:51.114
+In zsh, the shell refuses to run the line at all.
+
+72
+00:03:51.114 --> 00:03:55.868
+You will see the zsh way on your Mac, and the bash way on every server.
+
+73
+00:03:56.600 --> 00:03:59.171
+Now the dangerous one, the shredder.
+
+74
+00:03:59.171 --> 00:04:04.314
+You mean to delete one folder called old logs, with a space in its name.
+
+75
+00:04:04.314 --> 00:04:06.028
+You type rm -r old logs.
+
+76
+00:04:06.233 --> 00:04:08.655
+You already know what the clerk does.
+
+77
+00:04:08.655 --> 00:04:12.647
+It splits on the space, so rm gets two folders, old and logs.
+
+78
+00:04:12.867 --> 00:04:14.121
+It deletes both.
+
+79
+00:04:14.121 --> 00:04:16.317
+rm has no trash and no undo.
+
+80
+00:04:16.317 --> 00:04:18.983
+The Mac's Trash belongs to Finder.
+
+81
+00:04:18.983 --> 00:04:21.021
+rm just removes the names.
+
+82
+00:04:21.733 --> 00:04:23.257
+So, the guardrails.
+
+83
+00:04:23.257 --> 00:04:25.663
+Run pwd, to see where you are.
+
+84
+00:04:25.663 --> 00:04:29.753
+Put echo in front, to see exactly what rm will get.
+
+85
+00:04:29.967 --> 00:04:34.170
+While you learn, add -i, so rm asks before each file.
+
+86
+00:04:34.170 --> 00:04:36.628
+And read any rm -rf line twice.
+
+87
+00:04:36.628 --> 00:04:39.800
+The -f part switches off every question.
+
+88
+00:04:40.033 --> 00:04:41.319
+rm has no undo.
+
+89
+00:04:41.319 --> 00:04:43.289
+Look before you delete.
+
+90
+00:04:44.000 --> 00:04:46.300
+So that's the whole path of one note.
+
+91
+00:04:46.300 --> 00:04:52.269
+The clerk splits it on spaces, swaps patterns for real names, and hands the worker a plain list.
+
+92
+00:04:52.500 --> 00:04:55.847
+The program only ever sees what the clerk wrote down.
+
+93
+00:04:55.847 --> 00:04:59.511
+So when in doubt, ask echo to read the clerk's list aloud.
+
+94
+00:05:00.333 --> 00:05:01.567
+A quick check.
+
+95
+00:05:01.567 --> 00:05:05.267
+A folder holds report.txt and .secret.txt.
+
+96
+00:05:05.267 --> 00:05:08.439
+What does echo *.txt print, in bash?
+
+97
+00:05:11.667 --> 00:05:12.737
+Just report.txt.
+
+98
+00:05:12.737 --> 00:05:20.363
+A star at the start of a glob skips names that begin with a dot, so the clerk leaves the hidden file off the list.

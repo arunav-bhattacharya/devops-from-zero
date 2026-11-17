@@ -65,7 +65,7 @@ class D22KnifeInBox(VoiceScene):
 
         # 3. the wish: cook in the kitchen, ship only the lunch
         self.beat("Wouldn't it be nice to cook in the kitchen, and ship only the lunch? Leave the knife and the flour on the counter.",
-                  VGroup(box_, lunch, knife, flour, key, lab).animate.scale(0.75).move_to([3.4, 0.1, 0]), run_time=1.6)
+                  FadeOut(VGroup(box_, lunch, knife, flour, key, lab)), run_time=1.6)
         kit = RoundedRectangle(corner_radius=0.2, width=4.6, height=3.6, stroke_color=BLUE_M, stroke_width=3).set_fill(tint(BLUE_M, 0.06), opacity=1).move_to([-3.4, 0.0, 0])
         kl = VGroup(M("FROM python:3.14-slim AS build", 22, BLUE_M), T("stage 1: the kitchen", 26, BLUE_M)).arrange(DOWN, buff=0.12).next_to(kit, UP, buff=0.2)
         self.steps("That is a multi-stage build. One Dockerfile, with two FROM lines. Each FROM starts a new stage, from a clean base. The first stage is the kitchen.",
@@ -75,10 +75,10 @@ class D22KnifeInBox(VoiceScene):
         flk = chip("build leftovers", GREY_B, 24).move_to(kit.get_center() + DOWN * 1.15)
         self.steps("In the kitchen we make a virtual environment, a folder called venv that holds the app's Python packages. pip installs them into it, and then we remove pip from it.",
                    (1.6, Wait(1.6)), (0.6, FadeIn(venv)), (1.4, Wait(1.4)), (0.6, FadeIn(pipk), FadeIn(flk)), (1.2, Wait(1.2)), (0.6, pipk.animate.set_opacity(0.3)))
-        newbox = lunchbox(GOLD_M, 3.3, 2.25).move_to([3.4, 0.1, 0])
+        newbox = lunchbox(GOLD_M, 3.9, 2.25).move_to([3.4, 0.1, 0])
         nl = VGroup(M("FROM python:3.14-slim", 22, GOLD_M), T("stage 2: the lunchbox", 26, GOLD_M)).arrange(DOWN, buff=0.12).next_to(newbox, UP, buff=0.2)
         self.steps("The second stage starts again from a fresh, empty base. It even removes the base image's own pip.",
-                   (0.8, FadeOut(VGroup(box_, lunch, knife, flour, key, lab))), (0.8, Create(newbox), FadeIn(nl)))
+                   (0.8, Create(newbox), FadeIn(nl)))
         cp = M("COPY --from=build /venv /venv", 22, GREEN_M).move_to([0, -2.6, 0])
         arr = Arrow(kit.get_right() + UP * 0.75, newbox[0].get_left() + UP * 0.5, buff=0.15, stroke_width=3, color=GREEN_M, max_tip_length_to_length_ratio=0.1)
         v2 = venv.copy().scale(0.9).move_to(newbox[0].get_center() + UP * 0.45)
@@ -108,6 +108,7 @@ class D22KnifeInBox(VoiceScene):
         self.play(FadeOut(VGroup(sz, was, scan, arr)), run_time=0.4)
 
         # 5. a normal user
+        self.play(FadeOut(nl), VGroup(newbox, v2, app).animate.scale(0.85).move_to([4.9, 1.3, 0]), run_time=0.6)
         who = M("$ docker run --rm hello-devops:simple whoami", 22, GREY_B).move_to([0, 3.35, 0])
         root = M("root", 26, RED_M).next_to(who, DOWN, buff=0.15)
         self.steps("Next, who opens the box. The old image runs as root. Ask it who am I, and it says root.",
@@ -126,7 +127,6 @@ class D22KnifeInBox(VoiceScene):
         self.play(FadeOut(VGroup(who, root, kern, user, r1)), run_time=0.5)
 
         # 6. the key under the lid: secrets
-        self.play(VGroup(newbox, nl, v2, app).animate.scale(0.8).move_to([4.1, 1.3, 0]), run_time=0.6)
         arg = VGroup(M("ARG API_TOKEN", 24, YELLOW_M), M("--build-arg API_TOKEN=s3cr3t-demo-token", 22, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15).move_to([-2.6, 2.2, 0])
         self.steps("Last, the key under the lid. Sometimes a build step needs a secret, like a token to download a private package. A token is a secret string that works like a password.",
                    (2.4, Wait(2.4)), (0.8, FadeIn(arg[0])))
@@ -134,7 +134,7 @@ class D22KnifeInBox(VoiceScene):
                    (1.6, Wait(1.6)), (0.8, FadeIn(arg[1])))
         self.wait(2.0)
         hist = VGroup(M("$ docker history --no-trunc leak | grep API_TOKEN", 22, GREY_B), M("API_TOKEN=s3cr3t-demo-token", 24, RED_M), M("API_TOKEN=s3cr3t-demo-token", 24, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-2.0, 0.0, 0])
-        tape = chip("key", YELLOW_M, 24).move_to(newbox[0].get_top() + DOWN * 0.3)
+        tape = chip("key", YELLOW_M, 24).move_to(newbox[0].get_top())
         self.steps("Anyone who pulls the image. docker history, the list of steps that built it, prints the token. Twice.",
                    (1.4, Wait(1.4)), (0.6, FadeIn(hist[0])), (1.6, Wait(1.6)), (0.6, FadeIn(hist[1]), FadeIn(hist[2])), (0.6, FadeIn(tape, scale=0.7)))
         leaks = T("ARG, ENV, or COPY then rm: all ship with the image", 26, RED_M).move_to([-1.2, -1.35, 0])

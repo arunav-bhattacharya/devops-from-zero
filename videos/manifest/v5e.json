@@ -8,6 +8,26 @@
    "scene": "D38WishLoop",
    "poster_at": 200.0,
    "replaces": "d38-reconcile"
+  },
+  {
+   "slug": "d38-ticket-rail",
+   "title": "kubectl said created. Is it running? One order from the door to the stove",
+   "after": 4,
+   "file": "p10/d38_ticket_rail.py",
+   "scene": "D38TicketRail",
+   "poster_at": 205.0,
+   "replaces": "d38-apply"
+  }
+ ],
+ "d39": [
+  {
+   "slug": "d39-prep-runner",
+   "title": "Who starts first inside a Pod: prep cooks, a runner, then the dish",
+   "after": 4,
+   "file": "p10/d39_prep_runner.py",
+   "scene": "D39PrepRunner",
+   "poster_at": 280.0,
+   "replaces": "d39-pod-start"
   }
  ]
 }

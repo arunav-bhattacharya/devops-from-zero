@@ -1,0 +1,357 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.660
+Our office building now has a building manager.
+
+2
+00:00:05.660 --> 00:00:10.886
+Each morning, the badge office prints every worker a fresh badge, good for one day.
+
+3
+00:00:10.886 --> 00:00:13.216
+Door readers check badges, not faces.
+
+4
+00:00:13.433 --> 00:00:16.578
+One Monday the manager makes the rule strict.
+
+5
+00:00:16.578 --> 00:00:17.905
+No badge, no entry.
+
+6
+00:00:19.533 --> 00:00:26.496
+By ten o'clock, the cleaners, the plant service and the courier with the morning reports are all stuck on the pavement.
+
+7
+00:00:26.496 --> 00:00:28.485
+Nobody had told them about badges.
+
+8
+00:00:28.700 --> 00:00:30.440
+Every door worked perfectly.
+
+9
+00:00:30.440 --> 00:00:33.919
+The people who got hurt were the ones nobody remembered.
+
+10
+00:00:33.919 --> 00:00:38.640
+Hold on to that, because we are going to make this exact mistake on purpose.
+
+11
+00:00:39.467 --> 00:00:41.771
+You've met half of this already.
+
+12
+00:00:41.771 --> 00:00:45.660
+With ordinary HTTPS, only the server proves who it is.
+
+13
+00:00:45.660 --> 00:00:47.605
+The shop shows its ID card.
+
+14
+00:00:47.605 --> 00:00:50.053
+You, the customer, stay anonymous.
+
+15
+00:00:50.267 --> 00:00:52.728
+Between services, that isn't enough.
+
+16
+00:00:52.728 --> 00:00:56.079
+The fraud check wants to know: who is calling me?
+
+17
+00:00:56.079 --> 00:00:59.088
+Mutual TLS means both sides show an ID card.
+
+18
+00:00:59.088 --> 00:01:01.344
+Each one learns who the other is.
+
+19
+00:01:02.167 --> 00:01:03.674
+Now the real building.
+
+20
+00:01:03.674 --> 00:01:08.333
+Istio's control plane, a program called istiod, is the badge office.
+
+21
+00:01:08.333 --> 00:01:13.813
+Here are two Pods in the namespace hello-mesh: a small client, and hello-devops.
+
+22
+00:01:14.033 --> 00:01:17.227
+Each Pod has an Envoy sidecar next to the app.
+
+23
+00:01:17.227 --> 00:01:19.380
+The sidecar is the door reader.
+
+24
+00:01:19.600 --> 00:01:21.425
+What name goes on the badge?
+
+25
+00:01:21.425 --> 00:01:26.638
+It comes from the Pod's ServiceAccount, the identity Kubernetes gives a program.
+
+26
+00:01:26.638 --> 00:01:30.223
+Istio writes it in a standard shape called a SPIFFE ID.
+
+27
+00:01:30.433 --> 00:01:36.294
+This one reads: in the cluster's trust domain, namespace hello-mesh, ServiceAccount client.
+
+28
+00:01:36.294 --> 00:01:42.863
+Two Pods that share a ServiceAccount share a name, which is why the lab gives each Deployment its own.
+
+29
+00:01:43.567 --> 00:01:45.925
+How does the client get its badge?
+
+30
+00:01:45.925 --> 00:01:46.688
+Four steps.
+
+31
+00:01:46.688 --> 00:01:53.208
+A small Istio agent next to Envoy makes a private key, the secret half, and a signing request.
+
+32
+00:01:53.433 --> 00:01:59.221
+It sends the request to istiod, with the Pod's ServiceAccount token as proof of who it is.
+
+33
+00:01:59.433 --> 00:02:04.560
+istiod checks the token, and signs a certificate valid for 24 hours.
+
+34
+00:02:04.767 --> 00:02:10.097
+The agent hands key and certificate to Envoy, and renews them before they expire.
+
+35
+00:02:10.097 --> 00:02:15.361
+Nobody rotates a certificate by hand, and a stolen badge is only good for a day.
+
+36
+00:02:16.067 --> 00:02:18.343
+Now the client calls hello-devops.
+
+37
+00:02:18.343 --> 00:02:20.151
+The app makes a plain call.
+
+38
+00:02:20.151 --> 00:02:26.647
+Its sidecar opens a mutual TLS connection, and the two door readers show each other their badges.
+
+39
+00:02:26.867 --> 00:02:32.658
+The receiving reader learns who is calling from the handshake itself, not from anything the app wrote.
+
+40
+00:02:32.658 --> 00:02:34.475
+You can't fake it with a header.
+
+41
+00:02:35.100 --> 00:02:37.644
+But not every caller lives in the mesh.
+
+42
+00:02:37.644 --> 00:02:40.906
+Here's a Pod in another namespace, called outside.
+
+43
+00:02:40.906 --> 00:02:42.928
+It has no sidecar, so no badge.
+
+44
+00:02:43.133 --> 00:02:45.200
+Istio's default is PERMISSIVE.
+
+45
+00:02:45.200 --> 00:02:48.301
+Each door accepts badges, and plain text too.
+
+46
+00:02:48.301 --> 00:02:50.919
+So the outside Pod's call still works.
+
+47
+00:02:51.133 --> 00:02:52.713
+Now our strict Monday.
+
+48
+00:02:52.713 --> 00:02:57.306
+We apply a PeerAuthentication that says STRICT: mutual TLS only.
+
+49
+00:02:57.306 --> 00:03:00.465
+What happens to the outside Pod's next call?
+
+50
+00:03:00.465 --> 00:03:01.613
+Pause and guess.
+
+51
+00:03:04.833 --> 00:03:05.526
+Refused.
+
+52
+00:03:05.526 --> 00:03:07.603
+curl exits with code 56.
+
+53
+00:03:07.603 --> 00:03:12.277
+The connection was cut before any HTTP answer arrived.
+
+54
+00:03:12.500 --> 00:03:12.824
+Well.
+
+55
+00:03:12.824 --> 00:03:18.001
+That looks exactly like a network fault, which is why it's so confusing at work.
+
+56
+00:03:18.001 --> 00:03:23.955
+The cleaner is on the pavement, and the door reader has no idea a cleaner was ever expected.
+
+57
+00:03:24.167 --> 00:03:30.482
+So the rule: start PERMISSIVE, check every caller of the namespace, and only then switch to STRICT.
+
+58
+00:03:30.482 --> 00:03:33.097
+Go strict after every caller has a badge.
+
+59
+00:03:33.900 --> 00:03:38.452
+Badges are verified now, so we can decide who may open which door.
+
+60
+00:03:38.452 --> 00:03:40.521
+That's an AuthorizationPolicy.
+
+61
+00:03:40.521 --> 00:03:43.486
+A workload with no policy lets everyone in.
+
+62
+00:03:43.486 --> 00:03:47.900
+Say a second caller, a monitoring Pod, also visits hello-devops.
+
+63
+00:03:48.433 --> 00:03:49.848
+Both calls work.
+
+64
+00:03:50.100 --> 00:03:55.809
+Now a team adds one friendly rule for hello-devops: ALLOW the client, for GET requests.
+
+65
+00:03:55.809 --> 00:03:58.236
+They only meant to let the client in.
+
+66
+00:03:58.236 --> 00:04:00.533
+What happens to the monitoring Pod?
+
+67
+00:04:00.533 --> 00:04:01.583
+Pause and guess.
+
+68
+00:04:04.800 --> 00:04:05.688
+Locked out.
+
+69
+00:04:05.688 --> 00:04:13.923
+Once any ALLOW policy selects a workload, every request no ALLOW rule matches gets 403, access denied.
+
+70
+00:04:14.133 --> 00:04:19.245
+That one friendly rule became a guest list, and the monitoring Pod isn't on it.
+
+71
+00:04:19.245 --> 00:04:23.128
+An ALLOW policy is also a deny for everyone it doesn't name.
+
+72
+00:04:23.933 --> 00:04:25.243
+Two honest limits.
+
+73
+00:04:25.243 --> 00:04:31.718
+In ambient mode, the guard on each node, ztunnel, sees connections, not paths or methods.
+
+74
+00:04:31.718 --> 00:04:37.465
+A policy with HTTP rules has to sit on a waypoint, an Envoy for that namespace.
+
+75
+00:04:37.465 --> 00:04:42.776
+If it lands on ztunnel instead, Istio fails safe and treats it as a DENY.
+
+76
+00:04:43.000 --> 00:04:50.089
+And Istio itself is one more big system to run, with its own objects, upgrades and certificate authority.
+
+77
+00:04:50.800 --> 00:04:52.528
+So the moral of the story.
+
+78
+00:04:52.528 --> 00:04:58.707
+istiod prints every workload a one-day badge, and the door readers check it in the handshake.
+
+79
+00:04:58.707 --> 00:04:59.837
+A badge says who.
+
+80
+00:04:59.837 --> 00:05:01.299
+A policy says who may.
+
+81
+00:05:01.299 --> 00:05:05.020
+And before you lock any door, list everyone who uses it.
+
+82
+00:05:05.633 --> 00:05:06.635
+A quick check.
+
+83
+00:05:06.635 --> 00:05:14.362
+You switch to STRICT, and a job in another namespace, with no sidecar, starts failing with a cut connection.
+
+84
+00:05:14.362 --> 00:05:14.649
+Why?
+
+85
+00:05:14.649 --> 00:05:15.793
+Pause and think.
+
+86
+00:05:19.000 --> 00:05:20.285
+It has no badge.
+
+87
+00:05:20.285 --> 00:05:25.584
+STRICT accepts mutual TLS only, so its plain-text call is refused.
+
+88
+00:05:25.800 --> 00:05:29.512
+Next, lighter meshes, and the question this one leaves open.
+
+89
+00:05:29.512 --> 00:05:31.616
+Does your team need a mesh at all?

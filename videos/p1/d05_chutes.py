@@ -91,7 +91,7 @@ class D05Chutes(VoiceScene):
         forms = VGroup(VGroup(M(">  file", 26, GREEN_M), T("replace what is in it", 24, GREY_B)).arrange(RIGHT, buff=0.35),
                        VGroup(M(">> file", 26, GREEN_M), T("add to the end", 24, GREY_B)).arrange(RIGHT, buff=0.35),
                        VGroup(M("2> /dev/null", 26, RED_M), T("throw complaints in the bin", 24, GREY_B)).arrange(RIGHT, buff=0.35))
-        forms.arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to(LEFT * 3.4 + DOWN * 2.6)
+        forms.arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to(LEFT * 2.4 + DOWN * 2.6)
         self.beat("One greater than replaces the file. Two add to the end. And two, greater than, dev null, sends complaints to the bin: a special file that discards everything.",
                   LaggedStart(*[FadeIn(f, shift=UP * 0.1) for f in forms], lag_ratio=0.9), run_time=5.6)
         self.play(FadeOut(VGroup(d, inn, fileb, err, a_in, a_out, a_err, n0, n1, n2, scr[0], scr[2], forms, cm)), run_time=0.6)
@@ -150,15 +150,15 @@ class D05Chutes(VoiceScene):
         panel_tl = np.array([D.get_left()[0] + 0.2, 0.55, 0])
 
         def panel(lines, color=WHITE):
-            g_ = VGroup(*[M(l, 24, color) for l in lines]).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+            g_ = VGroup(*[M(l, 24, color) for l in lines]).arrange(DOWN, aligned_edge=LEFT, buff=0.16)
             return g_.move_to(panel_tl, aligned_edge=UL)
 
         aw = D[0].copy().move_to(D[0])
         self.beat("Now the manager's report, built one desk at a time, looking at the output after each step.",
-                  run_time=None)
+                  FadeIn(D[0]), Write(cmdline), run_time=2.0)
         p1 = panel(["203.0.113.7", "10.0.0.2", "198.51.100.23", "203.0.113.99", "..."])
         self.beat("Desk one is awk, a tool for columns. Dollar one is the first column, and in access.log that's the client's IP address, the number that identifies a computer on a network.",
-                  FadeIn(D[0]), Write(cmdline), Succession(Wait(4.2), FadeIn(p1, shift=DOWN * 0.1)), run_time=6.0)
+                  Succession(Wait(4.2), FadeIn(p1, shift=DOWN * 0.1)), run_time=6.0)
         side = T("238 lines, one IP each", 26, GREY_B).move_to(RIGHT * 3.6 + DOWN * 0.5)
         self.beat("One IP per request. 238 lines.", FadeIn(side), run_time=1.2)
 
@@ -224,7 +224,7 @@ class D05Chutes(VoiceScene):
         opts = VGroup(M("./backup.sh 2>&1 > backup.log", 26, GREY_B), M("./backup.sh > backup.log 2>&1", 26, GREY_B),
                       M("./backup.sh | backup.log", 26, GREY_B), M("./backup.sh >> backup.log", 26, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.25).next_to(cq2, DOWN, buff=0.5)
         self.beat("A quick check. A job sends its output to backup dot log, but its errors still appear on screen. Read two, greater than, ampersand one, as: send tray two wherever tray one goes right now. Which line fixes it?",
-                  FadeIn(cq), FadeIn(cq2), Succession(Wait(5.2), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.3)), run_time=7.6)
+                  Succession(FadeIn(VGroup(cq, cq2), run_time=0.8), Wait(4.4), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.3)), run_time=7.6)
         self.countdown(DOWN * 3.05, "pause and think")
         self.beat("The second one. The shell reads redirections left to right. First tray one points at the file, then tray two follows it there.",
                   opts[1].animate.set_color(GREEN_M), *[o.animate.set_opacity(0.35) for i, o in enumerate(opts) if i != 1], run_time=1.6)

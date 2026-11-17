@@ -9,5 +9,16 @@
    "poster_at": 288.0,
    "replaces": "d47-gitops"
   }
+ ],
+ "d48": [
+  {
+   "slug": "d48-signed-card",
+   "title": "One soup, two rooms: promoting the exact tested version from dev to prod",
+   "after": 2,
+   "file": "p11/d48_signed_card.py",
+   "scene": "D48SignedCard",
+   "poster_at": 205.0,
+   "replaces": "d48-promotion"
+  }
  ]
 }

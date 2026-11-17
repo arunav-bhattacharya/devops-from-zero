@@ -18,10 +18,10 @@ def card(lines, color, w=None, size=22, pad=0.35):
     return VGroup(r, g)
 
 
-def sticky(text, c=YELLOW_M, size=22):
+def sticky(text, c=YELLOW_M, size=22, minw=0):
     t = M(text, size, BLACK)
-    r = Rectangle(width=t.width + 0.35, height=0.55, stroke_width=0).set_fill(c, 0.92)
-    t.move_to(r)
+    r = Rectangle(width=max(t.width + 0.35, minw), height=0.55, stroke_width=0).set_fill(c, 1)
+    t.move_to(r).align_to(r, LEFT).shift(RIGHT * 0.175)
     return VGroup(r, t).rotate(0.05)
 
 
@@ -62,7 +62,7 @@ class D45TwoRoads(VoiceScene):
         yl = VGroup(*[M(n, 26, TEAL_M).move_to(b) for n, b in zip(("dev/", "staging/", "prod/"), blabs)])
         self.steps("Our app is in the same spot. hello-devops has over ten YAML files, plain text files describing its objects. Dev, staging and prod make three copies.",
                    (1.0, FadeOut(qs)), (2.6, Wait(2.6)), (1.0, *[Transform(b, y) for b, y in zip(blabs, yl)]))
-        dif = VGroup(*[card([(f"image tag: {t}", GREY_B), (f"replicas: {r}", GREY_B), (f"greeting: {g}", GREY_B)], GREY_B, size=20).move_to([x, -1.0, 0])
+        dif = VGroup(*[card([(f"image tag: {t}", GREY_B), (f"replicas: {r}", GREY_B), (f"greeting: {g}", GREY_B)], GREY_B, size=22).move_to([x, -1.0, 0])
                        for t, r, g, x in (("1.1.0", "1", "dev", BX[0]), ("1.0.0", "2", "staging", BX[1]), ("1.0.0", "4", "prod", BX[2]))])
         pdb = M("+ disruption budget", 22, GOLD_M).next_to(dif[2], DOWN, buff=0.25)
         self.beat("Each copy needs its own image tag, its own replica count and its own greeting. And prod also wants a disruption budget.",
@@ -160,9 +160,10 @@ class D45TwoRoads(VoiceScene):
                   FadeIn(h2), FadeIn(base), run_time=2.2)
         self.beat("You've used it already, with kubectl apply dash k.",
                   Indicate(base[1][0], color=GREEN_M), run_time=1.6)
-        notes = VGroup(sticky("namespace: hello-prod"), sticky("replicas: 4"), sticky("+ pdb.yaml", GOLD_M), sticky("GREETING: Hello from prod!"))
+        notes = VGroup(sticky("namespace: hello-prod"), sticky("replicas: 4"), sticky("+ pdb.yaml", GOLD_M), sticky("GREETING: Hello from prod!", minw=6.0))
         for n, y in zip(notes, (1.35, 0.55, -0.25, -1.05)):
             n.move_to([2.9, y, 0])
+        notes[3].move_to([3.35, -1.05, 0])
         ovl = T("overlays/prod", 26, YELLOW_M).move_to([2.9, 2.2, 0])
         self.beat("An overlay is another folder. It points at the base, and lists only the changes for one branch. Those are the sticky notes.",
                   FadeIn(ovl), LaggedStart(*[FadeIn(n, shift=LEFT * 0.2) for n in notes], lag_ratio=0.3), run_time=2.6)
@@ -170,10 +171,8 @@ class D45TwoRoads(VoiceScene):
                   *[Indicate(n, color=WHITE, scale_factor=1.05) for n in notes], run_time=3.0)
         tgt = [base[1][1], base[1][2], None, base[1][4]]
         self.steps("Kustomize lays the notes on top, and prints the result. Plain YAML again.",
-                   (1.6, notes[0].animate.scale(0.85).move_to(base[1][1].get_right() + RIGHT * 1.5),
-                    notes[1].animate.scale(0.85).move_to(base[1][2].get_right() + RIGHT * 2.2),
-                    notes[3].animate.scale(0.85).move_to(base[1][4].get_right() + RIGHT * 1.6),
-                    notes[2].animate.scale(0.85).move_to(base.get_bottom() + DOWN * 0.5)),
+                   (1.6, *[notes[i].animate.move_to([base[1][j].get_left()[0] - 0.12 + notes[i].width / 2, base[1][j].get_center()[1], 0]) for i, j in ((0, 1), (1, 2), (3, 4))],
+                    notes[2].animate.move_to(base.get_bottom() + DOWN * 0.5)),
                    (1.0, Wait(1.0)))
         cmdk = M("kubectl kustomize overlays/prod", 24, GREY_B).move_to([0, -3.1, 0])
         self.play(FadeIn(cmdk), run_time=0.5)
@@ -195,23 +194,22 @@ class D45TwoRoads(VoiceScene):
         self.play(FadeOut(VGroup(base, dnotes, ovl, cyc, h2)), run_time=0.6)
 
         # ---------- 6. both roads end in plain YAML
-        hb = box("Helm: fill blanks", BLUE_M, w=4.0, size=28).move_to([-3.6, 2.2, 0])
-        kb = box("Kustomize: patch a base", GREEN_M, w=4.4, size=28).move_to([3.6, 2.2, 0])
-        py = box("plain YAML", WHITE, w=3.2, size=28).move_to([0, 0.0, 0])
-        api = box("API server", GREY_B, w=3.2, size=28).move_to([0, -2.2, 0])
+        hb = box("Helm: fill blanks", BLUE_M, w=4.0, size=28).move_to([-3.6, 2.85, 0])
+        kb = box("Kustomize: patch a base", GREEN_M, w=4.9, size=28).move_to([3.7, 2.85, 0])
+        py = box("plain YAML", WHITE, w=3.2, size=28).move_to([0, 1.7, 0])
+        api = box("API server", GREY_B, w=3.2, size=28).move_to([0, 0.45, 0])
         ar = VGroup(edge_arrow(hb, py), edge_arrow(kb, py), edge_arrow(py, api))
         self.beat("Two roads, one destination. Either way, the result is ordinary Kubernetes YAML, and the API server never knows which tool made it.",
                   FadeIn(hb), FadeIn(kb), Succession(Wait(1.2), AnimationGroup(GrowArrow(ar[0]), GrowArrow(ar[1]), FadeIn(py))),
                   Succession(Wait(2.6), AnimationGroup(GrowArrow(ar[2]), FadeIn(api))), run_time=4.4)
 
         # ---------- 7. guardrails: which one, and when each goes too far
-        self.play(VGroup(hb, kb, py, api, ar).animate.scale(0.7).move_to([0, 2.2, 0]), run_time=0.8)
         rows = VGroup(
             VGroup(T("someone else's software", 26), M("Helm", 26, BLUE_M)),
             VGroup(T("your app, a few differences", 26), M("either; Kustomize stays plain", 26, GREEN_M)),
             VGroup(T("your app, many teams, many settings", 26), M("Helm", 26, BLUE_M)))
         for i, r in enumerate(rows):
-            y = 0.2 - 0.75 * i
+            y = -0.55 - 0.7 * i
             r[0].move_to([-5.9, y, 0], aligned_edge=LEFT); r[1].move_to([1.0, y, 0], aligned_edge=LEFT)
         self.beat("So which one? Mostly, whose software is it? Someone else's, like Envoy Gateway, ships as a Helm chart.",
                   FadeIn(rows[0]), run_time=1.6)
@@ -220,7 +218,7 @@ class D45TwoRoads(VoiceScene):
         self.beat("Many teams, many settings? Helm's values give each team one clear place.",
                   FadeIn(rows[2]), run_time=1.6)
         lims = VGroup(T("values.yaml repeats the whole Deployment: gone too far", 24, RED_M),
-                      T("an overlay changes half the base: fix the base", 24, RED_M)).arrange(DOWN, buff=0.25).move_to([0, -2.75, 0])
+                      T("an overlay changes half the base: fix the base", 24, RED_M)).arrange(DOWN, buff=0.25).move_to([0, -2.9, 0])
         self.beat("And each has a limit. A values file that repeats the whole Deployment has gone too far. An overlay that changes half the base means the base is wrong.",
                   FadeIn(lims[0]), Succession(Wait(3.0), FadeIn(lims[1])), run_time=4.4)
         self.play(FadeOut(VGroup(hb, kb, py, api, ar, rows, lims)), run_time=0.6)

@@ -20,5 +20,27 @@
    "poster_at": 224.0,
    "replaces": "d02-path"
   }
+ ],
+ "d03": [
+  {
+   "slug": "d03-clerk",
+   "title": "What the shell does with your line: split, expand, then run",
+   "after": 2,
+   "file": "p1/d03_clerk.py",
+   "scene": "D03Clerk",
+   "poster_at": 296.0,
+   "replaces": "d03-shell-line"
+  }
+ ],
+ "d04": [
+  {
+   "slug": "d04-highlighter",
+   "title": "When grep says nothing: a highlighter, a shape, and a silence that lies",
+   "after": 3,
+   "file": "p1/d04_highlighter.py",
+   "scene": "D04Highlighter",
+   "poster_at": 232.0,
+   "replaces": "d04-grep-find"
+  }
  ]
 }

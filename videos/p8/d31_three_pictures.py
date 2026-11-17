@@ -47,14 +47,14 @@ class D31ThreePictures(VoiceScene):
         self.title_card("Run it twice, get one café", "how Terraform decides what to do")
 
         # 1. the café nobody wrote down  [FAMILIAR, QUESTION]
-        room = panel(5.6, 3.0, GREY_B, 0.04).move_to([-2.9, 0.2, 0])
+        room = panel(6.6, 3.0, GREY_B, 0.04).move_to([-3.0, 0.2, 0])
         rl = T("café number one", 26, GREY_B).next_to(room, UP, buff=0.2)
-        machine = box("coffee machine", GOLD_M, w=2.6, h=0.7, size=24).move_to(room.get_center() + UP * 0.8 + LEFT * 1.1)
-        fridge = box("fridge: 4 degrees", BLUE_M, w=2.6, h=0.7, size=24).move_to(room.get_center() + UP * 0.8 + RIGHT * 1.35)
-        chairs = VGroup(*[chair() for _ in range(12)]).arrange(RIGHT, buff=0.18).move_to(room.get_center() + DOWN * 0.7)
+        machine = box("coffee machine", GOLD_M, w=2.9, h=0.75, size=26).move_to(room.get_center() + UP * 0.7 + LEFT * 1.6)
+        fridge = box("fridge: 4 degrees", BLUE_M, w=2.9, h=0.75, size=26).move_to(room.get_center() + UP * 0.7 + RIGHT * 1.6)
+        chairs = VGroup(*[chair().scale(0.85) for _ in range(12)]).arrange(RIGHT, buff=0.1).move_to(room.get_center() + DOWN * 0.7)
         self.beat("A friend opens a small café, and you help her set up. You plug in the coffee machine, set the fridge to four degrees, and line up twelve chairs.",
                   Create(room), FadeIn(rl), FadeIn(machine), FadeIn(fridge), LaggedStart(*[FadeIn(c) for c in chairs], lag_ratio=0.08), run_time=4.0)
-        room2 = DashedVMobject(panel(5.6, 3.0, GREY_B, 0.0), num_dashes=60).move_to([3.4, 0.2, 0])
+        room2 = DashedVMobject(panel(5.6, 3.0, GREY_B, 0.0), num_dashes=60).move_to([3.5, 0.2, 0])
         r2l = T("café number two", 26, GREY_B).next_to(room2, UP, buff=0.2)
         qm = T("?", 72, YELLOW_M).move_to(room2)
         self.beat("Nobody writes any of it down. A year later she opens a second café, exactly the same please. And you stand in the empty room, and can't remember half of it.",
@@ -69,7 +69,7 @@ class D31ThreePictures(VoiceScene):
         self.beat("So we write it down. The first idea is a list of steps, a shell script. On a computer our café is one container, a sealed box running nginx, a program that serves a web page, on port 8090.",
                   FadeIn(spl), Create(sp), LaggedStart(*[FadeIn(s, shift=RIGHT * 0.1) for s in script], lag_ratio=0.4), run_time=4.0)
         run1 = VGroup(T("run 1:", 26), T("works", 26, GREEN_M)).arrange(RIGHT, buff=0.2).next_to(sp, DOWN, buff=0.6).align_to(sp, LEFT)
-        run2 = VGroup(T("run 2:", 26), T("fails: the name tf-web is taken", 26, RED_M)).arrange(RIGHT, buff=0.2)
+        run2 = VGroup(T("run 2:", 26), T("fails: the name tf-web is taken", 26, RED_M)).arrange(RIGHT, buff=0.3)
         run2.next_to(run1, DOWN, buff=0.45).align_to(run1, LEFT)
         fit(run2, 6.4)
         self.steps("Run it once. It works. Run it again, and the second run fails, because the name tf-web is already taken.",

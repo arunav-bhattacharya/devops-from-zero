@@ -61,11 +61,11 @@ class D44FrontDoor(VoiceScene):
         self.beat("Guests shouldn't need to know which kitchen is where. So one host at the entrance sends each guest to the right place.",
                   FadeIn(guests), FadeIn(host), FadeIn(hl), run_time=2.4)
         g0 = guests[0]
-        self.play(g0.animate.move_to([-0.6, -0.1, 0]), run_time=0.7)
-        self.play(g0.animate.move_to(kit[1].get_left() + LEFT * 0.3), run_time=0.7)
+        self.play(g0.animate.move_to([-0.6, -0.1, 0]), run_time=0.5)
+        self.play(g0.animate.move_to(kit[1].get_left() + LEFT * 0.3), run_time=0.5)
         g1 = guests[1]
-        self.play(g1.animate.move_to([-0.6, -0.1, 0]), run_time=0.6)
-        self.play(g1.animate.move_to(kit[4].get_left() + LEFT * 0.3), run_time=0.6)
+        self.play(g1.animate.move_to([-0.6, -0.1, 0]), run_time=0.45)
+        self.play(g1.animate.move_to(kit[4].get_left() + LEFT * 0.3), run_time=0.45)
         tast = T("1 table in 10: tasting menu", 24, YELLOW_M).move_to([4.4, -3.25, 0])
         self.beat("On test nights, the host sends one table in ten to the new tasting menu. We'll come back to that.",
                   FadeIn(tast, shift=UP * 0.1), run_time=1.6)
@@ -101,7 +101,7 @@ class D44FrontDoor(VoiceScene):
                    (0.8, FadeIn(l4)), (1.4, VGroup(env, hdr).animate.move_to([-0.6, 0.3, 0]).scale(0.6)), (1.4, VGroup(env, hdr).animate.move_to([3.6, 0.3, 0]).scale(1 / 0.6).set_opacity(0)),
                    (1.0, Indicate(app[1], color=TEAL_M)))
         self.remove(env, hdr)
-        self.beat("Excellent hinges. No opinions. What we want is a host, someone who opens each request and decides where it goes.",
+        self.beat("Excellent hinges. No opinions. We want a host, who opens each request and decides where it goes.",
                   Indicate(doorl, color=WHITE), run_time=1.4)
         self.play(FadeOut(VGroup(door, doorl, l4)), run_time=0.5)
 
@@ -168,14 +168,14 @@ class D44FrontDoor(VoiceScene):
         badge[0].move_to(gc.get_corner(UL) + RIGHT * 0.05 + DOWN * 0.05)
         badge[1].move_to(gw.get_corner(UL) + RIGHT * 0.05 + DOWN * 0.05)
         badge[2].move_to(hr.get_corner(UL) + RIGHT * 0.05 + DOWN * 0.05)
-        badge[3].move_to(ctl.get_corner(UL) + RIGHT * 0.05 + DOWN * 0.05)
-        e1 = Arrow(gc.get_bottom() + DOWN * 0.3, ctl.get_left(), buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.1)
+        badge[3].move_to(ctl.get_corner(UR) + LEFT * 0.05 + DOWN * 0.05)
+        e1 = Arrow(own[0].get_bottom() + DOWN * 0.08, ctl.get_left(), buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.1)
         self.beat("One. The class eg names the controller. Envoy Gateway sees its own name, and accepts the class.",
                   FadeIn(badge[0]), GrowArrow(e1), run_time=1.8)
         e2 = Arrow(ctl.get_bottom(), prox.get_top(), buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.15)
         self.beat("Two. The Gateway, hello-gateway, uses class eg. So the controller starts an Envoy proxy for it, a Deployment and a Service.",
                   FadeIn(badge[1]), Succession(Wait(1.8), AnimationGroup(GrowArrow(e2), Indicate(prox[1], color=GOLD_M))), run_time=3.2)
-        e3 = DashedLine(hr.get_bottom() + DOWN * 0.3, app.get_top(), dash_length=0.1, stroke_width=2, color=BLUE_M)
+        e3 = DashedLine(own[2].get_bottom() + DOWN * 0.08, app.get_top(), dash_length=0.1, stroke_width=2, color=BLUE_M)
         self.beat("Three. The HTTPRoute hello-devops attaches to hello-gateway, and points at the hello-devops Service.",
                   FadeIn(badge[2]), Create(e3), run_time=2.0)
         self.steps("Four. The controller turns the route into Envoy settings, and sends them to the proxy. Now it starts forwarding.",
@@ -188,10 +188,7 @@ class D44FrontDoor(VoiceScene):
                    (1.2, Indicate(ctl[1], color=WHITE)))
         self.beat("It watches objects and writes settings. The proxy carries the traffic. The staffing company trains the host. The host greets the guests.",
                   run_time=None)
-        prog = VGroup(M("PROGRAMMED  False", 22, GREY_B), T("no addresses on kind: fine, use port-forward", 20, GREY_B)).arrange(DOWN, buff=0.1).move_to([-0.6, -3.05, 0])
-        self.beat("One kind quirk: with no cloud to give it an address, the Gateway shows PROGRAMMED, False. Ignore it. Routing works, and you reach the proxy with port-forward.",
-                  FadeIn(prog, shift=UP * 0.1), run_time=2.0)
-        self.play(FadeOut(VGroup(prog, badge, e1)), run_time=0.5)
+        self.play(FadeOut(VGroup(badge, e1)), run_time=0.5)
 
         # ---------- 6. the canary, by weight
         can = box("hello-canary", YELLOW_M, w=3.0, size=28).move_to([4.2, -2.8, 0])
@@ -204,14 +201,15 @@ class D44FrontDoor(VoiceScene):
                   FadeIn(can), Transform(p2, p2b), run_time=1.6)
         self.beat("A rule in an HTTPRoute can split traffic by weight. Ninety and ten: about nine requests in ten to hello-devops, one to the canary.",
                   GrowArrow(p3), FadeIn(w90), FadeIn(w10), Succession(Wait(3.0), Indicate(w10, color=YELLOW_M)), run_time=5.0)
-        self.beat("Here's a prediction for you. We send fifty requests. Pause and guess: is it exactly forty-five and five?",
+        self.beat("We send fifty requests. Pause and guess: is it exactly forty-five and five?",
                   run_time=None)
         self.wait(2.0)
         picks = np.random.default_rng(0).random(50) < 0.1
         n_can = int(picks.sum()); n_app = 50 - n_can
         assert (n_app, n_can) == (44, 6)
-        ca = Integer(0, font_size=34, color=TEAL_M).next_to(app, UP, buff=0.15)
-        cc = Integer(0, font_size=34, color=YELLOW_M).next_to(can, UP, buff=0.15)
+        ta, tc = ValueTracker(0), ValueTracker(0)
+        ca = always_redraw(lambda: T(str(int(round(ta.get_value()))), 34, TEAL_M).next_to(app, UP, buff=0.15))
+        cc = always_redraw(lambda: T(str(int(round(tc.get_value()))), 34, YELLOW_M).next_to(can, UP, buff=0.15))
         self.add(ca, cc)
         anims = []
         k_app = k_can = 0
@@ -221,9 +219,9 @@ class D44FrontDoor(VoiceScene):
         path_, dur = voice("Let's see. Envoy picks a backend for each request at random, in proportion to the weights.")
         self._cue("Let's see. Envoy picks a backend for each request at random, in proportion to the weights.", dur)
         self.add_sound(path_)
-        self.play(LaggedStart(*anims, lag_ratio=0.12), ChangeDecimalToValue(ca, n_app), ChangeDecimalToValue(cc, n_can), run_time=max(dur, 4.0))
+        self.play(LaggedStart(*anims, lag_ratio=0.12), ta.animate.set_value(n_app), tc.animate.set_value(n_can), run_time=max(dur, 4.0))
         self.wait(0.3)
-        ex = T("one example run", 20, GREY_B).next_to(cc, LEFT, buff=0.3)
+        ex = T("one example run", 20, GREY_B).next_to(cc, UP, buff=0.08)
         self.beat("This run: forty-four and six. Close to ninety, ten, but rarely exact.",
                   FadeIn(ex), run_time=1.6)
         self.beat("That's a canary release: a new version gets a small share of real traffic while you watch it. Good? Move the weights. Bad? Set the canary to zero.",
@@ -233,17 +231,18 @@ class D44FrontDoor(VoiceScene):
         self.beat("The lab adds a rule for testers: the header x-canary, always. That request matches both rules. Which wins?",
                   FadeIn(tester), run_time=1.6)
         self.wait(1.0)
-        pth = VMobject().set_points_as_corners([tester.get_right(), prox.get_left() + DOWN * 0.3, prox.get_right() + DOWN * 0.5, can.get_left()])
+        pth = VMobject().set_points_as_corners([tester.get_center(), prox.get_left() + DOWN * 0.3, prox.get_right() + DOWN * 0.5, can.get_left() + LEFT * (tester.width / 2 + 0.2)])
         self.steps("The most specific match. With equal paths, more header matches win, so testers always reach the canary.",
                    (1.6, Wait(1.6)), (1.6, MoveAlongPath(tester, pth)), (0.6, Indicate(can[1], color=YELLOW_M)))
+        ca.clear_updaters(); cc.clear_updaters()
         self.play(FadeOut(VGroup(tester, ex, ca, cc)), run_time=0.5)
 
         # ---------- 7. guardrails: TLS at the door, and where to look first
         lock = chip("HTTPS listener: tls.mode Terminate", GREEN_M, 22, mono=True).move_to([-3.3, 0.55, 0])
-        self.beat("Two habits. First, set TLS once, on the Gateway: an HTTPS listener with mode Terminate decrypts at the proxy, with a certificate from a Secret.",
+        self.beat("Two habits. First, set TLS once, on the Gateway. An HTTPS listener with mode Terminate decrypts at the proxy, with a certificate from a Secret.",
                   FadeOut(ctl), FadeIn(lock, shift=DOWN * 0.1), run_time=2.2)
-        plain = T("last hop: unencrypted", 22, RED_M).move_to([1.7, -2.05, 0])
-        self.beat("But the last hop, from the proxy to your Pods, stays unencrypted. Part 15 deals with that.",
+        plain = T("last hop: unencrypted", 22, RED_M).move_to([-0.6, -2.6, 0])
+        self.beat("The last hop, to your Pods, stays plain. Part 15 deals with that.",
                   Succession(Wait(2.0), FadeIn(plain)), run_time=3.0)
         dbg = M("kubectl describe httproute", 24, WHITE).move_to([2.6, 0.55, 0])
         cond = T("Accepted? ResolvedRefs?", 22, GREY_B).next_to(dbg, DOWN, buff=0.15)
@@ -257,7 +256,7 @@ class D44FrontDoor(VoiceScene):
                      T("Gateway: the door and its listeners", 28, BLUE_M),
                      T("HTTPRoute: each app's line in the book, with weights", 28, BLUE_M),
                      T("the controller writes settings; the proxy carries requests", 28, GOLD_M)).arrange(DOWN, buff=0.35)
-        self.beat("The moral of the story: a Service is a door, and a proxy is the host. The class staffs the door, the Gateway is the door, and each app writes its own HTTPRoute, weights and all. The controller writes settings. The proxy carries requests.",
+        self.beat("The moral of the story: a Service is a door, and a proxy is the host. The class staffs the door, the Gateway is the door, and each app writes its own route. The controller writes settings; the proxy carries requests.",
                   LaggedStart(*[FadeIn(m, shift=UP * 0.1) for m in mor], lag_ratio=0.8), run_time=8.0)
         self.play(FadeOut(mor), run_time=0.6)
         q = VGroup(T("A shop wants /api sent to Service api,", 30), T("and every other path to Service web, through one Gateway.", 30),

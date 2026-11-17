@@ -9,5 +9,16 @@
    "poster_at": 314.0,
    "replaces": "d43-health"
   }
+ ],
+ "d44": [
+  {
+   "slug": "d44-front-door",
+   "title": "One door for many kitchens: Gateway, HTTPRoute and a one-in-ten canary",
+   "after": 4,
+   "file": "p10/d44_front_door.py",
+   "scene": "D44FrontDoor",
+   "poster_at": 290.0,
+   "replaces": "d44-gateway"
+  }
  ]
 }

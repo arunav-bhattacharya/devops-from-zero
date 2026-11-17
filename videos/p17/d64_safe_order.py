@@ -112,7 +112,7 @@ class D64SafeOrder(VoiceScene):
         self.steps("The front desk checks one thing: may this helper send orders to the kitchen? Yes. The cook, trusting the order, opens the safe and brings it out.",
                    (1.0, order.animate.next_to(desk, UP, buff=0.55)), (0.5, Create(ok)), (1.6, Wait(1.6)),
                    (1.0, order.animate.next_to(cook, LEFT, buff=0.3)), (0.6, cook.animate.move_to(sf.get_center() + DOWN * 1.1)),
-                   (0.6, Indicate(sf[0], color=GOLD_M)), (0.6, cook.animate.move_to([2.6, -0.9, 0])))
+                   (0.6, Indicate(sf, color=GOLD_M)), (0.6, cook.animate.move_to([2.6, -0.9, 0])))
         self.beat("Nobody ever asked whether the helper was allowed in the safe. Each check was right. The gap is between them.",
                   Wait(0.1), run_time=0.4)
         self.play(FadeOut(VGroup(order, ok)), run_time=0.4)

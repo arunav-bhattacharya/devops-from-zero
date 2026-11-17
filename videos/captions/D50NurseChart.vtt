@@ -1,0 +1,377 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:04.775
+Picture a hospital ward at night.
+
+2
+00:00:04.775 --> 00:00:10.341
+Beside each bed, a small screen shows the patient's heart rate and temperature, right now.
+
+3
+00:00:10.533 --> 00:00:11.187
+At 3 a.m.
+
+4
+00:00:11.187 --> 00:00:13.512
+a doctor asks a simple question.
+
+5
+00:00:13.512 --> 00:00:16.200
+When did the fever in bed four start?
+
+6
+00:00:16.400 --> 00:00:17.931
+The screen cannot say.
+
+7
+00:00:17.931 --> 00:00:19.741
+It only knows the present.
+
+8
+00:00:19.933 --> 00:00:26.319
+So a nurse walks the ward every fifteen minutes, and writes every number on a chart, with the time and the bed.
+
+9
+00:00:26.467 --> 00:00:30.591
+Now the doctor has an answer: between one fifteen and one thirty.
+
+10
+00:00:31.333 --> 00:00:33.396
+Our app has the same blind spot.
+
+11
+00:00:33.396 --> 00:00:39.325
+hello-devops, the tiny lab app that greets every visitor, keeps a count of visits in memory.
+
+12
+00:00:39.467 --> 00:00:43.161
+It shows its counts on a plain web page, at slash metrics.
+
+13
+00:00:43.161 --> 00:00:45.645
+That page is the screen beside the bed.
+
+14
+00:00:45.800 --> 00:00:48.016
+It always shows the value right now.
+
+15
+00:00:48.016 --> 00:00:50.848
+Nothing remembers what it was ten minutes ago.
+
+16
+00:00:51.000 --> 00:00:58.153
+Prometheus is the nurse with the chart: a program that collects numbers from your programs every few seconds.
+
+17
+00:00:58.333 --> 00:00:59.823
+It collects by pulling.
+
+18
+00:00:59.823 --> 00:01:03.255
+It walks to the app and fetches the page, on a timer.
+
+19
+00:01:03.255 --> 00:01:05.457
+In the lab, every fifteen seconds.
+
+20
+00:01:05.600 --> 00:01:07.394
+One fetch is called a scrape.
+
+21
+00:01:07.394 --> 00:01:10.797
+The thing it scrapes is a target, one bed on the round.
+
+22
+00:01:10.933 --> 00:01:14.707
+After each scrape it writes the value down with a timestamp.
+
+23
+00:01:14.707 --> 00:01:17.475
+That history is what you graph and alert on.
+
+24
+00:01:22.200 --> 00:01:24.678
+Four scrapes, one minute of history.
+
+25
+00:01:24.678 --> 00:01:26.331
+Now we can see the past.
+
+26
+00:01:26.800 --> 00:01:29.607
+Now the app crashes, and stops answering.
+
+27
+00:01:29.607 --> 00:01:31.592
+How does Prometheus find out?
+
+28
+00:01:35.200 --> 00:01:36.774
+Its next scrape fails.
+
+29
+00:01:36.774 --> 00:01:41.139
+And after every scrape, Prometheus records a value called up.
+
+30
+00:01:41.139 --> 00:01:42.856
+One if the fetch worked.
+
+31
+00:01:42.856 --> 00:01:44.144
+Zero if it failed.
+
+32
+00:01:44.333 --> 00:01:47.486
+A nurse who finds an empty bed writes no reading.
+
+33
+00:01:47.486 --> 00:01:50.639
+A patient who has left cannot phone in to say so.
+
+34
+00:01:50.639 --> 00:01:56.108
+Because Prometheus knows which targets should exist, silence itself becomes a signal.
+
+35
+00:01:56.800 --> 00:01:57.777
+Two more gifts.
+
+36
+00:01:57.777 --> 00:02:00.837
+You can read the same page yourself, with curl.
+
+37
+00:02:00.837 --> 00:02:04.159
+And a slow monitoring server never blocks your app.
+
+38
+00:02:04.333 --> 00:02:05.953
+Pushing still has a place.
+
+39
+00:02:05.953 --> 00:02:09.690
+A batch job may finish in twenty seconds, before any scrape.
+
+40
+00:02:09.690 --> 00:02:12.929
+Such jobs can leave their result at the Pushgateway.
+
+41
+00:02:14.200 --> 00:02:16.128
+A real page has more lines.
+
+42
+00:02:16.128 --> 00:02:20.485
+Here is one metric, hello responses total, shown three times.
+
+43
+00:02:20.667 --> 00:02:25.267
+The part in braces is labels, a name and a value, like status is 500.
+
+44
+00:02:25.267 --> 00:02:30.067
+A label says which part of the app a number is about, like a bed number.
+
+45
+00:02:30.600 --> 00:02:32.537
+Same name, three label sets.
+
+46
+00:02:32.537 --> 00:02:34.889
+How many rows does the chart need?
+
+47
+00:02:34.889 --> 00:02:35.996
+Pause and guess.
+
+48
+00:02:38.133 --> 00:02:38.894
+Three rows.
+
+49
+00:02:38.894 --> 00:02:43.386
+Each exact combination of name and label values gets its own row.
+
+50
+00:02:43.386 --> 00:02:47.049
+Change any label value, and you have a different row.
+
+51
+00:02:47.200 --> 00:02:51.601
+Each scrape adds one sample, a timestamp and a value, to every row.
+
+52
+00:02:51.800 --> 00:02:53.535
+That row has a name now.
+
+53
+00:02:53.535 --> 00:02:58.235
+A time series: a metric name, plus one exact set of label values.
+
+54
+00:02:58.400 --> 00:03:05.233
+Prometheus adds two labels of its own: job, the name from its config, and instance, the target's address.
+
+55
+00:03:05.800 --> 00:03:06.922
+So far so good.
+
+56
+00:03:06.922 --> 00:03:09.391
+Now let's break it with one word.
+
+57
+00:03:09.391 --> 00:03:10.812
+A label looks free.
+
+58
+00:03:11.600 --> 00:03:13.771
+Count what one route already costs.
+
+59
+00:03:13.771 --> 00:03:19.848
+Its timing histogram has fifteen buckets, plus a sum and a count, and the counters add a few more.
+
+60
+00:03:20.000 --> 00:03:27.580
+In the lab, one request to a route nobody had called, slash ready Z, took the series from forty four to sixty four.
+
+61
+00:03:27.733 --> 00:03:31.765
+Now someone adds a user ID label, to see requests per user.
+
+62
+00:03:31.765 --> 00:03:33.746
+There are ten thousand users.
+
+63
+00:03:33.746 --> 00:03:35.796
+How many series for one route?
+
+64
+00:03:38.867 --> 00:03:40.569
+Twenty times ten thousand.
+
+65
+00:03:40.569 --> 00:03:45.088
+Two hundred thousand series, for one route, from one copy of the app.
+
+66
+00:03:45.267 --> 00:03:48.242
+The whole lab holds about two thousand two hundred.
+
+67
+00:03:48.242 --> 00:03:52.619
+One careless label makes this app about ninety times bigger than all of it.
+
+68
+00:03:52.800 --> 00:03:56.383
+It is the hospital adding a chart row for every visitor.
+
+69
+00:03:56.383 --> 00:03:58.047
+Nobody notices on day one.
+
+70
+00:03:58.047 --> 00:04:01.119
+By the end of the month, the chart room is full.
+
+71
+00:04:01.867 --> 00:04:03.434
+That number has a name.
+
+72
+00:04:03.434 --> 00:04:06.910
+Cardinality: how many time series a metric creates.
+
+73
+00:04:06.910 --> 00:04:10.591
+Every new combination of label values is a new series.
+
+74
+00:04:10.733 --> 00:04:16.521
+Labels hold small, fixed sets of values: the status code, the method, the route pattern.
+
+75
+00:04:16.667 --> 00:04:21.857
+Never user IDs, email addresses, request IDs or raw URLs.
+
+76
+00:04:22.000 --> 00:04:25.916
+The lab records the route pattern, not the address typed.
+
+77
+00:04:25.916 --> 00:04:30.931
+So slash nope and slash admin dot P H P both become one value: unmatched.
+
+78
+00:04:31.067 --> 00:04:34.498
+Details about one request belong in logs and traces.
+
+79
+00:04:34.498 --> 00:04:38.589
+The guide's rule of thumb: keep most metrics under ten series.
+
+80
+00:04:39.267 --> 00:04:40.774
+And one honest limit.
+
+81
+00:04:40.774 --> 00:04:45.585
+Prometheus keeps its chart on one machine's disk, in a single copy.
+
+82
+00:04:45.585 --> 00:04:47.308
+Fifteen days by default.
+
+83
+00:04:47.308 --> 00:04:48.744
+The lab keeps seven.
+
+84
+00:04:49.467 --> 00:04:51.214
+So the moral of the story.
+
+85
+00:04:51.214 --> 00:04:55.581
+A label with no fixed list of values is a leak with a slow start.
+
+86
+00:04:55.733 --> 00:04:59.112
+The page shows now, and the rounds write history.
+
+87
+00:04:59.112 --> 00:05:01.250
+An empty bed is up equals zero.
+
+88
+00:05:01.250 --> 00:05:03.732
+And every new label value adds rows.
+
+89
+00:05:04.400 --> 00:05:05.358
+A quick check.
+
+90
+00:05:05.358 --> 00:05:10.901
+A counter has a label method, with two values, and a label path, with two values.
+
+91
+00:05:10.901 --> 00:05:12.612
+At most, how many series?
+
+92
+00:05:15.733 --> 00:05:16.182
+Four.
+
+93
+00:05:16.182 --> 00:05:17.440
+Two times two.
+
+94
+00:05:17.440 --> 00:05:20.404
+Every combination is its own row.

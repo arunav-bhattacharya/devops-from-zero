@@ -110,7 +110,12 @@ class D20BackShelf(VoiceScene):
         self.play(FadeOut(VGroup(three, cmd)), run_time=0.5)
 
         # 4. problem two: finding each other
-        self.play(VGroup(c1, vol, vl, mnt).animate.scale(0.7).move_to([3.6, 1.7, 0]), run_time=0.8)
+        web_s = ctr("web", GOLD_M, 1.8, 0.9).move_to([2.6, 2.1, 0])
+        vol_s = cylinder(GREEN_M, 1.2, 0.8).move_to([5.4, 2.1, 0])
+        vl_s = M("site", 22, GREEN_M).next_to(vol_s, DOWN, buff=0.15)
+        mnt_s = DashedLine(web_s.get_right(), vol_s.get_left(), dash_length=0.12, stroke_width=3, color=GREEN_M)
+        self.play(ReplacementTransform(c1, web_s), ReplacementTransform(vol, vol_s), ReplacementTransform(mnt, mnt_s), FadeOut(vl), FadeIn(vl_s), run_time=0.8)
+        c1, vol, vl, mnt = web_s, vol_s, vl_s, mnt_s
         bridge = Line([-5.6, -1.3, 0], [1.6, -1.3, 0], stroke_width=4, color=GREY_B)
         bnl = M("default bridge", 24, GREY_B).next_to(bridge, DOWN, buff=0.2)
         a = ctr("a", BLUE_M, 1.4, 0.9).move_to([-4.4, 0.2, 0])
@@ -134,8 +139,7 @@ class D20BackShelf(VoiceScene):
         self.play(FadeOut(VGroup(lh, loop)), run_time=0.4)
 
         # predict: names on the default bridge
-        wg = M("$ docker run alpine wget -qO- http://web", 24, GREY_B).move_to([-2.0, 2.0, 0])
-        fit(wg, 7.4)
+        wg = M("$ docker run alpine wget -qO- http://web", 24, GREY_B).move_to([-1.0, 3.25, 0])
         self.beat("So we want names. From a container on the default bridge, ask for our nginx container by its name, web. Pause and guess.",
                   FadeIn(wg), run_time=1.4)
         self.wait(2.0)
@@ -147,10 +151,10 @@ class D20BackShelf(VoiceScene):
         # 5. a user-defined network with a staff list
         net = Line([-5.6, -1.3, 0], [5.6, -1.3, 0], stroke_width=4, color=TEAL_M)
         nl = M("demo", 24, TEAL_M).next_to(net, DOWN, buff=0.2).align_to(net, LEFT)
-        mk = M("$ docker network create demo", 24, GREY_B).move_to([-2.0, 2.0, 0])
+        mk = M("$ docker network create demo", 24, GREY_B).move_to([-1.0, 3.25, 0])
         self.steps("Now make a network of our own. docker network create demo. Then start web on it, and our asking container too.",
                    (0.6, FadeIn(mk)), (1.0, FadeOut(VGroup(bridge, bnl, b, cb)), Create(net), FadeIn(nl)),
-                   (1.0, VGroup(c1, vol, vl, mnt).animate.scale(1 / 0.7).scale(0.75).move_to([3.4, 0.9, 0]), ca.animate.set_color(TEAL_M)))
+                   (1.0, VGroup(c1, vol, vl, mnt).animate.move_to([3.9, 0.55, 0]), ca.animate.set_color(TEAL_M)))
         cw = Line(c1[0].get_bottom(), [c1.get_x(), -1.3, 0], stroke_width=3, color=TEAL_M)
         self.play(Create(cw), run_time=0.5)
         dns = VGroup(RoundedRectangle(corner_radius=0.1, width=2.8, height=1.3, stroke_color=YELLOW_M, stroke_width=3).set_fill(tint(YELLOW_M, 0.1), opacity=1))
@@ -186,10 +190,9 @@ class D20BackShelf(VoiceScene):
         # 7. moral and quick check
         mor = T("the count on the back shelf, a staff list by the door", 30, GREEN_M).move_to([0, 2.3, 0])
         self.beat("So, back to the cafe. The count lives on the back shelf, a volume that outlives any till. And the new cashier reads the staff list, the network's DNS, to find everyone by name.",
-                  FadeIn(mor, shift=DOWN * 0.1), Indicate(vol[3], color=GREEN_M), Succession(Wait(2.4), Indicate(dns[0], color=YELLOW_M)), run_time=4.0)
+                  FadeIn(mor, shift=DOWN * 0.1), Indicate(vol[3], color=GREEN_M), Succession(Wait(2.4), Indicate(dl[0], color=YELLOW_M)), run_time=4.0)
         self.play(FadeOut(mor), run_time=0.4)
-        quiz = T("Quick check: in the web container, REDIS_HOST=localhost. Where does the app look?", 26, YELLOW_M).move_to([0, 2.6, 0])
-        fit(quiz, 12.4)
+        quiz = VGroup(T("Quick check: in the web container,", 28, YELLOW_M), T("REDIS_HOST=localhost. Where does the app look?", 28, YELLOW_M)).arrange(DOWN, buff=0.12).move_to([0, 2.75, 0])
         self.beat("Quick check. Inside the web container, REDIS_HOST is set to localhost. Where does the app look for Redis?",
                   FadeIn(quiz, shift=DOWN * 0.1), run_time=1.4)
         self.wait(2.0)

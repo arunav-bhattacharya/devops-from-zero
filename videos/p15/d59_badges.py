@@ -42,7 +42,7 @@ def podbox(name, ns, x, y, sidecar=True, c=APP_C, h=1.8):
     nsl = M(f"ns: {ns}", 20, GREY_B).next_to(r, DOWN, buff=0.1)
     g = dict(r=r, app=app, lab=al, ns=nsl)
     if sidecar:
-        px = Square(0.62, stroke_color=PRX_C, stroke_width=3).set_fill(tint(PRX_C, 0.25), 1).move_to([x + 0.7, yy, 0])
+        px = Square(0.86, stroke_color=PRX_C, stroke_width=3).set_fill(tint(PRX_C, 0.25), 1).move_to([x + 0.7, yy, 0])
         g["px"] = px
         g["pxl"] = T("Envoy", 20, PRX_C).move_to(px).set_z_index(1)
     return g
@@ -157,7 +157,7 @@ class D59Badges(VoiceScene):
         self.beat("But not every caller lives in the mesh. Here's a Pod in another namespace, called outside. It has no sidecar, so no badge.",
                   FadeIn(grp(O)), run_time=2.2)
         mode = VGroup(T("PeerAuthentication:", 26, GREY_B), T("PERMISSIVE", 26, ASK_C)).arrange(RIGHT, buff=0.25).move_to([3.6, -2.3, 0])
-        plain = Arrow(O["r"].get_right(), H["px"].get_bottom() + LEFT * 0.1, buff=0.12, stroke_width=3, color=OUT_C, max_tip_length_to_length_ratio=0.06)
+        plain = Arrow(O["app"].get_top() + RIGHT * 0.9 + UP * 0.25, H["px"].get_bottom() + LEFT * 0.1, buff=0.12, stroke_width=3, color=OUT_C, max_tip_length_to_length_ratio=0.06)
         self.beat("Istio's default is PERMISSIVE. Each door accepts badges, and plain text too. So the outside Pod's call still works.",
                   FadeIn(mode), GrowArrow(plain), Succession(Wait(1.8), travel(plain, OUT_C, 1.0)), run_time=4.0)
         self.beat("Now our strict Monday. We apply a PeerAuthentication that says STRICT: mutual TLS only. What happens to the outside Pod's next call? Pause and guess.",
@@ -180,7 +180,7 @@ class D59Badges(VoiceScene):
         mb = badge_at(badge("prometheus", PURPLE_M), mon)
         self.beat("Badges are verified now, so we can decide who may open which door. That's an AuthorizationPolicy. A workload with no policy lets everyone in. Say a second caller, a monitoring Pod, also visits hello-devops.",
                   FadeIn(grp(mon)), FadeIn(mb), run_time=4.0)
-        ma = Arrow(mon["px"].get_right(), H["px"].get_bottom() + RIGHT * 0.1, buff=0.12, stroke_width=3, color=PURPLE_M, max_tip_length_to_length_ratio=0.06)
+        ma = Arrow(mon["px"].get_top(), H["px"].get_bottom() + RIGHT * 0.1, buff=0.12, stroke_width=3, color=PURPLE_M, max_tip_length_to_length_ratio=0.06)
         ca = Arrow(C["px"].get_right(), H["px"].get_left(), buff=0.15, stroke_width=3, color=BADGE_C, max_tip_length_to_length_ratio=0.04)
         self.play(FadeOut(hs1), FadeOut(hs2), run_time=0.3)
         self.beat("Both calls work.",
@@ -191,14 +191,14 @@ class D59Badges(VoiceScene):
                   FadeIn(pol, shift=DOWN * 0.1), run_time=3.0)
         self.pause([0.2, 1.45, 0])
         x2 = tick(False, 0.22).move_to(ma.point_from_proportion(0.7))
-        r403 = M("403 RBAC: access denied", 24, BAD_C).move_to([1.0, -2.6, 0])
+        r403 = M("403 RBAC: access denied", 24, BAD_C).move_to([3.7, -2.6, 0])
         self.beat("Locked out. Once any ALLOW policy selects a workload, every request no ALLOW rule matches gets 403, access denied.",
                   travel(ma, PURPLE_M, 0.8), Succession(Wait(0.8), AnimationGroup(Create(x2), FadeIn(r403))), travel(ca, BADGE_C, 0.8), run_time=3.4)
         rule2 = T("An ALLOW policy is also a deny for everyone it does not name.", 28, ASK_C).move_to([0, 1.5, 0])
         fit(rule2, 12.6)
         self.beat("That one friendly rule became a guest list, and the monitoring Pod isn't on it. An ALLOW policy is also a deny for everyone it doesn't name.",
-                  FadeIn(rule2, shift=UP * 0.1), run_time=3.0)
-        self.play(FadeOut(VGroup(rule2, r403, x2, ma, ca, pol, grp(mon), mb)), run_time=0.6)
+                  FadeOut(pol), FadeIn(rule2, shift=UP * 0.1), run_time=3.0)
+        self.play(FadeOut(VGroup(rule2, r403, x2, ma, ca, grp(mon), mb)), run_time=0.6)
 
         # ---------- 8. guardrails
         g1 = T("ambient mode: the node's ztunnel sees connections, not paths or methods", 24)

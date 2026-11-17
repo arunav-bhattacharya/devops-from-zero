@@ -86,14 +86,14 @@ class D03Clerk(VoiceScene):
                   FadeOut(VGroup(q, opts, bar, p, t)), run_time=1.6)
 
         # ---------- 2. the office: window, clerk, worker
-        win = RoundedRectangle(corner_radius=0.12, width=3.2, height=2.6, stroke_color=GREY_B, stroke_width=3).move_to(LEFT * 3.9 + DOWN * 0.1)
+        win = RoundedRectangle(corner_radius=0.12, width=3.2, height=2.6, stroke_color=GREY_B, stroke_width=3).move_to(LEFT * 3.2 + DOWN * 0.1)
         winl = T("the window", 26, GREY_B).next_to(win, UP, buff=0.2)
         you = person(WHITE).next_to(win, LEFT, buff=0.55)
         clerk = person(BLUE_M).move_to(win)
         clerkl = T("the clerk", 26, BLUE_M).next_to(win, DOWN, buff=0.25)
         self.beat("Picture your first day in a big office building. At a small window in the lobby sits a clerk who reads each note you pass through.",
                   FadeIn(you, shift=RIGHT * 0.2), Create(win), FadeIn(winl), Succession(Wait(2.6), AnimationGroup(FadeIn(clerk), FadeIn(clerkl))), run_time=4.2)
-        room = RoundedRectangle(corner_radius=0.12, width=3.0, height=2.6, stroke_color=GOLD_M, stroke_width=3).move_to(RIGHT * 3.6 + DOWN * 0.1)
+        room = RoundedRectangle(corner_radius=0.12, width=3.0, height=2.6, stroke_color=GOLD_M, stroke_width=3).move_to(RIGHT * 3.9 + DOWN * 0.1)
         worker = person(GOLD_M).move_to(room)
         workl = T("a worker", 26, GOLD_M).next_to(room, DOWN, buff=0.25)
         lk = DashedLine(win.get_right(), room.get_left(), dash_length=0.12, stroke_width=2, color=GREY_B)
@@ -107,13 +107,12 @@ class D03Clerk(VoiceScene):
                   Transform(clerkl, m2), run_time=1.8)
         self.beat("A command is the worker, usually a program file on disk. ls, which lists files, is the file /usr/bin/ls. The clerk finds it through your PATH.",
                   Transform(workl, m3), run_time=2.0)
-        bi = T("cd: a job the clerk does itself", 24, BLUE_M).move_to(DOWN * 2.6 + LEFT * 3.9)
+        bi = T("cd: a job the clerk does itself", 24, BLUE_M).move_to(DOWN * 2.6 + LEFT * 3.2)
         self.beat("A few commands, like cd, are jobs the clerk does itself. Those are called builtins.", FadeIn(bi, shift=UP * 0.1), run_time=1.6)
         self.beat("And here's the thing about this clerk. Brilliant at reading. Hopeless at guessing. It does exactly what the note says.",
                   Indicate(clerk, color=BLUE_M), run_time=1.6)
         office = VGroup(win, winl, you, clerk, clerkl, room, worker, workl, lk, bi)
-        self.play(office.animate.scale(0.42).to_corner(DL, buff=0.6), FadeOut(bi), run_time=0.8)
-        office.remove(bi)
+        self.play(FadeOut(office), run_time=0.7)
 
         # ---------- 3. how the clerk cuts a note into words
         line = "ls -l -h server/var/log"
@@ -152,7 +151,7 @@ class D03Clerk(VoiceScene):
         self.steps("Two. The clerk splits on that space, so ls asks for a file called my, and a file called notes.txt. Two errors.",
                    (0.8, FadeIn(chips2[1:])), (1.0, FadeIn(pb2), FadeIn(lab2), TransformFromCopy(chips2[1:], cells2)), (1.4, Wait(1.4)),
                    (0.8, FadeIn(errs, shift=UP * 0.1)))
-        self.beat("The clerk did a perfect job. Of exactly what the note said.", Indicate(office[3], color=BLUE_M), run_time=1.4)
+        self.beat("The clerk did a perfect job. Of exactly what the note said.", Indicate(pb2[1], color=GOLD_M), run_time=1.4)
         line3 = 'ls "my notes.txt"'
         t3 = M(line3, 30).next_to(p, RIGHT, buff=0.3)
         chips3 = VGroup(wchip("ls", BLUE_M), wchip('"my notes.txt"', BLUE_M)).arrange(RIGHT, buff=0.45).move_to([0, 1.2, 0])
@@ -256,10 +255,10 @@ class D03Clerk(VoiceScene):
         rc = VGroup(T("1. split the line on spaces", 30, BLUE_M), T("2. swap patterns for real names", 30, YELLOW_M),
                     T("3. hand the worker a plain list", 30, GOLD_M)).arrange(DOWN, buff=0.35, aligned_edge=LEFT).move_to([0.6, 0.6, 0])
         self.beat("So that's the whole path of one note. The clerk splits it on spaces, swaps patterns for real names, and hands the worker a plain list.",
-                  office.animate.set_opacity(1), LaggedStart(*[FadeIn(x, shift=UP * 0.1) for x in rc], lag_ratio=0.6), run_time=5.0)
+                  LaggedStart(*[FadeIn(x, shift=UP * 0.1) for x in rc], lag_ratio=0.6), run_time=5.0)
         self.beat("The program only ever sees what the clerk wrote down. So when in doubt, ask echo to read the clerk's list aloud.",
                   Indicate(rc[2], color=GOLD_M), run_time=1.6)
-        self.play(FadeOut(rc), FadeOut(office), run_time=0.6)
+        self.play(FadeOut(rc), run_time=0.6)
         cq = VGroup(T("A folder holds", 30), M("report.txt", 28), T("and", 30), M(".secret.txt", 28)).arrange(RIGHT, buff=0.2).move_to(UP * 1.9)
         cq2 = VGroup(T("What does", 30), M("echo *.txt", 28), T("print in bash?", 30)).arrange(RIGHT, buff=0.2).next_to(cq, DOWN, buff=0.25)
         opts = VGroup(M("report.txt .secret.txt", 26, GREY_B), M("report.txt", 26, GREY_B), M("*.txt", 26, GREY_B), T("an error about hidden files", 26, GREY_B))

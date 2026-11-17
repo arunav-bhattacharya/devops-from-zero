@@ -10,17 +10,17 @@ SAY.extend([
 ])
 
 ANA, BEN, MERGE, BASE, NOTE = GOLD_M, TEAL_M, GREEN_M, PURPLE_M, YELLOW_M
-TOP, BOT = 0.75, -1.15
-X0, X1, X2 = -3.6, -0.6, 2.4
+TOP, BOT = 0.7, -1.5
+X0, X1, X2 = -4.6, -0.6, 3.4
 
 
 def tint(c, a=0.3):
     return interpolate_color(ManimColor("#000000"), ManimColor(c), a)
 
 
-def commit(h, color, pos, below=False):
-    c = Circle(radius=0.3, stroke_color=color, stroke_width=3).set_fill(tint(color), 1).move_to(pos)
-    t = M(h, 22, color).next_to(c, DOWN if below else UP, buff=0.18)
+def commit(h, color, pos, below=True):
+    c = Circle(radius=0.36, stroke_color=color, stroke_width=3).set_fill(tint(color), 1).move_to(pos)
+    t = M(h, 24, color).next_to(c, DOWN if below else UP, buff=0.18)
     return VGroup(c, t)
 
 
@@ -79,8 +79,8 @@ class D09StapleRetype(VoiceScene):
         b0 = commit("d6aad6e", ANA, [X0, TOP, 0])
         f1 = commit("a18a0e8", BEN, [X1, TOP, 0])
         a01 = back(f1, b0)
-        mn = sticky("main").next_to(b0[0], DOWN, buff=0.45)
-        ot = sticky("other", BEN).next_to(f1[0], DOWN, buff=0.45)
+        mn = sticky("main").next_to(b0[0], UP, buff=0.35)
+        ot = sticky("other", BEN).next_to(f1[1], DOWN, buff=0.25)
         self.beat("In Git, each copy is a branch, a sticky note on a commit. Let's start with the easy shape. Main sits at d6aad6e, and a branch called other has one commit on top of it.",
                   GrowFromCenter(b0), FadeIn(mn, shift=UP * 0.15),
                   Succession(Wait(5.6), AnimationGroup(GrowArrow(a01), GrowFromCenter(f1), FadeIn(ot, shift=UP * 0.15))), run_time=8.4)
@@ -89,7 +89,7 @@ class D09StapleRetype(VoiceScene):
                   Write(cmd), run_time=1.8, after=2.0)
         out = M("Updating d6aad6e..a18a0e8   Fast-forward", 22, GREY_B).next_to(cmd, DOWN, buff=0.2)
         self.beat("No. Main gained nothing since other split off. So Git just slides the main note forward. That's a fast-forward.",
-                  Succession(Wait(1.6), mn.animate(run_time=1.4).next_to(f1[0], DOWN, buff=0.45).shift(DOWN * 0.7)), Succession(Wait(4.0), FadeIn(out)), run_time=6.4)
+                  Succession(Wait(1.6), mn.animate(run_time=1.4).next_to(f1[0], UP, buff=0.35)), Succession(Wait(4.0), FadeIn(out)), run_time=6.4)
         self.play(FadeOut(VGroup(b0, f1, a01, mn, ot, cmd, out)), run_time=0.6)
 
         # ---------- 3. shape two: both moved, the puzzle that needs a base
@@ -97,7 +97,7 @@ class D09StapleRetype(VoiceScene):
         am = commit("d6aad6e", ANA, [X1, TOP, 0])
         bb = commit("d229503", BEN, [X1, BOT, 0], below=True)
         e1, e2 = back(am, base), back(bb, base)
-        mn = sticky("main").next_to(am[0], RIGHT, buff=0.4)
+        mn = sticky("main").next_to(am[0], UP, buff=0.35)
         cf = sticky("currency-first", BEN).next_to(bb[0], RIGHT, buff=0.4)
         graph = VGroup(base, am, bb, e1, e2)
         self.beat("Now the real shape. Ana's commit on main and Ben's on currency-first both start from c711550. Both sides moved.",
@@ -127,7 +127,7 @@ class D09StapleRetype(VoiceScene):
                   FadeIn(mb), Succession(Wait(4.6), FadeIn(mbo), Indicate(base[1], color=BASE, scale_factor=1.3)), Succession(Wait(8.0), FadeIn(name, shift=UP * 0.1)), run_time=11.0)
         self.beat("A change made on only one side goes in as it is. Only a line that both sides changed, in different ways, is a conflict.",
                   FadeOut(VGroup(mb, mbo)), run_time=1.4)
-        self.play(FadeOut(name), VGroup(graph, mn, cf).animate.move_to(LEFT * 1.6 + DOWN * 0.15), run_time=0.8)
+        self.play(FadeOut(name), run_time=0.6)
 
         # ---------- 4. the real clash: markers
         cmd = M("$ git merge currency-first", 26).move_to(UP * 3.05)
@@ -155,19 +155,18 @@ class D09StapleRetype(VoiceScene):
         self.play(FadeOut(VGroup(pane, fname, fixed, runout, rule)), run_time=0.5)
 
         # ---------- 5. the merge commit staples both
-        graph.move_to(LEFT * 1.6 + DOWN * 0.15)
-        mc = commit("25ff3e9", MERGE, am[0].get_center() + RIGHT * 3.0)
+        mc = commit("25ff3e9", MERGE, am[0].get_center() + RIGHT * 4.0)
         p1, p2 = back(mc, am, MERGE), back(mc, bb, MERGE)
         self.add(graph, mn, cf)
         self.play(FadeIn(VGroup(graph, mn, cf)), run_time=0.5)
         cmd2 = M("$ git add price.py && git commit", 26).move_to(cmd)
         self.beat("Then git add marks the file resolved, and git commit finishes the merge. Git writes a merge commit, with two parents. Main's old tip, and Ben's commit.",
                   ReplacementTransform(cmd, cmd2), Succession(Wait(3.6), GrowFromCenter(mc), AnimationGroup(GrowArrow(p1), GrowArrow(p2))),
-                  Succession(Wait(5.0), mn.animate(run_time=1.2).next_to(mc[0], RIGHT, buff=0.4)), run_time=9.0)
-        staple = T("a cover note that says: these two joined here", 26, MERGE).next_to(mc, DOWN, buff=1.0)
+                  Succession(Wait(5.0), mn.animate(run_time=1.2).next_to(mc[0], UP, buff=0.35)), run_time=9.0)
+        staple = T("a cover note that says: these two joined here", 28, MERGE).move_to(DOWN * 3.1)
         self.beat("In the office, it staples both drafts together, with a cover note that says, these two joined here. Nothing is lost, and nothing is rewritten.",
                   FadeIn(staple, shift=UP * 0.1), Indicate(p1, color=MERGE), Indicate(p2, color=MERGE), run_time=3.0)
-        self.play(FadeOut(VGroup(mc, p1, p2, staple, cmd2)), mn.animate.next_to(am[0], RIGHT, buff=0.4), run_time=0.8)
+        self.play(FadeOut(VGroup(mc, p1, p2, staple, cmd2)), mn.animate.next_to(am[0], UP, buff=0.35), run_time=0.8)
 
         # ---------- 6. rebase: retype the pages
         cmd3 = M("$ git rebase main", 26).move_to(UP * 3.05)
@@ -176,17 +175,17 @@ class D09StapleRetype(VoiceScene):
         self.beat("Now rewind, and try the other way. On Ben's branch, run git rebase main. Rebase retypes Ben's pages, so they start after the latest version of main.",
                   FadeIn(on), Write(cmd3), run_time=2.4)
         ghost = bb.copy()
-        new_pos = np.array([am[0].get_center()[0] + 3.0, am[0].get_center()[1], 0])
+        new_pos = np.array([am[0].get_center()[0] + 4.0, am[0].get_center()[1], 0])
         self.beat("Same words, fresh pages. Pause and guess. Does Ben's retyped commit keep its ID, d229503?",
-                  ghost.animate(run_time=1.8, path_arc=0.6).move_to(new_pos + UP * 0.12), bb.animate.set_opacity(0.3), e2.animate.set_opacity(0.3), run_time=2.0, after=2.2)
-        nc = Circle(radius=0.3, stroke_color=BEN, stroke_width=3).set_fill(tint(BEN), 1).move_to(new_pos)
-        nl = T("new ID", 26, BEN).next_to(nc, UP, buff=0.18)
+                  ghost.animate(run_time=1.8, path_arc=0.6).move_to(new_pos + DOWN * 0.15), bb.animate.set_opacity(0.3), e2.animate.set_opacity(0.3), run_time=2.0, after=2.2)
+        nc = Circle(radius=0.36, stroke_color=BEN, stroke_width=3).set_fill(tint(BEN), 1).move_to(new_pos)
+        nl = T("new ID", 26, BEN).next_to(nc, DOWN, buff=0.18)
         ea = back(VGroup(nc), am, GREY_B)
         self.beat("It can't. Remember from last time, a commit's ID covers its parent. The retyped commit has a new parent, so it's a new commit, with a new ID.",
                   Succession(Wait(1.8), AnimationGroup(ReplacementTransform(ghost[0], nc), ReplacementTransform(ghost[1], nl))),
                   Succession(Wait(5.2), GrowArrow(ea)), run_time=7.4)
         self.beat("Then the currency-first note moves to the copy. The old commit still exists, but no branch points at it any more. The reflog still knows it.",
-                  cf.animate(run_time=1.4).next_to(nc, DOWN, buff=0.4), Succession(Wait(3.4), Indicate(bb[1], color=BEN)), run_time=6.0)
+                  cf.animate(run_time=1.4).next_to(nc, UP, buff=0.35), Succession(Wait(3.4), Indicate(bb[1], color=BEN)), run_time=6.0)
         straight = T("a straight line, as if Ben started today", 26, BEN).move_to(DOWN * 3.2)
         self.beat("The result is a straight line of history, as if Ben had started his work today.",
                   FadeIn(straight, shift=UP * 0.1), Succession(Wait(0.6), travel(ea, YELLOW_M, 0.6), travel(e1, YELLOW_M, 0.6)), run_time=3.2)
@@ -210,7 +209,7 @@ class D09StapleRetype(VoiceScene):
         self.beat("So rebase your own branch before anyone builds on it. Never rebase commits that other people already have.",
                   ReplacementTransform(twice, r1), run_time=1.6)
         r2 = VGroup(M("git push --force", 24, RED_M), T("trusts you", 26, RED_M), M("git push --force-with-lease", 24, MERGE), T("checks first", 26, MERGE))
-        r2g = VGroup(VGroup(r2[0], r2[1]).arrange(RIGHT, buff=0.3), VGroup(r2[2], r2[3]).arrange(RIGHT, buff=0.3)).arrange(DOWN, aligned_edge=LEFT, buff=0.25).move_to(LEFT * 3.2 + DOWN * 2.6)
+        r2g = VGroup(VGroup(r2[0], r2[1]).arrange(RIGHT, buff=0.3), VGroup(r2[2], r2[3]).arrange(RIGHT, buff=0.3)).arrange(DOWN, aligned_edge=LEFT, buff=0.25).move_to(LEFT * 3.2 + DOWN * 2.95)
         self.beat("And after a rebase of your own branch, a normal push is refused. A plain force push overwrites the shared branch, no matter what. Force with lease refuses if a teammate pushed in the meantime, so their commit survives. Use the lease every time.",
                   Succession(Wait(3.6), FadeIn(r2g[0], shift=UP * 0.1), Wait(4.4), FadeIn(r2g[1], shift=UP * 0.1)), run_time=12.0)
 

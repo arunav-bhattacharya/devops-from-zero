@@ -234,7 +234,7 @@ class D15HelperReport(VoiceScene):
         # 10. moral and quick check
         mor = VGroup(T("report on the sheet, reasons in the note,", 28), T("the verdict in the thumb", 28)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-6.2, -2.75, 0], aligned_edge=LEFT)
         self.beat("So back to the shop. The report goes on the sheet. The reasons go in the note. And the verdict is the thumb. A good helper says failed, out loud.",
-                  FadeIn(mor, shift=UP * 0.1), LaggedStart(Indicate(sheet[0], color=WHITE), Indicate(sticky[0], color=RED_M), Indicate(thumb[0], color=YELLOW_M), lag_ratio=0.5), run_time=4.0)
+                  FadeIn(mor, shift=UP * 0.1), LaggedStart(Indicate(lab_s[0], color=WHITE), Indicate(lab_e[0], color=RED_M), Indicate(lab_x[0], color=YELLOW_M), lag_ratio=0.5), run_time=4.0)
         quiz = VGroup(T("Quick check: it prints \"all fine\"", 28, YELLOW_M), T("and exits with 1. Did it pass?", 28, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-6.2, -2.75, 0], aligned_edge=LEFT)
         self.beat("Quick check before you go. A script prints all fine, then exits with one. Did it pass?",
                   FadeOut(mor), FadeIn(quiz, shift=UP * 0.1), Transform(num, M("1", 34, RED_M).move_to(thumb)), run_time=1.4)

@@ -1,3 +1,24 @@
 {
- "d13": [{"slug": "d13-key-card", "title": "A key card and a list of doors: how AWS says yes or no", "after": 4, "file": "p3/d13_key_card.py", "scene": "D13KeyCard", "poster_at": 300.0, "replaces": "d13-iam-check"}]
+ "d13": [
+  {
+   "slug": "d13-key-card",
+   "title": "A key card and a list of doors: how AWS says yes or no",
+   "after": 4,
+   "file": "p3/d13_key_card.py",
+   "scene": "D13KeyCard",
+   "poster_at": 300.0,
+   "replaces": "d13-iam-check"
+  }
+ ],
+ "d14": [
+  {
+   "slug": "d14-no-open-door",
+   "title": "A server with no open door: how Session Manager still lets you in",
+   "after": 1,
+   "file": "p3/d14_no_open_door.py",
+   "scene": "D14NoOpenDoor",
+   "poster_at": 272.0,
+   "replaces": "d14-request-path"
+  }
+ ]
 }

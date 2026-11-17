@@ -1,0 +1,353 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.947
+A friend opens a small café, and you help her set up.
+
+2
+00:00:05.947 --> 00:00:11.460
+You plug in the coffee machine, set the fridge to four degrees, and line up twelve chairs.
+
+3
+00:00:11.667 --> 00:00:13.530
+Nobody writes any of it down.
+
+4
+00:00:13.530 --> 00:00:17.515
+A year later she opens a second café, exactly the same please.
+
+5
+00:00:17.515 --> 00:00:21.564
+And you stand in the empty room, and can't remember half of it.
+
+6
+00:00:22.367 --> 00:00:23.903
+So we write it down.
+
+7
+00:00:23.903 --> 00:00:27.745
+The first idea is a list of steps, a shell script.
+
+8
+00:00:27.745 --> 00:00:36.659
+On a computer our café is one container, a sealed box running nginx, a program that serves a web page, on port 8090.
+
+9
+00:00:36.867 --> 00:00:37.788
+Run it once.
+
+10
+00:00:37.788 --> 00:00:38.478
+It works.
+
+11
+00:00:38.478 --> 00:00:44.695
+Run it again, and the second run fails, because the name tf-web is already taken.
+
+12
+00:00:44.900 --> 00:00:47.902
+A list of steps only knows how to start from nothing.
+
+13
+00:00:47.902 --> 00:00:49.998
+It has no idea what is already there.
+
+14
+00:00:49.998 --> 00:00:55.267
+Wouldn't it be nice to describe the finished room, and let a helper work out what is missing?
+
+15
+00:00:56.100 --> 00:00:57.568
+That helper is Terraform.
+
+16
+00:00:57.568 --> 00:01:04.263
+Picture an architect's drawing of the house, and a builder who compares the drawing with the house on every visit.
+
+17
+00:01:04.467 --> 00:01:07.418
+The drawing is your Terraform files.
+
+18
+00:01:07.418 --> 00:01:14.059
+They describe the desired state: one nginx container called tf-web, on port 8090.
+
+19
+00:01:14.267 --> 00:01:18.789
+The house is the real world, the containers Docker is actually running.
+
+20
+00:01:18.789 --> 00:01:20.445
+Right now, there are none.
+
+21
+00:01:20.667 --> 00:01:24.636
+And the builder keeps a notebook of everything built so far.
+
+22
+00:01:24.636 --> 00:01:28.605
+That notebook is the state, a file called terraform.tfstate.
+
+23
+00:01:28.605 --> 00:01:29.796
+Today it is empty.
+
+24
+00:01:30.000 --> 00:01:36.371
+Every run, the builder lines up these three pictures, and writes down the difference as a list of actions.
+
+25
+00:01:36.371 --> 00:01:37.693
+That list is the plan.
+
+26
+00:01:38.500 --> 00:01:41.036
+In the files, but not in the state?
+
+27
+00:01:41.036 --> 00:01:41.760
+Create it.
+
+28
+00:01:41.760 --> 00:01:43.427
+The plan prints a plus.
+
+29
+00:01:43.633 --> 00:01:46.174
+You type terraform apply, and say yes.
+
+30
+00:01:46.174 --> 00:01:50.989
+It also pulls the nginx image first, because the container refers to it.
+
+31
+00:01:50.989 --> 00:01:54.533
+Then Docker starts the container, and gives it an ID.
+
+32
+00:01:54.767 --> 00:02:04.395
+And the builder writes it in the notebook: this address, docker_container.web, is the container with ID 9aa5b095.
+
+33
+00:02:04.600 --> 00:02:06.600
+Now the question from the start.
+
+34
+00:02:06.600 --> 00:02:09.538
+You run apply again, without changing anything.
+
+35
+00:02:09.538 --> 00:02:11.788
+Does the builder make a second café?
+
+36
+00:02:14.433 --> 00:02:14.960
+Watch.
+
+37
+00:02:14.960 --> 00:02:20.224
+First, Terraform asks Docker about every ID in the notebook.
+
+38
+00:02:20.224 --> 00:02:23.470
+Those are the Refreshing state lines.
+
+39
+00:02:23.470 --> 00:02:25.576
+Is 9aa5b095 still there?
+
+40
+00:02:25.576 --> 00:02:27.331
+Yes, with port 8090.
+
+41
+00:02:27.533 --> 00:02:30.537
+Files, notebook and world all agree.
+
+42
+00:02:30.537 --> 00:02:32.289
+So the plan is empty.
+
+43
+00:02:32.289 --> 00:02:33.207
+No changes.
+
+44
+00:02:33.733 --> 00:02:35.775
+Now we can name what we just saw.
+
+45
+00:02:35.775 --> 00:02:39.796
+Describing the result instead of the steps is called declarative.
+
+46
+00:02:39.796 --> 00:02:45.487
+And a command that gives the same result however many times you run it is called idempotent.
+
+47
+00:02:46.200 --> 00:02:52.549
+The second rule of the plan: an object in both the files and the state, but with other settings?
+
+48
+00:02:52.549 --> 00:02:53.211
+Change it.
+
+49
+00:02:53.433 --> 00:02:56.269
+Change restart from no to unless-stopped.
+
+50
+00:02:56.269 --> 00:02:59.450
+Docker can change that on a running container.
+
+51
+00:02:59.450 --> 00:03:02.424
+So the plan shows a tilde: update in place.
+
+52
+00:03:02.424 --> 00:03:04.084
+Same container, same ID.
+
+53
+00:03:04.700 --> 00:03:06.246
+So far so good.
+
+54
+00:03:06.246 --> 00:03:08.617
+Now one more tiny edit.
+
+55
+00:03:08.617 --> 00:03:11.710
+Change the port, 8090 to 8091.
+
+56
+00:03:11.710 --> 00:03:13.359
+One word, again.
+
+57
+00:03:13.359 --> 00:03:14.803
+Another tilde?
+
+58
+00:03:17.467 --> 00:03:17.676
+No.
+
+59
+00:03:17.676 --> 00:03:21.379
+Docker cannot move a running container to a new port.
+
+60
+00:03:21.379 --> 00:03:23.964
+So the plan says minus plus: replace.
+
+61
+00:03:23.964 --> 00:03:26.619
+Destroy the old one, create a new one.
+
+62
+00:03:26.619 --> 00:03:29.553
+And the line ends with forces replacement.
+
+63
+00:03:29.767 --> 00:03:33.201
+Apply, and the container comes back with a new ID.
+
+64
+00:03:33.201 --> 00:03:35.949
+For nginx, that is a second of downtime.
+
+65
+00:03:35.949 --> 00:03:39.109
+For a database, it can mean an empty database.
+
+66
+00:03:39.333 --> 00:03:39.809
+Well...
+
+67
+00:03:39.809 --> 00:03:43.208
+that was a lot of building for one changed number.
+
+68
+00:03:43.833 --> 00:03:45.863
+So learn the four symbols.
+
+69
+00:03:45.863 --> 00:03:46.878
+Plus creates.
+
+70
+00:03:46.878 --> 00:03:48.674
+Tilde updates in place.
+
+71
+00:03:48.674 --> 00:03:50.235
+Minus plus replaces.
+
+72
+00:03:50.235 --> 00:03:52.187
+And minus alone destroys.
+
+73
+00:03:52.400 --> 00:03:55.491
+And build one habit while the containers are toys.
+
+74
+00:03:55.491 --> 00:03:59.571
+Read the summary line, and search the plan for forces replacement.
+
+75
+00:03:59.571 --> 00:04:02.724
+If the numbers surprise you, stop and find out why.
+
+76
+00:04:03.333 --> 00:04:05.426
+One honest limit of the picture.
+
+77
+00:04:05.426 --> 00:04:07.780
+This builder only comes when called.
+
+78
+00:04:07.780 --> 00:04:14.319
+Terraform looks only when you run plan or apply, so a change made by hand stays until your next run.
+
+79
+00:04:15.033 --> 00:04:16.621
+So the moral of the story.
+
+80
+00:04:16.621 --> 00:04:19.306
+Write the finished room down, not the steps.
+
+81
+00:04:19.306 --> 00:04:25.106
+Terraform compares your files, its notebook and the real world, and the difference is the plan.
+
+82
+00:04:25.106 --> 00:04:28.585
+That is why running it twice gives you one café, not two.
+
+83
+00:04:29.200 --> 00:04:30.201
+A quick check.
+
+84
+00:04:30.201 --> 00:04:33.633
+A teammate deletes the tf-web container by hand.
+
+85
+00:04:33.633 --> 00:04:36.492
+You run plan, without changing any file.
+
+86
+00:04:36.492 --> 00:04:38.208
+What does the plan show?
+
+87
+00:04:40.867 --> 00:04:41.453
+A create.
+
+88
+00:04:41.453 --> 00:04:48.752
+The refresh asks Docker about the ID in the notebook, Docker says it is gone, and the drawing still asks for it.

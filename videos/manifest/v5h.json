@@ -31,5 +31,27 @@
    "poster_at": 166.0,
    "replaces": "d57-tracing"
   }
+ ],
+ "d58": [
+  {
+   "slug": "d58-receptionist",
+   "title": "A receptionist at every door: retries, a sick host and outlier detection in Envoy",
+   "after": 3,
+   "file": "p15/d58_receptionist.py",
+   "scene": "D58Receptionist",
+   "poster_at": 225.0,
+   "replaces": "d58-sidecar"
+  }
+ ],
+ "d59": [
+  {
+   "slug": "d59-badges",
+   "title": "No badge, no entry: workload identity, mutual TLS, STRICT mode and ALLOW policies",
+   "after": 4,
+   "file": "p15/d59_badges.py",
+   "scene": "D59Badges",
+   "poster_at": 141.0,
+   "replaces": "d59-ambient"
+  }
  ]
 }

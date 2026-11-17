@@ -254,7 +254,7 @@ class D06Knock(VoiceScene):
         fit(cq2, 12.6)
         opts = VGroup(*[T(o, 28, GREY_B) for o in ("read it and write it", "read it only", "nothing at all", "run it as a program")]).arrange(DOWN, aligned_edge=LEFT, buff=0.22).next_to(cq2, DOWN, buff=0.5)
         self.beat("A quick check. A file shows R W dash, R dash dash, dash dash dash. It belongs to user app and group ops. Dana is in ops, but isn't the owner. What can Dana do?",
-                  FadeIn(cq), FadeIn(cq2), Succession(Wait(5.6), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.3)), run_time=7.6)
+                  Succession(FadeIn(VGroup(cq, cq2), run_time=0.8), Wait(4.8), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.3)), run_time=7.6)
         self.countdown(DOWN * 3.0, "pause and think")
         self.beat("Read it only. Dana is not the owner but is in the group, so the group's three slots decide, and they say R dash dash.",
                   opts[1].animate.set_color(GREEN_M), *[o.animate.set_opacity(0.35) for i, o in enumerate(opts) if i != 1], run_time=1.6)

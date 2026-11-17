@@ -42,6 +42,12 @@ YL = {"services": (0, "services:", BLUE_M), "web": (1, "web:", GOLD_M), "build":
 BASE = ["services", "web", "build", "ports", "p8000", "env", "rh", "redis", "image", "vols", "rd", "volumes", "rdata"]
 
 
+def rtext(items, top=3.15, size=26, x=1.0, buff=0.1):
+    """Short lines stacked in the right half of the frame, left edge at x, top edge at top."""
+    g = VGroup(*[T(t, size, c) for t, c in items]).arrange(DOWN, aligned_edge=LEFT, buff=buff)
+    return g.move_to([x, top, 0], aligned_edge=UL)
+
+
 class D21KitchenPlan(VoiceScene):
     def lay(self, keys, x0=-6.3, y0=3.05, dy=0.305):
         """Animations that move the shown YAML lines into the order of keys, fading new lines in and old ones out."""
@@ -119,8 +125,7 @@ class D21KitchenPlan(VoiceScene):
         p8 = M("8000", 24, GOLD_M).next_to(web, UP, buff=0.25)
         self.beat("Only web publishes a port, 8000, to your Mac. Redis has no port at all, because only web talks to it.",
                   FadeIn(p8, shift=DOWN * 0.1), Indicate(y["p8000"], color=WHITE), run_time=1.6)
-        decl = VGroup(T("phone calls: tell each step", 26, GREY_B), T("the plan: describe the finished kitchen", 26, BLUE_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([3.4, 2.75, 0])
-        fit(decl, 6.0)
+        decl = rtext([("phone calls: tell each step", GREY_B), ("the plan: describe", BLUE_M), ("the finished kitchen", BLUE_M)])
         self.beat("Notice the switch. No more phone calls telling each step. You describe the finished kitchen, and docker compose up works out the steps.",
                   FadeIn(decl, shift=DOWN * 0.1), run_time=1.8)
         self.play(FadeOut(decl), run_time=0.4)
@@ -155,8 +160,7 @@ class D21KitchenPlan(VoiceScene):
         visits = M('"visits": 1, 2, 3', 24, GOLD_M).move_to([3.4, -1.35, 0])
         self.steps("Call the app three times, and the visit count goes one, two, three, all kept by Redis.",
                    (1.6, Wait(1.6)), (0.6, FadeIn(visits)), (0.6, travel(Line(web.get_right(), red.get_left()), TEAL_M, 0.6)))
-        rule = T("Running is not ready. Make the app wait for healthy.", 30, YELLOW_M).move_to([3.2, 2.75, 0])
-        fit(rule, 6.2)
+        rule = rtext([("Running is not ready.", YELLOW_M), ("Make the app wait for healthy.", YELLOW_M)], size=28)
         self.beat("So here is the rule. Running is not ready. Make the app wait for healthy.",
                   FadeOut(up), FadeIn(rule, shift=DOWN * 0.1), run_time=1.4)
         self.play(FadeOut(VGroup(rule, hl, sl)), run_time=0.4)
@@ -174,32 +178,28 @@ class D21KitchenPlan(VoiceScene):
         dv = M("$ docker compose down -v", 24, RED_M).move_to(dn)
         self.steps("But add two characters, dash v, and Compose deletes the named volumes too, and your data with them, for good.",
                    (0.6, Transform(dn, dv)), (1.6, Wait(1.6)), (0.8, FadeOut(pan, scale=0.6), pnl.animate.set_color(RED_M).set_opacity(0.5), stuff.animate.set_opacity(0.15)))
-        r2 = T("Plain down clears the counters. Down -v empties the pantry.", 28, YELLOW_M).move_to([3.3, -2.3, 0])
-        fit(r2, 6.2)
+        r2 = rtext([("Plain down clears the counters.", YELLOW_M), ("Down -v empties the pantry.", YELLOW_M)], top=-1.0)
         self.beat("Two commands that look almost the same. Plain down clears the counters. Down dash v empties the pantry too.",
-                  FadeIn(r2, shift=UP * 0.1), run_time=1.4)
+                  FadeOut(visits), FadeIn(r2, shift=UP * 0.1), run_time=1.4)
         self.play(FadeOut(VGroup(r2, dn, visits, pnl)), stuff.animate.set_opacity(1), FadeIn(pan), run_time=0.6)
         pnl = M("redis-data", 22, GREEN_M).next_to(pan, LEFT, buff=0.25)
         self.add(pnl)
 
         # 5. guardrails
-        g = VGroup(T("healthchecks cover startup only:", 26, GOLD_M), T("the app must still cope if Redis dies later", 26, GOLD_M),
-                   T("and Compose runs on one machine only", 26, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([3.4, 2.65, 0])
-        fit(g, 6.0)
+        g = rtext([("healthchecks cover startup only:", GOLD_M), ("the app must still cope", GOLD_M), ("if Redis dies later", GOLD_M), ("Compose runs on one machine only", RED_M)], top=3.25)
         self.steps("Two honest limits. A healthcheck only covers startup. If Redis dies later, hello-devops answers its readiness check with a 503, and the app must cope. And Compose runs everything on one machine. If that machine dies, so does the app.",
-                   (0.8, FadeIn(g[0]), FadeIn(g[1])), (5.4, Wait(5.4)), (0.8, FadeIn(g[2])))
+                   (0.8, FadeIn(g[0]), FadeIn(g[1]), FadeIn(g[2])), (5.4, Wait(5.4)), (0.8, FadeIn(g[3])))
         self.play(FadeOut(g), run_time=0.5)
 
         # 6. moral and quick check
-        mor = VGroup(T("one file is the plan on the wall", 28, BLUE_M), T("wait for healthy, not for running", 28, PURPLE_M), T("down keeps the pantry; down -v does not", 28, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15).move_to([3.4, 2.6, 0])
-        fit(mor, 6.0)
+        mor = rtext([("one file is the plan on the wall", BLUE_M), ("wait for healthy, not running", PURPLE_M), ("down keeps the pantry,", GREEN_M), ("down -v empties it", GREEN_M)], top=3.25)
         self.steps("So the moral of the story. One file is the plan on the wall, and one command makes the kitchen match it. Wait for healthy, not for running. And down keeps the pantry, unless you say dash v.",
-                   (0.6, FadeIn(mor[0])), (3.0, Wait(3.0)), (0.6, FadeIn(mor[1])), (1.4, Wait(1.4)), (0.6, FadeIn(mor[2])))
+                   (0.6, FadeIn(mor[0])), (3.0, Wait(3.0)), (0.6, FadeIn(mor[1])), (1.4, Wait(1.4)), (0.6, FadeIn(mor[2]), FadeIn(mor[3])))
         self.play(FadeOut(mor), run_time=0.4)
-        quiz = VGroup(T("Quick check: depends_on: [redis],", 26, YELLOW_M), T("no healthcheck. What can go wrong?", 26, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([3.4, 2.7, 0])
+        quiz = rtext([("Quick check: depends_on: [redis],", YELLOW_M), ("no healthcheck.", YELLOW_M), ("What can go wrong?", YELLOW_M)], top=3.25)
         self.beat("Quick check. A compose file says depends on redis, the short form, with no healthcheck. What can go wrong?",
-                  FadeIn(quiz, shift=DOWN * 0.1), run_time=1.4)
+                  FadeIn(quiz, shift=DOWN * 0.1), FadeOut(pan), FadeOut(pnl), run_time=1.4)
         self.wait(2.0)
-        ans = VGroup(T("Web can start before Redis", 26, GREEN_M), T("accepts connections: a cold oven.", 26, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([3.4, -1.6, 0])
+        ans = rtext([("Web can start before Redis", GREEN_M), ("accepts connections: a cold oven.", GREEN_M)], top=-1.2)
         self.beat("Web can start before Redis accepts connections. The sauce goes into a cold oven.", FadeIn(ans, shift=UP * 0.1), run_time=1.2)
         self.wait(1.2)

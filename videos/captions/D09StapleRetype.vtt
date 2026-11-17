@@ -1,0 +1,429 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.732
+Merge and rebase both bring two lines of work back together.
+
+2
+00:00:06.732 --> 00:00:08.798
+So what is the real difference?
+
+3
+00:00:08.798 --> 00:00:10.998
+And why do people argue about it?
+
+4
+00:00:10.998 --> 00:00:11.997
+Let's find out.
+
+5
+00:00:12.667 --> 00:00:17.985
+Picture Ana and Ben, who each take a copy of the shop's price list home for the weekend.
+
+6
+00:00:18.133 --> 00:00:20.488
+Ana groups the thousands with commas.
+
+7
+00:00:20.488 --> 00:00:22.779
+Ben moves the currency to the front.
+
+8
+00:00:22.779 --> 00:00:25.769
+And on Monday, both have changed the same line.
+
+9
+00:00:26.333 --> 00:00:30.905
+The easy way to combine them is to keep whichever copy arrived last.
+
+10
+00:00:31.067 --> 00:00:34.543
+And that is how a weekend of work quietly disappears.
+
+11
+00:00:34.543 --> 00:00:39.528
+Last one wins is a fine rule for a race, and a terrible rule for a document.
+
+12
+00:00:39.667 --> 00:00:44.964
+So what we really want is both changes, and a question only when they truly clash.
+
+13
+00:00:45.133 --> 00:00:49.208
+In Git, each copy is a branch, a sticky note on a commit.
+
+14
+00:00:49.208 --> 00:00:51.496
+Let's start with the easy shape.
+
+15
+00:00:51.496 --> 00:00:56.929
+Main sits at d6aad6e, and a branch called other has one commit on top of it.
+
+16
+00:00:57.067 --> 00:00:59.325
+On main, you run git merge other.
+
+17
+00:00:59.325 --> 00:01:00.420
+Pause and guess.
+
+18
+00:01:00.420 --> 00:01:03.295
+Does Git need to create anything new here?
+
+19
+00:01:05.267 --> 00:01:05.473
+No.
+
+20
+00:01:05.473 --> 00:01:08.362
+Main gained nothing since other split off.
+
+21
+00:01:08.362 --> 00:01:11.183
+So Git just slides the main note forward.
+
+22
+00:01:11.183 --> 00:01:12.696
+That's a fast-forward.
+
+23
+00:01:13.467 --> 00:01:15.170
+Now the real shape.
+
+24
+00:01:15.170 --> 00:01:21.712
+Ana's commit on main and Ben's on currency-first both start from c711550.
+
+25
+00:01:21.712 --> 00:01:23.236
+Both sides moved.
+
+26
+00:01:24.000 --> 00:01:26.097
+Before we merge, a puzzle.
+
+27
+00:01:26.097 --> 00:01:28.517
+Say one line has two versions.
+
+28
+00:01:28.517 --> 00:01:31.018
+Main says the tax rate is 0.25.
+
+29
+00:01:31.018 --> 00:01:32.712
+The branch says 0.20.
+
+30
+00:01:32.712 --> 00:01:35.293
+Which one should the merge keep?
+
+31
+00:01:35.293 --> 00:01:36.584
+Pause and guess.
+
+32
+00:01:38.733 --> 00:01:40.397
+Honestly, you can't tell.
+
+33
+00:01:40.397 --> 00:01:41.795
+Maybe main raised it.
+
+34
+00:01:41.795 --> 00:01:43.659
+Maybe the branch lowered it.
+
+35
+00:01:43.659 --> 00:01:47.187
+Two versions are not enough to know who changed what.
+
+36
+00:01:47.333 --> 00:01:52.232
+So Git brings in a third version, the newest commit that both branches contain.
+
+37
+00:01:52.232 --> 00:01:56.200
+In our story, that's Friday's copy, the one they both took home.
+
+38
+00:01:56.400 --> 00:01:58.287
+Say the base has 0.20.
+
+39
+00:01:58.287 --> 00:01:59.573
+Now it's plain.
+
+40
+00:01:59.573 --> 00:02:02.575
+The branch never touched that line.
+
+41
+00:02:02.575 --> 00:02:06.005
+Only main changed it, so Git takes 0.25.
+
+42
+00:02:07.000 --> 00:02:10.259
+That third version is called the merge base.
+
+43
+00:02:10.259 --> 00:02:14.926
+In our repo, git merge-base main currency-first prints c711550.
+
+44
+00:02:14.926 --> 00:02:20.481
+Base plus two tips makes three, which is why it's called a three-way merge.
+
+45
+00:02:20.667 --> 00:02:23.970
+A change made on only one side goes in as it is.
+
+46
+00:02:23.970 --> 00:02:28.787
+Only a line that both sides changed, in different ways, is a conflict.
+
+47
+00:02:29.733 --> 00:02:32.523
+And Ana and Ben did change the same line.
+
+48
+00:02:32.523 --> 00:02:36.061
+Run git merge currency-first, and Git stops halfway.
+
+49
+00:02:36.733 --> 00:02:40.442
+The file now holds both versions, between marker lines.
+
+50
+00:02:40.442 --> 00:02:42.397
+Your side, from HEAD, on top.
+
+51
+00:02:42.397 --> 00:02:44.689
+Ben's side below the equals signs.
+
+52
+00:02:44.933 --> 00:02:48.407
+The first time, it looks as if Git broke your file.
+
+53
+00:02:48.407 --> 00:02:49.088
+It didn't.
+
+54
+00:02:49.088 --> 00:02:50.927
+It's asking you a question.
+
+55
+00:02:51.067 --> 00:02:53.039
+Here both ideas are good.
+
+56
+00:02:53.039 --> 00:03:00.615
+So you write one line with the currency first, and the commas kept, and you delete every marker.
+
+57
+00:03:00.615 --> 00:03:03.140
+The program prints EUR 1,543.12.
+
+58
+00:03:03.333 --> 00:03:04.639
+One warning, though.
+
+59
+00:03:04.639 --> 00:03:08.360
+Git checks that the text merged, not that the code works.
+
+60
+00:03:08.360 --> 00:03:10.841
+So run the tests after every conflict.
+
+61
+00:03:12.067 --> 00:03:16.633
+Then git add marks the file resolved, and git commit finishes the merge.
+
+62
+00:03:16.633 --> 00:03:19.423
+Git writes a merge commit, with two parents.
+
+63
+00:03:19.423 --> 00:03:21.516
+Main's old tip, and Ben's commit.
+
+64
+00:03:21.667 --> 00:03:27.757
+In the office, it staples both drafts together, with a cover note that says, these two joined here.
+
+65
+00:03:27.757 --> 00:03:30.341
+Nothing is lost, and nothing is rewritten.
+
+66
+00:03:31.333 --> 00:03:33.658
+Now rewind, and try the other way.
+
+67
+00:03:33.658 --> 00:03:36.188
+On Ben's branch, run git rebase main.
+
+68
+00:03:36.188 --> 00:03:41.316
+Rebase retypes Ben's pages, so they start after the latest version of main.
+
+69
+00:03:41.467 --> 00:03:43.697
+Same words, fresh pages.
+
+70
+00:03:43.697 --> 00:03:45.183
+Pause and guess.
+
+71
+00:03:45.183 --> 00:03:49.551
+Does Ben's retyped commit keep its ID, d229503?
+
+72
+00:03:51.733 --> 00:03:52.338
+It can't.
+
+73
+00:03:52.338 --> 00:03:56.169
+Remember from last time, a commit's ID covers its parent.
+
+74
+00:03:56.169 --> 00:04:01.076
+The retyped commit has a new parent, so it's a new commit, with a new ID.
+
+75
+00:04:01.267 --> 00:04:04.332
+Then the currency-first note moves to the copy.
+
+76
+00:04:04.332 --> 00:04:08.572
+The old commit still exists, but no branch points at it any more.
+
+77
+00:04:08.572 --> 00:04:10.268
+The reflog still knows it.
+
+78
+00:04:10.467 --> 00:04:15.231
+The result is a straight line of history, as if Ben had started his work today.
+
+79
+00:04:15.400 --> 00:04:17.680
+Merge kept both drafts, stapled.
+
+80
+00:04:17.680 --> 00:04:19.603
+Rebase retyped one of them.
+
+81
+00:04:19.603 --> 00:04:22.524
+Both end with Ana's and Ben's changes in.
+
+82
+00:04:23.067 --> 00:04:26.407
+Now the rule that matters more than the rest.
+
+83
+00:04:26.407 --> 00:04:31.677
+Say a teammate already copied Ben's branch, with the old d229503 in it.
+
+84
+00:04:31.867 --> 00:04:34.233
+Ben rebases and shares the new copy.
+
+85
+00:04:34.233 --> 00:04:37.783
+Now the teammate holds pages the branch no longer has.
+
+86
+00:04:37.783 --> 00:04:43.961
+If they merge, their history holds each of Ben's changes twice, under the old and the new IDs.
+
+87
+00:04:44.133 --> 00:04:46.830
+Unlike a typist, Git retypes in a second.
+
+88
+00:04:46.830 --> 00:04:50.184
+That's exactly why this mistake is so easy to make.
+
+89
+00:04:50.333 --> 00:04:53.581
+So rebase your own branch before anyone builds on it.
+
+90
+00:04:53.581 --> 00:04:56.768
+Never rebase commits that other people already have.
+
+91
+00:04:56.933 --> 00:05:00.895
+And after a rebase of your own branch, a normal push is refused.
+
+92
+00:05:00.895 --> 00:05:04.856
+A plain force push overwrites the shared branch, no matter what.
+
+93
+00:05:04.856 --> 00:05:10.303
+Force with lease refuses if a teammate pushed in the meantime, so their commit survives.
+
+94
+00:05:10.303 --> 00:05:11.851
+Use the lease every time.
+
+95
+00:05:12.733 --> 00:05:14.585
+So, the moral of the story.
+
+96
+00:05:14.585 --> 00:05:15.545
+Merge staples.
+
+97
+00:05:15.545 --> 00:05:16.573
+Rebase retypes.
+
+98
+00:05:16.573 --> 00:05:18.836
+A fast-forward only moves a note.
+
+99
+00:05:18.836 --> 00:05:22.334
+A three-way merge compares both tips with the base.
+
+100
+00:05:22.334 --> 00:05:26.448
+And rebase makes new commits, so keep it to your own branch.
+
+101
+00:05:27.200 --> 00:05:28.153
+A quick check.
+
+102
+00:05:28.153 --> 00:05:30.943
+Your teammate already pulled your branch.
+
+103
+00:05:30.943 --> 00:05:32.644
+Should you rebase it now?
+
+104
+00:05:32.644 --> 00:05:33.733
+Pause and guess.
+
+105
+00:05:35.933 --> 00:05:36.155
+No.
+
+106
+00:05:36.155 --> 00:05:42.960
+Their copy holds the old pages, so a rebase would leave every change in their history twice.
+
+107
+00:05:42.960 --> 00:05:43.996
+Merge instead.

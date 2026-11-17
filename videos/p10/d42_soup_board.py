@@ -79,7 +79,7 @@ class D42SoupBoard(Base):
         self.play(FadeOut(VGroup(brd, btx, office, ws, wl, say)), run_time=0.7)
 
         # ---------- 2. FAMILIAR: settings outside the image, the ConfigMap
-        img = panel(GREY_B, 3.2, 1.0, [-4.2, 2.4], 0.06)
+        img = panel(GREY_B, 3.8, 1.0, [-4.2, 2.4], 0.06)
         imt = M("hello-devops image", 24).move_to(img)
         envs = ["laptop", "staging", "production"]
         dest = VGroup(*[chip(e, GREY_B, 24) for e in envs]).arrange(RIGHT, buff=0.4).move_to([2.2, 2.4, 0])
@@ -97,7 +97,7 @@ class D42SoupBoard(Base):
         self.play(FadeOut(VGroup(img, imt, dest, cm, cmt, two)), run_time=0.7)
 
         # ---------- 3. SHRINK: the lab's demo, both ways at once
-        cmp_ = panel(GREEN_M, 3.6, 1.3, [-4.4, 2.3])
+        cmp_ = panel(GREEN_M, 4.0, 1.3, [-4.4, 2.3])
         cmh = T("ConfigMap: demo-config", 24, GREEN_M)
         cmv = M("COLOR: blue", 26)
         cmg = VGroup(cmh, cmv).arrange(DOWN, buff=0.15).move_to(cmp_)
@@ -153,11 +153,11 @@ class D42SoupBoard(Base):
         # ---------- 5. BREAK the wrong model: "surely a loop notices"
         self.beat("Now wait. Didn't we learn that Kubernetes runs a loop for everything? Surely some controller notices the change and restarts the Pod?",
                   Indicate(cmv, color=GREEN_M), run_time=1.8)
-        nob = T("no controller acts on a ConfigMap", 28, RED_M).move_to([3.0, -1.4, 0])
+        nob = T("no controller acts on a ConfigMap", 28, RED_M).move_to([3.7, -1.4, 0])
         self.beat("No. A ConfigMap is only data. No controller acts on it. The Deployment controller watches its own Pod template, not the ConfigMaps the template names. So changing a ConfigMap never restarts anything.",
                   FadeIn(nob, shift=UP * 0.1), run_time=2.0)
         mom = VGroup(T("the kubelet reads it at two moments:", 24, TEAL_M), T("1. a container starts: fills in env vars", 24),
-                     T("2. its regular sync: refreshes files", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([3.3, -2.6, 0])
+                     T("2. its regular sync: refreshes files", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([3.8, -2.6, 0])
         self.steps("The kubelet, the helper on each node, reads it at two moments. When it starts a container, to fill in environment variables. And on its regular sync, to refresh the mounted files.",
                    (0.6, FadeIn(mom[0])), (1.6, Wait(1.6)), (0.6, FadeIn(mom[1]), travel(a_env, BLUE_M, 0.6)), (1.2, Wait(1.2)), (0.6, FadeIn(mom[2]), travel(a_file, TEAL_M, 0.6)))
         self.play(FadeOut(VGroup(nob, mom, term, thead, log)), run_time=0.6)
@@ -170,9 +170,9 @@ class D42SoupBoard(Base):
                   FadeIn(lsh), LaggedStart(*[FadeIn(l, shift=UP * 0.1) for l in ls], lag_ratio=0.3), run_time=2.6)
         self.beat("On a change, the kubelet writes a new folder, and moves the link in one step. So the app never reads half a file.",
                   Indicate(ls[1], color=TEAL_M), run_time=1.6)
-        sp = VGroup(T("mounted with subPath: never updated", 24, RED_M), T("and it helps only if the app reads it again", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        sp = VGroup(T("mounted with subPath: never updated", 24, RED_M), T("and it helps only if the app reads it again", 22, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         sp.move_to([4.0, -2.3, 0])
-        sp.align_to(np.array([1.0, 0, 0]), LEFT)
+        sp.align_to(np.array([0.6, 0, 0]), LEFT)
         self.steps("That link trick is also why a file mounted with subPath, one file placed into an existing folder, is never updated. And even an updated file only helps if your app reads it again. Most apps read config once, at start.",
                    (0.8, FadeIn(sp[0])), (2.4, Wait(2.4)), (0.8, FadeIn(sp[1])))
         self.play(FadeOut(VGroup(ls, lsh, sp)), run_time=0.6)
@@ -190,7 +190,7 @@ class D42SoupBoard(Base):
         self.play(FadeOut(VGroup(term, rep, out, cmp_, cmg, kl, pod, podl, envb, envt, fileb, filet, a_env, a_file)), run_time=0.7)
 
         # hello-devops: a Deployment, so rollout restart
-        dep = panel(WHITE, 5.4, 2.1, [-3.4, 1.6], 0.0)
+        dep = panel(WHITE, 6.2, 2.1, [-3.35, 1.6], 0.0)
         dept = VGroup(M("Deployment hello-devops", 24, GREY_B), M("template:", 24), M("  envFrom: hello-config", 24, BLUE_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         dept.move_to(dep).align_to(dep, LEFT).shift(RIGHT * 0.3)
         cmd = M("$ kubectl rollout restart deployment/hello-devops", 24, PURPLE_M).move_to([0, -0.4, 0])

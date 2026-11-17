@@ -1,0 +1,425 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.738
+Picture our restaurant moving into a food hall.
+
+2
+00:00:05.738 --> 00:00:08.324
+Five kitchens now share one street door.
+
+3
+00:00:08.533 --> 00:00:11.419
+Guests shouldn't need to know which kitchen is where.
+
+4
+00:00:11.419 --> 00:00:14.904
+So one host at the entrance sends each guest to the right place.
+
+5
+00:00:17.067 --> 00:00:21.829
+On test nights, the host sends one table in ten to the new tasting menu.
+
+6
+00:00:21.829 --> 00:00:23.416
+We'll come back to that.
+
+7
+00:00:23.633 --> 00:00:25.039
+So here's the question.
+
+8
+00:00:25.039 --> 00:00:27.850
+Our app already has a Service with an address.
+
+9
+00:00:27.850 --> 00:00:30.416
+Why need anything more to let visitors in?
+
+10
+00:00:31.233 --> 00:00:38.756
+So far, you've used side doors: a NodePort on localhost 8081, or kubectl port-forward.
+
+11
+00:00:38.756 --> 00:00:40.243
+Fine on a laptop.
+
+12
+00:00:40.243 --> 00:00:42.517
+Not how real users arrive.
+
+13
+00:00:43.233 --> 00:00:54.803
+Real visitors need one door for many apps, routing by host name and path, TLS, the encryption behind https, in one place, and gradual releases.
+
+14
+00:00:55.533 --> 00:00:59.042
+A Service of type LoadBalancer does give you an address.
+
+15
+00:00:59.042 --> 00:01:00.859
+But it's a door with no host.
+
+16
+00:01:01.067 --> 00:01:03.525
+It works with connections, at layer 4.
+
+17
+00:01:03.525 --> 00:01:10.317
+It never opens the envelope: not the web address, not a header, the labelled extra lines in each request.
+
+18
+00:01:10.533 --> 00:01:11.799
+Excellent hinges.
+
+19
+00:01:11.799 --> 00:01:12.692
+No opinions.
+
+20
+00:01:12.692 --> 00:01:17.529
+We want a host, who opens each request and decides where it goes.
+
+21
+00:01:18.233 --> 00:01:20.555
+A program that does that is a proxy.
+
+22
+00:01:20.555 --> 00:01:25.713
+It sits in front of your apps and passes each request on, reading it at layer 7.
+
+23
+00:01:25.933 --> 00:01:28.211
+A host needs a book of rules.
+
+24
+00:01:28.211 --> 00:01:32.688
+Kubernetes' older one is Ingress: host names, paths, TLS.
+
+25
+00:01:32.900 --> 00:01:37.707
+Everything else went into margin notes, each controller with its own shorthand.
+
+26
+00:01:37.933 --> 00:01:48.052
+Today the Ingress API is frozen, and ingress-nginx, the most popular controller, was retired on March 24, 2026.
+
+27
+00:01:48.767 --> 00:01:51.724
+The newer set of objects is the Gateway API.
+
+28
+00:01:51.724 --> 00:01:55.756
+It splits the job by who owns what, just like the food hall.
+
+29
+00:01:55.967 --> 00:01:59.102
+A GatewayClass says which controller handles the door.
+
+30
+00:01:59.102 --> 00:02:01.657
+That's the company that staffs the entrance.
+
+31
+00:02:01.657 --> 00:02:04.328
+The platform team creates it once per cluster.
+
+32
+00:02:04.533 --> 00:02:10.577
+A Gateway is the street door itself, with listeners, such as HTTP on port 80.
+
+33
+00:02:10.800 --> 00:02:17.397
+And an HTTPRoute is each kitchen's line in the host's book: slash goes to the hello-devops Service.
+
+34
+00:02:17.397 --> 00:02:20.861
+App teams write these, and attach them to a Gateway.
+
+35
+00:02:21.067 --> 00:02:22.025
+Let's try it.
+
+36
+00:02:22.025 --> 00:02:25.415
+A fresh kind cluster, nothing extra installed.
+
+37
+00:02:25.415 --> 00:02:28.069
+We apply a Gateway and an HTTPRoute.
+
+38
+00:02:28.069 --> 00:02:31.312
+Pause and guess: does traffic start flowing?
+
+39
+00:02:33.533 --> 00:02:34.198
+Well...
+
+40
+00:02:34.198 --> 00:02:35.623
+not even close.
+
+41
+00:02:35.623 --> 00:02:37.143
+The apply fails.
+
+42
+00:02:37.143 --> 00:02:39.043
+No matches for kind.
+
+43
+00:02:39.267 --> 00:02:42.641
+The Gateway API isn't built into Kubernetes.
+
+44
+00:02:42.641 --> 00:02:47.856
+You install it as CRDs, new object types that the API server learns.
+
+45
+00:02:48.067 --> 00:02:49.814
+Even then, nothing routes.
+
+46
+00:02:49.814 --> 00:02:51.964
+A job description is not a host.
+
+47
+00:02:51.964 --> 00:02:55.660
+A controller has to read these objects and act on them.
+
+48
+00:02:56.267 --> 00:03:01.046
+The lab uses Envoy Gateway, a controller that runs the Envoy proxy.
+
+49
+00:03:01.046 --> 00:03:03.043
+Watch what happens on apply.
+
+50
+00:03:03.267 --> 00:03:03.568
+One.
+
+51
+00:03:03.568 --> 00:03:06.134
+The class eg names the controller.
+
+52
+00:03:06.134 --> 00:03:10.284
+Envoy Gateway sees its own name, and accepts the class.
+
+53
+00:03:10.500 --> 00:03:10.806
+Two.
+
+54
+00:03:10.806 --> 00:03:14.019
+The Gateway, hello-gateway, uses class eg.
+
+55
+00:03:14.019 --> 00:03:19.757
+So the controller starts an Envoy proxy for it, a Deployment and a Service.
+
+56
+00:03:19.967 --> 00:03:20.424
+Three.
+
+57
+00:03:20.424 --> 00:03:27.511
+The HTTPRoute hello-devops attaches to hello-gateway, and points at the hello-devops Service.
+
+58
+00:03:27.733 --> 00:03:28.067
+Four.
+
+59
+00:03:28.067 --> 00:03:33.403
+The controller turns the route into Envoy settings, and sends them to the proxy.
+
+60
+00:03:33.403 --> 00:03:35.071
+Now it starts forwarding.
+
+61
+00:03:35.300 --> 00:03:36.294
+Now a request.
+
+62
+00:03:36.294 --> 00:03:38.920
+From curl, to Envoy, to hello-devops.
+
+63
+00:03:38.920 --> 00:03:40.978
+Look where the controller is.
+
+64
+00:03:40.978 --> 00:03:43.391
+It never handles a single request.
+
+65
+00:03:43.600 --> 00:03:46.073
+It watches objects and writes settings.
+
+66
+00:03:46.073 --> 00:03:47.974
+The proxy carries the traffic.
+
+67
+00:03:47.974 --> 00:03:50.320
+The staffing company trains the host.
+
+68
+00:03:50.320 --> 00:03:52.032
+The host greets the guests.
+
+69
+00:03:53.533 --> 00:03:54.994
+Now, the tasting menu.
+
+70
+00:03:54.994 --> 00:03:59.243
+A second version of the app, hello-canary, gets its own Service.
+
+71
+00:03:59.467 --> 00:04:03.259
+A rule in an HTTPRoute can split traffic by weight.
+
+72
+00:04:03.259 --> 00:04:09.059
+Ninety and ten: about nine requests in ten to hello-devops, one to the canary.
+
+73
+00:04:09.267 --> 00:04:10.895
+We send fifty requests.
+
+74
+00:04:10.895 --> 00:04:14.507
+Pause and guess: is it exactly forty-five and five?
+
+75
+00:04:16.733 --> 00:04:17.418
+Let's see.
+
+76
+00:04:17.418 --> 00:04:22.827
+Envoy picks a backend for each request at random, in proportion to the weights.
+
+77
+00:04:23.133 --> 00:04:25.304
+This run: forty-four and six.
+
+78
+00:04:25.304 --> 00:04:28.224
+Close to ninety, ten, but rarely exact.
+
+79
+00:04:28.433 --> 00:04:35.190
+That's a canary release: a new version gets a small share of real traffic while you watch it.
+
+80
+00:04:35.190 --> 00:04:35.553
+Good?
+
+81
+00:04:35.553 --> 00:04:36.788
+Move the weights.
+
+82
+00:04:36.788 --> 00:04:37.078
+Bad?
+
+83
+00:04:37.078 --> 00:04:38.749
+Set the canary to zero.
+
+84
+00:04:38.967 --> 00:04:43.395
+The lab adds a rule for testers: the header x-canary, always.
+
+85
+00:04:43.395 --> 00:04:45.719
+That request matches both rules.
+
+86
+00:04:45.719 --> 00:04:46.517
+Which wins?
+
+87
+00:04:47.733 --> 00:04:49.318
+The most specific match.
+
+88
+00:04:49.318 --> 00:04:54.467
+With equal paths, more header matches win, so testers always reach the canary.
+
+89
+00:04:55.167 --> 00:04:56.010
+Two habits.
+
+90
+00:04:56.010 --> 00:04:58.772
+First, set TLS once, on the Gateway.
+
+91
+00:04:58.772 --> 00:05:05.981
+An HTTPS listener with mode Terminate decrypts at the proxy, with a certificate from a Secret.
+
+92
+00:05:06.200 --> 00:05:09.035
+The last hop, to your Pods, stays plain.
+
+93
+00:05:09.035 --> 00:05:10.736
+Part 15 deals with that.
+
+94
+00:05:10.967 --> 00:05:15.255
+Second, on a 404 or 500, don't touch the Gateway first.
+
+95
+00:05:15.255 --> 00:05:20.324
+Usually the route never attached, or points at a missing Service.
+
+96
+00:05:20.324 --> 00:05:22.741
+Run kubectl describe httproute.
+
+97
+00:05:23.567 --> 00:05:27.803
+The moral of the story: a Service is a door, and a proxy is the host.
+
+98
+00:05:27.803 --> 00:05:33.084
+The class staffs the door, the Gateway is the door, and each app writes its own route.
+
+99
+00:05:33.084 --> 00:05:36.707
+The controller writes settings; the proxy carries requests.
+
+100
+00:05:37.533 --> 00:05:38.687
+One quick check.
+
+101
+00:05:38.687 --> 00:05:46.544
+A shop wants slash api sent to the Service api, and every other path to the Service web, through one Gateway.
+
+102
+00:05:46.544 --> 00:05:47.841
+What do you write?
+
+103
+00:05:47.841 --> 00:05:48.995
+Pause and think.
+
+104
+00:05:51.200 --> 00:05:53.863
+One HTTPRoute with two path rules.
+
+105
+00:05:53.863 --> 00:05:58.955
+Slash api is more specific, so it wins, and slash takes the rest.
+
+106
+00:05:58.955 --> 00:06:00.521
+Thanks for watching.

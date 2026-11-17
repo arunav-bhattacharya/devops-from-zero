@@ -20,5 +20,16 @@
    "poster_at": 284.0,
    "replaces": "d36-idempotence"
   }
+ ],
+ "d37": [
+  {
+   "slug": "d37-which-note",
+   "title": "Which note wins: Ansible variable precedence as a ladder",
+   "after": 0,
+   "file": "p9/d37_notes.py",
+   "scene": "D37Notes",
+   "poster_at": 250.0,
+   "replaces": "d37-precedence"
+  }
  ]
 }

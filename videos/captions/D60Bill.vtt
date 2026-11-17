@@ -1,0 +1,353 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.638
+Picture a small bakery: three people in the back, and one door.
+
+2
+00:00:06.638 --> 00:00:08.869
+A salesman comes by with a brochure.
+
+3
+00:00:09.067 --> 00:00:10.871
+Badge readers on every door.
+
+4
+00:00:10.871 --> 00:00:12.353
+A guard on every floor.
+
+5
+00:00:12.353 --> 00:00:14.608
+A control room that watches it all.
+
+6
+00:00:14.608 --> 00:00:19.440
+The tower down the street runs on it, and its managers would never go back.
+
+7
+00:00:19.600 --> 00:00:20.874
+It's a fine system.
+
+8
+00:00:20.874 --> 00:00:25.501
+But the bakery has one door, and everyone inside knows everyone else.
+
+9
+00:00:25.667 --> 00:00:30.793
+What the brochure leaves out is the monthly bill, and the person who has to look after it all.
+
+10
+00:00:30.933 --> 00:00:37.467
+The last two lessons were the brochure: a receptionist at every door, badges checked in every handshake.
+
+11
+00:00:37.467 --> 00:00:38.975
+Today, the missing page.
+
+12
+00:00:38.975 --> 00:00:42.431
+And then the bakery's question: do we need any of this?
+
+13
+00:00:43.200 --> 00:00:45.042
+The bill has five lines.
+
+14
+00:00:45.042 --> 00:00:48.113
+Latency, because every proxy adds a hop.
+
+15
+00:00:48.113 --> 00:00:50.569
+CPU and memory, for every proxy.
+
+16
+00:00:50.569 --> 00:00:51.260
+Upgrades.
+
+17
+00:00:51.260 --> 00:00:55.942
+Debugging, because a failed call now has more places to fail.
+
+18
+00:00:55.942 --> 00:00:56.787
+And people.
+
+19
+00:00:56.933 --> 00:00:59.931
+The first two we can measure in five minutes.
+
+20
+00:00:59.931 --> 00:01:00.531
+So let's.
+
+21
+00:01:01.200 --> 00:01:04.632
+Take the receptionist lab from two lessons ago.
+
+22
+00:01:04.632 --> 00:01:09.086
+Send 300 requests straight to the app, and 300 through Envoy.
+
+23
+00:01:09.086 --> 00:01:10.692
+Same app, same laptop.
+
+24
+00:01:10.867 --> 00:01:13.917
+How much does one hop add to the middle request?
+
+25
+00:01:13.917 --> 00:01:14.933
+Pause and guess.
+
+26
+00:01:18.133 --> 00:01:22.064
+Direct, the median was 1.46 ms.
+
+27
+00:01:22.064 --> 00:01:24.980
+Through Envoy, 2.09 ms.
+
+28
+00:01:24.980 --> 00:01:27.263
+About 0.6 ms more.
+
+29
+00:01:27.400 --> 00:01:28.270
+Tiny, right?
+
+30
+00:01:28.270 --> 00:01:33.344
+And the idle Envoy, with its tiny config, holds about 64 MB of memory.
+
+31
+00:01:33.344 --> 00:01:35.591
+These are one laptop's numbers.
+
+32
+00:01:35.591 --> 00:01:40.013
+Yours will differ, which is exactly why you measure your own.
+
+33
+00:01:40.200 --> 00:01:41.215
+One more thing.
+
+34
+00:01:41.215 --> 00:01:46.357
+A sidecar mesh puts a proxy at both ends, so every call crosses two of them.
+
+35
+00:01:47.267 --> 00:01:49.523
+Now a made-up payments product.
+
+36
+00:01:49.523 --> 00:01:51.852
+Eight services, three Pods each.
+
+37
+00:01:51.852 --> 00:01:53.089
+Twenty-four Pods.
+
+38
+00:01:53.267 --> 00:01:56.788
+Give every Pod a sidecar at 64 MB each.
+
+39
+00:01:56.788 --> 00:02:05.184
+Before a single request is carried, the proxies need 1536 MB, about one and a half gigabytes.
+
+40
+00:02:05.333 --> 00:02:08.007
+The bakery would be paying a guard per loaf.
+
+41
+00:02:08.200 --> 00:02:10.382
+Other meshes share proxies instead.
+
+42
+00:02:10.382 --> 00:02:14.869
+Let's put our twenty-four Pods on three nodes, the machines they run on.
+
+43
+00:02:15.067 --> 00:02:20.515
+Cilium, a network plugin with a mesh built in, is often called sidecar-free.
+
+44
+00:02:20.515 --> 00:02:23.454
+So where does an HTTP retry actually run?
+
+45
+00:02:23.454 --> 00:02:24.601
+Pause and guess.
+
+46
+00:02:27.867 --> 00:02:34.389
+The tempting answer: in eBPF, the small programs Cilium runs inside the Linux kernel.
+
+47
+00:02:34.389 --> 00:02:35.464
+Let's be fair.
+
+48
+00:02:35.464 --> 00:02:40.068
+eBPF really does move packets and balance connections there.
+
+49
+00:02:40.267 --> 00:02:42.142
+But it doesn't read HTTP.
+
+50
+00:02:42.142 --> 00:02:46.343
+Anything that needs HTTP runs in an Envoy, one per node.
+
+51
+00:02:46.343 --> 00:02:49.119
+Sidecar-free doesn't mean proxy-free.
+
+52
+00:02:49.267 --> 00:02:59.370
+Istio's ambient mode is built the same way: one small proxy per node, ztunnel, and an Envoy waypoint only where you ask for HTTP features.
+
+53
+00:02:59.370 --> 00:03:03.104
+Three node proxies instead of twenty-four sidecars.
+
+54
+00:03:03.267 --> 00:03:10.761
+The price of sharing: a noisy neighbor can slow your traffic, and a broken node proxy hurts every Pod on that node.
+
+55
+00:03:11.533 --> 00:03:15.098
+Now the bakery's question, for our made-up product.
+
+56
+00:03:15.098 --> 00:03:16.776
+The lab has a checklist.
+
+57
+00:03:16.776 --> 00:03:26.423
+One team, two languages, NetworkPolicies, one Gateway, OpenTelemetry already, and no auditor asking for encryption on every internal call.
+
+58
+00:03:26.600 --> 00:03:27.967
+Every box is ticked.
+
+59
+00:03:27.967 --> 00:03:30.018
+So the answer is: no mesh yet.
+
+60
+00:03:30.018 --> 00:03:35.281
+Write a note to look again when a second team, or a compliance rule, arrives.
+
+61
+00:03:35.467 --> 00:03:37.586
+And remember what a mesh can't do.
+
+62
+00:03:37.586 --> 00:03:40.080
+It won't speed up a slow database query.
+
+63
+00:03:40.080 --> 00:03:42.761
+It only wraps proxies around the slow call.
+
+64
+00:03:43.533 --> 00:03:48.616
+If the answer is yes, adopt it one namespace at a time, one step at a time.
+
+65
+00:03:48.616 --> 00:03:49.903
+First only observe.
+
+66
+00:03:49.903 --> 00:03:52.343
+You'll find calls nobody knew about.
+
+67
+00:03:52.533 --> 00:03:55.114
+Then mutual TLS in permissive mode.
+
+68
+00:03:55.114 --> 00:03:58.136
+Then strict, once every caller is meshed.
+
+69
+00:03:58.136 --> 00:03:59.537
+Then authorization.
+
+70
+00:03:59.537 --> 00:04:01.307
+Traffic rules come last.
+
+71
+00:04:02.000 --> 00:04:05.598
+One last line of the bill hides in the easy path.
+
+72
+00:04:05.598 --> 00:04:12.207
+Linkerd, a lighter mesh, creates a root certificate when you install it, the trust anchor.
+
+73
+00:04:12.207 --> 00:04:14.116
+It expires after 365 days.
+
+74
+00:04:14.267 --> 00:04:19.582
+A team that takes the defaults and never looks again has a mesh that breaks a year later.
+
+75
+00:04:19.582 --> 00:04:22.330
+A certificate you didn't choose still expires.
+
+76
+00:04:22.330 --> 00:04:23.524
+Write down the date.
+
+77
+00:04:24.200 --> 00:04:25.773
+So the moral of the story.
+
+78
+00:04:25.773 --> 00:04:28.254
+A mesh is a fine system with a real bill.
+
+79
+00:04:28.254 --> 00:04:33.035
+Before you buy it, write down the two or three problems you expect it to solve.
+
+80
+00:04:33.035 --> 00:04:38.179
+Measure them before and after, and take the mesh out again if the numbers don't move.
+
+81
+00:04:38.333 --> 00:04:39.482
+A quick check.
+
+82
+00:04:39.482 --> 00:04:44.242
+Ten services, two Pods each, a 64 MB sidecar in every Pod.
+
+83
+00:04:44.242 --> 00:04:47.115
+How much memory before any traffic?
+
+84
+00:04:47.115 --> 00:04:48.920
+Pause and work it out.
+
+85
+00:04:52.133 --> 00:04:55.852
+Twenty Pods times 64 MB: 1280 MB.
+
+86
+00:04:55.852 --> 00:04:59.571
+And still two hops on every call.
+
+87
+00:04:59.733 --> 00:05:06.481
+Next, we leave the open-source parts behind, and meet one commercial product that collects every signal at once.
+
+88
+00:05:06.481 --> 00:05:10.819
+What do you gain when one tool sees everything, and what do you give up?

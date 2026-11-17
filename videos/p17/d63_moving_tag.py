@@ -132,16 +132,17 @@ class D63MovingTag(VoiceScene):
 
         # ---------- 5. the fingerprint: a SHA
         pA.move_to([-0.6, 1.75, 0]); pB.move_to([-0.6, -0.85, 0])
+        self.play(FadeIn(pA), FadeIn(pB), run_time=0.6)
         self.beat("Wouldn't it be nice to name the sack itself, not its label? Git gives every commit exactly that kind of name.",
-                  FadeIn(pA), FadeIn(pB), Succession(Wait(1.6), AnimationGroup(Indicate(pA[1][0][0], color=GOLD_M), Indicate(pB[1][0][0], color=RED_M))), run_time=3.0)
+                  Succession(Wait(1.0), AnimationGroup(Indicate(pA[1][0][0], color=GOLD_M), Indicate(pB[1][0][0], color=RED_M))), run_time=3.0)
         shaA = M("fdc7302786077937dd5afcc0a0b7d31de75a46e9", 22, GOLD_M).next_to(pA, DOWN, buff=0.2).align_to(pA, LEFT)
         shaB = M("2df87fdf0effb81f0db1334d84a8bf3a7c72cb45", 22, RED_M).next_to(pB, DOWN, buff=0.2).align_to(pB, LEFT)
         hA = chip("SHA", PURPLE_M, 22).next_to(shaA, RIGHT, buff=0.35)
         hB = chip("SHA", PURPLE_M, 22).next_to(shaB, RIGHT, buff=0.35)
         self.beat("A commit SHA is a hash, a fingerprint worked out from the commit's content: its files, its parent commit, its author and its message. That gives forty letters and digits.",
-                  Succession(Wait(2.6), AnimationGroup(Indicate(pA[0], color=GOLD_M, scale_factor=1.02), FadeIn(shaA, shift=DOWN * 0.15), FadeIn(hA))), run_time=5.0)
+                  Succession(Wait(2.6), AnimationGroup(Indicate(pA[1], color=GOLD_M, scale_factor=1.02), FadeIn(shaA, shift=DOWN * 0.15), FadeIn(hA))), run_time=5.0)
         self.beat("Change one byte, and you get a completely different fingerprint. The attacker's commit has its own, and can never borrow the old one.",
-                  Indicate(pB[0], color=RED_M, scale_factor=1.02), Succession(Wait(1.6), AnimationGroup(FadeIn(shaB, shift=DOWN * 0.15), FadeIn(hB))), run_time=3.4)
+                  Indicate(pB[1], color=RED_M, scale_factor=1.02), Succession(Wait(1.6), AnimationGroup(FadeIn(shaB, shift=DOWN * 0.15), FadeIn(hB))), run_time=3.4)
         self.beat("No real sack of sugar works like that. Imagine a label printed from the sugar itself, where swapping one grain prints a different label. That's where the pantry story stops, and git is better than the pantry.",
                   Wait(0.1), run_time=0.4)
         self.play(FadeOut(VGroup(pB, shaB, hB)), run_time=0.5)

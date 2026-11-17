@@ -81,7 +81,7 @@ class D65ThreeChecks(VoiceScene):
         self.beat("And it names a brand of pectin that doesn't exist.",
                   cd[1][2].animate.set_color(RED_M), Create(x2), FadeIn(nob), run_time=1.8)
         self.beat("The intern wasn't lying. They wrote what recipe cards usually look like. Neat handwriting and a confident tone feel like being right. They aren't the same thing.",
-                  Indicate(cd[0], color=GOLD_M, scale_factor=1.03), run_time=2.6)
+                  Indicate(cd[1], color=GOLD_M, scale_factor=1.03), run_time=2.6)
 
         # ---------- 3. what the model does: likely text
         self.play(FadeOut(VGroup(stove, stl, nob)), run_time=0.4)
@@ -110,7 +110,7 @@ class D65ThreeChecks(VoiceScene):
         self.beat("Now a real case from the lab. You ask an assistant for a Kubernetes Deployment for hello-devops, our tiny web app, with three copies, a health check and Redis as the database. No files, no versions.",
                   FadeIn(dl), FadeIn(dp[0]), LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in rows], lag_ratio=0.12), run_time=5.0)
         self.beat("A Deployment is the settings file that tells Kubernetes how to run your app. The answer came back in seconds, neatly indented. How many mistakes are in it? Pause and guess.",
-                  Indicate(dp[0], color=GOLD_M, scale_factor=1.02), run_time=2.6)
+                  Indicate(dl, color=GOLD_M, scale_factor=1.1), run_time=2.6)
         self.wait(2.0)
 
         # ---------- 5. three checks, one after another

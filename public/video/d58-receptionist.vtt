@@ -1,0 +1,389 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.400
+Picture an office building.
+
+2
+00:00:04.400 --> 00:00:06.414
+Small offices, one team in each.
+
+3
+00:00:06.414 --> 00:00:10.443
+All day, people walk the corridors with requests for each other.
+
+4
+00:00:10.667 --> 00:00:12.533
+Each team has its own habits.
+
+5
+00:00:12.533 --> 00:00:15.171
+One knocks five times, then knocks again.
+
+6
+00:00:15.171 --> 00:00:17.359
+Another gives up after one second.
+
+7
+00:00:17.359 --> 00:00:19.483
+Nobody checks who is at the door.
+
+8
+00:00:19.700 --> 00:00:22.095
+One afternoon, payroll slows down.
+
+9
+00:00:22.095 --> 00:00:24.279
+A queue forms outside its door.
+
+10
+00:00:24.500 --> 00:00:28.104
+The people stuck there are late for everyone waiting on them.
+
+11
+00:00:28.104 --> 00:00:29.700
+Soon those queues grow too.
+
+12
+00:00:29.700 --> 00:00:33.245
+By four o'clock, half the building is standing in corridors.
+
+13
+00:00:33.467 --> 00:00:35.362
+No team did anything foolish.
+
+14
+00:00:35.362 --> 00:00:38.304
+Each habit made sense from inside one office.
+
+15
+00:00:38.304 --> 00:00:42.553
+The trouble lives between the offices, where nobody is in charge.
+
+16
+00:00:43.367 --> 00:00:49.143
+Services, separate programs that call each other over the network, have exactly this building.
+
+17
+00:00:49.143 --> 00:00:52.831
+Before one call is safe, somebody has to decide all of this.
+
+18
+00:00:53.033 --> 00:00:55.884
+None of it is the work the service exists to do.
+
+19
+00:00:55.884 --> 00:00:59.329
+And left alone, every team solves it a little differently.
+
+20
+00:00:59.329 --> 00:01:05.149
+Those are the office habits, and they surface during an outage, when they are hardest to untangle.
+
+21
+00:01:05.767 --> 00:01:10.104
+Wouldn't it be nice if the door itself handled it, the same way for everyone?
+
+22
+00:01:10.933 --> 00:01:13.083
+So put a receptionist at the door.
+
+23
+00:01:13.083 --> 00:01:14.790
+The app makes a plain call.
+
+24
+00:01:14.790 --> 00:01:18.015
+The receptionist makes the real call on its behalf.
+
+25
+00:01:18.233 --> 00:01:23.675
+The receptionist adds the time limit, the second try, the badge check and the counting.
+
+26
+00:01:23.675 --> 00:01:25.927
+One set of habits, for every office.
+
+27
+00:01:26.133 --> 00:01:28.879
+A program that does this is called a proxy.
+
+28
+00:01:28.879 --> 00:01:30.603
+The one we'll use is Envoy.
+
+29
+00:01:30.603 --> 00:01:35.903
+And a proxy that lives right next to the app, in the same Pod, is called a sidecar.
+
+30
+00:01:36.133 --> 00:01:39.419
+Here's the nice part: the app doesn't change at all.
+
+31
+00:01:39.419 --> 00:01:44.285
+Packet rules inside the Pod quietly hand every connection to the proxy first.
+
+32
+00:01:44.285 --> 00:01:47.887
+The app keeps calling the same address and never notices.
+
+33
+00:01:48.900 --> 00:01:51.273
+Let's build the smallest version.
+
+34
+00:01:51.273 --> 00:01:57.744
+Our lab app, hello-devops, a tiny web app that greets every visitor, runs as three copies.
+
+35
+00:01:57.744 --> 00:01:59.757
+v1a and v1b are version one.
+
+36
+00:01:59.967 --> 00:02:04.944
+v2 is a canary, a new version that gets a small share of traffic first.
+
+37
+00:02:05.167 --> 00:02:11.616
+Envoy's route sends 90 out of every 100 requests to version one, and 10 to the canary.
+
+38
+00:02:11.833 --> 00:02:13.515
+We send 200 requests.
+
+39
+00:02:13.515 --> 00:02:15.756
+How many land on the canary?
+
+40
+00:02:15.756 --> 00:02:17.037
+Pause and guess.
+
+41
+00:02:20.267 --> 00:02:23.067
+About twenty, if it split perfectly.
+
+42
+00:02:23.067 --> 00:02:24.856
+The lab got 175 and 25.
+
+43
+00:02:24.856 --> 00:02:31.700
+Envoy picks at random for each request, so the numbers wander a little around 90 and 10.
+
+44
+00:02:32.333 --> 00:02:35.092
+Now let's break one copy on purpose.
+
+45
+00:02:35.092 --> 00:02:39.766
+v1b keeps its visit count in its own Redis, a small database.
+
+46
+00:02:39.766 --> 00:02:40.609
+We stop it.
+
+47
+00:02:40.833 --> 00:02:44.191
+Now real visits to v1b fail with error 500.
+
+48
+00:02:44.191 --> 00:02:49.188
+But its health page, slash healthz, still answers 200, all fine.
+
+49
+00:02:49.400 --> 00:02:54.218
+The obvious hope: Envoy runs its own health check, every five seconds.
+
+50
+00:02:54.218 --> 00:02:55.457
+Surely it notices.
+
+51
+00:02:55.457 --> 00:02:58.072
+Let's be fair; that check really runs.
+
+52
+00:02:58.072 --> 00:02:59.517
+And it keeps passing.
+
+53
+00:02:59.733 --> 00:03:03.923
+An office with the door wide open, and a phone nobody answers.
+
+54
+00:03:03.923 --> 00:03:06.829
+A health check only asks: is the door open?
+
+55
+00:03:07.033 --> 00:03:09.058
+So we send twenty requests.
+
+56
+00:03:09.058 --> 00:03:10.483
+What does curl see?
+
+57
+00:03:10.483 --> 00:03:11.683
+Pause and guess.
+
+58
+00:03:14.900 --> 00:03:16.151
+Twenty times 200.
+
+59
+00:03:16.151 --> 00:03:18.433
+Three requests did fail on v1b.
+
+60
+00:03:18.433 --> 00:03:26.088
+But the route has a retry policy, and each retry goes to a different host than the one that just failed.
+
+61
+00:03:26.088 --> 00:03:27.855
+So v1a answered instead.
+
+62
+00:03:28.367 --> 00:03:33.069
+And after the third error in a row, Envoy took v1b out of the pool.
+
+63
+00:03:33.069 --> 00:03:38.193
+Its admin page says so: three retries, three successes, one host ejected.
+
+64
+00:03:38.400 --> 00:03:40.131
+That is outlier detection.
+
+65
+00:03:40.131 --> 00:03:43.860
+Instead of asking the door, it watches the real answers.
+
+66
+00:03:43.860 --> 00:03:50.452
+Three 500s in a row, and the host is skipped for thirty seconds, longer each time it happens again.
+
+67
+00:03:50.667 --> 00:03:53.027
+Two ways to notice a sick host, then.
+
+68
+00:03:53.027 --> 00:03:55.197
+A health check knocks on the door.
+
+69
+00:03:55.197 --> 00:03:58.068
+Outlier detection listens to the phone calls.
+
+70
+00:03:59.300 --> 00:04:00.588
+Now the guardrail.
+
+71
+00:04:00.588 --> 00:04:02.162
+Retries hide failures.
+
+72
+00:04:02.162 --> 00:04:04.739
+That is their use, and their danger.
+
+73
+00:04:04.967 --> 00:04:08.616
+Picture a chain: A calls B, B calls C, C calls D.
+
+74
+00:04:08.616 --> 00:04:11.967
+Every hop tries once, and then retries twice.
+
+75
+00:04:11.967 --> 00:04:13.456
+Three tries per hop.
+
+76
+00:04:13.667 --> 00:04:18.111
+When D is struggling, one user request becomes three calls to B.
+
+77
+00:04:18.111 --> 00:04:18.806
+Nine to C.
+
+78
+00:04:18.806 --> 00:04:22.625
+And twenty-seven to D, just when D can least afford it.
+
+79
+00:04:22.833 --> 00:04:25.313
+The kind receptionist turned into a mob.
+
+80
+00:04:25.313 --> 00:04:30.088
+So keep retries few and short, and only for requests that are safe to repeat.
+
+81
+00:04:30.088 --> 00:04:34.800
+The lab's route waits three seconds in total, and gives each try one second.
+
+82
+00:04:35.633 --> 00:04:37.711
+And remember the payroll queue?
+
+83
+00:04:37.711 --> 00:04:42.537
+Envoy's circuit breakers are limits on connections and waiting requests.
+
+84
+00:04:42.537 --> 00:04:48.837
+Past a limit, it answers 503, service unavailable, at once, instead of letting the queue grow.
+
+85
+00:04:49.067 --> 00:04:50.618
+None of this is free.
+
+86
+00:04:50.618 --> 00:04:55.715
+Every call takes one extra hop, and every proxy costs CPU and memory.
+
+87
+00:04:56.533 --> 00:04:58.158
+So the moral of the story.
+
+88
+00:04:58.158 --> 00:05:00.533
+The trouble lives between the offices.
+
+89
+00:05:00.533 --> 00:05:07.220
+Put the habits at the door, once, the same for everyone, and let the receptionist watch who really answers.
+
+90
+00:05:07.433 --> 00:05:08.523
+A quick check.
+
+91
+00:05:08.523 --> 00:05:13.035
+A host's health page says 200, but its real requests fail.
+
+92
+00:05:13.035 --> 00:05:14.514
+Which tool notices?
+
+93
+00:05:14.514 --> 00:05:15.759
+Pause and think.
+
+94
+00:05:18.967 --> 00:05:20.270
+Outlier detection.
+
+95
+00:05:20.270 --> 00:05:23.311
+It watches the real answers, not the door.
+
+96
+00:05:23.533 --> 00:05:27.551
+Next, we hand the receptionists to a building manager, Istio.
+
+97
+00:05:27.551 --> 00:05:33.019
+How does every proxy get its rules and its ID badge, without anyone writing a file?

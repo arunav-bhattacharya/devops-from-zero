@@ -1,0 +1,349 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:04.825
+Here's a line from a build file.
+
+2
+00:00:04.825 --> 00:00:10.448
+It uses a ready-made step that another project wrote, called an action, at version v4.
+
+3
+00:00:10.600 --> 00:00:11.755
+v4 is v4, right?
+
+4
+00:00:11.755 --> 00:00:13.415
+So here's the question.
+
+5
+00:00:13.415 --> 00:00:18.396
+If nobody touches this file, can tomorrow's build run different code?
+
+6
+00:00:18.396 --> 00:00:20.056
+Hold on to your answer.
+
+7
+00:00:21.133 --> 00:00:22.495
+Back to our jam shop.
+
+8
+00:00:22.495 --> 00:00:28.592
+In the pantry there are sacks of sugar, and your recipe card says: use the sack labelled good.
+
+9
+00:00:28.733 --> 00:00:31.888
+A helper ties the label to the first sack.
+
+10
+00:00:31.888 --> 00:00:32.564
+You cook.
+
+11
+00:00:32.564 --> 00:00:33.916
+The jam is lovely.
+
+12
+00:00:34.067 --> 00:00:40.132
+Overnight, someone with a key to the pantry swaps what's in the second sack, and moves the label onto it.
+
+13
+00:00:40.267 --> 00:00:43.738
+In the morning you follow the recipe card, word for word.
+
+14
+00:00:43.738 --> 00:00:45.443
+Which sack do you cook with?
+
+15
+00:00:45.600 --> 00:00:46.415
+The bad one.
+
+16
+00:00:46.415 --> 00:00:48.522
+Your card didn't change at all.
+
+17
+00:00:48.522 --> 00:00:52.124
+It never named a sack, only a label, and labels move.
+
+18
+00:00:52.124 --> 00:00:53.687
+The recipe was perfect.
+
+19
+00:00:53.687 --> 00:00:56.065
+It just pointed at the wrong sugar.
+
+20
+00:00:57.067 --> 00:00:59.920
+Now the real thing, with a tiny experiment.
+
+21
+00:00:59.920 --> 00:01:04.698
+Git keeps a project's history as commits, saved snapshots of every file.
+
+22
+00:01:04.698 --> 00:01:07.220
+Each commit is one sack in the pantry.
+
+23
+00:01:07.400 --> 00:01:13.094
+The maintainer, the person who looks after the action, saves this commit and tags it v1.
+
+24
+00:01:13.094 --> 00:01:18.464
+A tag is the label: a name that points at one commit, like a sticky note on a page.
+
+25
+00:01:18.600 --> 00:01:22.820
+And your workflow, the file of build steps, is the recipe card.
+
+26
+00:01:22.820 --> 00:01:23.758
+It says at v1.
+
+27
+00:01:23.758 --> 00:01:26.705
+It follows the label, wherever the label is.
+
+28
+00:01:26.867 --> 00:01:30.584
+Now play the attacker, holding the maintainer's stolen token.
+
+29
+00:01:30.584 --> 00:01:34.240
+Change the code, save a new commit, with a friendly message.
+
+30
+00:01:34.400 --> 00:01:36.664
+Then one command moves the tag.
+
+31
+00:01:36.664 --> 00:01:38.125
+Minus f means force.
+
+32
+00:01:38.267 --> 00:01:40.194
+Your workflow still says v1.
+
+33
+00:01:40.194 --> 00:01:42.604
+Which code runs in your next build?
+
+34
+00:01:42.604 --> 00:01:43.705
+Pause and guess.
+
+35
+00:01:45.867 --> 00:01:46.789
+The attacker's.
+
+36
+00:01:46.789 --> 00:01:52.387
+The tag moved, and your build went with it, though not one letter of your own file changed.
+
+37
+00:01:52.533 --> 00:01:54.837
+So the answer to our question is yes.
+
+38
+00:01:54.837 --> 00:01:58.199
+v4 reads like a fixed version, but it's a sticky note.
+
+39
+00:01:58.199 --> 00:02:02.495
+Anyone who holds the key can peel it off and stick it somewhere else.
+
+40
+00:02:03.200 --> 00:02:05.525
+This isn't a thought experiment.
+
+41
+00:02:05.525 --> 00:02:11.775
+In March 2025, attackers moved the tags of a popular action, tj-actions changed-files.
+
+42
+00:02:11.775 --> 00:02:18.896
+For about a day, every workflow using one of those tags printed its CI secrets into the build log.
+
+43
+00:02:18.896 --> 00:02:22.384
+Over twenty-three thousand repositories used it.
+
+44
+00:02:22.533 --> 00:02:29.280
+And on the nineteenth of March 2026, attackers moved 76 of the 77 tags of trivy-action.
+
+45
+00:02:29.280 --> 00:02:34.088
+That's a security scanner, the very tool meant to protect you.
+
+46
+00:02:35.067 --> 00:02:38.640
+Wouldn't it be nice to name the sack itself, not its label?
+
+47
+00:02:38.640 --> 00:02:41.608
+Git gives every commit exactly that kind of name.
+
+48
+00:02:41.800 --> 00:02:50.356
+A commit SHA is a hash, a fingerprint worked out from the commit's content: its files, its parent commit, its author and its message.
+
+49
+00:02:50.356 --> 00:02:52.672
+That gives forty letters and digits.
+
+50
+00:02:52.867 --> 00:02:56.555
+Change one byte, and you get a completely different fingerprint.
+
+51
+00:02:56.555 --> 00:03:00.475
+The attacker's commit has its own, and can never borrow the old one.
+
+52
+00:03:00.667 --> 00:03:02.949
+No real sack of sugar works like that.
+
+53
+00:03:02.949 --> 00:03:08.775
+Imagine a label printed from the sugar itself, where swapping one grain prints a different label.
+
+54
+00:03:08.775 --> 00:03:13.039
+That's where the pantry story stops, and git is better than the pantry.
+
+55
+00:03:13.733 --> 00:03:15.913
+And the old commit is still there.
+
+56
+00:03:15.913 --> 00:03:22.067
+Ask git for it by its fingerprint, and you get the old, harmless code, even after the tag moved.
+
+57
+00:03:23.067 --> 00:03:26.374
+So pin the step to the fingerprint instead of the label.
+
+58
+00:03:26.374 --> 00:03:27.968
+This is called SHA pinning.
+
+59
+00:03:27.968 --> 00:03:33.519
+A workflow pinned like this keeps running exactly the code you reviewed, wherever the tags go.
+
+60
+00:03:34.200 --> 00:03:38.388
+Here's the real scan step in the lab's release workflow.
+
+61
+00:03:38.388 --> 00:03:42.875
+Notice: it's the same scanner whose tags were moved in 2026.
+
+62
+00:03:43.067 --> 00:03:44.359
+GitHub runs the SHA.
+
+63
+00:03:44.359 --> 00:03:51.016
+The part after the hash sign is a comment, a note for humans, so you can still see which release it is.
+
+64
+00:03:51.200 --> 00:03:52.369
+Is there a catch?
+
+65
+00:03:52.369 --> 00:03:54.364
+Yes, and it's fair to say it.
+
+66
+00:03:54.364 --> 00:03:58.836
+Pinned code never changes by itself, not even to bring you a fix.
+
+67
+00:03:59.000 --> 00:04:00.973
+So you need a bot and a person.
+
+68
+00:04:00.973 --> 00:04:07.273
+Dependabot, GitHub's robot that watches for new releases, updates the SHA and the comment together.
+
+69
+00:04:07.273 --> 00:04:10.583
+And someone reviews that change like any other code.
+
+70
+00:04:11.533 --> 00:04:14.591
+Images have the same two kinds of name.
+
+71
+00:04:14.591 --> 00:04:20.549
+A tag such as hello-devops colon 1.2.0 can be pushed again with new content.
+
+72
+00:04:20.733 --> 00:04:22.427
+A digest can't change.
+
+73
+00:04:22.427 --> 00:04:29.045
+It's at sha256, then sixty-four letters and digits, a fingerprint of the image itself.
+
+74
+00:04:29.200 --> 00:04:32.332
+And that explains a detail from the Trivy attack.
+
+75
+00:04:32.332 --> 00:04:35.016
+Images pulled by digest were not affected.
+
+76
+00:04:36.000 --> 00:04:37.846
+So the moral of the story.
+
+77
+00:04:37.846 --> 00:04:41.184
+A tag can be moved by anyone who holds the key.
+
+78
+00:04:41.184 --> 00:04:42.036
+Pin the SHA.
+
+79
+00:04:42.200 --> 00:04:44.165
+A label only points at a sack.
+
+80
+00:04:44.165 --> 00:04:46.523
+A fingerprint names the sack itself.
+
+81
+00:04:47.600 --> 00:04:48.529
+A quick check.
+
+82
+00:04:48.529 --> 00:04:52.046
+Your workflow pins docker/login-action to a full SHA.
+
+83
+00:04:52.046 --> 00:04:56.890
+Tonight, someone takes over the maintainers' account and moves every tag.
+
+84
+00:04:56.890 --> 00:04:58.881
+What runs in tomorrow's build?
+
+85
+00:04:58.881 --> 00:04:59.943
+Pause and think.
+
+86
+00:05:02.133 --> 00:05:04.234
+The same reviewed code as before.
+
+87
+00:05:04.234 --> 00:05:07.352
+Moving tags can't change what a pinned step runs.
