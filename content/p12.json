@@ -283,7 +283,7 @@
      "Burn rate is the error ratio divided by the budget. For 99.5% the budget is 0.5%, so 5% errors is burn rate 10.",
      "For each alert, ask two questions: do users feel it now, and can a person fix it now?"
     ],
-    "done_when": "You have an availability SLI from your own requests (mine was 200 good of 220, 90.91%), its burn rate against a 99.5% SLO, and all eight alerts sorted with a reason."
+    "done_when": "You have an availability SLI from your own requests (for example, 200 good of 220, 90.91%), its burn rate against a 99.5% SLO, and all eight alerts sorted with a reason."
    },
    "explain_back": {
     "prompt": "Explain to a product manager, in 3 to 4 sentences, what an error budget is and why it can let the team ship more, not less. Mention the SLO, the burn rate and what happens when the budget runs out.",

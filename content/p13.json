@@ -1,7 +1,7 @@
 {
  "part": 13,
  "title": "Dashboards with Grafana",
- "intro": "Part 12 put the lab's metrics into Prometheus. This part puts them in front of people. Day 53 builds a Grafana dashboard that an on-call engineer can read in seconds, and keeps it as code in git. Day 54 adds Grafana alerting, collects logs with Alloy and Loki, and tours the rest of the Grafana stack.",
+ "intro": "Part 12 put the lab's numbers into Prometheus. This part puts them in front of people. The first lesson builds a Grafana dashboard that an engineer woken at night can read in seconds, and keeps it as a file in git. The second adds Grafana's own alerts, collects the app's log lines with Alloy and Loki, and tours the rest of the Grafana family of tools.",
  "lessons": [
   {
    "id": "d53",
@@ -812,12 +812,12 @@
  ],
  "recap": [
   "Grafana stores dashboards, users and alert rules; the data stays in data sources such as Prometheus and Loki.",
-  "Choose each panel's visualization from its question, and set units and thresholds instead of rewriting PromQL.",
+  "Choose each panel's chart from its question, and set units and thresholds instead of rewriting PromQL.",
   "Use `$__rate_interval` for rate ranges, `=~` with multi-value variables, and `or vector(0)` where empty should mean zero.",
   "Design for on-call: RED stats on top, the same signals over time below, details collapsed or linked.",
   "Dashboards and alerts are code: provision them from files in git, with fixed uids, and change the file, not the UI.",
   "Grafana alerting runs rules on any data source; contact points and notification policies deliver the result.",
-  "Loki indexes only labels, so keep labels few and bounded; LogQL filters and parses the text at query time.",
+  "Loki indexes only labels, so keep labels few and bounded; LogQL filters and parses the text when you ask.",
   "Alloy collects logs (Promtail has reached end of life); Tempo, Mimir and Pyroscope cover traces, metrics and profiles."
  ],
  "flashcards": [
@@ -831,7 +831,7 @@
   },
   {
    "front": "Why add `or vector(0)` to an error ratio query?",
-   "back": "Before any error, the 5xx series doesn't exist, so the panel would show No data instead of 0%."
+   "back": "Before any error, the 5xx series does not exist, so the panel would show No data instead of 0%."
   },
   {
    "front": "Which unit shows a ratio from 0 to 1 as a percentage?",
@@ -839,7 +839,7 @@
   },
   {
    "front": "A variable allows several values. Which label matcher must the query use?",
-   "back": "`=~`, because Grafana inserts a regular expression such as a|b."
+   "back": "`=~`, because Grafana inserts a text pattern such as a|b."
   },
   {
    "front": "How should a RED dashboard for on-call be laid out?",
@@ -847,11 +847,11 @@
   },
   {
    "front": "What does `allowUiUpdates: false` do for a provisioned dashboard?",
-   "back": "The UI can't save over it. You change the JSON file in git instead."
+   "back": "The UI cannot save over it. You change the JSON file in git instead."
   },
   {
    "front": "Why set `updateIntervalSeconds` above 10 when Grafana runs in Docker on a Mac?",
-   "back": "At 10 or less Grafana waits for file events, which bind mounts may not deliver. Above 10 it polls."
+   "back": "At 10 or less Grafana waits for file events, which shared folders may not deliver. Above 10 it checks the folder itself."
   },
   {
    "front": "Name the three main parts of Grafana alerting.",
@@ -903,7 +903,7 @@
    "title": "Grafana tutorial: provision dashboards and data sources",
    "url": "https://grafana.com/tutorials/provision-dashboards-and-data-sources/",
    "kind": "read",
-   "why": "A short hands-on walk-through of dashboards as code with provisioning."
+   "why": "A short hands-on walk-through of keeping dashboards as code with provisioning."
   },
   {
    "title": "Grafana docs: Prometheus template variables",
@@ -921,7 +921,7 @@
    "title": "Grafana docs: introduction to Grafana Alerting",
    "url": "https://grafana.com/docs/grafana/latest/alerting/fundamentals/",
    "kind": "docs",
-   "why": "The alerting model in one page: rules, instances, contact points and policies."
+   "why": "The alerting model on one page: rules, instances, contact points and policies."
   },
   {
    "title": "Loki docs: query Loki with LogQL",
@@ -933,19 +933,19 @@
    "title": "Loki quickstart with Docker Compose and Alloy",
    "url": "https://grafana.com/docs/loki/latest/get-started/quick-start/tutorial/",
    "kind": "read",
-   "why": "Grafana's own small Loki stack to practise LogQL on generated logs."
+   "why": "Grafana's own small Loki stack, for practising LogQL on made-up logs."
   },
   {
    "title": "docker-otel-lgtm on GitHub",
    "url": "https://github.com/grafana/docker-otel-lgtm",
    "kind": "docs",
-   "why": "One container with Grafana, Loki, Tempo, Prometheus and Pyroscope for trying every signal on a laptop."
+   "why": "One container with Grafana, Loki, Tempo, Prometheus and Pyroscope, for trying every signal on a laptop."
   },
   {
    "title": "Creating visualizations with Grafana (video)",
    "url": "https://www.youtube.com/watch?v=yNRnLyVntUw",
    "kind": "watch",
-   "why": "A beginner walk-through of building panels and choosing visualizations."
+   "why": "A beginner walk-through of building panels and choosing charts."
   },
   {
    "title": "How to query Grafana Loki with LogQL (video)",
@@ -970,7 +970,7 @@
     "Add a dashboard variable with an All option"
    ],
    "answer": 0,
-   "why": "Every refresh runs every panel's query; fewer refreshes and precomputed recording rules cut the load."
+   "why": "Every refresh runs every panel's query. Fewer refreshes and ready-made recording rules cut the load."
   },
   {
    "q": "A panel shows memory use as 1610612736. What is the best fix?",
@@ -984,7 +984,7 @@
    "why": "Keep base units in the query and let the unit format them: 1610612736 bytes shows as 1.50 GiB."
   },
   {
-   "q": "You added `grafana/provisioning/datasources/loki.yaml`, but Grafana doesn't list Loki. What do you do?",
+   "q": "You added `grafana/provisioning/datasources/loki.yaml`, but Grafana does not list Loki. What do you do?",
    "options": [
     "Add the Loki data source to the dashboard JSON file",
     "Wait 30 seconds for the dashboard provider to poll",
@@ -992,7 +992,7 @@
     "Restart Grafana or call the data source reload API"
    ],
    "answer": 3,
-   "why": "Data source files are read at start; the dashboard provider's polling doesn't cover them."
+   "why": "Data source files are read when Grafana starts; the dashboard folder checks do not cover them."
   },
   {
    "q": "Which LogQL query returns lines from the web service that contain `timeout` but not `healthz`?",
@@ -1025,7 +1025,7 @@
     "The routing tree in the Alertmanager config"
    ],
    "answer": 0,
-   "why": "Alloy is the link between Docker and Loki; its UI shows which component is failing."
+   "why": "Alloy is the link between Docker and Loki, and its UI shows which component is failing."
   },
   {
    "q": "Your company has 40 services that all expose the same RED metrics. How should their dashboards be built?",
@@ -1036,7 +1036,7 @@
     "Build one dashboard with a job variable, kept as code"
    ],
    "answer": 3,
-   "why": "A variable lets one dashboard serve every service; copies drift and become sprawl."
+   "why": "A variable lets one dashboard serve every service; copies drift apart and pile up."
   },
   {
    "q": "Why do the lab's panels use `sum(rate(...))` and never `rate(sum(...))`?",
@@ -1047,7 +1047,7 @@
     "Because Grafana can't draw the result of rate(sum())"
    ],
    "answer": 1,
-   "why": "Summing first hides the moment one counter resets, so rate() would see a drop and get the speed wrong.",
+   "why": "Adding up first hides the moment one counter resets, so rate() would see a drop and get the speed wrong.",
    "from": "Part 12"
   },
   {
@@ -1059,7 +1059,7 @@
     "Compose stops with an error about a duplicate service"
    ],
    "answer": 2,
-   "why": "Compose merges files in order: new keys are added to the existing service, and the changed container is recreated.",
+   "why": "Compose merges files in order: new settings are added to the existing service, and the changed container is created again.",
    "from": "Part 5"
   },
   {
