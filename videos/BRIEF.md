@@ -87,3 +87,13 @@ For each video in your task:
   labels 26 or more, code 22 or more, small notes 20 or more; one colour per object for the whole video; fade
   out what you no longer need before the next idea; never combine FadeIn and Indicate on one object in one
   play; Indicate the outline or the text of a filled box, not the box.
+
+## Shared machine rules (Nov 17, after an overload and a restart)
+
+- The machine has 4 cores shared by up to ten writers. Every heavy job goes through a queue:
+  quick checks through `videos/quick_slot.sh <file.py> <Scene>`, any other heavy command (voice pre-generation,
+  a batch of frame grabs) through `videos/heavy.sh <command...>`, and finals through `videos/render_slot.sh`.
+- At most ONE heavy job of yours at a time, queued or running. No loops that start several renders.
+- Prefer grabbing frames with ffmpeg from an existing -ql video over rendering again.
+- If a container restart stops your work: an .mp4 with no .jpg next to it is a broken render (delete it and render
+  again); a media/<Scene>/ folder may hold a usable partial; scene files and manifests are safe.
