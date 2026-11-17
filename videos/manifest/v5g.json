@@ -42,5 +42,16 @@
    "poster_at": 214.2,
    "replaces": "d26-workflow-logic"
   }
+ ],
+ "d27": [
+  {
+   "slug": "d27-key-card",
+   "title": "A key for one shift: GITHUB_TOKEN, an approval gate and pinned actions",
+   "after": 1,
+   "file": "p6/d27_key_card.py",
+   "scene": "D27KeyCard",
+   "poster_at": 272.0,
+   "replaces": "d27-release"
+  }
  ]
 }
