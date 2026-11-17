@@ -1,0 +1,305 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.414
+You are looking after the coats at a friend's wedding.
+
+2
+00:00:05.414 --> 00:00:09.988
+Each coat goes on a hook, and you write the ticket number next to the hook in a small book.
+
+3
+00:00:10.200 --> 00:00:13.855
+Halfway through the evening, the book falls into a bowl of punch.
+
+4
+00:00:14.067 --> 00:00:17.686
+The coats are all still there, safe on their hooks.
+
+5
+00:00:17.686 --> 00:00:20.028
+Then a guest hands you ticket 41.
+
+6
+00:00:20.028 --> 00:00:21.376
+Which coat is hers?
+
+7
+00:00:21.376 --> 00:00:21.944
+No idea.
+
+8
+00:00:22.767 --> 00:00:25.025
+Terraform has the same three things.
+
+9
+00:00:25.025 --> 00:00:26.845
+Your code says what you want.
+
+10
+00:00:26.845 --> 00:00:31.363
+The real world is the containers Docker is running: those are the coats.
+
+11
+00:00:31.567 --> 00:00:36.864
+And in between is the book: the state, a file called terraform.tfstate.
+
+12
+00:00:37.067 --> 00:00:40.219
+Its main job is one line per object.
+
+13
+00:00:40.219 --> 00:00:46.350
+This address, docker_container.web, is the container with ID d8eb279c.
+
+14
+00:00:46.350 --> 00:00:47.839
+Ticket, and hook.
+
+15
+00:00:48.067 --> 00:00:50.415
+Every plan begins with a refresh.
+
+16
+00:00:50.415 --> 00:00:57.035
+Terraform asks the provider, the plugin that talks to Docker, about every object in the book.
+
+17
+00:00:57.035 --> 00:00:58.743
+Is d8eb279c still there?
+
+18
+00:00:58.743 --> 00:01:01.661
+Then it compares the book with your code.
+
+19
+00:01:01.867 --> 00:01:05.617
+Which raises the question you are probably already thinking.
+
+20
+00:01:05.617 --> 00:01:07.618
+Docker can list every container.
+
+21
+00:01:07.618 --> 00:01:09.993
+Why does Terraform need a book at all?
+
+22
+00:01:10.200 --> 00:01:13.882
+Because Docker cannot tell which containers this folder owns.
+
+23
+00:01:13.882 --> 00:01:15.511
+Some might be a teammate's.
+
+24
+00:01:15.511 --> 00:01:18.287
+Some might belong to another Terraform folder.
+
+25
+00:01:18.287 --> 00:01:20.701
+Only the book says which coats are ours.
+
+26
+00:01:21.333 --> 00:01:23.672
+So let's drop the book in the punch.
+
+27
+00:01:23.672 --> 00:01:26.270
+You delete terraform.tfstate by mistake.
+
+28
+00:01:26.270 --> 00:01:28.089
+The container keeps running.
+
+29
+00:01:28.089 --> 00:01:30.363
+What does the next apply try to do?
+
+30
+00:01:33.000 --> 00:01:35.872
+It tries to create everything again, as if new.
+
+31
+00:01:35.872 --> 00:01:39.417
+The code asks for a container, and the book knows of none.
+
+32
+00:01:39.417 --> 00:01:42.961
+With Docker that fails, because the name is already taken.
+
+33
+00:01:43.167 --> 00:01:47.913
+In a cloud, where names don't clash, you can end up with two of everything.
+
+34
+00:01:47.913 --> 00:01:50.001
+The coats were never the problem.
+
+35
+00:01:50.001 --> 00:01:50.824
+The book was.
+
+36
+00:01:51.633 --> 00:01:52.878
+Now a smaller slip.
+
+37
+00:01:52.878 --> 00:01:57.727
+You rename the resource label from web to site, because site reads better.
+
+38
+00:01:57.727 --> 00:01:59.365
+In git it looks harmless.
+
+39
+00:01:59.365 --> 00:02:01.068
+Same container, same name.
+
+40
+00:02:01.300 --> 00:02:02.779
+What does the plan say?
+
+41
+00:02:05.433 --> 00:02:07.336
+Terraform reads it differently.
+
+42
+00:02:07.336 --> 00:02:12.736
+The book has a line for web, and the code has no web any more, so web will be destroyed.
+
+43
+00:02:12.736 --> 00:02:16.909
+The code has a site, and the book has none, so site will be created.
+
+44
+00:02:17.133 --> 00:02:24.306
+That is the cloakroom attendant who sees a new ticket number, throws the coat in the bin, and buys an identical one.
+
+45
+00:02:24.306 --> 00:02:29.563
+The real container would be rebuilt, data and all, to change a name only you can see.
+
+46
+00:02:29.767 --> 00:02:33.063
+The fix is one block in your code: a moved block.
+
+47
+00:02:33.063 --> 00:02:36.561
+From docker_container.web, to docker_container.site.
+
+48
+00:02:36.561 --> 00:02:40.261
+It tells Terraform the object only changed its address.
+
+49
+00:02:40.467 --> 00:02:41.279
+Plan again.
+
+50
+00:02:41.279 --> 00:02:45.412
+docker_container.web has moved to docker_container.site.
+
+51
+00:02:45.412 --> 00:02:47.552
+Zero to add, zero to destroy.
+
+52
+00:02:47.552 --> 00:02:51.907
+Apply, and the book gets the new address, with the same ID.
+
+53
+00:02:52.133 --> 00:02:53.541
+So the rule is short.
+
+54
+00:02:53.541 --> 00:02:56.424
+A rename in code is a destroy to Terraform.
+
+55
+00:02:56.424 --> 00:03:00.111
+Add a moved block, and check the plan for has moved to.
+
+56
+00:03:00.833 --> 00:03:03.981
+One place where the cloakroom picture stops short.
+
+57
+00:03:03.981 --> 00:03:06.688
+A cloakroom book notes a ticket and a hook.
+
+58
+00:03:06.688 --> 00:03:11.157
+Terraform's state copies every detail of each object, secrets included.
+
+59
+00:03:11.367 --> 00:03:16.427
+In a test, a variable marked sensitive printed as sensitive value in the plan.
+
+60
+00:03:16.427 --> 00:03:18.828
+The state file held it in plain text.
+
+61
+00:03:18.828 --> 00:03:22.267
+Anyone who can read your state can read your secrets.
+
+62
+00:03:22.500 --> 00:03:24.954
+So treat the book like a password file.
+
+63
+00:03:24.954 --> 00:03:28.101
+Never commit it to git, and never edit it by hand.
+
+64
+00:03:28.101 --> 00:03:32.632
+Read it through commands, terraform state list and terraform state show.
+
+65
+00:03:32.833 --> 00:03:40.093
+And in a team, keep one copy on a remote backend that locks it, so only one run at a time can write in the book.
+
+66
+00:03:40.800 --> 00:03:42.173
+The moral of the story.
+
+67
+00:03:42.173 --> 00:03:45.933
+The containers are easy to see, so they feel like what matters.
+
+68
+00:03:45.933 --> 00:03:49.575
+But the state is what tells Terraform which ones are its own.
+
+69
+00:03:49.575 --> 00:03:51.664
+Lose the book, and it builds again.
+
+70
+00:03:51.664 --> 00:03:54.231
+Rename without telling it, and it rebuilds.
+
+71
+00:03:54.833 --> 00:03:55.843
+A quick check.
+
+72
+00:03:55.843 --> 00:04:00.242
+You run terraform state rm on the site container, then apply.
+
+73
+00:04:00.242 --> 00:04:02.477
+The container is still running.
+
+74
+00:04:02.477 --> 00:04:03.415
+What happens?
+
+75
+00:04:06.067 --> 00:04:09.125
+state rm only crossed the line out of the book.
+
+76
+00:04:09.125 --> 00:04:16.021
+The code still asks for the container, so apply tries to create it, and Docker refuses the duplicate name.

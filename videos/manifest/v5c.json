@@ -42,5 +42,16 @@
    "poster_at": 151.0,
    "replaces": "d32-loops"
   }
+ ],
+ "d33": [
+  {
+   "slug": "d33-cloakroom-book",
+   "title": "The state is Terraform's cloakroom book: lose it, or rename without moved, and it rebuilds",
+   "after": 3,
+   "file": "p8/d33_cloakroom_book.py",
+   "scene": "D33CloakroomBook",
+   "poster_at": 170.0,
+   "replaces": "d33-state"
+  }
  ]
 }

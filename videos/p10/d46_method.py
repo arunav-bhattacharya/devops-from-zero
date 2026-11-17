@@ -100,25 +100,24 @@ class D46Method(VoiceScene):
                   FadeIn(n3), FadeIn(rest[0]), run_time=1.6)
         self.beat("And four, the node, the whole kitchen. It sits under every Pod, yet it comes last.",
                   FadeIn(n4), FadeIn(rest[3]), run_time=1.6)
-        many = VGroup(*[Circle(radius=0.16, stroke_color=RED_M, stroke_width=2.5).set_fill(tint(RED_M, 0.4), 1) for _ in range(5)]).arrange(RIGHT, buff=0.2).move_to(node.get_center() + RIGHT * 1.6)
+        many = VGroup(*[Circle(radius=0.16, stroke_color=RED_M, stroke_width=2.5).set_fill(tint(RED_M, 0.4), 1) for _ in range(5)]).arrange(RIGHT, buff=0.2).move_to(node.get_center() + RIGHT * 2.1)
         self.beat("Why last? A sick kitchen shows up as many tables failing at once. One broken Pod rarely points there.",
                   LaggedStart(*[GrowFromCenter(m) for m in many], lag_ratio=0.15), run_time=2.0)
         self.play(FadeOut(many), run_time=0.4)
         ladder = VGroup(route, svc, pd, node, ups, n1, n2, n3, n4, rest)
-        self.play(ladder.animate.scale(0.58).move_to([-3.25, 0.6, 0]), run_time=1.0)
+        self.play(FadeOut(ladder), run_time=0.8)
         cmds = VGroup(M("1  kubectl get", 24), M("2  kubectl describe", 24), M("3  kubectl logs --previous", 24),
                       M("4  kubectl get events", 24), M("5  exec, port-forward, debug", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to([3.2, 0.6, 0])
         notes = VGroup(T("STATUS, READY, RESTARTS", 20, GREY_B), T("Events at the bottom first", 20, GREY_B), T("the one that crashed", 20, GREY_B),
                        T("the whole namespace, by time", 20, GREY_B), T("test from inside", 20, GREY_B))
         for c, n in zip(cmds, notes):
             n.next_to(c, DOWN, buff=0.06).align_to(c, LEFT).shift(RIGHT * 0.5)
-        cmds_g = VGroup(*[VGroup(c, n) for c, n in zip(cmds, notes)]).arrange(DOWN, aligned_edge=LEFT, buff=0.22).move_to([3.0, 0.4, 0])
+        cmds_g = VGroup(*[VGroup(c, n) for c, n in zip(cmds, notes)]).arrange(DOWN, aligned_edge=LEFT, buff=0.22).move_to([0, 0.2, 0])
         self.beat("At every layer, the commands are nearly always the same five. Get, for the status. Describe, reading the Events at the bottom first. Logs. Events for the whole namespace. And then, tests from inside.",
                   LaggedStart(*[FadeIn(c, shift=LEFT * 0.15) for c in cmds_g], lag_ratio=0.6), run_time=9.0)
 
         # ---------- 4. two families of states
-        ladder_keep = ladder.copy()
-        self.play(FadeOut(cmds_g), FadeOut(ladder), run_time=0.6)
+        self.play(FadeOut(cmds_g), run_time=0.6)
         hA = T("never started", 28, GOLD_M).move_to([-2.6, 2.7, 0])
         hB = T("started, then failed", 28, RED_M).move_to([3.0, 2.7, 0])
         sA = VGroup(*[M(s, 22, WHITE) for s in ("Pending", "ContainerCreating", "ImagePullBackOff", "CreateContainerConfigError")]).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
@@ -145,7 +144,7 @@ class D46Method(VoiceScene):
         self.play(FadeOut(VGroup(hA, hB, sA, sB, evA, q, bo)), run_time=0.6)
 
         # ---------- 5. a real case: one letter too many
-        case = T("one setting changed, then a restart", 26, GREY_B).move_to([0, 3.3, 0])
+        case = T("one setting changed, then a restart", 26, GREY_B).move_to([0, 3.05, 0])
         t1 = term([("$ kubectl get pods -n hello -l app=hello-devops", GREY_B),
                    ("NAME                           READY  STATUS   RESTARTS", GREY_B),
                    ("hello-devops-5d8f7c6b9-4kq2w   0/1    Running  0", YELLOW_M),
@@ -190,7 +189,7 @@ class D46Method(VoiceScene):
         self.wait(2.0)
         self.beat("NXDOMAIN. No such name. And the correct name, redis with one S, resolves to the Redis Service's address.",
                   FadeIn(t4[1][3]), Succession(Wait(1.6), AnimationGroup(FadeIn(t4[1][4]), FadeIn(t4[1][5]))), run_time=3.4)
-        found = chip("cause: a typo in the ConfigMap", YELLOW_M, 26).move_to([0, 3.3, 0])
+        found = chip("cause: a typo in the ConfigMap", YELLOW_M, 26).move_to([0, 3.05, 0])
         self.beat("That's the proof. A typo in the ConfigMap, one letter too many. Redis and the network are fine. One change fixes it, and we know exactly why.",
                   Transform(case, found), run_time=1.8)
         self.beat("That helper is called an ephemeral container: short-lived, never restarted, gone with the Pod.",
@@ -198,18 +197,16 @@ class D46Method(VoiceScene):
         self.play(FadeOut(VGroup(t3, t4, helper, case)), run_time=0.6)
 
         # ---------- 6. guardrails
-        ladder = ladder_keep.scale(0.62 / 0.58).move_to([-3.0, 0.3, 0])
-        self.play(FadeIn(ladder), run_time=0.8)
-        g1 = VGroup(T("change one thing at a time", 28, YELLOW_M), T("then watch what happens", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.7, 1.8, 0])
-        g2 = VGroup(M("Forbidden", 28, RED_M), T("a locked door, not a broken one", 24, GREY_B), M("kubectl auth can-i", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.7, 0.0, 0])
-        g3 = VGroup(T("bugs in your own code", 28, PURPLE_M), T("need app logs, metrics, traces", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.7, -2.0, 0])
+        g1 = VGroup(T("change one thing at a time", 28, YELLOW_M), T("then watch what happens", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([0, 2.0, 0])
+        g2 = VGroup(M("Forbidden", 28, RED_M), T("a locked door, not a broken one", 24, GREY_B), M("kubectl auth can-i", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([0, 0.1, 0])
+        g3 = VGroup(T("bugs in your own code", 28, PURPLE_M), T("need app logs, metrics, traces", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([0, -1.9, 0])
         self.beat("A few guardrails. First, change one thing at a time, and watch what happens. That's the opposite of our manager.",
                   FadeIn(g1), run_time=1.8)
         self.beat("Second, Forbidden is not a bug. Your key just doesn't open that door. Ask with kubectl auth can-i.",
                   FadeIn(g2), run_time=2.0)
         self.beat("Third, the honest limit: this finds causes only in what Kubernetes can see. Bugs in your own code need the app's logs, metrics and traces.",
                   FadeIn(g3), run_time=2.0)
-        self.play(FadeOut(VGroup(ladder, g1, g2, g3)), run_time=0.6)
+        self.play(FadeOut(VGroup(g1, g2, g3)), run_time=0.6)
 
         # ---------- 7. moral and a quick check
         mor = VGroup(T("Read before you touch. A restart deletes clues.", 30),

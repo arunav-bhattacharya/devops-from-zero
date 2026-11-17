@@ -1,361 +1,361 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:09.827
+00:00:02.700 --> 00:00:09.794
 Picture your small lunch kitchen landing its first big customer: an office that wants two hundred boxes a day.
 
 2
-00:00:09.827 --> 00:00:12.923
+00:00:09.794 --> 00:00:12.889
 On day one, their buyer opens a box to check it.
 
 3
-00:00:13.067 --> 00:00:17.424
+00:00:13.100 --> 00:00:17.458
 Next to the lunch she finds a kitchen knife, and a half-empty bag of flour.
 
 4
-00:00:17.424 --> 00:00:20.504
+00:00:17.458 --> 00:00:20.537
 And taped under the lid is the key to your back door.
 
 5
-00:00:20.667 --> 00:00:22.456
+00:00:20.767 --> 00:00:22.556
 Nobody packed those on purpose.
 
 6
-00:00:22.456 --> 00:00:27.248
+00:00:22.556 --> 00:00:27.348
 They were lying on the counter while the lunch was made, so they went into the box.
 
 7
-00:00:27.248 --> 00:00:29.327
+00:00:27.348 --> 00:00:29.427
 And the lunch itself tastes perfect.
 
 8
-00:00:29.467 --> 00:00:30.622
+00:00:29.633 --> 00:00:30.788
 That is the trap.
 
 9
-00:00:30.622 --> 00:00:36.328
+00:00:30.788 --> 00:00:36.495
 An image fills up the same way, and the app inside works perfectly, so nobody looks.
 
 10
-00:00:36.867 --> 00:00:40.466
+00:00:37.100 --> 00:00:40.699
 Our hello-devops image from before has exactly these three.
 
 11
-00:00:40.466 --> 00:00:44.859
+00:00:40.699 --> 00:00:45.092
 It was built in one stage, so everything used to build it ships with it.
 
 12
-00:00:45.000 --> 00:00:48.696
+00:00:45.300 --> 00:00:48.996
 The knife is pip, the tool that installed the app's packages.
 
 13
-00:00:48.696 --> 00:00:51.848
+00:00:48.996 --> 00:00:52.148
 The app never needs it again, but an attacker could.
 
 14
-00:00:51.848 --> 00:00:54.817
+00:00:52.148 --> 00:00:55.117
 The flour is whatever else the build left behind.
 
 15
-00:00:54.817 --> 00:00:59.725
+00:00:55.117 --> 00:01:00.025
 And the key is a secret token, left where anyone who pulls the image can read it.
 
 16
-00:01:00.267 --> 00:01:04.152
+00:01:00.633 --> 00:01:04.518
 Wouldn't it be nice to cook in the kitchen, and ship only the lunch?
 
 17
-00:01:04.152 --> 00:01:06.723
+00:01:04.518 --> 00:01:07.089
 Leave the knife and the flour on the counter.
 
 18
-00:01:06.867 --> 00:01:08.706
+00:01:07.300 --> 00:01:09.139
 That is a multi-stage build.
 
 19
-00:01:08.706 --> 00:01:11.070
+00:01:09.139 --> 00:01:11.503
 One Dockerfile, with two FROM lines.
 
 20
-00:01:11.070 --> 00:01:14.223
+00:01:11.503 --> 00:01:14.656
 Each FROM starts a new stage, from a clean base.
 
 21
-00:01:14.223 --> 00:01:16.259
+00:01:14.656 --> 00:01:16.692
 The first stage is the kitchen.
 
 22
-00:01:16.400 --> 00:01:22.900
+00:01:16.900 --> 00:01:23.400
 In the kitchen we make a virtual environment, a folder called venv that holds the app's Python packages.
 
 23
-00:01:22.900 --> 00:01:26.525
+00:01:23.400 --> 00:01:27.025
 pip installs them into it, and then we remove pip from it.
 
 24
-00:01:26.667 --> 00:01:30.280
+00:01:27.233 --> 00:01:30.847
 The second stage starts again from a fresh, empty base.
 
 25
-00:01:30.280 --> 00:01:32.973
+00:01:30.847 --> 00:01:33.540
 It even removes the base image's own pip.
 
 26
-00:01:33.133 --> 00:01:40.347
+00:01:33.767 --> 00:01:40.980
 Then it reaches back into the kitchen for exactly one thing: the venv, with every package already installed.
 
 27
-00:01:40.347 --> 00:01:41.616
+00:01:40.980 --> 00:01:42.249
 And it adds app.py.
 
 28
-00:01:41.800 --> 00:01:44.147
+00:01:42.467 --> 00:01:44.814
 Only the last stage becomes the image.
 
 29
-00:01:44.147 --> 00:01:48.533
+00:01:44.814 --> 00:01:49.200
 The kitchen, with its knife and flour, stays behind in the build cache.
 
 30
-00:01:49.133 --> 00:01:51.615
+00:01:49.833 --> 00:01:52.315
 So how much smaller is the image now?
 
 31
-00:01:51.615 --> 00:01:52.688
+00:01:52.315 --> 00:01:53.388
 Pause and guess.
 
 32
-00:01:54.867 --> 00:01:55.650
+00:01:55.600 --> 00:01:56.383
 Barely.
 
 33
-00:01:55.650 --> 00:02:00.683
+00:01:56.383 --> 00:02:01.416
 The content went from 51.8 megabytes to 49.6.
 
 34
-00:02:00.867 --> 00:02:02.896
+00:02:01.633 --> 00:02:03.662
 Well, that is not much of a diet.
 
 35
-00:02:02.896 --> 00:02:06.277
+00:02:03.662 --> 00:02:07.044
 And that's fine, because size was never the point here.
 
 36
-00:02:06.467 --> 00:02:07.998
+00:02:07.267 --> 00:02:08.798
 The point is what left.
 
 37
-00:02:07.998 --> 00:02:14.191
+00:02:08.798 --> 00:02:14.991
 A vulnerability scanner called Trivy checks every package against public lists of known bugs.
 
 38
-00:02:14.191 --> 00:02:16.788
+00:02:14.991 --> 00:02:17.588
 Removing pip took away 5 high findings.
 
 39
-00:02:16.788 --> 00:02:20.317
+00:02:17.588 --> 00:02:21.117
 They sat in libraries that pip carries inside itself.
 
 40
-00:02:20.467 --> 00:02:26.717
+00:02:21.333 --> 00:02:27.584
 The 44 that stayed come from the Debian base, and on the day we scanned, none of them had a fix yet.
 
 41
-00:02:26.717 --> 00:02:28.843
+00:02:27.584 --> 00:02:29.709
 You rebuild when Debian ships one.
 
 42
-00:02:28.843 --> 00:02:33.031
+00:02:29.709 --> 00:02:33.897
 Your numbers will differ, because new bugs are published every day.
 
 43
-00:02:33.600 --> 00:02:35.401
+00:02:35.100 --> 00:02:36.901
 Next, who opens the box.
 
 44
-00:02:35.401 --> 00:02:37.426
+00:02:36.901 --> 00:02:38.926
 The old image runs as root.
 
 45
-00:02:37.426 --> 00:02:39.977
+00:02:38.926 --> 00:02:41.477
 Ask it who am I, and it says root.
 
 46
-00:02:40.133 --> 00:02:45.598
+00:02:41.700 --> 00:02:47.165
 The walls of a container fence it in, but it is still root on a kernel it shares with everyone.
 
 47
-00:02:45.598 --> 00:02:49.107
+00:02:47.165 --> 00:02:50.673
 Break out through one bug, and you arrive with root's rights.
 
 48
-00:02:49.267 --> 00:02:52.062
+00:02:50.900 --> 00:02:53.695
 Two lines in the final stage fix it.
 
 49
-00:02:52.062 --> 00:02:56.797
+00:02:53.695 --> 00:02:58.431
 Create a normal user with the number 10001, and switch to it.
 
 50
-00:02:56.797 --> 00:02:59.825
+00:02:58.431 --> 00:03:01.459
 Now the same question says: user 10001.
 
 51
-00:03:00.000 --> 00:03:02.170
+00:03:01.667 --> 00:03:03.837
 Write the number, not the name.
 
 52
-00:03:02.170 --> 00:03:06.580
+00:03:03.837 --> 00:03:08.247
 A name means nothing until someone reads the image's user list.
 
 53
-00:03:06.580 --> 00:03:10.431
+00:03:08.247 --> 00:03:12.097
 A number like 10001 is plainly not zero, which is root.
 
 54
-00:03:11.733 --> 00:03:13.620
+00:03:12.800 --> 00:03:14.686
 Last, the key under the lid.
 
 55
-00:03:13.620 --> 00:03:19.144
+00:03:14.686 --> 00:03:20.211
 Sometimes a build step needs a secret, like a token to download a private package.
 
 56
-00:03:19.144 --> 00:03:22.783
+00:03:20.211 --> 00:03:23.849
 A token is a secret string that works like a password.
 
 57
-00:03:22.933 --> 00:03:25.668
+00:03:24.067 --> 00:03:26.801
 The obvious way is a build argument.
 
 58
-00:03:25.668 --> 00:03:29.390
+00:03:26.801 --> 00:03:30.523
 So we build with a fake token, s3cr3t demo token.
 
 59
-00:03:29.390 --> 00:03:34.403
+00:03:30.523 --> 00:03:35.536
 The build finishes, and the token is not in the running container.
 
 60
-00:03:34.403 --> 00:03:35.618
+00:03:35.536 --> 00:03:36.751
 Who can find it?
 
 61
-00:03:35.618 --> 00:03:36.833
+00:03:36.751 --> 00:03:37.967
 Pause and guess.
 
 62
-00:03:39.000 --> 00:03:40.821
+00:03:40.200 --> 00:03:42.021
 Anyone who pulls the image.
 
 63
-00:03:40.821 --> 00:03:45.271
+00:03:42.021 --> 00:03:46.471
 docker history, the list of steps that built it, prints the token.
 
 64
-00:03:45.271 --> 00:03:45.676
+00:03:46.471 --> 00:03:46.876
 Twice.
 
 65
-00:03:45.867 --> 00:03:47.956
+00:03:47.100 --> 00:03:49.189
 The other obvious ways leak too.
 
 66
-00:03:47.956 --> 00:03:50.894
+00:03:49.189 --> 00:03:52.128
 ENV stores the value in the image's settings.
 
 67
-00:03:50.894 --> 00:03:55.661
+00:03:52.128 --> 00:03:56.894
 And copying a token file, then deleting it later, leaves it in its layer.
 
 68
-00:03:55.661 --> 00:03:56.901
+00:03:56.894 --> 00:03:58.135
 The soup jar again.
 
 69
-00:03:57.067 --> 00:03:59.128
+00:03:58.367 --> 00:04:00.428
 The safe way is a secret mount.
 
 70
-00:03:59.128 --> 00:04:06.509
+00:04:00.428 --> 00:04:07.809
 The secret is handed to that one RUN step while it runs, and never lands in a layer, the cache, or the history.
 
 71
-00:04:06.509 --> 00:04:08.969
+00:04:07.809 --> 00:04:10.269
 Search the history now: zero matches.
 
 72
-00:04:09.133 --> 00:04:10.618
+00:04:10.500 --> 00:04:11.984
 So here is the rule.
 
 73
-00:04:10.618 --> 00:04:15.145
+00:04:11.984 --> 00:04:16.512
 A secret in ARG, ENV, or a deleted file ships with the image.
 
 74
-00:04:15.145 --> 00:04:16.407
+00:04:16.512 --> 00:04:17.773
 Mount it instead.
 
 75
-00:04:17.133 --> 00:04:18.421
+00:04:18.500 --> 00:04:19.788
 A few honest costs.
 
 76
-00:04:18.421 --> 00:04:22.285
+00:04:19.788 --> 00:04:23.651
 A smaller base, with no shell inside, is harder to debug.
 
 77
-00:04:22.285 --> 00:04:29.402
+00:04:23.651 --> 00:04:30.768
 A base pinned to its exact fingerprint stops getting fixes by itself, so teams let a bot propose updates.
 
 78
-00:04:29.402 --> 00:04:34.824
+00:04:30.768 --> 00:04:36.191
 And a token that ever went in as an ARG must be treated as leaked, and replaced.
 
 79
-00:04:35.533 --> 00:04:37.194
+00:04:36.900 --> 00:04:38.560
 So the moral of the story.
 
 80
-00:04:37.194 --> 00:04:40.068
+00:04:38.560 --> 00:04:41.434
 Cook in the kitchen, and ship only the lunch.
 
 81
-00:04:40.068 --> 00:04:41.983
+00:04:41.434 --> 00:04:43.350
 Open the box as a normal user.
 
 82
-00:04:41.983 --> 00:04:44.346
+00:04:43.350 --> 00:04:45.713
 And never tape the key under the lid.
 
 83
-00:04:44.346 --> 00:04:49.711
+00:04:45.713 --> 00:04:51.077
 Our final image also carries a health check that tests the app every thirty seconds.
 
 84
-00:04:50.267 --> 00:04:51.124
+00:04:51.700 --> 00:04:52.558
 Quick check.
 
 85
-00:04:51.124 --> 00:04:54.555
+00:04:52.558 --> 00:04:55.989
 Last month, a token went in as a build argument.
 
 86
-00:04:54.555 --> 00:04:57.057
+00:04:55.989 --> 00:04:58.490
 Today you switch to a secret mount.
 
 87
-00:04:57.057 --> 00:04:58.272
+00:04:58.490 --> 00:04:59.705
 Are you safe now?
 
 88
-00:05:00.467 --> 00:05:00.673
+00:05:01.933 --> 00:05:02.140
 No.
 
 89
-00:05:00.673 --> 00:05:04.865
+00:05:02.140 --> 00:05:06.332
 Every image built last month still carries it in its history.
 
 90
-00:05:04.865 --> 00:05:07.271
+00:05:06.332 --> 00:05:08.737
 Treat it as leaked, and replace it.

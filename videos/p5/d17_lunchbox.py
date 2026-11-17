@@ -107,7 +107,7 @@ class D17Lunchbox(VoiceScene):
         self.play(FadeOut(out), FadeOut(cmd), run_time=0.5)
 
         # 4. what it really is: a process with walls and a budget
-        kern = box("Linux kernel", TEAL_M, w=11.0, h=0.7, size=28).move_to([0.4, -2.55, 0])
+        kern = box("Linux kernel", TEAL_M, w=11.0, h=0.66, size=28).move_to([0.4, -2.45, 0])
         host = VGroup(*[proc().move_to([x, y, 0]) for x, y in [(-4.0, -1.5), (-3.2, -0.7), (-4.3, 0.2), (-3.0, 0.5), (4.3, -1.4), (5.0, -0.5), (4.0, 0.3), (5.2, 0.6),
                                                                (-1.4, -1.6), (1.9, -1.6), (2.6, -0.4), (-2.0, -0.2)]])
         self.steps("Here is what really happens. Down at the bottom is the kernel of the machine. Above it run lots of ordinary programs, called processes.",

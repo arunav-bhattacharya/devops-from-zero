@@ -108,7 +108,7 @@ class D22KnifeInBox(VoiceScene):
         self.play(FadeOut(VGroup(sz, was, scan, arr)), run_time=0.4)
 
         # 5. a normal user
-        self.play(FadeOut(nl), VGroup(newbox, v2, app).animate.scale(0.85).move_to([4.9, 1.3, 0]), run_time=0.6)
+        self.play(FadeOut(nl), VGroup(newbox, v2, app).animate.scale(0.85).move_to([4.75, 1.3, 0]), run_time=0.6)
         who = M("$ docker run --rm hello-devops:simple whoami", 22, GREY_B).move_to([0, 3.35, 0])
         root = M("root", 26, RED_M).next_to(who, DOWN, buff=0.15)
         self.steps("Next, who opens the box. The old image runs as root. Ask it who am I, and it says root.",
@@ -121,7 +121,7 @@ class D22KnifeInBox(VoiceScene):
         idl = M("uid=10001(appuser)", 26, GREEN_M).move_to(root)
         self.steps("Two lines in the final stage fix it. Create a normal user with the number 10001, and switch to it. Now the same question says: user 10001.",
                    (2.4, Wait(2.4)), (0.8, FadeIn(user, shift=UP * 0.1)), (1.6, Wait(1.6)), (0.6, Transform(who, M("$ docker run --rm hello-devops:1.0.0 id", 22, GREY_B).move_to(who)), Transform(root, idl)))
-        r1 = T("Run as a number: 10001 is plainly not 0.", 28, YELLOW_M).move_to([0, 0.2, 0])
+        r1 = T("Run as a number: 10001 is plainly not 0.", 28, YELLOW_M).move_to([-1.6, 0.2, 0])
         self.beat("Write the number, not the name. A name means nothing until someone reads the image's user list. A number like 10001 is plainly not zero, which is root.",
                   FadeIn(r1, shift=UP * 0.1), run_time=1.6)
         self.play(FadeOut(VGroup(who, root, kern, user, r1)), run_time=0.5)
@@ -134,7 +134,7 @@ class D22KnifeInBox(VoiceScene):
                    (1.6, Wait(1.6)), (0.8, FadeIn(arg[1])))
         self.wait(2.0)
         hist = VGroup(M("$ docker history --no-trunc leak | grep API_TOKEN", 22, GREY_B), M("API_TOKEN=s3cr3t-demo-token", 24, RED_M), M("API_TOKEN=s3cr3t-demo-token", 24, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-2.0, 0.0, 0])
-        tape = chip("key", YELLOW_M, 24).move_to(newbox[0].get_top())
+        tape = chip("key", YELLOW_M, 24).next_to(newbox, LEFT, buff=0.2)
         self.steps("Anyone who pulls the image. docker history, the list of steps that built it, prints the token. Twice.",
                    (1.4, Wait(1.4)), (0.6, FadeIn(hist[0])), (1.6, Wait(1.6)), (0.6, FadeIn(hist[1]), FadeIn(hist[2])), (0.6, FadeIn(tape, scale=0.7)))
         leaks = T("ARG, ENV, or COPY then rm: all ship with the image", 26, RED_M).move_to([-1.2, -1.35, 0])
