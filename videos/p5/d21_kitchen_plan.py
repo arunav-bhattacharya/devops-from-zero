@@ -127,7 +127,7 @@ class D21KitchenPlan(VoiceScene):
                   FadeIn(p8, shift=DOWN * 0.1), Indicate(y["p8000"], color=WHITE), run_time=1.6)
         decl = rtext([("phone calls: tell each step", GREY_B), ("the plan: describe", BLUE_M), ("the finished kitchen", BLUE_M)])
         self.beat("Notice the switch. No more phone calls telling each step. You describe the finished kitchen, and docker compose up works out the steps.",
-                  FadeIn(decl, shift=DOWN * 0.1), run_time=1.8)
+                  FadeOut(p8), FadeIn(decl, shift=DOWN * 0.1), run_time=1.8)
         self.play(FadeOut(decl), run_time=0.4)
 
         # 3. the trap: running is not ready
@@ -156,7 +156,7 @@ class D21KitchenPlan(VoiceScene):
         hl = chip("Healthy  5.8s", GREEN_M, 24, mono=True).next_to(red, UP, buff=0.25)
         sl = chip("Started  6.0s", GOLD_M, 24, mono=True).next_to(web, UP, buff=0.25)
         self.steps("Run docker compose up. The volume and network are created. Redis warms up, and turns healthy after 5.8 seconds. Only then does web start, at 6.0.",
-                   (0.6, FadeIn(up), FadeOut(p8)), (1.6, Wait(1.6)), (2.0, fill.animate.stretch_to_fit_height(0.95).align_to(therm[0], DOWN).shift(UP * 0.05).set_fill(GREEN_M)), (0.6, FadeIn(hl)), (1.0, Wait(1.0)), (0.6, FadeIn(sl)))
+                   (0.6, FadeIn(up)), (1.6, Wait(1.6)), (2.0, fill.animate.stretch_to_fit_height(0.95).align_to(therm[0], DOWN).shift(UP * 0.05).set_fill(GREEN_M)), (0.6, FadeIn(hl)), (1.0, Wait(1.0)), (0.6, FadeIn(sl)))
         visits = M('"visits": 1, 2, 3', 24, GOLD_M).move_to([3.4, -1.35, 0])
         self.steps("Call the app three times, and the visit count goes one, two, three, all kept by Redis.",
                    (1.6, Wait(1.6)), (0.6, FadeIn(visits)), (0.6, travel(Line(web.get_right(), red.get_left()), TEAL_M, 0.6)))

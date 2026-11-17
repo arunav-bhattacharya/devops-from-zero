@@ -1,297 +1,297 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:09.013
+00:00:02.700 --> 00:00:08.980
 Picture opening a small restaurant kitchen every morning by phoning each cook with orders.
 
 2
-00:00:09.013 --> 00:00:10.060
+00:00:08.980 --> 00:00:10.026
 Light the oven.
 
 3
-00:00:10.060 --> 00:00:11.455
+00:00:10.026 --> 00:00:11.422
 Now start the sauce.
 
 4
-00:00:11.455 --> 00:00:12.851
+00:00:11.422 --> 00:00:12.817
 Now open the pantry.
 
 5
-00:00:13.000 --> 00:00:13.623
+00:00:13.033 --> 00:00:13.656
 It works.
 
 6
-00:00:13.623 --> 00:00:17.707
+00:00:13.656 --> 00:00:17.740
 Until the day you are ill, and nobody else knows the order.
 
 7
-00:00:18.267 --> 00:00:24.140
+00:00:18.367 --> 00:00:24.240
 Or the cook starts the sauce before the oven is hot, because lit is not the same as ready.
 
 8
-00:00:24.333 --> 00:00:28.585
+00:00:24.467 --> 00:00:28.719
 That is exactly how we started hello-devops and Redis last time.
 
 9
-00:00:28.585 --> 00:00:33.170
+00:00:28.719 --> 00:00:33.303
 A network, a volume, and two long commands, typed in the right order.
 
 10
-00:00:33.170 --> 00:00:34.764
+00:00:33.303 --> 00:00:34.897
 Phone calls, one by one.
 
 11
-00:00:35.467 --> 00:00:38.613
+00:00:35.600 --> 00:00:38.746
 The fix is a plan pinned to the kitchen wall.
 
 12
-00:00:38.613 --> 00:00:47.213
+00:00:38.746 --> 00:00:47.347
 In Docker, that plan is one file, compose.yaml, read by Docker Compose, a tool that runs an app made of several containers.
 
 13
-00:00:47.400 --> 00:00:50.037
+00:00:47.567 --> 00:00:50.203
 Under services, one entry per station.
 
 14
-00:00:50.037 --> 00:00:54.339
+00:00:50.203 --> 00:00:54.506
 Web, built from our Dockerfile, and Redis, a ready-made image.
 
 15
-00:00:54.339 --> 00:00:58.919
+00:00:54.506 --> 00:00:59.085
 Under volumes, the pantry: a named volume that keeps Redis's data.
 
 16
-00:00:59.067 --> 00:01:01.260
+00:00:59.300 --> 00:01:01.493
 You do not even write the network.
 
 17
-00:01:01.260 --> 00:01:07.710
+00:01:01.493 --> 00:01:07.944
 Compose makes one for the project, puts every service on it, and so service names work as addresses.
 
 18
-00:01:07.710 --> 00:01:09.775
+00:01:07.944 --> 00:01:10.008
 Web finds Redis simply as redis.
 
 19
-00:01:09.933 --> 00:01:13.184
+00:01:10.233 --> 00:01:13.484
 Only web publishes a port, 8000, to your Mac.
 
 20
-00:01:13.184 --> 00:01:17.157
+00:01:13.484 --> 00:01:17.457
 Redis has no port at all, because only web talks to it.
 
 21
-00:01:17.333 --> 00:01:18.439
+00:01:17.667 --> 00:01:18.772
 Notice the switch.
 
 22
-00:01:18.439 --> 00:01:20.773
+00:01:18.772 --> 00:01:21.106
 No more phone calls telling each step.
 
 23
-00:01:20.773 --> 00:01:25.503
+00:01:21.106 --> 00:01:25.836
 You describe the finished kitchen, and docker compose up works out the steps.
 
 24
-00:01:26.067 --> 00:01:28.037
+00:01:26.467 --> 00:01:28.437
 Now the trap from the opening.
 
 25
-00:01:28.037 --> 00:01:32.109
+00:01:28.437 --> 00:01:32.509
 We want Redis started before web, so we add depends on, redis.
 
 26
-00:01:32.109 --> 00:01:34.343
+00:01:32.509 --> 00:01:34.743
 Surely that means: wait for Redis.
 
 27
-00:01:34.533 --> 00:01:36.328
+00:01:34.967 --> 00:01:36.762
 Let's be fair and watch it.
 
 28
-00:01:36.328 --> 00:01:37.725
+00:01:36.762 --> 00:01:38.158
 Compose starts Redis.
 
 29
-00:01:37.725 --> 00:01:39.387
+00:01:38.158 --> 00:01:39.820
 Its container is running.
 
 30
-00:01:39.387 --> 00:01:44.373
+00:01:39.820 --> 00:01:44.807
 But a database can need several more seconds before it accepts connections.
 
 31
-00:01:44.533 --> 00:01:47.027
+00:01:45.033 --> 00:01:47.527
 The short form only waits for running.
 
 32
-00:01:47.027 --> 00:01:51.096
+00:01:47.527 --> 00:01:51.596
 So web starts right away, calls Redis, and nobody answers yet.
 
 33
-00:01:51.267 --> 00:01:54.217
+00:01:51.800 --> 00:01:54.751
 The sauce went in, and the oven was only lit.
 
 34
-00:01:54.933 --> 00:01:56.750
+00:01:55.467 --> 00:01:57.284
 The fix is a healthcheck.
 
 35
-00:01:56.750 --> 00:02:04.963
+00:01:57.284 --> 00:02:05.496
 Docker runs redis-cli ping inside the container every five seconds, with a three second timeout and five retries.
 
 36
-00:02:04.963 --> 00:02:07.071
+00:02:05.496 --> 00:02:07.604
 Exit code zero means healthy.
 
 37
-00:02:07.267 --> 00:02:10.142
+00:02:07.833 --> 00:02:10.708
 And the long form of depends on waits for it.
 
 38
-00:02:10.142 --> 00:02:11.867
+00:02:10.708 --> 00:02:12.433
 Condition: service healthy.
 
 39
-00:02:12.067 --> 00:02:13.823
+00:02:12.667 --> 00:02:14.423
 Run docker compose up.
 
 40
-00:02:13.823 --> 00:02:16.616
+00:02:14.423 --> 00:02:17.216
 The volume and network are created.
 
 41
-00:02:16.616 --> 00:02:20.766
+00:02:17.216 --> 00:02:21.366
 Redis warms up, and turns healthy after 5.8 seconds.
 
 42
-00:02:20.766 --> 00:02:23.400
+00:02:21.366 --> 00:02:24.000
 Only then does web start, at 6.0.
 
 43
-00:02:23.600 --> 00:02:28.897
+00:02:24.233 --> 00:02:29.531
 Call the app three times, and the visit count goes one, two, three, all kept by Redis.
 
 44
-00:02:29.067 --> 00:02:30.503
+00:02:29.733 --> 00:02:31.169
 So here is the rule.
 
 45
-00:02:30.503 --> 00:02:32.010
+00:02:31.169 --> 00:02:32.677
 Running is not ready.
 
 46
-00:02:32.010 --> 00:02:34.164
+00:02:32.677 --> 00:02:34.831
 Make the app wait for healthy.
 
 47
-00:02:34.733 --> 00:02:35.715
+00:02:35.433 --> 00:02:36.415
 Closing time.
 
 48
-00:02:35.715 --> 00:02:37.225
+00:02:36.415 --> 00:02:37.925
 docker compose down.
 
 49
-00:02:37.225 --> 00:02:40.699
+00:02:37.925 --> 00:02:41.399
 What happens to the visit count, three so far?
 
 50
-00:02:40.699 --> 00:02:41.907
+00:02:41.399 --> 00:02:42.607
 Pause and guess.
 
 51
-00:02:44.067 --> 00:02:47.056
+00:02:44.833 --> 00:02:47.823
 Down removes the containers and the network.
 
 52
-00:02:47.056 --> 00:02:48.755
+00:02:47.823 --> 00:02:49.521
 The counters get cleared.
 
 53
-00:02:48.755 --> 00:02:50.589
+00:02:49.521 --> 00:02:51.356
 But the named volume stays.
 
 54
-00:02:50.589 --> 00:02:51.880
+00:02:51.356 --> 00:02:52.647
 That is the pantry.
 
 55
-00:02:52.067 --> 00:02:55.626
+00:02:52.867 --> 00:02:56.426
 Bring it back up, and the count carries on where it left off.
 
 56
-00:02:55.626 --> 00:02:57.435
+00:02:56.426 --> 00:02:58.235
 It does not start again at one.
 
 57
-00:02:57.600 --> 00:03:04.519
+00:02:58.467 --> 00:03:05.385
 But add two characters, dash v, and Compose deletes the named volumes too, and your data with them, for good.
 
 58
-00:03:04.667 --> 00:03:07.202
+00:03:05.600 --> 00:03:08.135
 Two commands that look almost the same.
 
 59
-00:03:07.202 --> 00:03:09.217
+00:03:08.135 --> 00:03:10.150
 Plain down clears the counters.
 
 60
-00:03:09.217 --> 00:03:11.492
+00:03:10.150 --> 00:03:12.425
 Down dash v empties the pantry too.
 
 61
-00:03:12.267 --> 00:03:13.520
+00:03:13.233 --> 00:03:14.487
 Two honest limits.
 
 62
-00:03:13.520 --> 00:03:15.888
+00:03:14.487 --> 00:03:16.855
 A healthcheck only covers startup.
 
 63
-00:03:15.888 --> 00:03:22.574
+00:03:16.855 --> 00:03:23.540
 If Redis dies later, hello-devops answers its readiness check with a 503, and the app must cope.
 
 64
-00:03:22.574 --> 00:03:25.568
+00:03:23.540 --> 00:03:26.535
 And Compose runs everything on one machine.
 
 65
-00:03:25.568 --> 00:03:28.215
+00:03:26.535 --> 00:03:29.181
 If that machine dies, so does the app.
 
 66
-00:03:28.933 --> 00:03:30.601
+00:03:29.900 --> 00:03:31.568
 So the moral of the story.
 
 67
-00:03:30.601 --> 00:03:35.540
+00:03:31.568 --> 00:03:36.507
 One file is the plan on the wall, and one command makes the kitchen match it.
 
 68
-00:03:35.540 --> 00:03:37.721
+00:03:36.507 --> 00:03:38.688
 Wait for healthy, not for running.
 
 69
-00:03:37.721 --> 00:03:40.864
+00:03:38.688 --> 00:03:41.831
 And down keeps the pantry, unless you say dash v.
 
 70
-00:03:41.400 --> 00:03:42.232
+00:03:42.433 --> 00:03:43.265
 Quick check.
 
 71
-00:03:42.232 --> 00:03:47.362
+00:03:43.265 --> 00:03:48.395
 A compose file says depends on redis, the short form, with no healthcheck.
 
 72
-00:03:47.362 --> 00:03:48.609
+00:03:48.395 --> 00:03:49.643
 What can go wrong?
 
 73
-00:03:50.800 --> 00:03:53.930
+00:03:51.867 --> 00:03:54.997
 Web can start before Redis accepts connections.
 
 74
-00:03:53.930 --> 00:03:56.061
+00:03:54.997 --> 00:03:57.128
 The sauce goes into a cold oven.

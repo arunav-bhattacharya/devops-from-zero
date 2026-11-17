@@ -20,5 +20,16 @@
    "poster_at": 290.0,
    "replaces": "d44-gateway"
   }
+ ],
+ "d45": [
+  {
+   "slug": "d45-two-roads",
+   "title": "One recipe, three branches: Helm fills blanks, Kustomize adds sticky notes",
+   "after": 5,
+   "file": "p10/d45_two_roads.py",
+   "scene": "D45TwoRoads",
+   "poster_at": 292.0,
+   "replaces": "d45-packaging"
+  }
  ]
 }
