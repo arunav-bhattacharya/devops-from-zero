@@ -195,9 +195,8 @@ const sideOpen = {};
 function route() { return (location.hash || "").slice(1) || "home"; }
 function viewKind() { const r = route(); if (r === "review") return review.active ? "review-live" : "review-idle"; return /^d\d\d$/.test(r) ? "lesson" : r; }
 function sideHTML() {
-  const r = route(), nx = nextUp(), dc = dueCount();
-  const link = (h, t, extra = "") => `<a class="navlink${r === h ? " on" : ""}" href="#${h}">${t}${extra}</a>`;
-  let s = `<div>${link("home", "Today")}${nx ? `<a class="navlink" href="#${nx}">Up next: Day ${pad(L(nx).day)}</a>` : ""}${link("review", "Review", dc ? ` <span class="due">${dc}</span>` : "")}${link("plan", "Plan and pace")}${link("commands", "Command cheat sheet")}${link("glossary", "Glossary")}${link("library", "Library: links and videos")}${link("labs", "Lab files")}</div>`;
+  const r = route(), nx = nextUp();
+  let s = "";  // the page links live in the top bar; the rail holds only the parts and lessons
   const curPart = L(r) ? L(r).part : /^p\d+$/.test(r) ? +r.slice(1) : nx ? L(nx).part : 0;
   for (const p of C.parts) {
     const si = secOf(p.part), sOpen = si < 0 || isSecOpen(si);
@@ -222,8 +221,14 @@ function chrome() {
   side.innerHTML = sideHTML(); side.scrollTop = keep; sideFoot();
   const dc = dueCount(), b = $("#dueBadge");
   b.hidden = !dc; b.textContent = dc;
-  const r = route();
-  $$(".topnav a").forEach((a) => a.classList.toggle("on", a.dataset.nav === r || (r === "home" && a.dataset.nav === "home")));
+  const r = route(), nx = nextUp(), up = $("#upNext");
+  up.hidden = !nx;
+  if (nx) { up.href = "#" + nx; up.dataset.nav = nx; up.textContent = `Up next: Day ${pad(L(nx).day)}`; }
+  const nav = $(".topnav");
+  $$("a", nav).forEach((a) => { const on = a.dataset.nav === r; a.classList.toggle("on", on); if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  /* on narrow screens the links are a row that scrolls sideways: keep the current one in view */
+  const cur = $("a.on", nav);
+  if (cur && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2);
 }
 function openSide(open) { side.classList.toggle("open", open); scrim.hidden = !open; menuBtn.setAttribute("aria-expanded", String(open)); }
 /* the menu button hides or shows the course rail on wide screens, and opens it as a drawer on narrow ones;
