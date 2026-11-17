@@ -1,0 +1,445 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.663
+Here is a line from our lab app, hello-devops.
+
+2
+00:00:05.663 --> 00:00:11.588
+Redis, the small database that keeps its visit count, is down, so the app writes this error.
+
+3
+00:00:11.800 --> 00:00:14.429
+All the logs go to one store you can search.
+
+4
+00:00:14.429 --> 00:00:17.296
+So you type ConnectionError into the search box.
+
+5
+00:00:17.500 --> 00:00:19.917
+The word is right there on your screen.
+
+6
+00:00:19.917 --> 00:00:21.652
+And the answer is zero hits.
+
+7
+00:00:21.867 --> 00:00:25.583
+How can a search miss a word you can read with your own eyes?
+
+8
+00:00:25.583 --> 00:00:27.106
+Hold on to that question.
+
+9
+00:00:27.106 --> 00:00:29.908
+By the end, that zero will make perfect sense.
+
+10
+00:00:30.733 --> 00:00:32.561
+Let's go back to the hospital.
+
+11
+00:00:32.561 --> 00:00:35.850
+Every note from every bed is copied to one chart room.
+
+12
+00:00:35.850 --> 00:00:38.348
+Here are two notes from the payment desk.
+
+13
+00:00:38.567 --> 00:00:41.177
+A doctor asks: which notes say declined?
+
+14
+00:00:41.177 --> 00:00:45.940
+The simplest plan is to read every note, from the first word to the last.
+
+15
+00:00:46.167 --> 00:00:49.064
+That is what the terminal command grep does.
+
+16
+00:00:49.064 --> 00:00:51.172
+It reads every word, every time.
+
+17
+00:00:51.900 --> 00:00:52.489
+Found it.
+
+18
+00:00:52.489 --> 00:00:57.460
+Then she asks a second question, and the reading starts again from page one.
+
+19
+00:00:57.667 --> 00:00:58.925
+Two notes are fine.
+
+20
+00:00:58.925 --> 00:01:03.163
+But a week of logs from fifty containers is a mountain of notes.
+
+21
+00:01:03.367 --> 00:01:08.664
+By the time the doctor finishes reading, the patient has gone home, and so has the doctor.
+
+22
+00:01:09.067 --> 00:01:10.265
+So here is the wish.
+
+23
+00:01:10.265 --> 00:01:15.117
+Wouldn't it be nice to do the reading once, when a note arrives, and never again?
+
+24
+00:01:15.933 --> 00:01:18.571
+You already own a thing that grants that wish.
+
+25
+00:01:18.571 --> 00:01:20.405
+The index at the back of a book.
+
+26
+00:01:20.633 --> 00:01:23.213
+To find declined, you don't read the book.
+
+27
+00:01:23.213 --> 00:01:26.407
+You look up one word, and it hands you page numbers.
+
+28
+00:01:26.633 --> 00:01:30.203
+Somebody did the slow reading once, when the book was made.
+
+29
+00:01:30.203 --> 00:01:32.684
+Every reader after that gets it for free.
+
+30
+00:01:33.500 --> 00:01:35.541
+So the chart room hires a clerk.
+
+31
+00:01:35.541 --> 00:01:41.535
+Each time a note arrives, the clerk reads it once, and files every word on its own index card.
+
+32
+00:01:41.767 --> 00:01:42.878
+Watch two habits.
+
+33
+00:01:42.878 --> 00:01:47.326
+It splits the text into words, and it writes each one in lower case.
+
+34
+00:01:47.326 --> 00:01:49.680
+Capital FAILED becomes plain failed.
+
+35
+00:01:49.900 --> 00:01:54.275
+On every card, it writes the number of the note the word came from.
+
+36
+00:01:54.275 --> 00:01:54.863
+Note one.
+
+37
+00:01:55.867 --> 00:01:57.025
+Note two arrives.
+
+38
+00:01:57.025 --> 00:01:58.660
+New words get new cards.
+
+39
+00:01:58.660 --> 00:02:02.543
+Words the clerk has seen before just get one more number.
+
+40
+00:02:02.767 --> 00:02:05.973
+Payment, for, and order now say: notes one and two.
+
+41
+00:02:06.200 --> 00:02:07.559
+Now let's search.
+
+42
+00:02:07.559 --> 00:02:08.198
+Payment.
+
+43
+00:02:08.198 --> 00:02:10.196
+How many notes come back?
+
+44
+00:02:10.196 --> 00:02:11.475
+Pause and guess.
+
+45
+00:02:14.700 --> 00:02:14.952
+Two.
+
+46
+00:02:14.952 --> 00:02:20.047
+The search went straight to one card, read the numbers one and two, and was done.
+
+47
+00:02:20.267 --> 00:02:22.036
+Notice what it did not do.
+
+48
+00:02:22.036 --> 00:02:24.077
+It did not read a single note.
+
+49
+00:02:24.300 --> 00:02:25.563
+One small change.
+
+50
+00:02:25.563 --> 00:02:27.867
+Payments, with an s at the end.
+
+51
+00:02:27.867 --> 00:02:29.056
+Pause and guess.
+
+52
+00:02:32.267 --> 00:02:32.601
+Zero.
+
+53
+00:02:32.601 --> 00:02:35.009
+There is no card that says payments.
+
+54
+00:02:35.009 --> 00:02:38.420
+The clerk files words as they are, only lowercased.
+
+55
+00:02:38.420 --> 00:02:41.296
+It never trims them down to a shorter stem.
+
+56
+00:02:41.900 --> 00:02:43.000
+Now, our mystery.
+
+57
+00:02:43.000 --> 00:02:47.984
+Most of us picture search like grep, only faster: it finds any piece of text.
+
+58
+00:02:47.984 --> 00:02:49.925
+Let's be fair to that picture.
+
+59
+00:02:49.925 --> 00:02:53.873
+Grep really would find ConnectionError inside the error line.
+
+60
+00:02:54.100 --> 00:02:57.532
+But Elasticsearch never looks at the notes when you search.
+
+61
+00:02:57.532 --> 00:02:58.812
+It looks at the cards.
+
+62
+00:02:58.812 --> 00:03:01.139
+So let's watch the clerk file the error.
+
+63
+00:03:01.367 --> 00:03:02.775
+Here is the surprise.
+
+64
+00:03:02.775 --> 00:03:05.525
+Dots between letters do not split a word.
+
+65
+00:03:05.525 --> 00:03:08.811
+So the whole dotted name goes on one single card.
+
+66
+00:03:09.033 --> 00:03:12.304
+Service, not, and known each get a card of their own.
+
+67
+00:03:12.533 --> 00:03:14.333
+Now search ConnectionError.
+
+68
+00:03:14.333 --> 00:03:17.332
+Is there a card with exactly that word on it?
+
+69
+00:03:17.332 --> 00:03:18.399
+Pause and guess.
+
+70
+00:03:21.600 --> 00:03:21.818
+No.
+
+71
+00:03:21.818 --> 00:03:27.913
+There is a card for the whole dotted name, but none for connection error on its own.
+
+72
+00:03:27.913 --> 00:03:28.639
+Zero hits.
+
+73
+00:03:28.867 --> 00:03:29.205
+Well.
+
+74
+00:03:29.205 --> 00:03:34.281
+The search swears it has never heard of a word that is sitting right there.
+
+75
+00:03:34.281 --> 00:03:35.567
+And it isn't lying.
+
+76
+00:03:35.567 --> 00:03:39.155
+Zero hits really means: no card with that exact word.
+
+77
+00:03:39.367 --> 00:03:42.113
+So ask for words that really are on cards.
+
+78
+00:03:42.113 --> 00:03:45.382
+The phrase service not known, from the same error.
+
+79
+00:03:45.382 --> 00:03:46.363
+Found, at once.
+
+80
+00:03:46.567 --> 00:03:48.565
+That's the zero from the start.
+
+81
+00:03:48.565 --> 00:03:49.789
+The error happened.
+
+82
+00:03:49.789 --> 00:03:52.432
+We asked for a word that was never filed.
+
+83
+00:03:53.833 --> 00:03:56.018
+Now we can give the real names.
+
+84
+00:03:56.018 --> 00:03:59.329
+In Elasticsearch, each log event is a document.
+
+85
+00:03:59.533 --> 00:04:01.784
+The clerk is called the analyzer.
+
+86
+00:04:01.784 --> 00:04:03.899
+Each word on a card is a token.
+
+87
+00:04:04.100 --> 00:04:10.273
+And the box of cards is an inverted index: a table from each word to the documents that contain it.
+
+88
+00:04:10.273 --> 00:04:14.887
+It is the book's index, turned around from the way the notes were written.
+
+89
+00:04:15.700 --> 00:04:18.748
+Three habits before you trust an empty result.
+
+90
+00:04:18.748 --> 00:04:20.139
+First, ask the clerk.
+
+91
+00:04:20.139 --> 00:04:26.301
+Elasticsearch has an analyze request that shows the exact tokens a line would be filed under.
+
+92
+00:04:26.533 --> 00:04:29.334
+Second, not every field gets cut into words.
+
+93
+00:04:29.334 --> 00:04:33.472
+A keyword field, such as level, is filed whole, capitals and all.
+
+94
+00:04:33.472 --> 00:04:38.820
+Its stored value is ERROR, so an exact search for error in lower case finds nothing.
+
+95
+00:04:39.033 --> 00:04:43.546
+Third, a note that arrived this very instant may not be on the cards yet.
+
+96
+00:04:43.546 --> 00:04:49.543
+Elasticsearch makes new documents searchable within about one second, in a step called a refresh.
+
+97
+00:04:50.367 --> 00:04:52.480
+So read the whole story out loud.
+
+98
+00:04:52.480 --> 00:04:55.553
+The clerk reads each note once, when it arrives.
+
+99
+00:04:55.553 --> 00:04:58.690
+It files every word, lowercased, on its own card.
+
+100
+00:04:58.690 --> 00:05:02.276
+And a search looks up whole cards, never pieces of them.
+
+101
+00:05:02.500 --> 00:05:05.604
+Search finds whole tokens, never pieces of them.
+
+102
+00:05:05.604 --> 00:05:07.932
+Ask for words that are really there.
+
+103
+00:05:08.133 --> 00:05:09.203
+A quick check.
+
+104
+00:05:09.203 --> 00:05:11.801
+A log line says disk.full.warning.
+
+105
+00:05:11.801 --> 00:05:14.169
+Does a search for full find it?
+
+106
+00:05:14.169 --> 00:05:15.392
+Pause and think.
+
+107
+00:05:18.600 --> 00:05:18.797
+No.
+
+108
+00:05:18.797 --> 00:05:22.334
+Dots between letters keep the whole name as one token.
+
+109
+00:05:22.334 --> 00:05:26.919
+Search for the whole name, and check with analyze if you are not sure.
+
+110
+00:05:27.133 --> 00:05:30.395
+Next, many copies of our app will share this one store.
+
+111
+00:05:30.395 --> 00:05:32.885
+How do we know which copy wrote each line?

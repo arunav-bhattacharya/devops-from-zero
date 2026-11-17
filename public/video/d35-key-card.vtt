@@ -1,0 +1,413 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.344
+Here's a question that sounds simple.
+
+2
+00:00:05.344 --> 00:00:12.633
+A pipeline, the robot on GitHub that runs plan and apply for you, has to get into AWS, Amazon's cloud.
+
+3
+00:00:12.867 --> 00:00:14.113
+It's not a person.
+
+4
+00:00:14.113 --> 00:00:17.920
+It has no phone for a code and no password in its head.
+
+5
+00:00:17.920 --> 00:00:20.481
+So how does AWS know it's allowed in?
+
+6
+00:00:21.900 --> 00:00:23.864
+Let's leave computers for a minute.
+
+7
+00:00:23.864 --> 00:00:27.342
+You're away for two weeks while a builder works on your house.
+
+8
+00:00:27.342 --> 00:00:28.969
+The quick way to let them in?
+
+9
+00:00:28.969 --> 00:00:30.652
+A spare key under the doormat.
+
+10
+00:00:30.867 --> 00:00:32.272
+On day one, it works.
+
+11
+00:00:32.272 --> 00:00:35.083
+The builder lifts the mat, and in they go.
+
+12
+00:00:35.900 --> 00:00:37.485
+It still works in a year.
+
+13
+00:00:37.485 --> 00:00:41.161
+And it works for anyone who lifts the mat, builder or not.
+
+14
+00:00:41.367 --> 00:00:44.179
+Under the doormat isn't really a hiding place.
+
+15
+00:00:44.179 --> 00:00:47.908
+It's the first place anyone looks, right after the flowerpot.
+
+16
+00:00:48.733 --> 00:00:51.064
+The pipeline has its own doormat.
+
+17
+00:00:51.064 --> 00:00:58.197
+The quick way is an AWS access key, saved as a GitHub secret, a hidden setting the pipeline can read.
+
+18
+00:00:58.400 --> 00:01:01.034
+That key works until someone deletes it.
+
+19
+00:01:01.034 --> 00:01:02.680
+Nothing about it expires.
+
+20
+00:01:02.900 --> 00:01:08.603
+So if it ever leaks, the stolen copy stays useful for months, quietly, for whoever has it.
+
+21
+00:01:08.833 --> 00:01:14.771
+Wouldn't it be nice if the pipeline got a key that opened only one room, and stopped working on its own?
+
+22
+00:01:16.000 --> 00:01:17.788
+A hotel does it differently.
+
+23
+00:01:17.788 --> 00:01:19.704
+You walk up to the front desk.
+
+24
+00:01:19.933 --> 00:01:21.001
+You show your ID.
+
+25
+00:01:21.001 --> 00:01:28.160
+The desk doesn't know you, but it knows the office that stamped that ID, and it can tell a real stamp from a fake.
+
+26
+00:01:28.367 --> 00:01:33.173
+Then it checks a second thing: is the name on that ID on tonight's booking list?
+
+27
+00:01:33.400 --> 00:01:34.038
+Both yes?
+
+28
+00:01:34.038 --> 00:01:35.740
+It hands you a key card.
+
+29
+00:01:35.740 --> 00:01:38.647
+The card opens room twelve, nothing else.
+
+30
+00:01:38.647 --> 00:01:41.555
+And at checkout, it simply stops working.
+
+31
+00:01:41.767 --> 00:01:44.283
+Nobody had to remember to cancel it.
+
+32
+00:01:44.283 --> 00:01:45.961
+The card cancels itself.
+
+33
+00:01:46.167 --> 00:01:47.071
+Let's map it.
+
+34
+00:01:47.071 --> 00:01:49.785
+You, the guest, are the pipeline's job.
+
+35
+00:01:50.000 --> 00:01:51.637
+The ID office is GitHub.
+
+36
+00:01:51.637 --> 00:01:54.639
+It signs a pass for the job, called a token.
+
+37
+00:01:54.639 --> 00:01:57.231
+It's short lived, and it soon expires.
+
+38
+00:01:57.433 --> 00:01:58.979
+The front desk is AWS.
+
+39
+00:01:58.979 --> 00:02:04.529
+The booking list is the role's trust policy, the part that says who may use it.
+
+40
+00:02:04.733 --> 00:02:08.372
+The key card is a set of short-lived AWS credentials.
+
+41
+00:02:08.372 --> 00:02:12.491
+And room twelve is what the role may touch, its permissions.
+
+42
+00:02:13.100 --> 00:02:17.025
+That whole handshake has a name: OIDC, OpenID Connect.
+
+43
+00:02:17.025 --> 00:02:23.567
+It's a standard that lets GitHub prove who a job is, with a signed pass that soon expires.
+
+44
+00:02:23.800 --> 00:02:25.707
+Let's look at one real pass.
+
+45
+00:02:25.707 --> 00:02:29.386
+It holds claims, named fields that GitHub vouches for.
+
+46
+00:02:29.386 --> 00:02:30.476
+Two matter here.
+
+47
+00:02:30.700 --> 00:02:35.853
+aud, the audience, says who the pass is meant for: AWS's sign-in service.
+
+48
+00:02:35.853 --> 00:02:40.441
+sub, the subject, names the repo and the context the job runs in.
+
+49
+00:02:40.667 --> 00:02:43.041
+So the job asks GitHub for a pass.
+
+50
+00:02:43.267 --> 00:02:45.513
+It carries the pass to AWS.
+
+51
+00:02:45.733 --> 00:02:50.670
+Check one: is GitHub's signature real, and is the audience right?
+
+52
+00:02:50.670 --> 00:02:50.973
+Yes.
+
+53
+00:02:51.200 --> 00:02:54.558
+Check two: does the sub match the trust policy?
+
+54
+00:02:54.558 --> 00:02:55.629
+Your repo, yes.
+
+55
+00:02:55.833 --> 00:03:00.028
+Then AWS hands back short-lived credentials, and plan runs.
+
+56
+00:03:00.028 --> 00:03:01.948
+No key was stored anywhere.
+
+57
+00:03:02.567 --> 00:03:04.231
+Now let's be skeptical.
+
+58
+00:03:04.231 --> 00:03:06.401
+AWS trusts GitHub's signature.
+
+59
+00:03:06.401 --> 00:03:11.611
+But GitHub signs passes for every repo in the world, strangers included.
+
+60
+00:03:11.833 --> 00:03:16.999
+So a stranger's workflow asks GitHub for a pass, and gets a real one.
+
+61
+00:03:16.999 --> 00:03:18.421
+Does AWS let it in?
+
+62
+00:03:18.421 --> 00:03:19.619
+Pause and guess.
+
+63
+00:03:21.833 --> 00:03:23.661
+The signature checks out.
+
+64
+00:03:23.661 --> 00:03:25.196
+That pass is genuine.
+
+65
+00:03:25.400 --> 00:03:31.312
+But the sub names the stranger's repo, and the trust policy names only yours.
+
+66
+00:03:31.312 --> 00:03:37.915
+AWS refuses, with this error: Not authorized to perform sts:AssumeRoleWithWebIdentity.
+
+67
+00:03:38.133 --> 00:03:41.292
+A perfectly real ID, with the wrong name on it.
+
+68
+00:03:41.292 --> 00:03:44.988
+So the point is: the signature says who wrote the pass.
+
+69
+00:03:44.988 --> 00:03:46.736
+The sub says who it's for.
+
+70
+00:03:46.736 --> 00:03:48.080
+The desk needs both.
+
+71
+00:03:48.900 --> 00:03:51.921
+And the desk reads names character for character.
+
+72
+00:03:51.921 --> 00:03:54.140
+Older repos write the sub like this.
+
+73
+00:03:54.367 --> 00:04:00.143
+Repos created after July 15, 2026 put numeric IDs in it, like this.
+
+74
+00:04:00.143 --> 00:04:04.108
+The lab trusts both forms, for your repo only.
+
+75
+00:04:04.333 --> 00:04:07.549
+So when you see that error, don't blame the pipeline.
+
+76
+00:04:07.549 --> 00:04:08.763
+Check the sub first.
+
+77
+00:04:10.067 --> 00:04:11.153
+One more thing.
+
+78
+00:04:11.153 --> 00:04:14.629
+A key card is only as safe as the room it opens.
+
+79
+00:04:14.629 --> 00:04:16.295
+So keep the role small.
+
+80
+00:04:16.500 --> 00:04:21.115
+The lab's role may manage only buckets whose names start with hello-devops.
+
+81
+00:04:21.333 --> 00:04:25.564
+It may also read its own IAM setup, so that plan works.
+
+82
+00:04:25.564 --> 00:04:29.411
+IAM is AWS's service that decides who may do what.
+
+83
+00:04:29.633 --> 00:04:31.240
+And it cannot change IAM.
+
+84
+00:04:31.240 --> 00:04:32.589
+Why does that matter?
+
+85
+00:04:32.589 --> 00:04:39.723
+If it could, a pull request could edit the pipeline's own permissions, and turn its key card into a master key.
+
+86
+00:04:39.933 --> 00:04:42.898
+A card that can upgrade itself isn't a card.
+
+87
+00:04:42.898 --> 00:04:45.728
+So you apply IAM changes from your laptop.
+
+88
+00:04:45.933 --> 00:04:48.418
+Even asking for a pass is limited.
+
+89
+00:04:48.418 --> 00:04:52.584
+Only the two jobs that log in to AWS get id-token: write.
+
+90
+00:04:52.584 --> 00:04:55.361
+The checks job can only read the repo.
+
+91
+00:04:56.567 --> 00:04:58.598
+So here's the moral of the story.
+
+92
+00:04:58.598 --> 00:05:01.799
+A key that never expires is a key under the doormat.
+
+93
+00:05:01.799 --> 00:05:04.139
+Let the pipeline borrow one that does.
+
+94
+00:05:04.367 --> 00:05:05.774
+GitHub signs a pass.
+
+95
+00:05:05.774 --> 00:05:10.276
+AWS checks the signature, then the sub, character for character.
+
+96
+00:05:10.276 --> 00:05:12.668
+It hands back a card that expires.
+
+97
+00:05:12.668 --> 00:05:15.060
+And the card opens one small room.
+
+98
+00:05:16.267 --> 00:05:18.097
+A quick check before you go.
+
+99
+00:05:18.097 --> 00:05:22.020
+Your plan job passes its checks, then fails with this error.
+
+100
+00:05:22.020 --> 00:05:23.589
+What do you check first?
+
+101
+00:05:23.589 --> 00:05:24.635
+Pause and think.
+
+102
+00:05:26.867 --> 00:05:27.372
+The sub.
+
+103
+00:05:27.372 --> 00:05:32.171
+The name on the pass has to match the booking list, character for character.
