@@ -716,3 +716,9 @@ body.sx-on { overflow: hidden; }
 
 /* phones: headings a step smaller, so long tool names fit */
 @media (max-width: 560px) { .lsec h2, .block-h h2 { font-size: 22px; } .lmain { gap: 52px; } .page { gap: 44px; } .task { padding: 18px 16px 20px; } .quiz > .q, .card { padding-left: 16px; padding-right: 16px; } }
+
+
+/* book-voice opening and closing */
+.opening { margin: 6px 0 30px; font-size: 1.06em; }
+.opening p:first-child { margin-top: 0; }
+.closing { margin: 26px 0 8px; padding-top: 18px; border-top: 1px solid var(--rule); }

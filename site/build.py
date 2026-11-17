@@ -11,6 +11,7 @@ import datetime
 import hashlib
 import html
 import json
+import os
 import pathlib
 import re
 
@@ -134,6 +135,9 @@ def lesson(L, R, part, k):
                   "run": c.get("run", "")} for c in L.get("code", [])],
         "commands": [{"cmd": c["cmd"], "html": hl("bash", c["cmd"]), "what": inline(c["what"])} for c in L.get("commands", [])],
         "mistake": md(L.get("mistake", "")), "realWorld": md(L.get("real_world", "")),
+        # book-voice fields (optional): a scene that opens the lesson, a look-back that closes it, one sidebar
+        "opening": md(L.get("opening", "")), "closing": md(L.get("closing", "")),
+        "aside": {"title": inline(L["aside"]["title"]), "html": md(L["aside"]["body"]), "after": int(L["aside"].get("after", len(L["sections"]) - 1))} if L.get("aside") else None,
         "task": {"title": inline(L["task"]["title"]), "steps": [inline(x) for x in L["task"]["steps"]],
                  "hints": [inline(x) for x in L["task"].get("hints", [])], "doneWhen": inline(L["task"].get("done_when", ""))},
         "explain": {"prompt": inline(L["explain_back"]["prompt"]), "answer": md(L["explain_back"]["answer"]),
@@ -204,8 +208,9 @@ ICON = ('<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3
         '%3Crect x=%2217%22 y=%222%22 width=%225%22 height=%2219%22 fill=%22%23d3921a%22/%3E%3C/svg%3E">')
 
 
-def render(course):
-    data = json.dumps(course, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+def render(course, data=None):
+    """data: the course JSON already serialised for the page (the --look build reuses the published one)."""
+    data = data or json.dumps(course, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     page = (SITE / "template.html").read_text()
     page = page.replace("/*CSS*/", (SITE / "app.css").read_text() + (SITE / "art.css").read_text())
     page = page.replace("/*JS*/", (SITE / "app.js").read_text())
@@ -218,19 +223,38 @@ def document(page):
             '</head><body>\n' + page + '\n</body></html>\n')
 
 
+def look_only():
+    """Rebuild only the look (style, script, template) of the published site: the course data already
+    in public/index.html goes back in byte for byte, so lesson drafts in content/ are not published."""
+    m = re.search(r'<script type="application/json" id="course">(.*?)</script>', (WEB / "index.html").read_text(), flags=re.S)
+    if not m:
+        raise SystemExit("public/index.html has no course data; run a full build first")
+    page = render(None, data=m.group(1))
+    OUT.write_text(page)
+    (WEB / "index.html").write_text(document(page))
+    print(f"look only: {OUT.stat().st_size // 1024} KB, published lessons unchanged")
+
+
 def main():
+    import sys
+    if "--look" in sys.argv[1:]:
+        return look_only()
     index = json.loads((ROOT / "brief/index.json").read_text())
     course = {"parts": [], "order": [], "lessons": {}, "labs": labs(), "built": datetime.date.today().isoformat()}
     renum = ROOT / "brief/renumber-v3.json"  # old id -> new id, so the site can move progress saved before the third edition
     course["renum"] = json.loads(renum.read_text()) if renum.exists() else {}
     # narrated videos (videos/manifest/*.json): {lesson id: [{slug, title, after, ...}]}; files live in public/video/
     vids = {}
-    for mf in sorted((ROOT / "videos/manifest").glob("*.json")):
-        for lid, vs in json.loads(mf.read_text()).items():
+    manifests = [json.loads(mf.read_text()) for mf in sorted((ROOT / "videos/manifest").glob("*.json"))]
+    # a remade video names the old slug it replaces; once the remake is rendered, the old one is hidden
+    replaced = {v["replaces"] for m in manifests for vs in m.values() for v in vs
+                if v.get("replaces") and (WEB / "video" / f"{v['slug']}.mp4").exists()}
+    for m in manifests:
+        for lid, vs in m.items():
             for v in vs:
                 mp4 = WEB / "video" / f"{v['slug']}.mp4"
-                if not mp4.exists():
-                    continue  # not rendered yet
+                if not mp4.exists() or v["slug"] in replaced:
+                    continue  # not rendered yet, or replaced by a remake
                 dur = None
                 try:
                     import subprocess
@@ -275,6 +299,9 @@ def main():
     course["sections"] = sections
     page = render(course)
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    if os.environ.get("DFZ_CHECK_ONLY"):  # writers check that the build works without touching the published files
+        print(f"build ok (check only): {len(page) // 1024} KB")
+        return
     OUT.write_text(page)  # fragment for claude.ai (it wraps the page in its own document): the full course
     WEB.mkdir(parents=True, exist_ok=True)
     (WEB / "index.html").write_text(document(page))           # Cloudflare (or any static host): the same course as a full web page

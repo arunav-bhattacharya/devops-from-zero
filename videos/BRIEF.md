@@ -61,3 +61,29 @@ For each video in your task:
 - When you finish a video (final render done, media folder deleted, manifest updated), move on to the next one. Do not wait for review.
 - Build intuition, not a summary. Open with the problem (what goes wrong without this, ideally with hello-devops), then show the mechanism step by step (which part talks to which, in what order, what changes), then show why it is built that way. Keep one main picture that grows across the video rather than many unrelated slides. Ask the question a beginner would ask ("but how does it know?") and answer it on screen.
 - Resolution (Nov 15): `render_hd.sh` now renders 2560x1440 (1440p). Every video of this batch must be final-rendered at 1440p. If you rendered a final before this change, render it again.
+
+## Fifth pass (Nov 16): every video remade in the Venkat teaching style
+
+- Every lesson's text is being rewritten in a book voice for complete newcomers (brief/VOICE.md). Each video is
+  remade after its lesson is rewritten, so text and video tell one story with the same everyday world.
+- Teaching style: the **venkat-style-video** skill (load it with the Skill tool as
+  `anthropic-skills:venkat-style-video`, and read its `references/teaching-arcs.md`, `analogy-bank.md`,
+  `humor-and-voice.md` and `script-template.md` before scripting). Open with the question a learner is shy to
+  ask, start from something familiar, make the pain felt, map an everyday analogy part by part out loud,
+  shrink the problem, predict then show (say "pause and guess", hold a 2 second beat), break the wrong model
+  on purpose, name the concept only after it is understood, add the guardrail, end on the moral and one
+  quick check question. One light moment every one to two minutes, at pivots and payoffs, never inside a
+  walkthrough, each cashed back into the idea. Invent every analogy and joke.
+- The viewer is a complete newcomer: no tool names before the problem is clear, every term defined in plain
+  words when it first appears, everyday scenes before technical ones.
+- Length: 3 to 6 minutes (the learner prefers a longer video that builds intuition over a short one that
+  rushes). Never pad.
+- Resolution: 1440p, the default of `render_hd.sh` and `render_slot.sh`. Always render finals with
+  `render_slot.sh`.
+- Slugs: a remake gets a NEW slug (`dDD-<topic>`, different from the old one) and a NEW scene class, so no
+  browser or artifact serves the old file. In your manifest entry, add `"replaces": "<old slug>"`. Delete
+  nothing in public/video; the lead removes old files.
+- Visual rules from the JVM course, now house rules here too: keep 0.6 units of margin from the frame edge;
+  labels 26 or more, code 22 or more, small notes 20 or more; one colour per object for the whole video; fade
+  out what you no longer need before the next idea; never combine FadeIn and Indicate on one object in one
+  play; Indicate the outline or the text of a filled box, not the box.

@@ -7,9 +7,9 @@
    "id": "d23",
    "title": "Pull requests, code review and CI/CD ideas",
    "minutes": 50,
-   "goal": "By the end you can take a change from branch to merged pull request with gh, give a review that helps, route reviews with CODEOWNERS, tag a version, and tell continuous integration, delivery and deployment apart.",
+   "goal": "By the end you can take a change from branch to merged pull request with gh, give a review that helps, send each change to the right reviewers with CODEOWNERS, tag a version, and tell continuous integration, delivery and deployment apart.",
    "guess": {
-    "q": "Your new team says it practices continuous deployment. What does that mean?",
+    "q": "You join a new team, and they say they practice continuous deployment. What do they mean?",
     "options": [
      "Everyone merges code into main at least once a day",
      "Every change is ready to release, and a person clicks to ship it",
@@ -17,24 +17,24 @@
      "The production servers are never switched off"
     ],
     "answer": 2,
-    "why": "With continuous deployment, every change that passes the pipeline goes live and nobody clicks anything. Merging daily is continuous integration, and a human release click is continuous delivery."
+    "why": "With continuous deployment, every change that passes the automatic checks goes live, and nobody clicks anything. Merging daily is continuous integration, and a person clicking to release is continuous delivery."
    },
    "terms": [
     {
      "term": "Pull request (PR)",
-     "plain": "A GitHub page that asks to merge one branch into another, with review and checks."
+     "plain": "A page on GitHub that asks to add one branch's changes to another, so people and tests can check them first."
     },
     {
      "term": "Draft pull request",
-     "plain": "A pull request marked not ready: nobody can merge it, and code owners are not asked to review yet."
+     "plain": "A pull request marked as not ready: nobody can merge it, and code owners are not asked to review it yet."
     },
     {
      "term": "Code owner",
-     "plain": "A person or team that a CODEOWNERS file names for some paths; GitHub requests their review automatically."
+     "plain": "A person or team that a CODEOWNERS file names for some files; GitHub asks for their review automatically."
     },
     {
      "term": "Squash merge",
-     "plain": "Merging a pull request as one new commit on main that holds all of the branch's changes."
+     "plain": "Merging a pull request as one new commit on main that holds all the changes from the branch."
     },
     {
      "term": "Continuous integration (CI)",
@@ -42,11 +42,11 @@
     },
     {
      "term": "Continuous delivery",
-     "plain": "Every change that passes the pipeline is ready to release, and a person decides when."
+     "plain": "Every change that passes the automatic checks is ready to release, and a person decides when."
     },
     {
      "term": "Continuous deployment",
-     "plain": "Every change that passes the pipeline goes to production with no human step."
+     "plain": "Every change that passes the automatic checks goes to the live system with no person in between."
     },
     {
      "term": "Semantic versioning",
@@ -55,8 +55,8 @@
    ],
    "sections": [
     {
-     "h": "From branch to merged pull request",
-     "body": "Day 9 left you with a clean branch on your laptop. You could merge it into `main` yourself and push. Then nobody else reads the change before it lands, and no test runs on it unless you ran one. A pull request (PR) fixes both. It is a page on GitHub that asks to merge your branch into `main`. Teammates review the diff there, and checks run on it: automatic tests that show a green tick or a red cross. Those checks are CI, explained later today, and Day 24 sets them up. The loop most teams run:\n\n1. Start from a fresh main: `git switch main && git pull`, then `git switch -c add-pr-template`.\n2. Commit in small steps and push the branch with `git push -u origin add-pr-template`.\n3. Open the PR: click Compare & pull request in the yellow banner on the repository page, or run `gh pr create --fill`.\n4. Not ready yet? Make it a draft with `gh pr create --draft --fill`. Nobody can merge a draft, and `gh pr ready` ends the draft stage.\n5. Wait for the checks. From Day 24 on, CI runs on every push, and `gh pr checks --watch` follows it from the terminal.\n6. Answer the review by pushing more commits to the same branch. The PR updates itself.\n7. Merge, for example with Squash and merge and Delete branch, or `gh pr merge --squash --delete-branch`. Then `git switch main && git pull`.\n\nOn the PR page, base is the branch you merge into and compare is yours. The Files changed tab shows a three-dot diff, `git diff main...your-branch`: only what your branch changed since it left main, counted from the merge base you met on Day 9. Squash and merge, in step 7, turns all of the branch's commits into one new commit on `main`; Go deeper compares the three merge methods.\n\nTwo facts about CI on pull requests explain today's worked example. First, GitHub builds a temporary merge commit of your branch into the current main, and CI tests that combination. Second, CI starts only when something happens to the PR itself: it is opened, gets new commits, or is reopened. A new commit on main is not an event on your PR, so nothing reruns, and a PR that was green yesterday may be red against today's main. The Update branch button brings main into your branch and runs CI again. While a PR has a merge conflict, GitHub cannot build that temporary merge, so CI does not run at all.",
+     "h": "One change, from your laptop to main",
+     "body": "Git, the tool from Part 2 that records every change to files, keeps the code everyone uses on a branch called `main`: our recipe book. A branch is a separate line of saved changes, where you can work without touching what others use. Each saved change is a commit.\n\nDay 9 left you with a clean branch on your laptop. You could merge it into `main` yourself, which adds its commits there. Then you would push, which sends your commits to GitHub. GitHub is the website that keeps the team's shared copy of the project. But then nobody else reads the change before it lands, and no test runs on it unless you ran one.\n\nA pull request (PR) fixes both. It is a page on GitHub that asks to merge your branch into `main`. Teammates read the diff there, the list of lines you added and removed. Checks run on it too: automatic tests that show a green tick or a red cross, which Day 24 sets up. In kitchen terms, the PR is your page on the head chef's desk, and the checks are a taster.\n\nMost teams run this loop, typed in the terminal, the window for text commands. The repository is your project's home on GitHub, with its whole history. And `gh` is GitHub's own command-line tool, from Day 2.\n\n1. Start from a fresh main: `git switch main && git pull`, then `git switch -c add-pr-template`.\n2. Commit in small steps and push the branch with `git push -u origin add-pr-template`.\n3. Open the PR: click Compare & pull request in the yellow banner on the repository page, or run `gh pr create --fill`.\n4. Not ready yet? Make it a draft with `gh pr create --draft --fill`. Nobody can merge a draft, and `gh pr ready` ends the draft stage.\n5. Wait for the checks. From Day 24 on, CI runs on every push, and `gh pr checks --watch` follows it from the terminal.\n6. Answer the review by pushing more commits to the same branch. The PR updates itself.\n7. Merge, for example with Squash and merge and Delete branch, or `gh pr merge --squash --delete-branch`. Then `git switch main && git pull`.\n\n\nTwo facts about the checks on pull requests explain our kitchen. First, GitHub builds a temporary merge commit, one that joins your branch with the current main, and the checks test that combination. Second, they start only when something happens to the PR itself: it is opened, gets new commits, or is reopened.\n\nSo a new commit on main is not an event on your PR, and nothing reruns. A PR that was green yesterday may be red against today's main, like a soup card written before the pots moved. The Update branch button brings main into your branch and runs the checks again. A merge conflict means two changes hit the same lines and Git cannot combine them alone. While a PR has one, GitHub cannot build that temporary merge, so the checks do not run at all.\n\nNext, we'll see what a human reviewer adds that a green tick cannot.",
      "refs": [
       {
        "title": "About pull requests",
@@ -76,8 +76,8 @@
      ]
     },
     {
-     "h": "Code review that helps",
-     "body": "CI runs the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a name that will confuse the next reader. A review goes well when both sides do their part. As the author:\n\n- Keep the PR small. Fifty lines tend to get careful comments; two thousand tend to get a quick \"looks good\".\n- Say why in the description, and how you tested it. The PR template in today's Files section asks both questions.\n- Read your own diff on GitHub before you ask anyone. You will catch the stray debug line yourself.\n- Answer every comment, even with \"done\", and re-request the review once you have pushed the changes.\n\nAs the reviewer, read the description first, then the tests, then the code. In Files changed, click the blue comment icon next to a line, or drag across several lines. The suggestion button in a comment lets you write the exact replacement, and the author applies it with Commit suggestion. Tick Viewed on each file you finish. When you are done, click Review changes and choose Comment, Approve or Request changes. Request changes only blocks the merge when a ruleset requires pull requests. A ruleset is a set of rules for a branch, such as \"main only changes through a reviewed PR\", and Day 25 builds one. With that rule on, Request changes blocks until that same reviewer approves.\n\nAsk questions instead of giving orders: \"what happens here if Redis is down?\" Mark polish with a \"Nit:\" prefix, so the author knows it can wait. [Google's code review guide](https://google.github.io/eng-practices/review/) gives a simple rule: approve a change once it clearly improves the code, even if it isn't perfect. Be kind to the person and strict about the code. GitHub never lets you approve your own pull request, so on a team someone else always approves.",
+     "h": "What a reviewer catches that tests miss",
+     "body": "The kitchen taster checks the salt. The head chef notices the card that never says how much stock to use. In code, the checks run the tests the author wrote. A reviewer catches what nobody thought to test, such as a missing error case or a confusing name.\n\nAs the author:\n\n- Keep the PR small. Fifty lines tend to get careful comments; two thousand tend to get a quick \"looks good\".\n- Say why in the description, and how you tested it. The PR template in today's Files section asks both questions.\n- Read your own diff on GitHub before you ask anyone. You will catch the stray debug line (a print you added while hunting a bug) yourself.\n- Answer every comment, even with \"done\", and re-request the review once you have pushed the changes.\n\nThe easy trap is a branch that lives for a week and ends as one huge PR. Reviewers can only skim it, and conflicts pile up while it waits. When a test fails, you can't tell which change broke it. Make one small branch per change, open the PR early (as a draft if it is not ready), and merge within a day or two.\n\n**A small pull request gets a real review. Keep yours small.**\n\nAs the reviewer, read the description first, then the tests, then the code. In Files changed, click the blue comment icon next to a line, or drag across several lines. The suggestion button in a comment lets you write the exact replacement, and the author applies it with Commit suggestion. Tick Viewed on each file you finish. When you are done, click Review changes and choose Comment, Approve or Request changes.\n\nRequest changes only blocks the merge when a ruleset requires pull requests. A ruleset is a set of rules for a branch, such as \"main only changes through a reviewed PR\", and Day 25 builds one. With that rule on, Request changes blocks until that same reviewer approves.\n\nOur lab app, hello-devops, is a tiny web app that greets every visitor and counts the visits. Redis is a small database where it can keep that count. A good comment asks instead of ordering: \"what happens here if Redis is down?\"\n\nMark polish with a \"Nit:\" prefix, so the author knows it can wait. [Google's code review guide](https://google.github.io/eng-practices/review/) gives a simple rule: approve a change once it clearly improves the code, even if it isn't perfect. Be kind to the person and strict about the code. GitHub never lets you approve your own pull request, so on a team someone else always approves. Next, we'll let GitHub pick that someone for each file.",
      "refs": [
       {
        "title": "Reviewing proposed changes in a pull request",
@@ -97,8 +97,8 @@
      ]
     },
     {
-     "h": "CODEOWNERS: the right reviewers, automatically",
-     "body": "On a bigger team, the author has to know who should look at each change. A new teammate who edits `infra/` may not know a platform team exists, and the change merges without the people who know that code. A `CODEOWNERS` file maps paths to the people or teams responsible for them. When a PR changes a file that has an owner, GitHub requests that owner's review automatically, except while the PR is a draft. The rules:\n\n- Put the file in `.github/CODEOWNERS`. GitHub also looks in the root and in `docs/`, and uses the first one it finds.\n- Each line is a pattern, much like in `.gitignore`, followed by owners such as `@username` or `@org/team-name`.\n- The last matching line wins, so put the broad `*` line first and the specific paths below it.\n- Owners need write access to the repository, or their line does nothing.\n- GitHub reads the file from the PR's base branch, so a change to it counts only after it is merged. A PR cannot pick its own reviewers.\n\nOn its own the file only requests reviews. To make an owner's approval required, turn on Require review from Code Owners in a ruleset; Day 25 builds the ruleset for main. An approval from any one of a line's owners is enough. Give the file itself an owner too, with a line for `/.github/CODEOWNERS`, or a PR could change who owns what without the owners seeing it.\n\nCode owners work in public repositories on the Free plan; private ones need a paid plan. In your solo hello-devops every line names you, and you can't approve your own PR, so the file has no effect yet. Add it anyway: GitHub highlights any line with bad syntax when you open the file.",
+     "h": "Sending each change to the people who know that code",
+     "body": "In a big kitchen, every new dessert goes past the pastry chef, and nobody has to remember to ask. In software, a new teammate who edits `infra/`, the folder that describes the servers, may not know a platform team exists, so the change merges without them.\n\nA `CODEOWNERS` file writes the rule down. It maps paths (files and folders in the repository) to the people or teams responsible for them. When a PR changes a file that has an owner, GitHub requests that owner's review automatically, except while the PR is a draft. The rules:\n\n- Put the file in `.github/CODEOWNERS`. GitHub also looks in the root and in `docs/`, and uses the first one it finds.\n- Each line is a pattern, much like in `.gitignore` (the Part 2 file that lists what Git ignores), then owners such as `@username` or `@org/team-name`.\n- The last matching line wins, so put the broad `*` line first and the specific paths below it.\n- Owners need write access (permission to change the repository), or their line does nothing.\n- GitHub reads the file from the PR's base branch (the one it merges into), so a change to it counts only after it is merged. A PR cannot pick its own reviewers.\n\nOn its own the file only requests reviews. To make an owner's approval required, turn on Require review from Code Owners in a ruleset; Day 25 builds the ruleset for main. An approval from any one of a line's owners is enough. Give the file itself an owner too, with a line for `/.github/CODEOWNERS`. Otherwise a PR could change who owns what without the owners seeing it.\n\nIn your solo hello-devops every line names you, and you can't approve your own PR, so the file has no effect yet. Add it anyway: GitHub highlights any line with bad syntax when you open the file.\n\nOwners decide who reads a change. Next: how long may a change wait on its branch?",
      "refs": [
       {
        "title": "About code owners",
@@ -108,8 +108,8 @@
      ]
     },
     {
-     "h": "Trunk-based development and GitFlow",
-     "body": "Your team also has to agree how long branches live and where releases come from. That agreement is the branching strategy, and two styles are common.\n\nIn trunk-based development, everyone merges small branches into one main branch, the trunk, at least once a day. A branch lives for hours or a day or two, and `main` is always in a state you could release. Unfinished work is merged too, but switched off behind a feature flag: a setting that turns code on or off without a new deploy.\n\nGitFlow uses several long-lived branches:\n\n- `main` holds released code only.\n- `develop` collects finished features.\n- `feature/...` branches start from `develop`.\n- `release/...` and `hotfix/...` branches prepare and patch releases.\n\nGitFlow fits software that ships a big version a few times a year, or that must patch several old versions at once. If you deploy every week or more often, it gets in your way. Long-lived branches drift apart, and merging them back is slow and risky. For a web service like hello-devops I would pick trunk-based every time. This course uses [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow), GitHub's own simple version of it: branch, pull request, review, merge.",
+     "h": "How long should a branch live?",
+     "body": "Imagine two ways to keep the recipe book. In one, every cook adds small, tested edits to the same book all day. In the other, next season's menu grows in a separate book for months, then gets copied back in one long afternoon. You can guess which afternoon goes badly.\n\nA team's answer, including where releases come from, is its branching strategy. Two styles are common.\n\nIn trunk-based development, everyone merges small branches into one main branch, the trunk, at least once a day. A branch lives for hours or a day or two, and `main` is always in a state you could release.\n\nUnfinished work is merged too, but switched off behind a feature flag: a setting that turns code on or off without a new deploy. To deploy is to put a new version where users can reach it.\n\nGitFlow uses several long-lived branches:\n\n- `main` holds released code only.\n- `develop` collects finished features.\n- `feature/...` branches start from `develop`.\n- `release/...` and `hotfix/...` branches prepare and patch releases.\n\nGitFlow fits software that ships a big version a few times a year, or that must patch several old versions at once. If you deploy every week or more often, it gets in your way. Long-lived branches drift apart, and merging them back is slow and risky.\n\nFor a web service like hello-devops I would pick trunk-based every time. This course uses [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow), GitHub's own simple version of it: branch, pull request, review, merge.\n\nSmall, frequent merges stay safe only if something tests every one. That something is CI.",
      "refs": [
       {
        "title": "GitHub flow",
@@ -129,8 +129,8 @@
      ]
     },
     {
-     "h": "CI, continuous delivery and continuous deployment",
-     "body": "Continuous integration (CI), which Day 1 sketched, means everyone merges small changes often, and a server builds and tests every change automatically. Without it, people test on their own laptops, and the combined code first meets a test when someone tries to release. With CI you hear about a broken test minutes after you push, while you still remember what you changed. On GitHub, that server is a fresh virtual machine that GitHub starts for the test and deletes afterwards (Day 24). [Martin Fowler's article on continuous integration](https://martinfowler.com/articles/continuousIntegration.html) is the classic description and worth an evening.\n\nCD has two meanings, and people mix them up:\n\n- Continuous delivery: every change that passes is ready to release. A person decides when it goes to production, often with one click.\n- Continuous deployment: every change that passes goes to production on its own. Nobody clicks anything.\n\nThe steps a change goes through form a pipeline. A typical one runs in this order:\n\n1. Build: install dependencies and package the code.\n2. Test: run linters and automated tests.\n3. Publish: build a container image and push it to a registry.\n4. Deploy: release that image to staging (a copy of production for a last check), then to production.\n\nBuild the image once, at the publish step. This rule is called **build once, deploy many**: the very same image, with the same digest from Day 18, moves from staging to production. If you rebuilt it for production, the build could pull newer packages, and what you ship would no longer be what you tested. Each step you automate here also moves the DORA metrics from Day 1, such as how often you deploy and how long a change takes to reach users.",
+     "h": "Integration, delivery, deployment: three words that sound alike",
+     "body": "In the kitchen, CI is the taster who tries each dish the moment it is ready. Continuous delivery keeps every tasted dish plated until the head chef sends it out. Continuous deployment sends it straight to the table.\n\nContinuous integration (CI), which Day 1 sketched, means everyone merges small changes often, and a server builds and tests every change automatically. A server is a computer that runs programs for others. Without CI, people test on their own laptops, and the combined code first meets a test when someone tries to release. With CI you hear about a broken test minutes after you push, while you still remember what you changed.\n\nOn GitHub, it is a fresh virtual machine (a computer simulated in software), started for the test and deleted afterwards (Day 24). [Martin Fowler's article on continuous integration](https://martinfowler.com/articles/continuousIntegration.html) is the classic description and worth an evening.\n\nCD has two meanings, often mixed up. Both end in production, the real system your users use:\n\n- Continuous delivery: every change that passes is ready to release. A person decides when it goes to production, often with one click.\n- Continuous deployment: every change that passes goes to production on its own. Nobody clicks anything.\n\nThe steps a change goes through form a pipeline. A typical one runs in this order:\n\n1. Build: install dependencies and package the code.\n2. Test: run linters and automated tests.\n3. Publish: build a container image and push it to a registry.\n4. Deploy: release that image to staging (a copy of production for a last check), then to production.\n\nDependencies are other people's code your app needs. Linters are programs that check code for style and common mistakes.\n\nAn image, from Part 5, is your app packed with everything it needs to run, and a registry is an online store for images.\n\nBuild the image once, at the publish step. This rule is called **build once, deploy many**: the very same image, with the same digest from Day 18, moves from staging to production. A digest is a fingerprint of the image's exact contents. If you rebuilt it for production, the build could pull newer packages, and what you ship would no longer be what you tested.\n\nAutomating these steps also moves the delivery numbers from Day 1 (the DORA metrics), such as how often you deploy and how long a change takes to reach users. Next: how the new version replaces the old one while users keep clicking.",
      "refs": [
       {
        "title": "About continuous integration",
@@ -150,8 +150,8 @@
      ]
     },
     {
-     "h": "Deployment strategies: how a new version reaches users",
-     "body": "Deploying means swapping the old version for the new one while users keep working. The naive way stops the old version, then starts the new one. Users get errors during the gap, and if the new version is broken, every user hits it at once. Four common ways avoid one or both problems:\n\n- Rolling: replace servers or containers a few at a time. Kubernetes does this by default (Day 40).\n- Blue/green: run the new version (green) next to the old one (blue), then switch all traffic at once.\n- Canary: send a small share of traffic, say 5%, to the new version, then grow it step by step.\n- Feature flags: ship new code switched off, then turn it on for some users with a setting.\n\nEach one has a cost. Rolling needs no extra servers, but for a few minutes old and new versions serve users side by side, so both must work with the same database. Blue/green gives you an instant rollback and costs double the capacity during the switch. A canary limits the damage of a bad release, as long as you have good metrics to judge it (Part 12 builds them). Feature flags need no deploy at all. You pay for them later, with `if` branches in the code that someone has to clean up.\n\nOn Kubernetes, [Argo Rollouts](https://github.com/argoproj/argo-rollouts) automates blue/green and canary releases. For hello-devops, the rolling update Kubernetes gives you for free is plenty.",
+     "h": "Swapping versions while people keep using the app",
+     "body": "The naive deploy is like changing a menu mid-dinner by closing the doors, swapping every recipe and opening again. It stops the old version, then starts the new one. Users get errors during the gap, and if the new version is broken, every user hits it at once.\n\nFirst, three words. A container is one running copy of an image. Kubernetes, which Part 10 teaches, runs containers across many servers and replaces them for you. Traffic means the requests users send. Four common ways avoid one or both problems:\n\n- Rolling: replace servers or containers a few at a time. Kubernetes does this by default (Day 40).\n- Blue/green: run the new version (green) next to the old one (blue), then switch all traffic at once.\n- Canary: send a small share of traffic, say 5%, to the new version, then grow it step by step.\n- Feature flags: ship new code switched off, then turn it on for some users with a setting.\n\nA canary, then, is the new soup offered to a few tables first.\n\nEach one has a cost. Rolling needs no extra servers, but for a few minutes old and new versions serve users side by side, so both must work with the same database. Blue/green gives you an instant rollback (a quick return to the old version) and costs double the capacity during the switch. A canary limits the damage of a bad release, as long as you have good metrics to judge it (Part 12 builds them). Metrics are numbers measured over time, such as errors per minute. Feature flags need no deploy at all. You pay for them later, with `if` branches in the code that someone has to clean up.\n\nOn Kubernetes, [Argo Rollouts](https://github.com/argoproj/argo-rollouts), an add-on tool, automates blue/green and canary releases. For hello-devops, the rolling update Kubernetes gives you for free is plenty.\n\nNext, we'll give each new version a name everyone agrees on.",
      "refs": [
       {
        "title": "Argo Rollouts: blue/green and canary for Kubernetes",
@@ -166,8 +166,8 @@
      ]
     },
     {
-     "h": "Semantic versions and release tags",
-     "body": "A version number tells users how much changed. [Semantic versioning](https://github.com/semver/semver/blob/master/semver.md) uses three numbers, MAJOR.MINOR.PATCH:\n\n- MAJOR goes up when you break compatibility, as in 2.0.0.\n- MINOR goes up when you add a feature that stays compatible, as in 1.3.0.\n- PATCH goes up for a compatible bug fix, as in 1.2.1.\n\nA pre-release adds a label after a dash, as in `1.3.0-rc.1`, and counts as older than `1.3.0`.\n\nDay 9 covered the mechanics: an annotated tag such as `git tag -a v1.2.0 -m \"...\"` is a fixed name for one commit, and `git push origin v1.2.0` sends it, because a plain push does not. In this course a tag is what starts a release. On Day 27, pushing the tag `v1.0.0` starts a workflow that builds and publishes the image `1.0.0`. The git tag, the image tag and the app's `version` field then all match. Tag `main` after the PR is merged, never a feature branch, so the release points at a commit CI already tested on main.",
+     "h": "Version numbers that say how much changed",
+     "body": "A reprinted menu marked \"second printing\" tells regulars that little changed. A version number does that job for software. [Semantic versioning](https://github.com/semver/semver/blob/master/semver.md) uses three numbers, MAJOR.MINOR.PATCH:\n\n- MAJOR goes up when you break compatibility, as in 2.0.0.\n- MINOR goes up when you add a feature that stays compatible, as in 1.3.0.\n- PATCH goes up for a compatible bug fix, as in 1.2.1.\n\nCompatible means code that worked with the old version still works with the new one. A pre-release adds a label after a dash, as in `1.3.0-rc.1`, and counts as older than `1.3.0`.\n\nA tag, from Day 9, is a fixed name for one commit. An annotated tag such as `git tag -a v1.2.0 -m \"...\"` also stores a message. The command `git push origin v1.2.0` sends it, because a plain push does not.\n\nIn this course a tag is what starts a release. On Day 27, pushing the tag `v1.0.0` starts a workflow (a list of automated steps that GitHub runs) that builds and publishes the image `1.0.0`. The git tag, the image tag and the app's `version` field then all match. Tag `main` after the PR is merged, never a feature branch, so the release points at a commit CI already tested on main.\n\nOne gap remains. Every green tick we talked about assumes something runs the checks, and in your repository nothing does yet. A pull request alone is a chef's desk with no taster.",
      "refs": [
       {
        "title": "Semantic Versioning 2.0.0 specification",
@@ -182,39 +182,38 @@
      ]
     }
    ],
-   "analogy": "A pull request works like a suggested edit in a shared document. You write on your own copy, a colleague reads the suggestion and comments in the margin, and the owner accepts it into the main text. CI is a spell checker that runs on every suggestion before anyone reads it, and CODEOWNERS decides whose desk the suggestion lands on. A shared document checks each suggestion against the text as it is now. GitHub checks a PR only when the PR changes, so two suggestions that were each fine can still clash once both are accepted.",
    "diagram": "<svg viewBox=\"0 0 560 210\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A change moves from a branch to a pull request with CI checks and review, then merges to main and gets a version tag\"><rect x=\"8\" y=\"24\" width=\"88\" height=\"44\" rx=\"10\" class=\"bx\"/><text x=\"52\" y=\"51\" class=\"t\" font-size=\"13\" text-anchor=\"middle\">Branch</text><line x1=\"96\" y1=\"46\" x2=\"120\" y2=\"46\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"124\" y=\"24\" width=\"128\" height=\"44\" rx=\"10\" class=\"bxo\"/><text x=\"188\" y=\"51\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Pull request</text><line x1=\"252\" y1=\"46\" x2=\"276\" y2=\"46\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"280\" y=\"24\" width=\"136\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"348\" y=\"51\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Merge to main</text><line x1=\"416\" y1=\"46\" x2=\"440\" y2=\"46\" class=\"ln\" marker-end=\"url(#ar)\"/><rect x=\"444\" y=\"24\" width=\"108\" height=\"44\" rx=\"10\" class=\"bxg\"/><text x=\"498\" y=\"51\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Tag v1.2.0</text><text x=\"52\" y=\"88\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">short-lived</text><text x=\"348\" y=\"88\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">main stays green</text><text x=\"498\" y=\"88\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">a fixed release</text><rect x=\"96\" y=\"128\" width=\"112\" height=\"44\" rx=\"10\" class=\"bxt\"/><text x=\"152\" y=\"155\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">CI checks</text><rect x=\"228\" y=\"128\" width=\"120\" height=\"44\" rx=\"10\" class=\"bxp\"/><text x=\"288\" y=\"155\" class=\"tk\" font-size=\"13\" text-anchor=\"middle\">Code review</text><line x1=\"152\" y1=\"128\" x2=\"170\" y2=\"72\" class=\"lnd\" marker-end=\"url(#ar)\"/><line x1=\"288\" y1=\"128\" x2=\"220\" y2=\"72\" class=\"lnd\" marker-end=\"url(#ar)\"/><text x=\"152\" y=\"192\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">runs on every push</text><text x=\"288\" y=\"192\" class=\"ts\" font-size=\"11\" text-anchor=\"middle\">a teammate reads it</text></svg>",
    "diagram_caption": "One change: a short branch, a pull request with checks and review, a merge, then a tag for the release.",
    "worked": {
     "title": "Two green pull requests, one broken main",
     "steps": [
      {
-      "say": "Make a scratch clone of hello-devops, so your real repo stays clean, and turn on your venv from Day 2. Play teammate A: on a branch, rename `count_visit` to `record_visit` in `app.py` (the function and its one caller), then commit and test.",
+      "say": "Now the two cooks from the opening, in real code. Make a scratch clone of hello-devops (a full copy in a new folder), so your real repository stays clean. Turn on the virtual environment from Day 2, the project's private set of Python packages. Then play teammate A, the cook who moves the stock. On a branch, rename `count_visit` to `record_visit` in `app.py` (the function and its one caller), then commit and run the tests.",
       "code": "$ git clone -q ~/code/hello-devops ~/code/pr-demo && cd ~/code/pr-demo\n$ source ~/code/hello-devops/.venv/bin/activate\n$ git switch -c rename-visit\nSwitched to a new branch 'rename-visit'\n$ git commit -qam \"Rename count_visit to record_visit\" && pytest -q | tail -1\n3 passed in 0.17s",
       "lang": "console"
      },
      {
-      "say": "Now play teammate B, who starts from the same main with `git switch main && git switch -c hello-name`. B adds an endpoint and a test. B uses the old name, which was correct that morning.",
+      "say": "Now play teammate B, who starts from the same main with `git switch main && git switch -c hello-name`. B adds an endpoint, a new web address the app answers, and a test for it. B uses the old name, which was correct that morning. This is the new soup card that still says blue pot.",
       "code": "# app.py, just above: if __name__ == \"__main__\":\n@app.get(\"/hello/<name>\")\ndef hello(name):\n    REQUESTS.labels(path=\"/hello\").inc()\n    return jsonify(message=f\"Hello, {name}!\", visits=count_visit())\n\n\n# test_app.py, at the end\ndef test_hello_by_name():\n    client = app.test_client()\n    response = client.get(\"/hello/Ana\")\n    assert response.status_code == 200\n    assert response.get_json()[\"message\"] == \"Hello, Ana!\"",
       "lang": "python"
      },
      {
-      "say": "Commit and test B's branch: green as well. Each PR's Files changed tab would show the three-dot diff, only what that branch changed since it left main. Neither diff touches the other's lines.",
+      "say": "Commit and test B's branch: green as well. Each PR's Files changed tab would show the three-dot diff, only what that branch changed since it left main. Neither diff touches the other's lines, so a reviewer of either PR would see nothing wrong.",
       "code": "$ git commit -qam \"Add /hello/<name>\" && pytest -q | tail -1\n4 passed in 0.19s\n$ git diff --stat main...rename-visit\n app.py | 4 ++--\n 1 file changed, 2 insertions(+), 2 deletions(-)\n$ git diff --stat main...hello-name\n app.py      | 6 ++++++\n test_app.py | 7 +++++++\n 2 files changed, 13 insertions(+)",
       "lang": "console"
      },
      {
-      "say": "Merge both the way the Merge pull request button does, with `--no-ff`. Git reports no conflict, because the branches changed different lines.",
+      "say": "Merge both the way the Merge pull request button does, with `--no-ff`, which always records a merge commit. Git reports no conflict, because the branches changed different lines.",
       "code": "$ git switch main\n$ git merge -q --no-ff -m \"Merge pull request #12 from rename-visit\" rename-visit\n$ git merge --no-ff -m \"Merge pull request #13 from hello-name\" hello-name\nAuto-merging app.py\nMerge made by the 'ort' strategy.\n app.py      | 6 ++++++\n test_app.py | 7 +++++++\n 2 files changed, 13 insertions(+)",
       "lang": "console"
      },
      {
-      "say": "Run the tests on main. The new endpoint calls a function that no longer exists. This is a semantic conflict: the text merged cleanly and the meaning did not. `git grep` finds the stale call.",
+      "say": "Run the tests on main. The new endpoint calls a function that no longer exists, so the app answers with an error (status 500) instead of a greeting. This is a semantic conflict: the text merged cleanly, and the meaning did not. `git grep` searches the files and finds the stale call.",
       "code": "$ pytest -q 2>&1 | grep -E 'NameError|FAILED|failed'\nNameError: name 'count_visit' is not defined\nFAILED test_app.py::test_hello_by_name - assert 500 == 200\n1 failed, 3 passed in 0.19s\n$ git grep -n count_visit\napp.py:68:    return jsonify(message=f\"Hello, {name}!\", visits=count_visit())",
       "lang": "console"
      },
      {
-      "say": "On a shared main you undo with a new commit, as on Day 8. A merge commit has two parents, so `-m 1` tells revert to keep the first one, main's side. The Revert button on a merged PR does the same thing, as a new PR.",
+      "say": "On a shared main you undo with a new commit, as on Day 8, so nobody else's copy of the history changes under them. A merge commit has two parents, so `-m 1` tells revert to keep the first one, main's side. The Revert button on a merged PR does the same thing, as a new PR.",
       "code": "$ git revert -m 1 --no-edit HEAD\n[main 45bf9f5] Revert \"Merge pull request #13 from hello-name\"\n Date: Sat Nov 7 17:33:58 2026 +0000\n 2 files changed, 13 deletions(-)\n$ pytest -q | tail -1\n3 passed in 0.21s",
       "lang": "console"
      },
@@ -303,8 +302,6 @@
      "what": "List pull requests that were merged."
     }
    ],
-   "mistake": "Don't let a branch live for days and end as one huge pull request. Reviewers can only skim it, and conflicts pile up while it waits. When a test fails, you can't tell which change broke it. Make one small branch per change, open the PR early (as a draft if it is not ready), and merge within a day or two.",
-   "real_world": "Every change to the checkout service at PayLoop, a made-up payments company, goes through a pull request. CODEOWNERS sends anything under `payments/` to the payments team, and the merge button turns on only after one of them approves and CI is green. Merges to `main` deploy to staging on their own. The same image reaches production when an engineer clicks approve, and that human click is why this counts as continuous delivery.",
    "task": {
     "title": "Your first pull request with gh, with a template and code owners",
     "steps": [
@@ -313,7 +310,7 @@
      "Push the branch and open a draft pull request with `gh pr create --draft --fill`.",
      "Open the PR in the browser. Review it as if a teammate wrote it: mark each file Viewed, leave one line comment, and leave one suggested change.",
      "Apply your suggestion with Commit suggestion, then run `git pull` on your laptop so your branch has that commit too.",
-     "Mark the PR ready with `gh pr ready`, then merge it with squash and delete the branch, using `gh pr merge`.",
+     "Mark the PR ready with `gh pr ready`. Then merge it as one squashed commit and delete the branch, using `gh pr merge`.",
      "Update your local `main`. Open `.github/CODEOWNERS` on GitHub and check that no line is flagged as an error.",
      "Create the annotated tag `v0.1.0` on main and push it.",
      "Start a second branch, change one line, and push it. On the repository page, click Compare & pull request: the description box now starts from your template. Close that PR with `gh pr close` if you don't need it."
@@ -326,16 +323,16 @@
     "done_when": "You are done when `gh pr list --state merged` shows your PR, `git ls-remote --tags origin` lists `v0.1.0`, and GitHub shows no errors in your CODEOWNERS file."
    },
    "explain_back": {
-    "prompt": "A new teammate keeps mixing up continuous integration, continuous delivery and continuous deployment. Set them straight in 3 to 4 sentences, and say where a human decides.",
-    "answer": "Continuous integration means we all merge small changes often, and a server builds and tests each one, so we hear about a break within minutes. Continuous delivery carries every passing change through the rest of the pipeline, so it is packaged and ready to release, and a person decides when it goes to production. Continuous deployment drops that last human step, and every passing change goes live on its own. In both kinds of CD, the artifact is built once, and that same artifact moves through each stage."
+    "prompt": "A new teammate keeps mixing up continuous integration, continuous delivery and continuous deployment. Set them straight in 3 to 4 sentences, and say where a person decides.",
+    "answer": "Continuous integration means we all merge small changes often, and a server builds and tests each one, so we hear about a break within minutes. Continuous delivery carries every passing change through the rest of the pipeline, so it is packaged and ready to release, and a person decides when it goes to production. Continuous deployment drops that last human step, and every passing change goes live on its own. In both kinds of CD, the package is built once, and that same package moves through each stage."
    },
    "recap": [
-    "A pull request puts the diff, the review and the CI checks on one page; open it early as a draft.",
-    "CI tests the PR merged with main, and only reruns when the PR changes, so update stale branches before merging.",
-    "Good reviews start with small PRs and a clear why; reviewers ask questions and mark polish as \"Nit:\".",
-    "CODEOWNERS requests the right reviewers automatically; the last matching line wins.",
+    "A pull request puts the change, the review and the automatic checks on one page; open it early as a draft.",
+    "CI tests the PR merged with main, and reruns only when the PR changes, so update stale branches before merging.",
+    "Small PRs get real reviews; CODEOWNERS sends each one to the right people, and the last matching line wins.",
     "Trunk-based development keeps main releasable with small daily merges; GitFlow suits rare, big releases.",
-    "CI tests every change, continuous delivery keeps it ready, continuous deployment ships it; build once, deploy many, and tag releases with semantic versions."
+    "CI tests every change, continuous delivery keeps it ready, continuous deployment ships it; build once, deploy many, and tag releases with semantic versions.",
+    "The limit: a pull request tests nothing by itself, so the green tick means little until a workflow runs the checks (Day 24)."
    ],
    "check": [
     {
@@ -347,7 +344,7 @@
       "Blue/green deployment"
      ],
      "answer": 1,
-     "why": "Every change is ready to ship and a person picks the moment. That is continuous delivery."
+     "why": "Every change is ready to ship, and a person picks the moment. That is continuous delivery."
     },
     {
      "q": "You fix a bug in version 2.4.1, and nobody has to change how they call your API. What is the next version?",
@@ -358,7 +355,7 @@
       "2.4.1-fix"
      ],
      "answer": 2,
-     "why": "A compatible bug fix raises only the PATCH number."
+     "why": "A bug fix that keeps everything compatible raises only the PATCH number."
     },
     {
      "q": "A CODEOWNERS file has `* @ana` on the first line and `/infra/ @platform-team` below it. A PR changes only `infra/main.tf`. Whose review does GitHub request?",
@@ -383,12 +380,12 @@
     },
     {
      "q": "How do you make code reviews faster and more useful?",
-     "a": "I keep pull requests small and focused, and the description says why the change exists and how I tested it. I read my own diff before I ask anyone, and I open a draft early when I want feedback on the approach. As a reviewer I start with the description and the tests, ask questions instead of giving orders, and label polish as \"Nit:\" so it does not block. CODEOWNERS routes each PR to the people who know that code, and CI handles style, so humans spend their time on design and behaviour."
+     "a": "I keep pull requests small and focused, and the description says why the change exists and how I tested it. I read my own diff before I ask anyone, and I open a draft early when I want feedback on the approach. As a reviewer I start with the description and the tests, ask questions instead of giving orders, and label polish as \"Nit:\" so it does not block. CODEOWNERS sends each PR to the people who know that code, and CI handles style, so people spend their review time on design and behaviour."
     }
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Today's worked example showed the problem: two pull requests that each pass CI, merge without a conflict, and break main together. Git works on lines, not on what the code means, so only a test run on the real combination can catch it. GitHub gives you two tools against it.\n\n- Require branches to be up to date before merging. This is a ruleset setting (Day 25). PR B must take in the newest main and pass its checks again before it can merge. It is simple and safe, but on a busy repository people keep updating their branches and rerunning CI.\n- A merge queue. You press merge, and GitHub puts your PR in a queue. It builds a temporary branch with main plus the PRs ahead of yours, runs the required checks there, and merges only when they pass. Workflows must also listen to the `merge_group` event, or their required checks never report for the queue. Merge queues are available for repositories owned by an organization, so you will meet them at work rather than in your own account.\n\nFor a team of five, the up-to-date rule is usually enough. A merge queue pays off when many PRs land every hour. See [Managing a merge queue](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue).\n\nWhile you are in the merge settings, pick one merge method for the repository:\n\n- Create a merge commit: keeps every commit from the branch and adds a merge commit, like the `--no-ff` merges in the worked example.\n- Squash and merge: turns all the branch's commits into one new commit on `main`.\n- Rebase and merge: replays each commit on top of `main`, with no merge commit.\n\nMany trunk-based teams allow only squash. One PR becomes one commit on `main`, so `git log` stays readable and `git revert` undoes a whole PR in one step. The small commits are still visible on the PR page. Two side effects are worth knowing. After a squash merge, `git branch -d` on your laptop says the branch is not fully merged, because main got one new commit instead of yours; `git branch -D` is safe then. And Rebase and merge creates new commits on GitHub's side, so commits you signed on Day 9 lose their Verified badge. See [About merge methods on GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github)."
+    "body": "The worked example showed the problem: two pull requests that each pass CI, merge without a conflict, and break main together. Git works on lines of text. It does not know what the code means, so only a test run on the real combination can catch it. Back in the kitchen, someone has to cook the new soup in today's kitchen, with today's pots. GitHub gives you two tools for that.\n\n- Require branches to be up to date before merging. This is a ruleset setting (Day 25). PR B must take in the newest main and pass its checks again before it can merge. It is simple and safe, but on a busy repository people keep updating their branches and rerunning CI.\n- A merge queue. You press merge, and GitHub puts your PR in a queue. It builds a temporary branch with main plus the PRs ahead of yours, runs the required checks there, and merges only when they pass. Workflows must also listen to the `merge_group` event, or their required checks never report for the queue. Merge queues are available for repositories owned by an organization, so you will meet them at work rather than in your own account.\n\nFor a team of five, the up-to-date rule is usually enough. A merge queue pays off when many PRs land every hour. See [Managing a merge queue](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue).\n\nWhile you are in the merge settings, pick one merge method for the repository:\n\n- Create a merge commit: keeps every commit from the branch and adds a merge commit, like the `--no-ff` merges in the worked example.\n- Squash and merge: turns all the branch's commits into one new commit on `main`.\n- Rebase and merge: replays each commit on top of `main`, with no merge commit.\n\nMany trunk-based teams allow only squash. One PR becomes one commit on `main`, so `git log` stays readable and `git revert` undoes a whole PR in one step. The small commits are still visible on the PR page.\n\nTwo side effects are worth knowing. After a squash merge, `git branch -d` on your laptop says the branch is not fully merged, because main got one new commit instead of yours; `git branch -D` is safe then. And Rebase and merge creates new commits on GitHub's side, so commits you signed on Day 9 lose their Verified badge. See [About merge methods on GitHub](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github).\n\nOne plan detail from the CODEOWNERS section: code owners work in public repositories on the Free plan, and private ones need a paid plan."
    },
    "sources": [
     {
@@ -407,7 +404,14 @@
      "title": "Semantic Versioning 2.0.0 specification",
      "url": "https://github.com/semver/semver/blob/master/semver.md"
     }
-   ]
+   ],
+   "opening": "One Friday morning, two cooks in a restaurant kitchen improve the house recipe book. The first moves the spare stock into a new green pot and fixes every card that named the old blue pot. The second, working from the breakfast cards, writes a new soup that takes a ladle from the blue pot. At noon, the new soup reaches for an empty pot.\n\nNobody was careless. Each cook checked their own work, and the two changes never touched the same card. That is why the trap is easy to fall into: the trouble lives in the combination, and nobody tasted the combination.\n\nLast time, we packed our app into an image ready to ship. That left a question: how does a change reach it safely when other people change the same code? In this lesson, we'll follow one change through a pull request (GitHub's page for proposing a change), a review and a merge. Then we'll meet the ideas this part automates: testing, shipping and naming each change. Before we start, make a guess, and keep it in mind.",
+   "aside": {
+    "title": "What exactly does the Files changed tab show?",
+    "body": "On the PR page, base is the branch you merge into, and compare is yours. The Files changed tab shows a three-dot diff, the same as `git diff main...your-branch` on your laptop. It lists only what your branch changed since it left main. Git counts from the merge base you met on Day 9: the newest commit that both main and your branch contain. Anything other people added to main after that point stays out of the view. That keeps the review about your work, and it is why two PRs can each look harmless alone.",
+    "after": 0
+   },
+   "closing": "We started with two cooks whose changes were each fine and who broke lunch together. You now have the pieces that stop that: small branches, pull requests, reviewers chosen by CODEOWNERS, and the habit of testing what two changes do together. The worked example replayed that failure in real code.\n\nOpen your hello-devops repository on GitHub. Check that your first PR shows as merged, that `v0.1.0` appears under Tags, and that CODEOWNERS shows no errors.\n\nNext, we'll write our first workflow in GitHub Actions, GitHub's built-in way to run commands for you. It answers the question this lesson left open: who actually tastes the dish?"
   },
   {
    "id": "d24",

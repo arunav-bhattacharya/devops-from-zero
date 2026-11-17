@@ -407,6 +407,7 @@ function viewLesson(id) {
   }
   const toc = [];
   let h = lessonHead(l);
+  if (l.opening) h += `<section class="opening prose" id="opening">${l.opening}</section>`;
   if (l.guess) {
     QUIZ["g-" + id] = { qs: [l.guess] };
     const st = QS["g-" + id] || (QS["g-" + id] = { ans: [null], shown: false });
@@ -421,6 +422,7 @@ function viewLesson(id) {
     for (const v of (l.videos || []).filter((x) => x.after === si)) b += videoHTML(v);
     if (si === 0 && l.analogy) b += `<aside class="callout analogy"><div class="ch">${ICON.bulb}Analogy</div><div class="prose">${l.analogy}</div></aside>`;
     if (si === Math.min(1, l.sections.length - 1) && l.realWorld) b += `<aside class="callout world"><div class="ch">${ICON.team}In real teams</div><div class="prose">${l.realWorld}</div></aside>`;
+    if (l.aside && l.aside.after === si) b += `<aside class="callout aside"><div class="ch">${ICON.bulb}${l.aside.title}</div><div class="prose">${l.aside.html}</div></aside>`;
     if (si === l.sections.length - 1 && l.mistake) b += `<aside class="callout mistake"><div class="ch">${ICON.warn}Common mistake</div><div class="prose">${l.mistake}</div></aside>`;
     if (s.refs.length) b += `<div class="refs"><span class="label">Further learning</span><ul>${s.refs.map((r) => `<li><span class="kind ${esc(r.kind)}">${r.kind === "watch" ? ICON.play + " " : ""}${esc(r.kind)}</span><span><a href="${esc(r.url)}" target="_blank" rel="noopener">${r.title}</a><span class="host">${esc(host(r.url))}</span></span></li>`).join("")}</ul></div>`;
     h += b + "</section>";
@@ -432,6 +434,7 @@ function viewLesson(id) {
   if (l.code.length) { toc.push(["files", "Files"]); h += `<section class="block" id="files"><div class="block-h"><span class="num">{ }</span><h2>Files for this lesson</h2></div>${l.code.map(codeBox).join("")}</section>`; }
   if (l.commands.length) { toc.push(["cmds", "Commands"]); h += `<section class="block" id="cmds"><div class="block-h"><span class="num">$_</span><h2>Commands you used</h2></div>${cmdRows(l.commands)}</section>`; }
   if (l.recap.length) h += `<section class="recap"><span class="label">Remember</span><ul>${l.recap.map((r) => `<li>${r}</li>`).join("")}</ul></section>`;
+  if (l.closing) h += `<section class="closing prose" id="closing">${l.closing}</section>`;
   toc.push(["task", "Hands-on"]);
   const tdone = !!(P.tasks[id] && P.tasks[id].d);
   h += `<section class="task" id="task"><span class="label">Hands-on · your turn</span><h3>${l.task.title}</h3><ol>${l.task.steps.map((s) => `<li>${s}</li>`).join("")}</ol>
@@ -748,6 +751,7 @@ function sxIndex() {
     if (!l || l.pending) continue;
     const day = `Day ${pad(l.day)}`, where = `${day} · ${strip(l.title)}`;
     out.push({ k: "Lesson", t: `${day}: ${strip(l.title)}`, x: strip(l.goal), go: id, w: 10 });
+    if (l.opening) out.push({ k: "Section", t: "Opening", sub: where, x: strip(l.opening), go: id, to: "opening", w: 5 });
     l.sections.forEach((s, i) => { out.push({ k: "Section", t: strip(s.h), sub: where, x: strip(s.html), go: id, to: "s" + (i + 1), w: 6 }); for (const r of s.refs || []) link(r, where); });
     for (const t of l.terms || []) out.push({ k: "Term", t: strip(t.term), sub: where, x: strip(t.plain), go: id, to: "words", w: 8 });
     for (const c of l.commands || []) out.push({ k: "Command", t: c.cmd, sub: where, x: strip(c.what), go: id, to: "cmds", w: 7, mono: true });
