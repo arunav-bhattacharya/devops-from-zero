@@ -182,7 +182,7 @@ class D06Knock(VoiceScene):
                   Create(logbox), FadeIn(logl), run_time=1.6)
 
         def logline(i, text, color=WHITE):
-            return M(text, 22, color).move_to(LOG_TL + DOWN * 0.44 * i, aligned_edge=UL)
+            return M(text, 22, color).move_to(LOG_TL + DOWN * 0.4 * i, aligned_edge=UL)
 
         jobs = VGroup(*[logline(i, f"worker: processing job {i + 1}") for i in range(3)])
         self.play(LaggedStart(*[FadeIn(j, shift=UP * 0.05) for j in jobs], lag_ratio=0.8), run_time=2.4)
@@ -205,8 +205,8 @@ class D06Knock(VoiceScene):
         self.beat("worker.sh catches SIGTERM with a shell command called trap. It's on job three, and you knock with a plain kill. What does the log say next?",
                   Indicate(jobs[2], color=WHITE), Indicate(kn[0], color=TEAL_M), run_time=1.8)
         self.countdown(RIGHT * 2.9 + DOWN * 2.95)
-        t1 = fit(logline(3, "worker: got SIGTERM, finishing job 3, then exiting", TEAL_M), 6.1)
-        t2 = logline(4, "worker: stopped cleanly after job 3", TEAL_M)
+        t1 = VGroup(logline(3, "worker: got SIGTERM, finishing job 3,", TEAL_M), logline(4, "  then exiting", TEAL_M).shift(RIGHT * 0.5))
+        t2 = logline(5, "worker: stopped cleanly after job 3", TEAL_M)
         ex0 = M("exit code 0", 26, GREEN_M).next_to(logbox, DOWN, buff=0.15).align_to(logbox, LEFT)
         self.steps("It finishes job three, says so, and leaves. Stopped cleanly after job three. Exit code zero, a clean ending.",
                    (0.6, FadeIn(t1, shift=UP * 0.05)), (1.4, Wait(1.4)), (0.6, FadeIn(t2, shift=UP * 0.05)), (0.5, FadeIn(ex0)))
@@ -224,7 +224,14 @@ class D06Knock(VoiceScene):
 
         # guardrail
         self.play(FadeOut(VGroup(cd, t3, cut, ex9, jobs, logbox, logl)), wk.animate.set_opacity(1), run_time=0.6)
-        tl = NumberLine(x_range=[0, 12, 2], length=6.6, include_numbers=True, font_size=24, color=GREY_B).move_to(RIGHT * 2.9 + UP * 0.6)
+        x0, L_ = 2.9 - 3.3, 6.6
+        def n2p(v):
+            return np.array([x0 + L_ * v / 12, 0.6, 0])
+        axis = Line(n2p(0), n2p(12), color=GREY_B, stroke_width=3)
+        ticks = VGroup(*[Line(n2p(v) + DOWN * 0.1, n2p(v) + UP * 0.1, color=GREY_B, stroke_width=3) for v in range(0, 13, 2)])
+        nums = VGroup(*[T(str(v), 24, GREY_B).next_to(n2p(v), DOWN, buff=0.22) for v in range(0, 13, 2)])
+        tl = VGroup(axis, ticks, nums)
+        tl.n2p = n2p
         tll = T("docker stop", 28, BLUE_M).next_to(tl, UP, buff=1.0).align_to(tl, LEFT)
         k0 = VGroup(Line(DOWN * 0.25, UP * 0.25, color=TEAL_M, stroke_width=4), M("SIGTERM", 24, TEAL_M)).arrange(UP, buff=0.1)
         k0.move_to(tl.n2p(0), aligned_edge=DOWN).shift(UP * 0.05)
@@ -247,7 +254,7 @@ class D06Knock(VoiceScene):
                    T("Name the real cause before you reach for the shortcut.", 30, YELLOW_M)).arrange(DOWN, buff=0.35).move_to(UP * 0.3)
         fit(m, 12.6)
         self.beat("So, back to Friday. The script was missing one execute bit. The worker deserved a polite knock, and a few seconds to finish. Neither needed the master key or security. The moral: name the real cause before you reach for the shortcut.",
-                  FadeIn(m[0], shift=UP * 0.1), Succession(Wait(3.6), FadeIn(m[1], shift=UP * 0.1)), Succession(Wait(7.0), FadeIn(m[2], shift=UP * 0.1)), run_time=9.6)
+                  Succession(FadeIn(m[0], shift=UP * 0.1), Wait(2.6), FadeIn(m[1], shift=UP * 0.1), Wait(2.4), FadeIn(m[2], shift=UP * 0.1)), run_time=9.6)
         self.play(FadeOut(m), run_time=0.5)
         cq = VGroup(T("A file shows", 30), M("-rw-r-----", 28), T("and belongs to", 30), M("app:ops", 28)).arrange(RIGHT, buff=0.2).move_to(UP * 1.9)
         cq2 = T("Dana is in the group ops, but is not the owner. What can Dana do?", 30).next_to(cq, DOWN, buff=0.25)

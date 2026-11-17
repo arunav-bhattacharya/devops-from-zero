@@ -1,5 +1,7 @@
 {
  "d15": [{"slug": "d15-helper-report", "title": "Done or failed? How a script reports back on stdout, stderr and its exit code", "after": 5, "file": "p4/d15_helper_report.py", "scene": "D15HelperReport", "poster_at": 290.0, "replaces": "d15-script-io"}],
  "d16": [{"slug": "d16-silent-phone", "title": "The silent phone: timeouts, polite retries, and testing with a stand-in", "after": 5, "file": "p4/d16_silent_phone.py", "scene": "D16SilentPhone", "poster_at": 300.0, "replaces": "d16-fake-far-end"}],
- "d18": [{"slug": "d18-soup-jar", "title": "The soup jar under the sticker: layers, copy-on-write and why a delete never shrinks an image", "after": 3, "file": "p5/d18_soup_jar.py", "scene": "D18SoupJar", "poster_at": 262.0, "replaces": "d18-layers"}]
+ "d17": [{"slug": "d17-lunchbox", "title": "A lunchbox, not a tiny computer: what really runs when a container runs", "after": 3, "file": "p5/d17_lunchbox.py", "scene": "D17Lunchbox", "poster_at": 255.0, "replaces": "d17-container"}],
+ "d18": [{"slug": "d18-soup-jar", "title": "The soup jar under the sticker: layers, copy-on-write and why a delete never shrinks an image", "after": 3, "file": "p5/d18_soup_jar.py", "scene": "D18SoupJar", "poster_at": 262.0, "replaces": "d18-layers"}],
+ "d19": [{"slug": "d19-napkin-last", "title": "Put the napkin last: the build cache, step order, and how a container stops", "after": 4, "file": "p5/d19_napkin_last.py", "scene": "D19NapkinLast", "poster_at": 258.0, "replaces": "d19-pid1"}]
 }

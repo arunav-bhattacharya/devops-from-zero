@@ -42,5 +42,16 @@
    "poster_at": 232.0,
    "replaces": "d04-grep-find"
   }
+ ],
+ "d05": [
+  {
+   "slug": "d05-chutes",
+   "title": "Trays and chutes: building a report one pipe at a time",
+   "after": 2,
+   "file": "p1/d05_chutes.py",
+   "scene": "D05Chutes",
+   "poster_at": 266.0,
+   "replaces": "d05-pipes"
+  }
  ]
 }

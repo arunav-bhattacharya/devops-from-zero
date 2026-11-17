@@ -1,365 +1,365 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:06.359
+00:00:02.700 --> 00:00:06.326
 You change one setting, you apply it, and there is no error.
 
 2
-00:00:06.359 --> 00:00:08.777
+00:00:06.326 --> 00:00:08.743
 Yet the app keeps showing the old value.
 
 3
-00:00:08.777 --> 00:00:09.985
+00:00:08.743 --> 00:00:09.952
 Did something break?
 
 4
-00:00:10.133 --> 00:00:12.146
+00:00:10.167 --> 00:00:12.180
 Let us start in the restaurant.
 
 5
-00:00:12.146 --> 00:00:15.782
+00:00:12.180 --> 00:00:15.816
 At noon, the manager briefs the waiters on the specials.
 
 6
-00:00:15.782 --> 00:00:17.146
+00:00:15.816 --> 00:00:17.179
 Today's soup: tomato.
 
 7
-00:00:17.146 --> 00:00:19.419
+00:00:17.179 --> 00:00:19.452
 That is on the board in the office.
 
 8
-00:00:19.600 --> 00:00:24.215
+00:00:19.667 --> 00:00:24.281
 At two, the manager changes the soup to pumpkin, and writes it on the board.
 
 9
-00:00:24.400 --> 00:00:28.254
+00:00:24.500 --> 00:00:28.354
 But the waiters heard the specials once, at the start of their shift.
 
 10
-00:00:28.254 --> 00:00:32.499
+00:00:28.354 --> 00:00:32.599
 So they keep offering tomato soup, and the kitchen keeps saying it has none.
 
 11
-00:00:32.667 --> 00:00:34.170
+00:00:32.800 --> 00:00:34.304
 Nobody did anything wrong.
 
 12
-00:00:34.170 --> 00:00:39.087
+00:00:34.304 --> 00:00:39.220
 The news reached the board, but not the people who had already heard the old version.
 
 13
-00:00:39.087 --> 00:00:41.689
+00:00:39.220 --> 00:00:41.823
 Your app can have exactly the same afternoon.
 
 14
-00:00:42.600 --> 00:00:52.467
+00:00:42.733 --> 00:00:52.601
 Since the Docker lessons, we have built one image, and changed how it behaves with environment variables, named settings a program reads when it starts.
 
 15
-00:00:52.467 --> 00:00:54.480
+00:00:52.601 --> 00:00:54.613
 The same image runs everywhere.
 
 16
-00:00:54.480 --> 00:00:56.103
+00:00:54.613 --> 00:00:56.236
 Only the settings differ.
 
 17
-00:00:56.267 --> 00:01:00.318
+00:00:56.467 --> 00:01:00.518
 In Kubernetes, most teams keep those settings in a ConfigMap.
 
 18
-00:01:00.318 --> 00:01:03.041
+00:01:00.518 --> 00:01:03.241
 A small object with keys and text values.
 
 19
-00:01:03.041 --> 00:01:05.033
+00:01:03.241 --> 00:01:05.233
 It is the board in the office.
 
 20
-00:01:05.200 --> 00:01:07.788
+00:01:05.467 --> 00:01:08.054
 A container can read it in two main ways.
 
 21
-00:01:07.788 --> 00:01:11.322
+00:01:08.054 --> 00:01:11.589
 With envFrom, every key becomes an environment variable.
 
 22
-00:01:11.322 --> 00:01:14.162
+00:01:11.589 --> 00:01:14.429
 That is the briefing at the start of a shift.
 
 23
-00:01:14.162 --> 00:01:16.750
+00:01:14.429 --> 00:01:17.016
 Or as a volume: every key becomes a file.
 
 24
-00:01:16.750 --> 00:01:21.041
+00:01:17.016 --> 00:01:21.308
 That is a board on the kitchen wall, which anyone can look at again.
 
 25
-00:01:21.933 --> 00:01:24.626
+00:01:22.233 --> 00:01:24.926
 Let us shrink this to the lesson's demo.
 
 26
-00:01:24.626 --> 00:01:28.261
+00:01:24.926 --> 00:01:28.561
 One ConfigMap, demo-config, with one key: COLOR, blue.
 
 27
-00:01:28.400 --> 00:01:31.114
+00:01:28.767 --> 00:01:31.481
 And one Pod that reads that value twice.
 
 28
-00:01:31.114 --> 00:01:34.643
+00:01:31.481 --> 00:01:35.009
 Once as an environment variable, and once as a file.
 
 29
-00:01:34.800 --> 00:01:37.490
+00:01:35.233 --> 00:01:37.924
 Every five seconds, it prints both.
 
 30
-00:01:37.490 --> 00:01:40.104
+00:01:37.924 --> 00:01:40.537
 env equals blue, file equals blue.
 
 31
-00:01:40.267 --> 00:01:43.350
+00:01:40.767 --> 00:01:43.850
 Now change the value in the ConfigMap to green.
 
 32
-00:01:43.350 --> 00:01:44.400
+00:01:43.850 --> 00:01:44.900
 Pause and guess.
 
 33
-00:01:44.400 --> 00:01:46.303
+00:01:44.900 --> 00:01:46.803
 What will the next lines say?
 
 34
-00:01:49.000 --> 00:01:51.439
+00:01:49.533 --> 00:01:51.972
 For a while, nothing changes at all.
 
 35
-00:01:51.600 --> 00:01:56.983
+00:01:52.200 --> 00:01:57.583
 Then, on the kubelet's next sync, usually within a minute or so, the file shows green.
 
 36
-00:01:57.133 --> 00:01:59.113
+00:01:57.800 --> 00:01:59.780
 And the environment variable?
 
 37
-00:01:59.113 --> 00:01:59.523
+00:01:59.780 --> 00:02:00.190
 Never.
 
 38
-00:01:59.523 --> 00:02:02.937
+00:02:00.190 --> 00:02:03.604
 It stays blue for the whole life of the container.
 
 39
-00:02:02.937 --> 00:02:04.371
+00:02:03.604 --> 00:02:05.037
 The briefing is over.
 
 40
-00:02:04.533 --> 00:02:05.121
+00:02:05.267 --> 00:02:05.854
 Now wait.
 
 41
-00:02:05.121 --> 00:02:08.973
+00:02:05.854 --> 00:02:09.707
 Didn't we learn that Kubernetes runs a loop for everything?
 
 42
-00:02:08.973 --> 00:02:13.087
+00:02:09.707 --> 00:02:13.820
 Surely some controller notices the change and restarts the Pod?
 
 43
-00:02:13.267 --> 00:02:13.482
+00:02:14.033 --> 00:02:14.249
 No.
 
 44
-00:02:13.482 --> 00:02:15.278
+00:02:14.249 --> 00:02:16.045
 A ConfigMap is only data.
 
 45
-00:02:15.278 --> 00:02:17.074
+00:02:16.045 --> 00:02:17.840
 No controller acts on it.
 
 46
-00:02:17.074 --> 00:02:23.826
+00:02:17.840 --> 00:02:24.592
 The Deployment controller watches its own Pod template, not the ConfigMaps the template names.
 
 47
-00:02:23.826 --> 00:02:27.273
+00:02:24.592 --> 00:02:28.040
 So changing a ConfigMap never restarts anything.
 
 48
-00:02:27.467 --> 00:02:31.262
+00:02:28.267 --> 00:02:32.062
 The kubelet, the helper on each node, reads it at two moments.
 
 49
-00:02:31.262 --> 00:02:34.997
+00:02:32.062 --> 00:02:35.797
 When it starts a container, to fill in environment variables.
 
 50
-00:02:34.997 --> 00:02:38.303
+00:02:35.797 --> 00:02:39.103
 And on its regular sync, to refresh the mounted files.
 
 51
-00:02:39.067 --> 00:02:41.828
+00:02:39.933 --> 00:02:42.695
 How does the kubelet swap a file safely?
 
 52
-00:02:41.828 --> 00:02:42.932
+00:02:42.695 --> 00:02:43.799
 List the folder.
 
 53
-00:02:42.932 --> 00:02:46.522
+00:02:43.799 --> 00:02:47.389
 The real data sits in a folder named after the time.
 
 54
-00:02:46.522 --> 00:02:49.973
+00:02:47.389 --> 00:02:50.840
 The name dot dot data is a link, a pointer, to it.
 
 55
-00:02:50.133 --> 00:02:54.953
+00:02:51.067 --> 00:02:55.886
 On a change, the kubelet writes a new folder, and moves the link in one step.
 
 56
-00:02:54.953 --> 00:02:57.144
+00:02:55.886 --> 00:02:58.077
 So the app never reads half a file.
 
 57
-00:02:57.333 --> 00:03:05.046
+00:02:58.300 --> 00:03:06.013
 That link trick is also why a file mounted with subPath, one file placed into an existing folder, is never updated.
 
 58
-00:03:05.046 --> 00:03:09.272
+00:03:06.013 --> 00:03:10.238
 And even an updated file only helps if your app reads it again.
 
 59
-00:03:09.272 --> 00:03:11.753
+00:03:10.238 --> 00:03:12.720
 Most apps read config once, at start.
 
 60
-00:03:12.533 --> 00:03:15.646
+00:03:13.533 --> 00:03:16.646
 So how do the waiters hear about the pumpkin soup?
 
 61
-00:03:15.646 --> 00:03:16.394
+00:03:16.646 --> 00:03:17.394
 A new shift.
 
 62
-00:03:16.394 --> 00:03:18.697
+00:03:17.394 --> 00:03:19.697
 The new waiters get a fresh briefing.
 
 63
-00:03:18.867 --> 00:03:24.971
+00:03:19.900 --> 00:03:26.004
 Our demo is a bare Pod, so we replace it: delete it, and create it again from the same spec.
 
 64
-00:03:24.971 --> 00:03:27.890
+00:03:26.004 --> 00:03:28.923
 The new container starts with the new value.
 
 65
-00:03:27.890 --> 00:03:30.279
+00:03:28.923 --> 00:03:31.312
 env equals green, file equals green.
 
 66
-00:03:31.200 --> 00:03:35.974
+00:03:32.233 --> 00:03:37.008
 hello-devops runs as a Deployment, and it reads GREETING through envFrom.
 
 67
-00:03:35.974 --> 00:03:38.133
+00:03:37.008 --> 00:03:39.166
 So a new greeting needs new Pods.
 
 68
-00:03:38.133 --> 00:03:41.076
+00:03:39.166 --> 00:03:42.109
 The tool for that is kubectl rollout restart.
 
 69
-00:03:41.667 --> 00:03:46.431
+00:03:42.733 --> 00:03:47.497
 It writes the current time into an annotation, a note, in the Pod template.
 
 70
-00:03:47.400 --> 00:03:54.702
+00:03:48.500 --> 00:03:55.802
 The template changed, so the Deployment does a normal rolling update, and every new Pod starts with the new values.
 
 71
-00:03:54.702 --> 00:03:56.544
+00:03:55.802 --> 00:03:57.644
 A new shift, freshly briefed.
 
 72
-00:03:56.733 --> 00:03:58.477
+00:03:57.867 --> 00:03:59.610
 Tools have a neater trick.
 
 73
-00:03:58.477 --> 00:04:05.853
+00:03:59.610 --> 00:04:06.986
 Kustomize's configMapGenerator adds a hash, a short code worked out from the content, to the ConfigMap's name.
 
 74
-00:04:05.853 --> 00:04:11.687
+00:04:06.986 --> 00:04:12.820
 New content means a new name, so the template changes, and a rollout happens by itself.
 
 75
-00:04:12.400 --> 00:04:13.320
+00:04:13.533 --> 00:04:14.453
 One guardrail.
 
 76
-00:04:13.320 --> 00:04:18.709
+00:04:14.453 --> 00:04:19.842
 A Deployment rollback brings back the old Pod template, but not the old ConfigMap.
 
 77
-00:04:18.709 --> 00:04:23.177
+00:04:19.842 --> 00:04:24.311
 Change both, roll back, and the old code runs with the new settings.
 
 78
-00:04:23.177 --> 00:04:27.317
+00:04:24.311 --> 00:04:28.451
 Like reprinting last week's menu with this week's prices on it.
 
 79
-00:04:27.467 --> 00:04:30.111
+00:04:28.667 --> 00:04:31.311
 The fix is to treat config like images.
 
 80
-00:04:30.111 --> 00:04:34.654
+00:04:31.311 --> 00:04:35.854
 Never change a version, make a new one, hello-config-v2 next to v1.
 
 81
-00:04:34.654 --> 00:04:38.857
+00:04:35.854 --> 00:04:40.057
 And immutable true makes sure nobody edits a version in place.
 
 82
-00:04:39.733 --> 00:04:41.209
+00:04:40.967 --> 00:04:42.442
 The moral of the story.
 
 83
-00:04:41.209 --> 00:04:45.378
+00:04:42.442 --> 00:04:46.611
 Environment variables are the briefing, heard once, at the start.
 
 84
-00:04:45.378 --> 00:04:48.328
+00:04:46.611 --> 00:04:49.561
 Mounted files are the board, updated in place.
 
 85
-00:04:48.328 --> 00:04:51.920
+00:04:49.561 --> 00:04:53.153
 And only a new shift, a rollout restart, hears the news.
 
 86
-00:04:52.067 --> 00:04:53.094
+00:04:53.367 --> 00:04:54.394
 One quick check.
 
 87
-00:04:53.094 --> 00:04:56.303
+00:04:54.394 --> 00:04:57.603
 You change GREETING in hello-config, and apply it.
 
 88
-00:04:56.303 --> 00:04:59.063
+00:04:57.603 --> 00:05:00.363
 What do the running hello-devops Pods show?
 
 89
-00:05:01.733 --> 00:05:02.839
+00:05:03.067 --> 00:05:04.172
 The old greeting.
 
 90
-00:05:02.839 --> 00:05:04.660
+00:05:04.172 --> 00:05:05.993
 They read it once, at start.
 
 91
-00:05:04.660 --> 00:05:08.367
+00:05:05.993 --> 00:05:09.700
 Run a rollout restart, and the new Pods show the new one.

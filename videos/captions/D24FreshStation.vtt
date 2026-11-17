@@ -1,361 +1,361 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:07.967
+00:00:02.700 --> 00:00:07.933
 You push your code to GitHub, and a minute later, a green tick appears next to your commit.
 
 2
-00:00:08.133 --> 00:00:10.286
+00:00:08.167 --> 00:00:10.320
 So where did your tests actually run?
 
 3
-00:00:10.286 --> 00:00:11.392
+00:00:10.320 --> 00:00:11.425
 Not on your laptop.
 
 4
-00:00:11.392 --> 00:00:15.407
+00:00:11.425 --> 00:00:15.440
 And how did a machine you have never seen know whether a test failed?
 
 5
-00:00:15.600 --> 00:00:17.682
+00:00:15.667 --> 00:00:17.748
 Hold on to both questions.
 
 6
-00:00:17.682 --> 00:00:19.283
+00:00:17.748 --> 00:00:19.349
 First, a small cafe.
 
 7
-00:00:19.467 --> 00:00:23.436
+00:00:19.567 --> 00:00:23.536
 The owner tastes every pot of soup herself, before it goes out.
 
 8
-00:00:23.436 --> 00:00:25.389
+00:00:23.536 --> 00:00:25.489
 On a quiet Tuesday, that works.
 
 9
-00:00:26.933 --> 00:00:31.081
+00:00:27.100 --> 00:00:31.248
 On a busy Saturday, with a queue at the door, she skips one taste.
 
 10
-00:00:31.081 --> 00:00:32.024
+00:00:31.248 --> 00:00:32.191
 Just this once.
 
 11
-00:00:33.200 --> 00:00:35.148
+00:00:33.400 --> 00:00:35.348
 That is the pot with no salt.
 
 12
-00:00:35.333 --> 00:00:37.232
+00:00:35.567 --> 00:00:37.465
 Nobody would call her lazy.
 
 13
-00:00:37.232 --> 00:00:38.568
+00:00:37.465 --> 00:00:38.802
 Her tongue is fine.
 
 14
-00:00:38.568 --> 00:00:40.537
+00:00:38.802 --> 00:00:40.771
 Her Saturday is the problem.
 
 15
-00:00:40.733 --> 00:00:46.228
+00:00:41.000 --> 00:00:46.495
 A check that lives in a busy person's memory gets skipped exactly when it matters most.
 
 16
-00:00:46.228 --> 00:00:49.323
+00:00:46.495 --> 00:00:49.589
 Testing on your own laptop has the same weakness.
 
 17
-00:00:49.467 --> 00:00:52.545
+00:00:49.800 --> 00:00:52.879
 What we want is a taster who has no Saturdays.
 
 18
-00:00:53.467 --> 00:00:54.617
+00:00:53.800 --> 00:00:54.950
 So let's hire one.
 
 19
-00:00:54.617 --> 00:00:59.475
+00:00:54.950 --> 00:00:59.808
 Picture a restaurant kitchen, and follow one order through it, step by step.
 
 20
-00:00:59.667 --> 00:01:00.266
+00:01:00.033 --> 00:01:00.633
 You push.
 
 21
-00:01:00.266 --> 00:01:04.461
+00:01:00.633 --> 00:01:04.827
 GitHub records an event: a push of this commit, to this branch.
 
 22
-00:01:04.461 --> 00:01:07.324
+00:01:04.827 --> 00:01:07.691
 That's an order ticket landing on the rail.
 
 23
-00:01:07.467 --> 00:01:16.220
+00:01:07.900 --> 00:01:16.653
 GitHub opens the folder .github/workflows/ in the commit you pushed, and starts a run of every workflow that listens for push.
 
 24
-00:01:16.400 --> 00:01:20.290
+00:01:16.867 --> 00:01:20.756
 A workflow is just a text file that says what to run, and when.
 
 25
-00:01:20.290 --> 00:01:22.451
+00:01:20.756 --> 00:01:22.917
 It is what's written on the ticket.
 
 26
-00:01:22.600 --> 00:01:28.606
+00:01:23.133 --> 00:01:29.140
 For each job, GitHub starts a brand new virtual machine, a computer simulated in software.
 
 27
-00:01:28.606 --> 00:01:30.208
+00:01:29.140 --> 00:01:30.741
 It is called the runner.
 
 28
-00:01:30.400 --> 00:01:34.422
+00:01:30.967 --> 00:01:34.989
 It comes with Linux and common tools, but none of your files.
 
 29
-00:01:34.422 --> 00:01:35.939
+00:01:34.989 --> 00:01:36.505
 A clean, empty station.
 
 30
-00:01:36.133 --> 00:01:40.831
+00:01:36.733 --> 00:01:41.431
 A program on that machine runs the job's steps, one at a time, in order.
 
 31
-00:01:40.831 --> 00:01:43.571
+00:01:41.431 --> 00:01:44.171
 The cook follows the ticket, line by line.
 
 32
-00:01:43.733 --> 00:01:47.637
+00:01:44.400 --> 00:01:48.303
 The result, a green tick or a red cross, lands on the commit.
 
 33
-00:01:47.637 --> 00:01:49.684
+00:01:48.303 --> 00:01:50.351
 Then GitHub deletes the machine.
 
 34
-00:01:49.684 --> 00:01:52.244
+00:01:50.351 --> 00:01:52.911
 The station is wiped for the next order.
 
 35
-00:01:52.400 --> 00:01:57.457
+00:01:53.133 --> 00:01:58.190
 So your laptop takes no part, and no file survives from one job to the next.
 
 36
-00:01:57.457 --> 00:01:59.453
+00:01:58.190 --> 00:02:00.187
 Your first question, answered.
 
 37
-00:01:59.600 --> 00:02:03.802
+00:02:00.400 --> 00:02:04.602
 And two jobs get two stations, side by side, at the same time.
 
 38
-00:02:03.802 --> 00:02:05.971
+00:02:04.602 --> 00:02:06.771
 Like two cooks with two tickets.
 
 39
-00:02:06.867 --> 00:02:09.446
+00:02:07.700 --> 00:02:10.279
 Now let's write the job the obvious way.
 
 40
-00:02:09.446 --> 00:02:13.056
+00:02:10.279 --> 00:02:13.889
 Install the packages the tests need, then run the tests.
 
 41
-00:02:13.056 --> 00:02:15.441
+00:02:13.889 --> 00:02:16.275
 Exactly what you type on your laptop.
 
 42
-00:02:15.600 --> 00:02:17.007
+00:02:16.500 --> 00:02:17.907
 Pause and guess.
 
 43
-00:02:17.007 --> 00:02:18.237
+00:02:17.907 --> 00:02:19.137
 Green, or red?
 
 44
-00:02:20.400 --> 00:02:22.506
+00:02:21.367 --> 00:02:23.473
 Red, at the very first step.
 
 45
-00:02:22.506 --> 00:02:26.417
+00:02:23.473 --> 00:02:27.384
 requirements-dev.txt does not exist on that machine.
 
 46
-00:02:26.417 --> 00:02:28.975
+00:02:27.384 --> 00:02:29.941
 On your laptop it was right there.
 
 47
-00:02:29.133 --> 00:02:29.840
+00:02:30.167 --> 00:02:30.873
 Of course.
 
 48
-00:02:29.840 --> 00:02:33.797
+00:02:30.873 --> 00:02:34.831
 We gave the cook a spotless station, and no ingredients.
 
 49
-00:02:33.933 --> 00:02:40.616
+00:02:35.033 --> 00:02:41.716
 So nearly every job begins with actions/checkout, which copies your repository onto the machine.
 
 50
-00:02:40.616 --> 00:02:42.565
+00:02:41.716 --> 00:02:43.665
 Fetch the ingredients first.
 
 51
-00:02:42.733 --> 00:02:46.857
+00:02:43.867 --> 00:02:47.991
 Then setup-python puts Python 3.14 on the station.
 
 52
-00:02:47.000 --> 00:02:49.267
+00:02:48.200 --> 00:02:50.467
 Notice there are two kinds of step.
 
 53
-00:02:49.267 --> 00:02:51.663
+00:02:50.467 --> 00:02:52.863
 run executes your own shell commands.
 
 54
-00:02:51.663 --> 00:02:57.687
+00:02:52.863 --> 00:02:58.887
 uses calls an action: ready made code that someone published, at a version after the at sign.
 
 55
-00:02:58.600 --> 00:03:00.016
+00:02:59.800 --> 00:03:01.216
 Now the second question.
 
 56
-00:03:00.016 --> 00:03:03.968
+00:03:01.216 --> 00:03:05.168
 How does a machine that never read your tests know that one failed?
 
 57
-00:03:04.133 --> 00:03:07.399
+00:03:05.400 --> 00:03:08.665
 Every command ends with a number, its exit code.
 
 58
-00:03:07.399 --> 00:03:08.691
+00:03:08.665 --> 00:03:09.958
 Zero means success.
 
 59
-00:03:08.691 --> 00:03:10.596
+00:03:09.958 --> 00:03:11.863
 Anything else means trouble.
 
 60
-00:03:10.733 --> 00:03:13.492
+00:03:12.067 --> 00:03:14.825
 pytest exits with 1 when a test fails.
 
 61
-00:03:14.467 --> 00:03:16.864
+00:03:15.833 --> 00:03:18.230
 A non zero exit code fails the step.
 
 62
-00:03:16.864 --> 00:03:20.859
+00:03:18.230 --> 00:03:22.225
 The job stops there and is marked failed, and so is the run.
 
 63
-00:03:21.600 --> 00:03:25.038
+00:03:23.033 --> 00:03:26.472
 So the machine doesn't read your test output at all.
 
 64
-00:03:25.038 --> 00:03:26.361
+00:03:26.472 --> 00:03:27.794
 It reads one number.
 
 65
-00:03:26.361 --> 00:03:32.180
+00:03:27.794 --> 00:03:33.613
 Most of CI rests on that habit: tools exit with a non zero code when something is wrong.
 
 66
-00:03:33.067 --> 00:03:37.553
+00:03:34.533 --> 00:03:39.020
 A clean station is a fine taster, as long as you respect three rules.
 
 67
-00:03:37.733 --> 00:03:38.008
+00:03:39.233 --> 00:03:39.508
 One.
 
 68
-00:03:38.008 --> 00:03:41.515
+00:03:39.508 --> 00:03:43.015
 A self-hosted runner is a machine you run yourself.
 
 69
-00:03:41.515 --> 00:03:44.266
+00:03:43.015 --> 00:03:45.766
 Never attach one to a public repository.
 
 70
-00:03:44.266 --> 00:03:52.723
+00:03:45.766 --> 00:03:54.223
 Anyone can open a pull request, and a stranger's code could run on your machine, and leave things behind for your next job.
 
 71
-00:03:52.723 --> 00:03:54.855
+00:03:54.223 --> 00:03:56.355
 A dirty station nobody cleaned.
 
 72
-00:03:55.000 --> 00:03:55.321
+00:03:56.567 --> 00:03:56.888
 Two.
 
 73
-00:03:55.321 --> 00:03:58.052
+00:03:56.888 --> 00:03:59.619
 A job may run for at most 6 hours.
 
 74
-00:03:58.052 --> 00:04:03.916
+00:03:59.619 --> 00:04:05.483
 Set timeout-minutes much lower, or a hung job waits the full 360 minutes.
 
 75
-00:04:04.067 --> 00:04:04.518
+00:04:05.700 --> 00:04:06.151
 Three.
 
 76
-00:04:04.518 --> 00:04:11.887
+00:04:06.151 --> 00:04:13.520
 The wiped station forgets everything, so every run downloads and installs the same packages again.
 
 77
-00:04:11.887 --> 00:04:14.519
+00:04:13.520 --> 00:04:16.152
 Day 25 adds a cache that remembers.
 
 78
-00:04:15.400 --> 00:04:17.164
+00:04:17.067 --> 00:04:18.831
 So here's the whole story.
 
 79
-00:04:17.164 --> 00:04:18.453
+00:04:18.831 --> 00:04:20.120
 A push is a ticket.
 
 80
-00:04:18.453 --> 00:04:20.421
+00:04:20.120 --> 00:04:22.088
 A workflow says what to cook.
 
 81
-00:04:20.421 --> 00:04:23.000
+00:04:22.088 --> 00:04:24.666
 A fresh runner cooks it, step by step.
 
 82
-00:04:23.000 --> 00:04:25.375
+00:04:24.666 --> 00:04:27.041
 And one exit code says how it went.
 
 83
-00:04:25.533 --> 00:04:27.673
+00:04:27.267 --> 00:04:29.407
 A taster with no Saturdays.
 
 84
-00:04:27.867 --> 00:04:28.838
+00:04:29.633 --> 00:04:30.605
 Quick check.
 
 85
-00:04:28.838 --> 00:04:34.263
+00:04:30.605 --> 00:04:36.029
 You save your file as .github/workflow/ci.yml, with no s, and push.
 
 86
-00:04:34.263 --> 00:04:35.558
+00:04:36.029 --> 00:04:37.325
 What do you see?
 
 87
-00:04:35.558 --> 00:04:36.853
+00:04:37.325 --> 00:04:38.620
 Pause and think.
 
 88
-00:04:39.000 --> 00:04:40.017
+00:04:40.833 --> 00:04:41.850
 Nothing at all.
 
 89
-00:04:40.017 --> 00:04:44.896
+00:04:41.850 --> 00:04:46.730
 No run, no error, no warning, because GitHub never looks in that folder.
 
 90
-00:04:44.896 --> 00:04:48.556
+00:04:46.730 --> 00:04:50.389
 If no run appears after a push, check that path first.

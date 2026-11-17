@@ -20,5 +20,27 @@
    "poster_at": 272.0,
    "replaces": "d14-request-path"
   }
+ ],
+ "d31": [
+  {
+   "slug": "d31-three-pictures",
+   "title": "Files, notebook and real world: why running Terraform twice changes nothing",
+   "after": 1,
+   "file": "p8/d31_three_pictures.py",
+   "scene": "D31ThreePictures",
+   "poster_at": 263.0,
+   "replaces": "d31-plan"
+  }
+ ],
+ "d32": [
+  {
+   "slug": "d32-count-shift",
+   "title": "count or for_each: one cancelled name, three sheds touched",
+   "after": 5,
+   "file": "p8/d32_count_shift.py",
+   "scene": "D32CountShift",
+   "poster_at": 151.0,
+   "replaces": "d32-loops"
+  }
  ]
 }

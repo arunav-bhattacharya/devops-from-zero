@@ -29,5 +29,38 @@
    "poster_at": 280.0,
    "replaces": "d39-pod-start"
   }
+ ],
+ "d40": [
+  {
+   "slug": "d40-shift-change",
+   "title": "Change every waiter without closing the doors: a rolling update, one ready Pod at a time",
+   "after": 3,
+   "file": "p10/d40_shift_change.py",
+   "scene": "D40ShiftChange",
+   "poster_at": 135.0,
+   "replaces": "d40-rollout"
+  }
+ ],
+ "d41": [
+  {
+   "slug": "d41-host-stand",
+   "title": "How do you call a Pod that keeps moving? The Service as the host stand",
+   "after": 1,
+   "file": "p10/d41_host_stand.py",
+   "scene": "D41HostStand",
+   "poster_at": 150.0,
+   "replaces": "d41-service"
+  }
+ ],
+ "d42": [
+  {
+   "slug": "d42-soup-board",
+   "title": "I changed the setting. Why the old value? The board, the briefing and rollout restart",
+   "after": 2,
+   "file": "p10/d42_soup_board.py",
+   "scene": "D42SoupBoard",
+   "poster_at": 150.0,
+   "replaces": "d42-config"
+  }
  ]
 }
