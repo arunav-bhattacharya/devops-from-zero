@@ -132,7 +132,7 @@ Our file still has a weakness, though. Every value, such as the port 8090, is ty
 
 new = {
     "goal": "By the end you can explain why teams write their infrastructure as code, read a Terraform plan, and create, change and destroy a container with Terraform on your laptop.",
-    "opening": """Picture a friend who opens a small café. On the first morning you help her set up. You plug in the coffee machine, set the fridge to four degrees and line up twelve chairs. It all works, and nobody writes any of it down. Why would you? You were both right there.
+    "opening": """Picture a friend who opens a small café. On the first morning you help her set up. You plug in the coffee machine, set the fridge to four degrees and line up twelve chairs. It all works, and nobody writes any of it down. Why would you? You were both there.
 
 A year later she opens a second café and asks you to make it exactly the same. You stand in the empty room and can't remember half of what you did. The trap is easy to fall into: doing things by hand feels fast the first time, and the cost arrives later.
 

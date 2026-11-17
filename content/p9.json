@@ -1,13 +1,14 @@
 {
  "part": 9,
  "title": "Configuration management with Ansible",
- "intro": "Terraform gave you servers, and the next question is what runs on them and who keeps it that way. Ansible logs in over SSH, makes each server match what your files describe, and leaves alone whatever already matches. Both days run against three small practice servers in Docker on your Mac, so nothing costs money. Day 37 ends by letting Ansible find EC2 servers by tag, which you can also try against a local AWS emulator.",
+ "intro": "Terraform gave you servers. The next question is what runs on them, and who keeps it that way. Ansible works like a careful house sitter with a checklist: it logs in over SSH, makes each server match what your files describe, and leaves alone whatever already matches. Both lessons run against three small practice servers in Docker on your Mac, so nothing costs money. Day 37 ends by letting Ansible find EC2 servers by tag, which you can also try against a local AWS emulator.",
  "lessons": [
   {
    "id": "d36",
    "title": "Ansible from zero: inventory, modules and your first playbook",
    "minutes": 50,
    "goal": "By the end you can say what Ansible does that Terraform does not, list servers in an inventory, run ad-hoc commands and a first playbook against three practice servers, and explain why a second run changes nothing.",
+   "opening": "Your neighbour goes away for a week and asks you to look after her house. She leaves a list of chores: water the plants, turn the heating on, lock the back door. On day one you do every chore. On day two you water the plants again, as the list says. By Friday the pots are swimming.\n\nThe list was the trouble, not you. It said what to do, when it should have said how the house should be: soil damp, room at 20 degrees, door locked. A list of chores is easy to write, because that is how we think about work. A list of results is the one you can follow twice without harm.\n\nLast time, Terraform built storage and servers in a real cloud. It built the house, but something still has to set up what runs inside it. In this lesson, we'll meet Ansible, list our servers, send one command to many of them, and write a first checklist that is safe to run twice. Before we start, make a guess, and keep it in mind.",
    "guess": {
     "q": "A playbook installs nginx and writes its config file. It succeeds. You run the same playbook again a minute later. What does Ansible do?",
     "options": [
@@ -17,12 +18,12 @@
      "Reads a state file from the first run and skips every task"
     ],
     "answer": 2,
-    "why": "Each module looks at the server first and acts only when something differs, so the second run reports ok everywhere. Ansible keeps no state file like Terraform's: it checks the real server every time."
+    "why": "Each module looks at the server first and acts only when something differs, so the second run reports ok everywhere. Ansible keeps no state file like Terraform's. It checks the real server every time."
    },
    "terms": [
     {
      "term": "Configuration management",
-     "plain": "Keeping the packages, files and services on many servers in a state you wrote down as code."
+     "plain": "Keeping the programs, files and services on many servers the way you wrote them down as code."
     },
     {
      "term": "Control node",
@@ -30,7 +31,7 @@
     },
     {
      "term": "Managed node",
-     "plain": "A server that Ansible configures. It needs SSH and Python, but no Ansible."
+     "plain": "A server that Ansible looks after. It needs an SSH login and Python, but no Ansible."
     },
     {
      "term": "Inventory",
@@ -55,8 +56,8 @@
    ],
    "sections": [
     {
-     "h": "Terraform made the server. Something still has to set it up",
-     "body": "On Day 35 Terraform created resources in AWS, and on Day 14 a user data script installed hello-devops on one EC2 server. That works for one server. It gets hard with twenty, and harder a year later, when nobody remembers which ones got last month's fix.\n\n**Configuration management** is the answer to that problem. You write down what each server should have: packages, files, users and services. A tool then makes every server match, every time you run it. Terraform is good at creating machines through a cloud API. Ansible is good at what happens inside them after they boot.\n\nHow much of this you need depends on how you run servers:\n- Mutable infrastructure: servers live for months, and you change them in place. Ansible was built for this.\n- Immutable infrastructure: you never change a running server. You build a new image, start new servers from it and delete the old ones. Docker images (Day 18) and Kubernetes (Part 10) work this way.\n\nMost new apps ship as containers, so you may write little Ansible for your own service. It still has plenty of work:\n- VMs that will not move to containers, such as databases, build agents or old Java apps\n- bootstrapping fresh machines, including the nodes a Kubernetes cluster runs on\n- network devices such as switches and routers\n- fleet-wide changes, like a security patch on every server this afternoon",
+     "h": "Terraform built the server. Something still has to set it up",
+     "body": "Last part, Terraform built things: on Day 35 it created resources in AWS. Before that, on Day 14, a user data script installed hello-devops on one EC2 server, a server rented from Amazon. A user data script holds commands AWS runs once, when a server first starts. That works for one server. It gets hard with twenty, and harder a year later, when nobody remembers which ones got last month's fix.\n\nThat is the neighbour's house, twenty times over. Configuration management is the answer: you write down what each server should have, such as its packages (installed programs), files, users and services (programs that run in the background). A tool then makes every server match, every time you run it. Terraform is good at creating machines through a cloud's API. Ansible, today's tool, is good at what happens inside them after they start.\n\nHow much of this you need depends on how you run servers:\n- Mutable infrastructure: servers live for months, and you change them in place. Ansible was built for this.\n- Immutable infrastructure: you never change a running server. You build a new image, start new servers from it and delete the old ones. Docker images (Day 18) and Kubernetes (Part 10) work this way.\n\nMost new apps ship as containers, so you may write little Ansible for your own app. It still has plenty of work:\n- VMs (whole computers simulated in software) that will not move to containers, such as databases, build machines or old Java apps\n- setting up fresh machines, including the ones a Kubernetes cluster runs on\n- network devices such as switches and routers\n- changes across a whole fleet, like a security patch on every server this afternoon\n\nPicture that last one. OpenSSH, the program behind SSH logins, ships a security fix, and every VM a team runs needs it the same day. With Ansible, someone previews the patch on two servers, then runs it on the rest, and Ansible's summary lists any server that failed. How does one laptop reach all those servers? Through a door they already have.",
      "refs": [
       {
        "title": "Getting started with Ansible",
@@ -71,8 +72,8 @@
      ]
     },
     {
-     "h": "Agentless: everything happens over SSH",
-     "body": "Ansible runs on one machine, the **control node**, which is your Mac. The servers it manages are called managed nodes. Nothing of Ansible is installed on them, and no Ansible process waits there for orders. That is what agentless means. Older tools such as Puppet and Chef install an agent on every server, and the agent pulls its config from a central server. Without an agent there is nothing to install or keep updated on the servers. A fresh Ubuntu server is ready for Ansible as soon as you can log in to it.\n\nA managed node needs two things: an SSH login (Day 7) and Python 3. For every task, Ansible does this on each server:\n1. It opens an SSH connection, or reuses an open one.\n2. It copies a small Python program, the module, into a temporary folder.\n3. It runs the module with the server's python3. The module checks the server and fixes what differs.\n4. It reads the JSON result the module prints, then deletes the temporary folder.\n\nThat result has a `changed` field, and it is where the green ok and the yellow changed in Ansible's output come from. Ansible works on five servers at a time by default, and the `-f` option raises that number.\n\nNetwork switches are the exception to the Python rule. Their modules run on the control node and talk to the device over SSH or an API.",
+     "h": "No helper on the server: everything happens over SSH",
+     "body": "Ansible runs on one machine, the control node, which is your Mac. The servers it looks after are called managed nodes. Nothing of Ansible is installed on them, and no Ansible program waits there for orders. That is what agentless means: there is no agent, no helper program living on each server.\n\nOlder tools such as Puppet and Chef do install an agent on every server, and the agent fetches its settings from a central server. Without an agent, there is nothing to install or keep updated on the servers. A fresh Ubuntu server is ready for Ansible as soon as you can log in to it.\n\nA managed node needs two things: an SSH login (a secure way to log in and run commands, from Day 7) and Python 3. For every task, Ansible does this on each server:\n1. It opens an SSH connection, or reuses an open one.\n2. It copies a small Python program, the module, into a temporary folder.\n3. It runs the module with the server's python3. The module checks the server and fixes what differs.\n4. It reads the JSON result the module prints, then deletes the temporary folder.\n\nThat result has a `changed` field, and it is where the green ok and the yellow changed in Ansible's output come from. Ansible works on five servers at a time by default, and the `-f` option raises that number.\n\nNetwork switches are the exception to the Python rule. Their modules run on the control node and talk to the device over SSH or an API. Our servers are ordinary ones, so next we need Ansible on the Mac, and some servers to practise on.",
      "refs": [
       {
        "title": "Installing Ansible",
@@ -88,7 +89,7 @@
     },
     {
      "h": "Install Ansible, and start three practice servers",
-     "body": "Ansible comes as two Python packages:\n- `ansible-core` is the engine, the commands and the built-in modules, called `ansible.builtin`.\n- `ansible` is ansible-core plus a large set of community collections, such as `amazon.aws`. It is much bigger, and its current release still ships ansible-core 2.21.\n\nStart with ansible-core, installed as a tool with its own Python. Pick one way:\n- `uv tool install ansible-core`\n- `pipx install ansible-core`\n- `brew install ansible`, for the big package\n\nansible-core 2.22, the current version, needs Python 3.13 or newer on the control node. The `python3` that comes with macOS is older, so do not run plain `pip install` with it. uv downloads a suitable Python by itself. Check the current docs for the install command, then run `ansible --version`.\n\nThe lab's `compose.yaml` starts three Ubuntu 24.04 containers: web1 and web2 for the app, and lb1 for nginx. Each runs sshd and has python3, like a fresh cloud server. The script `./setup.sh` makes an SSH key for the lab in `.keys/`, builds the image with only the public key inside, starts the servers and waits until SSH answers.\n\nThese servers run systemd as PID 1, so `systemctl` works as it did on Day 6. A plain container has no systemd, and systemd inside Docker needs extra rights: `privileged: true`, the host's cgroup tree and some tmpfs mounts. Those rights are fine on your laptop and wrong anywhere else. Other differences from a real server:\n- All three share the kernel of Docker's VM, so `uptime` shows that VM's uptime.\n- There is no real boot or disk setup, and the network is IPv4 only.\n- They all live on 127.0.0.1 and differ by SSH port: 2201, 2202 and 2203.",
+     "body": "Ansible comes as two Python packages:\n- `ansible-core` is the engine: the commands and the built-in modules, called `ansible.builtin`.\n- `ansible` is ansible-core plus a large set of community collections (bundles of extra modules), such as `amazon.aws`. It is much bigger, and its current release still ships ansible-core 2.21.\n\nStart with ansible-core, installed as a tool with its own Python. Pick one way:\n- `uv tool install ansible-core`\n- `pipx install ansible-core`\n- `brew install ansible`, for the big package\n\nansible-core 2.22, the current version, needs Python 3.13 or newer on the control node. The `python3` that comes with macOS is older, so do not run plain `pip install` with it. uv downloads a suitable Python by itself. Check the current docs for the install command, then run `ansible --version`.\n\nNow the houses to look after. The lab's `compose.yaml` starts three Ubuntu 24.04 containers: web1 and web2 for the app, and lb1 for nginx, a web server that will later share visitors between them. Each one runs sshd, the program that answers SSH logins, and has python3, like a fresh cloud server.\n\nThe script `./setup.sh` makes an SSH key for the lab in `.keys/`. It builds the image with only the public half of the key inside, starts the servers and waits until SSH answers. These servers run systemd, the program that starts and watches services, so `systemctl` works as it did on Day 6. They are not quite real servers, and the box below says how they differ. With three servers running, Ansible needs a list of them.",
      "refs": [
       {
        "title": "Installing Ansible",
@@ -98,8 +99,8 @@
      ]
     },
     {
-     "h": "The inventory says which servers exist",
-     "body": "An inventory lists your servers and sorts them into groups. The lab's `inventory.ini` has three groups:\n- `[web]` holds web1 and web2.\n- `[lb]` holds lb1.\n- `[lab:children]` is a group of groups: everything in web and lb.\n\nA host line can carry host variables, settings for that host only. `web1 ansible_host=127.0.0.1 ansible_port=2201` names the host web1 and tells Ansible where its SSH really answers. Every inventory also has two groups you never write: `all`, with every host, and `ungrouped`, for hosts in no group. The file `inventory.yml` is the same inventory in YAML, which nests well and is easy for a program to write. The command `ansible-inventory --graph` prints the tree, and both files give the same one.\n\nAnsible reads its settings from the first config file it finds, in this order:\n1. The file named in the `ANSIBLE_CONFIG` environment variable.\n2. `ansible.cfg` in the current folder.\n3. `~/.ansible.cfg` in your home folder.\n4. `/etc/ansible/ansible.cfg`.\n\nSo run Ansible from the lab folder. Its `ansible.cfg` picks the inventory, logs in as `ubuntu` with the lab key and says where roles live. It also gives SSH a known_hosts file of the lab's own. The option `StrictHostKeyChecking=accept-new` trusts a new server the first time and refuses a changed key later, the same rule as Day 7. The setting `interpreter_python = auto_silent` hides a warning about which Python Ansible found on each server.",
+     "h": "The inventory: which servers exist",
+     "body": "A house sitter for a whole street needs the addresses, and Ansible needs the same. An inventory lists your servers and sorts them into groups. The lab's `inventory.ini` has three groups:\n- `[web]` holds web1 and web2.\n- `[lb]` holds lb1.\n- `[lab:children]` is a group of groups: everything in web and lb.\n\nA host line can carry host variables, settings for that host only. `web1 ansible_host=127.0.0.1 ansible_port=2201` names the host web1 and tells Ansible where its SSH really answers. Every inventory also has two groups you never write: `all`, with every host, and `ungrouped`, for hosts in no group.\n\nThe file `inventory.yml` is the same inventory in YAML, a text format that shows nesting by indenting lines. YAML is also easy for a program to write. The command `ansible-inventory --graph` prints the tree of groups, and both files give the same one.\n\nAnsible reads its settings from the first config file it finds, in this order:\n1. The file named in the `ANSIBLE_CONFIG` environment variable.\n2. `ansible.cfg` in the current folder.\n3. `~/.ansible.cfg` in your home folder.\n4. `/etc/ansible/ansible.cfg`.\n\nSo run Ansible from the lab folder. Its `ansible.cfg` picks the inventory, logs in as `ubuntu` with the lab key and says where roles (Day 37) live. It also gives SSH a known_hosts file of the lab's own, the list of server fingerprints SSH has already seen. The option `StrictHostKeyChecking=accept-new` trusts a new server the first time and refuses a changed fingerprint later, the same rule as Day 7. The setting `interpreter_python = auto_silent` hides a warning about which Python Ansible found on each server. The list is ready. Let's send one instruction to every house on it.",
      "refs": [
       {
        "title": "How to build your inventory",
@@ -115,7 +116,7 @@
     },
     {
      "h": "Ad-hoc commands: one module on many servers",
-     "body": "An ad-hoc command runs one module once, straight from the terminal. Its shape is `ansible PATTERN -m MODULE -a ARGUMENTS`, and the pattern is a host or a group from the inventory, such as `all`, `web` or `web1`.\n\n`ansible all -m ansible.builtin.ping` logs in to every server and runs the ping module. It answers `pong` when SSH and Python work. `ansible.builtin.ping` is the module's full name: the ping module from the builtin collection inside ansible-core. Day 37 explains the naming.\n\nWithout `-m`, Ansible uses the command module, which runs a program directly, with no shell. Pipes, `>`, `;` and `&&` do not work there. `ansible web1 -a 'cat /etc/os-release | grep PRETTY'` failed with `cat: '|': No such file or directory`, because cat got the pipe as a file name. The shell module runs the same line through `/bin/sh`, and it printed the one line we wanted.\n\nAdd `-b` (become) to run as root through sudo: `ansible web1 -a whoami` printed `ubuntu`, and with `-b` it printed `root`. Modules you will use all the time:\n- `ansible.builtin.apt`, or the generic `package`, installs packages.\n- `ansible.builtin.copy` puts a file on the server.\n- `ansible.builtin.service` starts, stops, restarts and enables services.\n\nOur first `apt` call taught us something. jq installed on web1 but failed on web2 with `No package matching 'jq' is available`. Ubuntu's container image ships with no package list, and an earlier command of ours had refreshed it on web1 only. Adding `update_cache=true` runs `apt-get update` first.",
+     "body": "An ad-hoc command runs one module once, straight from the terminal. Its shape is `ansible PATTERN -m MODULE -a ARGUMENTS`. The pattern is a host or a group from the inventory, such as `all`, `web` or `web1`.\n\n`ansible all -m ansible.builtin.ping` logs in to every server and runs the ping module. It answers `pong` when SSH and Python work. `ansible.builtin.ping` is the module's full name: the ping module from the builtin collection inside ansible-core. Day 37 explains the naming.\n\nWithout `-m`, Ansible uses the command module, which runs a program directly, with no shell. The shell is the program that reads what you type in a terminal, and it is what understands pipes, `>`, `;` and `&&`. So those do not work in the command module. `ansible web1 -a 'cat /etc/os-release | grep PRETTY'` failed with `cat: '|': No such file or directory`, because cat got the pipe as a file name. The shell module runs the same line through `/bin/sh`, and it printed the one line we wanted.\n\nAdd `-b` (become) to run as root, the all-powerful user, through sudo. `ansible web1 -a whoami` printed `ubuntu`, and with `-b` it printed `root`. Modules you will use all the time:\n- `ansible.builtin.apt`, or the generic `package`, installs packages.\n- `ansible.builtin.copy` puts a file on the server.\n- `ansible.builtin.service` starts, stops, restarts and enables services.\n\nOur first `apt` call taught us something. We asked for jq, a small tool that reads JSON. It installed on web1 but failed on web2 with `No package matching 'jq' is available`. Ubuntu's container image ships with no package list, and an earlier command of ours had refreshed that list on web1 only. Adding `update_cache=true` runs `apt-get update` first. That run also showed something quieter: on the second try, web1 had nothing to do.",
      "refs": [
       {
        "title": "Introduction to ad hoc commands",
@@ -130,8 +131,8 @@
      ]
     },
     {
-     "h": "Idempotence: ok, changed, and a preview with --check --diff",
-     "body": "A module describes the result you want. `name=jq state=present` means \"jq must be installed\". The apt module checks first. If jq is there, it does nothing and reports ok. If not, it installs jq and reports changed. So running a task twice is safe, and the second run tells you whether anything had drifted. This property is called idempotence, and it is the main thing Ansible gives you over a shell script.\n\nThe command and shell modules cannot know what your command did, so they report changed every time. Treat them as a last resort. `ansible-doc -l` lists every module you have, and `ansible-doc ansible.builtin.apt` shows one module's options and examples.\n\nTwo flags show what a run would do before it does it:\n- `--check` runs every task in a dry mode. Modules report what they would change, and change nothing.\n- `--diff` prints the lines a task changes in a file, like `git diff`.\n\nTogether they work like Terraform's plan from Day 31, with one difference. Ansible has no state file, so the preview comes from the real servers at that moment. Check mode is still a prediction. A task that depends on an earlier task's result can guess wrong, because the earlier task did not really run.\n\nNo state file also means no memory of past runs. Delete a resource block in Terraform and the next plan destroys the object, because the state remembers it. Delete the jq task from a playbook and jq stays installed. To remove something, you write a task that says so, such as `state=absent`.",
+     "h": "Results, not chores: ok, changed and a preview",
+     "body": "Back to the neighbour's plants. Watering them is a chore, and doing it twice drowns them. Damp soil is a result, and checking it twice is harmless. Ansible modules are written as results. `name=jq state=present` means \"jq must be installed\".\n\nThe apt module checks first. If jq is there, it does nothing and reports ok. If not, it installs jq and reports changed. So running a task twice is safe, and the second run tells you whether anything had drifted. This property is called idempotence, and it is the main thing Ansible gives you over a shell script.\n\n**A chore repeated does harm, and a result checked twice does none. Write tasks as results.**\n\nThe command and shell modules cannot know what your command did, so they report changed every time. A task such as `shell: apt-get install -y nginx` turns Ansible back into a slow shell script. It reports changed on every run, a preview cannot see inside it, and any handler it notifies fires every time. Look for a real module first, with `ansible-doc -l | grep apt`, and keep `command` for jobs that no module covers. The command `ansible-doc -l` lists every module you have, and `ansible-doc ansible.builtin.apt` shows one module's options and examples.\n\nTwo flags show what a run would do before it does it:\n- `--check` runs every task in a dry mode. Modules report what they would change, and change nothing.\n- `--diff` prints the lines a task changes in a file, like `git diff`.\n\nTogether they work like Terraform's plan, with one difference. Ansible has no state file, so the preview comes from the real servers at that moment. Check mode is still a prediction. A task that depends on an earlier task's result can guess wrong, because the earlier task did not really run.\n\nNo state file also means no memory of past runs. A good house sitter would notice a broken window that no line on the list mentions. Ansible never does. Delete a resource block in Terraform and the next plan destroys the object, because the state remembers it. Delete the jq task from a playbook and jq stays installed. To remove something, you write a task that says so, such as `state=absent`. Single commands are handy, but a real checklist has many lines, and it belongs in a file.",
      "refs": [
       {
        "title": "Validating tasks: check mode and diff mode",
@@ -142,7 +143,7 @@
     },
     {
      "h": "A first playbook: plays, tasks, handlers and the recap",
-     "body": "A playbook is a YAML file with a list of plays. A play names its hosts and lists its tasks, and each task calls one module with arguments: an ad-hoc command, written down. The lab's `first-playbook.yml` has two plays:\n1. \"Basics on every server\" installs tree and htop and writes `/etc/motd` on the whole lab group.\n2. \"Web server on the load balancer\" installs nginx on lb1, gives it a site config and a page, and starts it.\n\nAnsible runs the first task on every host of the play, then the second task, and so on from top to bottom. Setting `become: true` on a play makes every task use sudo. Each play starts with Gathering Facts, where Ansible collects details about each server. Day 37 puts them to use.\n\nA handler waits until something notifies it. The site config task has `notify: Reload nginx`. When that task reports changed, the handler runs once, at the end of the play. When the file was already right, nginx is left alone. Ten tasks can notify the same handler, and it still runs once.\n\nThe run ends with PLAY RECAP, one line per host:\n- `ok` counts every task that succeeded, changed or not.\n- `changed` counts the tasks that changed something.\n- `unreachable` means SSH failed, and `failed` means a task failed.\n\nA failed task stops the play for that host only. Its notified handlers do not run, which is how a restart gets lost. The hands-on brings Day 6 back: `ansible.builtin.systemd_service` with `enabled: true` does what `systemctl enable` did.",
+     "body": "A playbook is that checklist written down: a YAML file with a list of plays. A play names its hosts and lists its tasks, and each task calls one module with arguments, like an ad-hoc command saved in a file. The lab's `first-playbook.yml` has two plays:\n1. \"Basics on every server\" installs tree and htop and writes `/etc/motd` (the message shown at login) on the whole lab group.\n2. \"Web server on the load balancer\" installs nginx on lb1, gives it a site config and a page, and starts it.\n\nAnsible runs the first task on every host of the play, then the second task, and so on from top to bottom. Setting `become: true` on a play makes every task use sudo. Each play starts with Gathering Facts, where Ansible collects details about each server. Day 37 puts them to use.\n\nA handler waits until something notifies it, like a note on the checklist saying \"if you changed the boiler setting, restart the boiler at the end\". The site config task has `notify: Reload nginx`. When that task reports changed, the handler runs once, at the end of the play. When the file was already right, nginx is left alone. Ten tasks can notify the same handler, and it still runs once.\n\nThe run ends with PLAY RECAP, one line per host:\n- `ok` counts every task that succeeded, changed or not.\n- `changed` counts the tasks that changed something.\n- `unreachable` means SSH failed, and `failed` means a task failed.\n\nA failed task stops the play for that host only. Its notified handlers do not run, which is how a restart gets lost. The hands-on brings Day 6 back: `ansible.builtin.systemd_service` with `enabled: true` does what `systemctl enable` did.\n\nOur first checklist works, and it is safe to run twice. It also has every value typed straight in, and every server gets the same files. The next lesson makes it fit each server, and keeps its secrets safe.",
      "refs": [
       {
        "title": "Ansible playbooks",
@@ -162,7 +163,11 @@
      ]
     }
    ],
-   "analogy": "Ansible works like a house sitter with a checklist: heating at 20 degrees, plants watered, back door locked. She checks each line and acts only where the house does not match it, so a second round through a tidy house changes nothing. A shell script is a list of chores instead, and it waters the plants again even when the soil is wet. A good house sitter would also notice a broken window that no line mentions. Ansible never does: a package someone installed by hand stays, because nothing on the list talks about it.",
+   "aside": {
+    "title": "How are the practice servers different from real ones?",
+    "body": "They are containers that run systemd as PID 1, the first program a machine starts. A plain container has no systemd, and systemd inside Docker needs extra rights: `privileged: true`, the host's cgroup tree and some tmpfs mounts. Those rights are fine on your laptop and wrong anywhere else. All three share the kernel (the core of the operating system) of Docker's VM, so `uptime` shows that VM's uptime. There is no real boot or disk setup, and the network is IPv4 only. They all live on 127.0.0.1 and differ by SSH port: 2201, 2202 and 2203.",
+    "after": 2
+   },
    "diagram": "<svg viewBox=\"0 0 560 270\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Your Mac logs in to web1 over SSH, copies a module, python3 runs it, and a JSON result comes back as ok or changed; web2 and lb1 get the same steps in parallel\"><text class=\"ts\" x=\"96\" y=\"20\" font-size=\"11\" text-anchor=\"middle\">control node</text><text class=\"ts\" x=\"464\" y=\"20\" font-size=\"11\" text-anchor=\"middle\">managed node</text><rect class=\"bxo\" x=\"16\" y=\"30\" width=\"160\" height=\"48\" rx=\"10\"/><text class=\"tk\" x=\"96\" y=\"59\" font-size=\"13\" text-anchor=\"middle\">Your Mac</text><rect class=\"bxt\" x=\"384\" y=\"30\" width=\"160\" height=\"48\" rx=\"10\"/><text class=\"tk\" x=\"464\" y=\"59\" font-size=\"13\" text-anchor=\"middle\">web1</text><line class=\"ln\" x1=\"176\" y1=\"42\" x2=\"380\" y2=\"42\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"280\" y=\"36\" font-size=\"11\" text-anchor=\"middle\">1. SSH login</text><line class=\"ln\" x1=\"176\" y1=\"68\" x2=\"380\" y2=\"68\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"280\" y=\"62\" font-size=\"11\" text-anchor=\"middle\">2. copy module</text><line class=\"ln\" x1=\"464\" y1=\"78\" x2=\"464\" y2=\"112\" marker-end=\"url(#ar)\"/><rect class=\"bxt\" x=\"384\" y=\"116\" width=\"160\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"464\" y=\"143\" font-size=\"13\" text-anchor=\"middle\">python3 runs it</text><rect class=\"bxg\" x=\"16\" y=\"116\" width=\"160\" height=\"44\" rx=\"10\"/><text class=\"tk\" x=\"96\" y=\"143\" font-size=\"13\" text-anchor=\"middle\">ok or changed</text><line class=\"ln\" x1=\"384\" y1=\"138\" x2=\"180\" y2=\"138\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"280\" y=\"132\" font-size=\"11\" text-anchor=\"middle\">3. JSON result</text><text class=\"ts\" x=\"96\" y=\"184\" font-size=\"11\" text-anchor=\"middle\">then the next task</text><rect class=\"bx\" x=\"384\" y=\"196\" width=\"74\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"421\" y=\"221\" font-size=\"13\" text-anchor=\"middle\">web2</text><rect class=\"bx\" x=\"470\" y=\"196\" width=\"74\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"507\" y=\"221\" font-size=\"13\" text-anchor=\"middle\">lb1</text><line class=\"lnd\" x1=\"176\" y1=\"216\" x2=\"380\" y2=\"216\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"280\" y=\"210\" font-size=\"11\" text-anchor=\"middle\">same steps</text><text class=\"ts\" x=\"464\" y=\"256\" font-size=\"11\" text-anchor=\"middle\">in parallel</text></svg>",
    "diagram_caption": "For each task, Ansible logs in over SSH, runs a small Python module on the server and reads back ok or changed.",
    "worked": {
@@ -174,7 +179,7 @@
       "lang": "console"
      },
      {
-      "say": "Run the first playbook. Every task that installs or writes something reports changed, and the handler runs because the site config changed. Output trimmed to the second play and the recap, and the rows of stars after each banner are cut.",
+      "say": "Run the first playbook. Every task that installs or writes something reports changed, and the handler runs because the site config changed. The output is trimmed to the second play and the recap, and the rows of stars after each banner are cut.",
       "code": "$ ansible-playbook first-playbook.yml\nPLAY [Web server on the load balancer]\nTASK [Install nginx]\nchanged: [lb1]\nTASK [Replace the default site with ours]\nchanged: [lb1]\nTASK [Put a page in the web folder]\nchanged: [lb1]\nTASK [Start nginx now and at every boot]\nchanged: [lb1]\nRUNNING HANDLER [Reload nginx]\nchanged: [lb1]\nPLAY RECAP\nlb1                        : ok=9    changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\nweb1                       : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\nweb2                       : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0",
       "lang": "console"
      },
@@ -189,7 +194,7 @@
       "lang": "console"
      },
      {
-      "say": "Run it for real. Then change a server by hand, the way a quick fix often happens: append a line to `/etc/motd` on web2 over SSH. The next run with `--diff --limit web2` puts the file back and shows exactly what it removed. A difference between the code and the server is called drift, and a regular Ansible run finds it and undoes it.",
+      "say": "Run it for real. Then change a server by hand, the way a quick fix often happens: add a line to `/etc/motd` on web2 over SSH. The next run with `--diff --limit web2` puts the file back and shows exactly what it removed. A difference between the code and the server is called drift, and a regular Ansible run finds it and undoes it.",
       "code": "$ ansible-playbook first-playbook.yml\n$ ssh -i .keys/id_ed25519 -p 2202 -o UserKnownHostsFile=.keys/known_hosts ubuntu@127.0.0.1 \"echo 'edited by hand' | sudo tee -a /etc/motd >/dev/null\"\n$ ansible-playbook first-playbook.yml --diff --limit web2\nTASK [Write a login message]\n--- before: /etc/motd\n+++ after: /etc/motd\n@@ -1,2 +1 @@\n web2 is managed by Ansible. Manual changes will be overwritten.\n-edited by hand\n\nchanged: [web2]",
       "lang": "console"
      },
@@ -312,16 +317,14 @@
      "what": "Show every SSH command Ansible sends, for debugging connections."
     }
    ],
-   "mistake": "Writing tasks as `shell: apt-get install -y nginx` turns Ansible back into a slow shell script. The shell and command modules cannot tell whether anything changed, so they report changed on every run, `--check` cannot preview them, and any handler they notify fires every time. Look for a real module first with `ansible-doc -l | grep apt`, and keep `command` for jobs that no module covers.",
-   "real_world": "OpenSSH ships a security fix, and every VM a team runs needs it the same day. With an Ansible repo, someone runs the patch playbook with `--check --diff` on two servers, then on the rest, and the PLAY RECAP lists the hosts that failed. The same playbooks also run on a schedule, so a change made by hand at 2 a.m. is found and reverted the next morning.",
    "task": {
     "title": "Run hello-devops as a systemd service with a playbook",
     "steps": [
-     "Keep the lab folder next to your hello-devops repo (`~/code/ansible-lab` and `~/code/hello-devops`). Start the servers with `./setup.sh` and check them with `ansible all -m ansible.builtin.ping`.",
+     "Keep the lab folder next to your hello-devops repo (`~/code/ansible-lab` and `~/code/hello-devops`). The hello-devops app is the course's tiny web app that answers every visit with a greeting and a count of visits. Start the servers with `./setup.sh` and check them with `ansible all -m ansible.builtin.ping`.",
      "Create `my-hello.yml` with one play for the `web` group and `become: true`.",
      "Add tasks that install `python3-venv` and `python3-packaging` with apt, create a system user `hello` with no login shell, and create `/opt/hello-devops`.",
      "Copy `app.py` and `requirements.txt` from your hello-devops repo into `/opt/hello-devops`.",
-     "Install the requirements into `/opt/hello-devops/venv` with the `ansible.builtin.pip` module.",
+     "Install the requirements into `/opt/hello-devops/venv` with the `ansible.builtin.pip` module. A venv is a private folder of Python packages for one app.",
      "Write a systemd unit (Day 6) that runs gunicorn on `0.0.0.0:8000` as the `hello` user, keep it in `files/`, and copy it to `/etc/systemd/system/hello-devops.service`.",
      "Start and enable the service with `ansible.builtin.systemd_service`. Add a handler that restarts it, and notify it from the tasks that copy code or the unit.",
      "Run the playbook, then `curl -s localhost:8101` and `curl -s localhost:8102`. Run it a second time and read the recap.",
@@ -340,13 +343,14 @@
     "answer": "Ansible reads the inventory, logs in to each server over SSH and runs the tasks in order. For each task it copies a small Python module to the server, runs it with python3 and reads back a JSON result. The module checks the server first and changes only what differs, so a second run reports ok and changes nothing. A handler, such as a reload, runs once at the end of the play, and only if a task that notified it reported a change."
    },
    "recap": [
-    "Terraform creates servers; Ansible configures what runs inside them, as often as you like.",
+    "Terraform creates servers, and Ansible sets up what runs inside them, as often as you like.",
     "Ansible is agentless: a managed node needs only an SSH login and Python 3.",
-    "The inventory lists hosts in groups; ansible.cfg in the current folder sets the defaults.",
-    "Modules describe a result and report ok or changed; command and shell always say changed.",
-    "--check --diff previews a run against the real servers, because there is no state file.",
+    "The inventory lists hosts in groups, and ansible.cfg in the current folder sets the defaults.",
+    "Modules describe a result and report ok or changed. command and shell always say changed.",
+    "--check --diff previews a run against the real servers, because there is no state file. Nothing is removed unless a task says so.",
     "Handlers run once at the end of a play, and only after a change."
    ],
+   "closing": "We started with a neighbour's list of chores and plants drowning by Friday. Ansible's modules are a list of results instead: each one looks at the server first, so the second run of our playbook changed nothing at all.\n\nIn your own playbook, look for every `shell:` and `command:` task. Each one is a chore, not a result, and it will say changed on every run until you replace it with a module or teach it when to say ok.\n\nNext, we'll make the checklist fit each house. How can one playbook give every server its own settings, and keep a password in git without anyone reading it?",
    "check": [
     {
      "q": "A nightly playbook has the task `ansible.builtin.shell: echo 'vm.swappiness=10' >> /etc/sysctl.conf`. What does the file look like after a week?",
@@ -357,7 +361,7 @@
       "One copy, because Ansible remembers the first run"
      ],
      "answer": 1,
-     "why": "The shell module runs its command every time and cannot know it already ran; `ansible.builtin.lineinfile` with `line:` would add the line once."
+     "why": "The shell module runs its command every time and cannot know it already ran. `ansible.builtin.lineinfile` with `line:` would add the line once."
     },
     {
      "q": "The inventory has `[db]` with db1 and db2, `[web]` with web1, and `[prod:children]` listing web and db. Which hosts does `ansible prod -m ansible.builtin.ping` reach?",
@@ -368,7 +372,7 @@
       "web1, db1 and db2"
      ],
      "answer": 3,
-     "why": "A :children group contains every host of each child group."
+     "why": "A :children group contains every host of each of its child groups."
     },
     {
      "q": "Three tasks in one play have `notify: Restart app`. On this run two of them report changed and one reports ok. What happens?",
@@ -385,7 +389,7 @@
    "interview": [
     {
      "q": "What does agentless mean for Ansible, and what does a server need before Ansible can manage it?",
-     "a": "Ansible runs on a control node and leaves nothing running on the servers it manages. For each task it connects over SSH, copies a small Python module to a temporary folder, runs it and deletes it. So a Linux server needs an SSH login, usually with sudo rights, and Python 3. Network devices are the exception: their modules run on the control node and talk to the device over SSH or an API. You have nothing to install or upgrade on servers, but the control node must be able to reach every one of them."
+     "a": "Ansible runs on a control node and leaves nothing running on the servers it manages. For each task it connects over SSH, copies a small Python module to a temporary folder, runs it and deletes it. So a Linux server needs an SSH login, usually with sudo rights, and Python 3. Network devices are the exception: their modules run on the control node and talk to the device over SSH or an API. You have nothing to install or upgrade on the servers, but the control node must be able to reach every one of them."
     },
     {
      "q": "What is idempotence, and how do you keep a playbook idempotent?",
@@ -393,12 +397,12 @@
     },
     {
      "q": "When would you use the command or shell module?",
-     "a": "Only when no module does the job, for example a vendor's CLI or a one-off migration command of your own app. The command module runs the program directly with no shell, which is safer, but pipes and redirects do not work. The shell module runs the line through /bin/sh, so pipes work, but you have to quote carefully. Both always report changed, so I add `changed_when` or `creates` to keep the recap honest and stop handlers from firing on every run."
+     "a": "Only when no module does the job, for example a vendor's own command-line tool or a one-off migration command of your own app. The command module runs the program directly with no shell, which is safer, but pipes and redirects do not work. The shell module runs the line through /bin/sh, so pipes work, but you have to quote carefully. Both always report changed, so I add `changed_when` or `creates` to keep the recap honest and stop handlers from firing on every run."
     }
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Run `ansible web1 -m ansible.builtin.ping -vvv` and read the lines that start with `SSH: EXEC`. Verbose mode shows every command Ansible sends. With pipelining switched off (`ANSIBLE_PIPELINING=False`), one ping took seven SSH or SFTP calls:\n1. Ask the server for the home folder of `ubuntu`.\n2. Make a private temporary folder under `~/.ansible/tmp`.\n3. Look for a Python, trying python3.15, python3.14 and so on down the list.\n4. Copy the module over SFTP as `AnsiballZ_ping.py`.\n5. Make it executable.\n6. Run it with `/usr/bin/python3.12`.\n7. Delete the temporary folder.\n\nWith the lab's `pipelining = True`, the same ping took two calls. Ansible found Python, then sent the module through the open connection's standard input, so nothing was written to disk. The `ControlPersist=60s` option in `ansible.cfg` keeps one SSH connection open for a minute, so the next tasks skip the login. Pipelining needs sudo to work without a terminal, which is the default on Ubuntu.\n\nThree settings change how a run behaves on many servers:\n- `forks`, or `-f 20` on the command line, sets how many hosts Ansible works on at once. The default is 5.\n- `serial: 2` in a play finishes the whole play on two hosts before it starts the next two. That is how you roll a change through a fleet without touching every server at the same moment.\n- `ansible.builtin.raw` sends a plain command over SSH with no Python. Teams use it to install Python on a bare machine, then switch to real modules.\n\nAnsible pushes from a control node. `ansible-pull` turns that around: each server clones a git repo and runs a playbook on itself, often from a timer. It suits machines your control node cannot reach, such as laptops on home networks."
+    "body": "Run `ansible web1 -m ansible.builtin.ping -vvv` and read the lines that start with `SSH: EXEC`. Verbose mode shows every command Ansible sends. With pipelining switched off (`ANSIBLE_PIPELINING=False`), one ping took seven SSH or SFTP calls (SFTP copies files over SSH):\n1. Ask the server for the home folder of `ubuntu`.\n2. Make a private temporary folder under `~/.ansible/tmp`.\n3. Look for a Python, trying python3.15, python3.14 and so on down the list.\n4. Copy the module over SFTP as `AnsiballZ_ping.py`.\n5. Make it executable.\n6. Run it with `/usr/bin/python3.12`.\n7. Delete the temporary folder.\n\nWith the lab's `pipelining = True`, the same ping took two calls. Ansible found Python, then sent the module through the open connection's standard input, so nothing was written to disk. The `ControlPersist=60s` option in `ansible.cfg` keeps one SSH connection open for a minute, so the next tasks skip the login. Pipelining needs sudo to work without a terminal, which is the default on Ubuntu.\n\nThree settings change how a run behaves on many servers:\n- `forks`, or `-f 20` on the command line, sets how many hosts Ansible works on at once. The default is 5.\n- `serial: 2` in a play finishes the whole play on two hosts before it starts the next two. That is how you roll a change through a fleet without touching every server at the same moment.\n- `ansible.builtin.raw` sends a plain command over SSH with no Python. Teams use it to install Python on a bare machine, then switch to real modules.\n\nAnsible pushes from a control node. `ansible-pull` turns that around: each server clones a git repo and runs a playbook on itself, often from a timer. It suits machines your control node cannot reach, such as laptops on home networks."
    },
    "sources": [
     {
@@ -423,7 +427,8 @@
    "id": "d37",
    "title": "Ansible in practice: variables, templates, roles and Vault",
    "minutes": 50,
-   "goal": "By the end you can turn a playbook into a role with defaults and templates, decide where each variable belongs, keep a secret in Vault, lint the code in CI, and let Ansible find EC2 servers by tag.",
+   "goal": "By the end you can turn a playbook into a role with defaults and templates, decide where each variable belongs, keep a secret in Vault, check the code in CI, and let Ansible find EC2 servers by tag.",
+   "opening": "The house sitter's checklist works on every house in the street, and now the owners start asking for small changes. The houses on the left want the heating at 19 degrees. The corner house is trying a new kind of plant food first, before anyone else. Each owner writes a note, and soon there are notes in the checklist, on the fridges and on one front door.\n\nThen someone adds a helpful line to the checklist: \"spare key under the blue pot\". The checklist gets photocopied for every new sitter, and the key's hiding place goes with it. Writing exceptions and secrets straight onto the list is the quick thing to do, which is why it happens.\n\nLast time, our first playbook set up three servers, with every value typed in. In this lesson, we'll learn where each note belongs and which one wins. Then we'll fill in files per server, pack the checklist into a role, lock a secret away, and find servers in AWS. Before we start, make a guess, and keep it in mind.",
    "guess": {
     "q": "A role's defaults/main.yml sets `hello_devops_greeting: Hello`. group_vars/web.yml sets it to `Hi`, and host_vars/web2.yml sets it to `Hey`. What does web2 get?",
     "options": [
@@ -433,7 +438,7 @@
      "An error, because one variable is set three times"
     ],
     "answer": 1,
-    "why": "Role defaults have the lowest precedence of all, so the inventory can override them. Host variables beat group variables, because a value for one host is more specific than a value for its group."
+    "why": "Role defaults have the lowest precedence of all, so the inventory can override them. Host variables beat group variables, because a value for one host is more specific than a value for its whole group."
    },
    "terms": [
     {
@@ -442,7 +447,7 @@
     },
     {
      "term": "Fact",
-     "plain": "Something Ansible learns about a server at the start of a play, such as its OS or IP address."
+     "plain": "Something Ansible learns about a server at the start of a play, such as its operating system or IP address."
     },
     {
      "term": "Jinja2 template",
@@ -466,13 +471,13 @@
     },
     {
      "term": "Dynamic inventory",
-     "plain": "An inventory plugin that asks an API, such as AWS, which servers exist right now."
+     "plain": "An inventory plugin that asks a cloud, such as AWS, which servers exist right now."
     }
    ],
    "sections": [
     {
-     "h": "Where variables live, and which value wins",
-     "body": "Day 36 hard-coded everything: the port, the folder, the greeting. Variables let one playbook serve many servers that differ a little. You can set them in many places, and the rule for which value wins is called **variable precedence**. The docs list 22 levels. In practice you need seven, from weakest to strongest:\n1. Role defaults, in `roles/NAME/defaults/main.yml`.\n2. `group_vars/all.yml`, for every host.\n3. `group_vars/web.yml` or a `group_vars/web/` folder, for one group.\n4. `host_vars/web2.yml`, for one host.\n5. `vars:` in a play.\n6. Role vars, in `roles/NAME/vars/main.yml`.\n7. Extra vars on the command line, `-e name=value`, which always win.\n\nAnsible loads the `group_vars` and `host_vars` folders that sit next to the inventory file or the playbook, and it matches file names to group and host names. The lab sets the greeting twice. The file `group_vars/web/vars.yml` says `Hello from Ansible`, and `host_vars/web2.yml` gives web2, the canary, its own text. The command `ansible web -m ansible.builtin.debug -a var=hello_devops_greeting` asks each host what it sees. It printed exactly those two values. With `-e 'hello_devops_greeting=\"Hi from -e\"'` added, both hosts printed `Hi from -e`.\n\nThe order has a pattern. A role default is only the author's suggestion, so it is weakest. The inventory files come next, where a host beats its group. Values written in the playbook beat the inventory, and what you type for one run beats everything.\n\nRole vars break the pattern: they sit above group_vars and host_vars. A value in a role's `vars/` folder cannot be changed from the inventory at all. So `defaults/` is for every setting a user may want to change, and `vars/` for the role's own fixed details.\n\nMy rule is to set each variable in one place, plus its role default. When the same name appears in four files, nobody can predict the result without running it.",
+     "h": "Notes in many places: where variables live and which one wins",
+     "body": "Last time, the playbook had the port, the folder and the greeting typed in. A variable is a named value, such as `hello_devops_greeting`, that tasks use instead of a typed-in one. Change the value, and every task that reads it follows, without any edit to the tasks. Variables let one playbook serve many servers that differ a little.\n\nYou can set a variable in many places, just as the street had notes in many places. The rule for which value wins is called **variable precedence**. The docs list 22 levels. In practice you need seven, from weakest to strongest:\n1. Role defaults, in `roles/NAME/defaults/main.yml`. A role is a packaged set of tasks, which we build later in this lesson.\n2. `group_vars/all.yml`, for every host.\n3. `group_vars/web.yml` or a `group_vars/web/` folder, for one group.\n4. `host_vars/web2.yml`, for one host.\n5. `vars:` in a play.\n6. Role vars, in `roles/NAME/vars/main.yml`.\n7. Extra vars on the command line, `-e name=value`, which always win.\n\nAnsible loads the `group_vars` and `host_vars` folders that sit next to the inventory file or the playbook, and it matches file names to group and host names. The lab sets the greeting twice. The file `group_vars/web/vars.yml` says `Hello from Ansible`. The file `host_vars/web2.yml` gives web2 its own text, because web2 is the canary. A canary is the one server that gets a change first, so a problem shows up on one machine instead of all.\n\nThe command `ansible web -m ansible.builtin.debug -a var=hello_devops_greeting` asks each host what it sees. It printed exactly those two values. With `-e 'hello_devops_greeting=\"Hi from -e\"'` added, both hosts printed `Hi from -e`.\n\nThe street explains the order. A role default is the printed checklist, only the author's suggestion, so it is weakest. Next come the notes on the inventory: the note for one side of the street, then the sticky note on one front door, so a host beats its group. Values written in the playbook beat the inventory, and the owner's phone call tonight (`-e`) beats everything.\n\nRole vars break the pattern: they sit above group_vars and host_vars. A value in a role's `vars/` folder cannot be changed from the inventory at all, and Ansible gives no warning. So `defaults/` is for every setting a user may want to change, and `vars/` for the role's own fixed details. A real sitter would notice two notes that disagree and ask. Ansible never asks. It picks the winner by its list, silently, so a forgotten override can hide your change for weeks.\n\n**When the same name sits in four files, nobody can predict the result. Set each variable in one place, plus its role default.**\n\nNext, we put variables to work inside files.",
      "refs": [
       {
        "title": "Using variables",
@@ -488,7 +493,7 @@
     },
     {
      "h": "Facts and templates: one file, filled in per host",
-     "body": "At the start of each play, the Gathering Facts step runs the setup module on every host. It collects facts: the OS and its version, IP addresses, memory, CPUs and a lot more. Running `ansible web1 -m ansible.builtin.setup -a 'filter=ansible_distribution*'` printed `Ubuntu`, `24.04` and `noble`. In a playbook you read them as `ansible_facts['distribution']`. A play that needs no facts can say `gather_facts: false` and save a few seconds per host.\n\nAnsible also sets some magic variables itself:\n- `inventory_hostname` is the host's name in the inventory, such as web1.\n- `groups['web']` is the list of hosts in the web group.\n- `hostvars['web1']` holds every variable of another host.\n\nTemplates are where variables and facts pay off. The template module reads a Jinja2 file on your Mac, fills it in for each host and copies the result to the server. Jinja2 has two kinds of markers:\n- `{{ name }}` prints a value.\n- `{% if %}` and `{% for %}` blocks add conditions and loops.\n\nThe role's `hello-devops.service.j2` is Day 36's systemd unit with variables for the user, folder, port and number of workers. The load balancer's `nginx-lb.conf.j2` loops over `groups['web']` and writes one `server` line per web host, with each host's `hello_devops_port` from `hostvars`. Add a third web server to the inventory, run the playbook, and nginx learns about it with no edit to the template. The line `{{ ansible_managed }}` at the top prints `Ansible managed`, a warning to anyone who opens the file on the server. Templates render on the control node, so servers do not need Jinja2.",
+     "body": "At the start of each play, the Gathering Facts step runs the setup module on every host. It collects facts, things Ansible learns about the server: its operating system and version, its memory and a lot more. Facts include its IP addresses, the numbers that identify it on a network. Running `ansible web1 -m ansible.builtin.setup -a 'filter=ansible_distribution*'` printed `Ubuntu`, `24.04` and `noble`. In a playbook you read them as `ansible_facts['distribution']`. A play that needs no facts can say `gather_facts: false` and save a few seconds per host.\n\nAnsible also sets some magic variables itself:\n- `inventory_hostname` is the host's name in the inventory, such as web1.\n- `groups['web']` is the list of hosts in the web group.\n- `hostvars['web1']` holds every variable of another host.\n\nTemplates are where variables and facts pay off. A template is a file with blanks that Ansible fills in for each host, like a form letter that prints a different name at the top of each copy. The template module reads a Jinja2 file on your Mac, fills it in for each host and copies the result to the server. Jinja2, the template language Ansible uses, has two kinds of markers:\n- `{{ name }}` prints a value.\n- `{% if %}` and `{% for %}` blocks add conditions and loops.\n\nThe role's `hello-devops.service.j2` is Day 36's systemd unit with variables for the user, the folder, the port and the number of workers. The load balancer's `nginx-lb.conf.j2` loops over `groups['web']`. It writes one `server` line per web host, with each host's `hello_devops_port` from `hostvars`. Add a third web server to the inventory, run the playbook, and nginx learns about it with no edit to the template.\n\nThe line `{{ ansible_managed }}` at the top prints `Ansible managed`, a warning to anyone who opens the file on the server. Templates render on the control node, so the servers do not need Jinja2. Templates shape files. Tasks need a little logic of their own too.",
      "refs": [
       {
        "title": "Templating (Jinja2)",
@@ -504,7 +509,7 @@
     },
     {
      "h": "Loops, conditions, handlers and tags",
-     "body": "Four task keywords cover most of the logic you will write:\n- `loop:` runs a task once per item. The role copies `app.py` and `requirements.txt` with one task that loops over `hello_devops_files`, and `item` holds the current entry.\n- `when:` runs a task only if a condition is true. The apt task has `when: ansible_facts['os_family'] == \"Debian\"`, so the role would skip it on a Red Hat server instead of failing.\n- `notify:` names a handler, as on Day 36. The copy, pip and template tasks all notify `Restart hello-devops`, and the app still restarts once.\n- `tags:` labels tasks, so you can run part of a playbook.\n\nThe role tags its tasks `install` or `config`. Running `ansible-playbook site.yml --list-tags` lists them, and `--tags config` ran only the settings file, the unit, the service and the nginx config. That is useful when you change one template and do not want to wait for apt and pip. The flag `--skip-tags install` does the opposite.\n\nHandlers have one trap. When a task fails, the play stops for that host, and handlers that were already notified do not run. Say the copy of `app.py` changed, and then the pip task failed. The restart never happens. On the next run the copy reports ok, so nothing notifies the handler again, and the old code keeps running with the new file on disk. The flag `--force-handlers` runs notified handlers even after a failure.",
+     "body": "Four task keywords cover most of the logic you will write:\n- `loop:` runs a task once per item. The role copies `app.py` and `requirements.txt` with one task that loops over `hello_devops_files`, and `item` holds the current entry.\n- `when:` runs a task only if a condition is true. The apt task has `when: ansible_facts['os_family'] == \"Debian\"`, so the role would skip it on a Red Hat server (another family of Linux) instead of failing.\n- `notify:` names a handler, as on Day 36. The copy, pip and template tasks all notify `Restart hello-devops`, and the app still restarts once.\n- `tags:` labels tasks, so you can run part of a playbook.\n\nThe role tags its tasks `install` or `config`. Running `ansible-playbook site.yml --list-tags` lists them, and `--tags config` ran only the settings file, the unit, the service and the nginx config. That is useful when you change one template and do not want to wait for apt and pip. The flag `--skip-tags install` does the opposite.\n\nHandlers have one trap. When a task fails, the play stops for that host, and handlers that were already notified do not run. Say the copy of `app.py` changed, and then the pip task failed. The restart never happens. On the next run the copy reports ok, so nothing notifies the handler again, and the old code keeps running with the new file on disk. The flag `--force-handlers` runs notified handlers even after a failure. The playbook is getting long now, so it is time to pack it up.",
      "refs": [
       {
        "title": "Loops",
@@ -519,8 +524,8 @@
      ]
     },
     {
-     "h": "Roles and collections: packaging Ansible code",
-     "body": "Day 36's `hello-devops.yml` puts all of the app's tasks and its handler into one playbook. A second playbook that needs the same app would have to copy all of it. A role packages that job once, much like a Terraform module on Day 34, and any play can use it. A role is a folder with a fixed layout, so Ansible knows where to look in it. `ansible-galaxy role init roles/hello_devops` makes the skeleton, and the lab's role uses these parts:\n- `tasks/main.yml` and `handlers/main.yml`, the tasks and their handlers.\n- `templates/`, the `.j2` files, which a template task in the role finds by name alone.\n- `defaults/main.yml`, settings meant to be overridden.\n- `vars/main.yml`, the role's own fixed values.\n- `meta/main.yml`, a description and the supported platforms.\n\nA play uses the role with `roles: [hello_devops]`, so `site.yml` is two short plays. Put the role's name in front of its variables, as in `hello_devops_port`. All variables of a host share one namespace, so a plain `port` in two roles would clash. ansible-lint enforces this rule.\n\nModules come in collections, packages named `namespace.collection`. ansible-core ships `ansible.builtin`, with about 70 modules such as copy, template and apt. Everything else comes from collections such as `amazon.aws`, `community.general` or `community.docker`. A fully qualified name (FQCN) such as `ansible.builtin.copy` says exactly which collection a module comes from. Short names like `copy` still work, but two collections can ship a module with the same short name, so the lab writes full names everywhere.\n\nList the collections a project needs in `requirements.yml`, with version ranges, and install them with `ansible-galaxy collection install -r requirements.yml`. It is the same idea as `requirements.txt` in Python: your laptop and CI get the same code. The big `ansible` package from Homebrew already bundles amazon.aws and many more. Roles and collections that other people wrote come from Ansible Galaxy. Read one before you run it as root on your servers.",
+     "h": "Packing it up: roles and collections",
+     "body": "Day 36's `hello-devops.yml` puts all of the app's tasks and its handler into one playbook. A second playbook that needs the same app would have to copy all of it. A role packages that job once, much like a Terraform module on Day 34, and any play can use it.\n\nA role is a folder with a fixed layout, so Ansible knows where to look in it. `ansible-galaxy role init roles/hello_devops` makes the empty skeleton, and the lab's role uses these parts:\n- `tasks/main.yml` and `handlers/main.yml`, the tasks and their handlers.\n- `templates/`, the `.j2` files, which a template task in the role finds by name alone.\n- `defaults/main.yml`, settings meant to be overridden.\n- `vars/main.yml`, the role's own fixed values.\n- `meta/main.yml`, a description and the supported platforms.\n\nA play uses the role with `roles: [hello_devops]`, so `site.yml` is two short plays. Put the role's name in front of its variables, as in `hello_devops_port`. All variables of a host share one pool of names, so a plain `port` in two roles would clash. ansible-lint, a checker we meet shortly, enforces this rule.\n\nModules come in collections, packages named `namespace.collection`. ansible-core ships `ansible.builtin`, with about 70 modules such as copy, template and apt. Everything else comes from collections such as `amazon.aws`, `community.general` or `community.docker`. A fully qualified name (FQCN) such as `ansible.builtin.copy` says exactly which collection a module comes from. Short names like `copy` still work, but two collections can ship a module with the same short name, so the lab writes full names everywhere.\n\nList the collections a project needs in `requirements.yml`, with version ranges, and install them with `ansible-galaxy collection install -r requirements.yml`. It is the same idea as the `requirements.txt` list of Python packages in hello-devops: your laptop and CI get the same code. The big `ansible` package from Homebrew already bundles amazon.aws and many more. Roles and collections that other people wrote come from Ansible Galaxy, a public site for sharing them. Read one before you run it as root on your servers. A packed role is easy to share, which makes the next question urgent: what about its secrets?",
      "refs": [
       {
        "title": "Roles",
@@ -541,7 +546,7 @@
     },
     {
      "h": "Ansible Vault: secrets you can commit",
-     "body": "A playbook often needs a secret, such as a database password or an API token. Written in plain text in group_vars, it lands in git, and git history keeps it even after you delete the line. Ansible Vault encrypts it with AES256 (the Advanced Encryption Standard, with a 256-bit key) and a password, so the encrypted text can sit in git. You have two ways to use it:\n- `ansible-vault encrypt FILE` (or `create`) encrypts a whole file, names and values.\n- `ansible-vault encrypt_string --name NAME 'value'` encrypts one value and prints a YAML block to paste into a normal vars file.\n\nThe difference showed up in the lab. With a whole encrypted file in `group_vars/web/`, even `ansible web -m ping` failed with `Attempting to decrypt but no vault secrets found`, because Ansible decrypts such files while it loads the inventory. A single encrypted value is decrypted only when a task uses it, so ping and Day 36's playbooks keep working without the password. That is why the lab's `group_vars/web/vault.yml` holds one `encrypt_string` value. The plain `vars.yml` next to it says `hello_devops_api_token: \"{{ vault_hello_devops_api_token }}\"`. The `vault_` prefix tells readers the real value is encrypted, and grep still finds the plain name.\n\nYou give Ansible the password with `--ask-vault-pass` or `--vault-password-file .vault_pass`. Keep that file out of git, as the lab's `.gitignore` does, with mode 600. Teams keep the real password in a password manager or a CI secret. The lab's token is fake, and its practice password is `practice-only-password`.\n\nansible-core 2.22 added **secret masking**: values decrypted from Vault print as `$REDACTED$`, even in `debug` output and in `--diff`. The same `debug` command on ansible-core 2.21, the version inside today's `ansible` package, printed the token in plain text. So the role also sets `diff: false` on the task that writes the secret, which keeps it out of the output on any version.",
+     "body": "A playbook often needs a secret, such as a database password or an API token (a long password that one program uses to call another). Written in plain text in group_vars, it lands in git, and git history keeps it even after you delete the line. That is the spare key's hiding place, photocopied for every sitter.\n\nAnsible Vault encrypts the secret with AES256, a strong standard cipher, and a password, so the scrambled text can sit in git. You have two ways to use it:\n- `ansible-vault encrypt FILE` (or `create`) encrypts a whole file, names and values.\n- `ansible-vault encrypt_string --name NAME 'value'` encrypts one value and prints a YAML block to paste into a normal vars file.\n\nThe difference showed up in the lab. With a whole encrypted file in `group_vars/web/`, even `ansible web -m ping` failed with `Attempting to decrypt but no vault secrets found`. Ansible decrypts such files while it loads the inventory. A single encrypted value is decrypted only when a task uses it, so ping and Day 36's playbooks keep working without the password.\n\nThat is why the lab's `group_vars/web/vault.yml` holds one `encrypt_string` value. The plain `vars.yml` next to it says `hello_devops_api_token: \"{{ vault_hello_devops_api_token }}\"`. The `vault_` prefix tells readers the real value is encrypted, and grep (the search command) still finds the plain name.\n\nYou give Ansible the password with `--ask-vault-pass` or `--vault-password-file .vault_pass`. Keep that file out of git, as the lab's `.gitignore` does, with mode 600, so only you can read it. Teams keep the real password in a password manager or a CI secret. The lab's token is fake, and its practice password is `practice-only-password`.\n\nansible-core 2.22 added secret masking: values decrypted from Vault print as `$REDACTED$`, even in `debug` output and in `--diff`. The same `debug` command on ansible-core 2.21, the version inside today's `ansible` package, printed the token in plain text. So the role also sets `diff: false` on the task that writes the secret, which keeps it out of the output on any version. Secrets are safe in git now. Next, we make sure mistakes do not get that far.",
      "refs": [
       {
        "title": "Ansible Vault",
@@ -557,7 +562,7 @@
     },
     {
      "h": "Lint, test and run it from CI",
-     "body": "Three checks catch most mistakes before a server sees them:\n1. `ansible-playbook --syntax-check site.yml` parses the playbook and stops at YAML or structure errors. It contacts no servers.\n2. `ansible-lint` checks style and known traps: short module names, `shell` where a module exists, tasks with no name, risky file modes. The lab's `.ansible-lint` picks the strictest profile, `production`.\n3. A real run against throwaway servers, done twice, where the second run must show `changed=0`.\n\nMolecule automates the third check. It is a test framework for roles, playbooks and collections, maintained by the Ansible project. A Molecule scenario creates test servers (often containers), applies your role, applies it again to prove idempotence, runs your checks and deletes everything. Its current setup uses ordinary Ansible playbooks and inventory to create and destroy the test servers. The lab skips Molecule, because the compose servers already play that part by hand.\n\nThe lab's `.github/workflows/ansible.yml` runs the first two checks on every pull request. It installs ansible-core, ansible-lint and the collections, and it needs no servers and no secrets. Running playbooks from CI against real servers is the next step. That job needs an SSH key as a secret, a network path to the servers and the vault password.\n\nTeams that run Ansible a lot often move it to AWX or Red Hat Ansible Automation Platform. Both add a web UI, an API, schedules, access control and a log of every run. AWX is the open source upstream of the Red Hat product, but its releases have been paused since July 2024 during a large rewrite.",
+     "body": "Three checks catch most mistakes before a server sees them:\n1. `ansible-playbook --syntax-check site.yml` reads the playbook and stops at YAML or structure errors. It contacts no servers.\n2. `ansible-lint` checks style and known traps: short module names, `shell` where a module exists, tasks with no name, risky file permissions. The lab's `.ansible-lint` picks the strictest profile, `production`.\n3. A real run against throwaway servers, done twice, where the second run must show `changed=0`.\n\nMolecule automates the third check. It is a test tool for roles, playbooks and collections, kept by the Ansible project. A Molecule scenario creates test servers (often containers), applies your role, applies it again to prove that the second run changes nothing, runs your checks and deletes everything. Its current setup uses ordinary Ansible playbooks and inventory to create and destroy the test servers. The lab skips Molecule, because the compose servers already play that part by hand.\n\nThe lab's `.github/workflows/ansible.yml` runs the first two checks on every pull request. It installs ansible-core, ansible-lint and the collections, and it needs no servers and no secrets. Running playbooks from CI against real servers is the next step. That job needs an SSH key as a secret, a network path to the servers and the vault password.\n\nPicture a team that still runs many VMs. It keeps one Ansible repo, with an inventory folder per environment and the same roles for staging and production. Every change goes through a pull request where CI runs ansible-lint and a syntax check, and a reviewer reads the `--check --diff` output for one staging host. The real run happens from a shared tool or a CI job with the SSH key as a secret, never from one person's laptop. So far our servers are three containers on a laptop. Real ones live in a cloud and come and go.",
      "refs": [
       {
        "title": "Ansible Lint documentation",
@@ -578,7 +583,7 @@
     },
     {
      "h": "Real servers: find them in AWS, and know when not to use Ansible",
-     "body": "A static inventory goes stale on a cloud, where servers come and go. A dynamic inventory asks the cloud instead. The `amazon.aws.aws_ec2` inventory plugin reads a YAML file whose name must end in `aws_ec2.yml`. The lab's `aws/hello.aws_ec2.yml` asks one Region for running instances with the tag `Project=hello-devops`. That is the tag Day 35's `default_tags` puts on everything Terraform creates, so an `aws_instance` you add there shows up by itself. Tag a Day 14 instance the same way and it appears too. The file also:\n- names each host after its `Name` tag, or its instance ID,\n- turns tags into groups, so `Role=web` becomes the group `role_web`,\n- sets `ansible_host` to the public IP and `ansible_user` to `ubuntu`.\n\nIt needs the amazon.aws collection, boto3 (Day 16) next to Ansible (`uv tool install ansible-core --with boto3`) and the AWS login from Day 13. Then `ansible-inventory -i aws/hello.aws_ec2.yml --graph` lists the servers, and two `-i` options combine it with `inventory.ini`. Go deeper runs the plugin against an AWS emulator, so you can try it with no account. Day 14 recommends instances with no open SSH port. Ansible can reach those through SSM Session Manager with the `amazon.aws.aws_ssm` connection plugin, which also needs an S3 bucket for file transfers.\n\nAnsible is one of several ways to get software onto a server:\n- cloud-init user data (Day 14) runs once, at first boot. It is enough for a server you never change.\n- Ansible changes long-lived servers again and again, and undoes drift.\n- Packer bakes an image with everything installed, often by running Ansible inside the build, so new servers boot ready.\n- Kubernetes replaces containers instead of changing them.\n\nFor a fleet of long-lived VMs, I would pick Ansible. For anything that can be a container, the image is the configuration, and Ansible's part shrinks to preparing the machines underneath.",
+     "body": "A list of addresses goes out of date on a cloud, where servers start and stop all day. A dynamic inventory asks the cloud instead. The `amazon.aws.aws_ec2` inventory plugin reads a YAML file whose name must end in `aws_ec2.yml`. The lab's `aws/hello.aws_ec2.yml` asks one Region for running instances (EC2 servers) with the tag `Project=hello-devops`.\n\nThat is the tag Day 35's `default_tags` puts on everything Terraform creates, so an `aws_instance` you add there shows up by itself. Tag a Day 14 instance the same way and it appears too. The file also:\n- names each host after its `Name` tag, or its instance ID,\n- turns tags into groups, so `Role=web` becomes the group `role_web`,\n- sets `ansible_host` to the public IP and `ansible_user` to `ubuntu`.\n\nIt needs the amazon.aws collection, boto3 (the Python library for AWS, from Day 16) next to Ansible (`uv tool install ansible-core --with boto3`) and the AWS login from Day 13. Then `ansible-inventory -i aws/hello.aws_ec2.yml --graph` lists the servers, and two `-i` options combine it with `inventory.ini`. Go deeper runs the plugin against an AWS emulator, a program that pretends to be AWS, so you can try it with no account.\n\nDay 14 recommends instances with no open SSH port. Ansible can reach those through SSM Session Manager, AWS's way to reach a server without SSH, with the `amazon.aws.aws_ssm` connection plugin. It also needs an S3 bucket for file transfers.\n\nAnsible is one of several ways to get software onto a server:\n- cloud-init user data (Day 14) runs once, at first boot. It is enough for a server you never change.\n- Ansible changes long-lived servers again and again, and undoes drift.\n- Packer bakes an image with everything installed, often by running Ansible inside the build, so new servers start ready.\n- Kubernetes replaces containers instead of changing them.\n\nFor a fleet of long-lived VMs, I would pick Ansible. For anything that can be a container, the image is the configuration, and Ansible's part shrinks to preparing the machines underneath. That is where the course goes next: a world where nobody repairs a running container, because something replaces it.",
      "refs": [
       {
        "title": "amazon.aws.aws_ec2 inventory plugin",
@@ -593,7 +598,11 @@
      ]
     }
    ],
-   "analogy": "Variables in Ansible behave like a recipe card in a restaurant chain. The card says two spoons of salt, which is the role default. A branch can write one spoon on its copy (group_vars). A regular guest can ask for no salt at one table (host_vars), and the chef's order on the night beats everything (-e). A real kitchen would notice two orders that disagree and ask. Ansible never asks: it picks the winner by its precedence list, silently, so a forgotten override in host_vars can hide your change for weeks.",
+   "aside": {
+    "title": "What are AWX and Ansible Automation Platform?",
+    "body": "Teams that run Ansible a lot often move it off laptops and into AWX or Red Hat Ansible Automation Platform. Both add a web page, an API, schedules, access control and a log of every run. AWX is the open source project that the Red Hat product is built from. Its releases have been paused since July 2024, during a large rewrite.",
+    "after": 5
+   },
    "diagram": "<svg viewBox=\"0 0 560 290\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Variable precedence from weakest to strongest: role defaults, group_vars/all, group_vars/web, host_vars/web2, play vars, role vars, extra vars\"><text class=\"ts\" x=\"64\" y=\"36\" font-size=\"11\" text-anchor=\"middle\">strongest</text><text class=\"ts\" x=\"64\" y=\"264\" font-size=\"11\" text-anchor=\"middle\">weakest</text><line class=\"ln\" x1=\"120\" y1=\"266\" x2=\"120\" y2=\"24\" marker-end=\"url(#ar)\"/><rect class=\"bxo\" x=\"150\" y=\"16\" width=\"240\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"270\" y=\"36\" font-size=\"13\" text-anchor=\"middle\">-e extra vars</text><text class=\"ts\" x=\"404\" y=\"35\" font-size=\"11\" text-anchor=\"start\">Hi from -e</text><rect class=\"bxp\" x=\"150\" y=\"54\" width=\"240\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"270\" y=\"74\" font-size=\"13\" text-anchor=\"middle\">role vars</text><text class=\"ts\" x=\"404\" y=\"73\" font-size=\"11\" text-anchor=\"start\">fixed by the role</text><rect class=\"bxt\" x=\"150\" y=\"92\" width=\"240\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"270\" y=\"112\" font-size=\"13\" text-anchor=\"middle\">play vars</text><rect class=\"bxt\" x=\"150\" y=\"130\" width=\"240\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"270\" y=\"150\" font-size=\"13\" text-anchor=\"middle\">host_vars/web2</text><text class=\"ts\" x=\"404\" y=\"149\" font-size=\"11\" text-anchor=\"start\">web2, the canary</text><rect class=\"bxt\" x=\"150\" y=\"168\" width=\"240\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"270\" y=\"188\" font-size=\"13\" text-anchor=\"middle\">group_vars/web</text><text class=\"ts\" x=\"404\" y=\"187\" font-size=\"11\" text-anchor=\"start\">Hello from Ansible</text><rect class=\"bxt\" x=\"150\" y=\"206\" width=\"240\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"270\" y=\"226\" font-size=\"13\" text-anchor=\"middle\">group_vars/all</text><rect class=\"bxg\" x=\"150\" y=\"244\" width=\"240\" height=\"30\" rx=\"10\"/><text class=\"tk\" x=\"270\" y=\"264\" font-size=\"13\" text-anchor=\"middle\">role defaults</text><text class=\"ts\" x=\"404\" y=\"263\" font-size=\"11\" text-anchor=\"start\">Hello, DevOps!</text></svg>",
    "diagram_caption": "Higher wins: web2 gets its host_vars greeting unless -e overrides it, and role vars beat the whole inventory.",
    "worked": {
@@ -610,7 +619,7 @@
       "lang": "console"
      },
      {
-      "say": "Write the practice vault password into `.vault_pass` and run `site.yml` over the servers from Day 36, with `--diff`. The template replaces Day 36's static unit, so the diff shows the new lines. The handler restarts the app once per host, and lb1 gets its load balancer config. Output trimmed to web1's unit and the recap.",
+      "say": "Write the practice vault password into `.vault_pass` and run `site.yml` over the servers from Day 36, with `--diff`. The template replaces Day 36's fixed unit file, so the diff shows the new lines. The handler restarts the app once per host, and lb1 gets its load balancer config. The output is trimmed to web1's unit and the recap.",
       "code": "$ printf '%s\\n' 'practice-only-password' > .vault_pass && chmod 600 .vault_pass\n$ ansible-playbook site.yml --vault-password-file .vault_pass --diff\nTASK [hello_devops : Write the systemd unit]\n-Description=hello-devops web app\n+Description=hello-devops 1.0.0\n-Environment=APP_VERSION=1.0.0\n+# APP_VERSION, GREETING and the token come from this file (mode 0640).\n+EnvironmentFile=/etc/hello-devops.env\nchanged: [web1]\nPLAY RECAP\nlb1                        : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\nweb1                       : ok=10   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\nweb2                       : ok=10   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0",
       "lang": "console"
      },
@@ -806,8 +815,6 @@
      "what": "Ask AWS which instances match the dynamic inventory and print their groups."
     }
    ],
-   "mistake": "Setting the same variable in a role's `vars/`, in group_vars and in a play's `vars:`, then wondering why a change in the inventory has no effect. Role vars beat group_vars and host_vars, so a greeting placed there cannot be overridden from the inventory, and Ansible gives no warning about it. Keep settings in `defaults/`, set each value in one place, and ask Ansible what it sees with `ansible web -m ansible.builtin.debug -a var=NAME`.",
-   "real_world": "Teams that still run VMs usually keep one Ansible repo per platform, with an inventory folder per environment and the same roles for staging and production. Every change goes through a pull request where CI runs ansible-lint and a syntax check, and a reviewer reads the `--check --diff` output for one staging host. The real run happens from AWX, Ansible Automation Platform or a CI job with the SSH key as a secret, never from one person's laptop.",
    "task": {
     "title": "A role for the load balancer, a canary release and your own secret",
     "steps": [
@@ -832,13 +839,14 @@
     "answer": "The role's defaults/main.yml sets a greeting with the lowest precedence of all. The file group_vars/web/vars.yml overrides it for both web servers, and host_vars/web2.yml overrides it again for web2 only, because host variables beat group variables. The template module then fills the greeting into the settings file on each host, so one template gives each server its own file. If the greeting were in the role's vars/ folder, it would beat group_vars and host_vars, and nobody could change it from the inventory."
    },
    "recap": [
-    "Put knobs in role defaults, shared values in group_vars, exceptions in host_vars, and one-off overrides in -e.",
-    "Facts and magic variables such as groups and hostvars feed templates, which render on the control node.",
-    "loop, when, notify and tags cover most task logic; a failed play can lose a pending restart.",
-    "A role has a fixed layout and prefixes its variables with its name; collections come from requirements.yml.",
+    "Put settings in role defaults, shared values in group_vars, exceptions in host_vars, and one-off overrides in -e.",
+    "Facts and magic variables such as groups and hostvars feed templates, which are filled in on the control node.",
+    "loop, when, notify and tags cover most task logic, and a failed play can lose a pending restart.",
+    "A role has a fixed layout and puts its name in front of its variables. Collections come from requirements.yml.",
     "Encrypt single values with encrypt_string, keep the vault password out of git, and expect $REDACTED$ in 2.22 output.",
-    "Lint and syntax-check in CI, and let the aws_ec2 plugin find cloud servers by tag."
+    "Lint in CI and find cloud servers by tag. Ansible changes servers in place, which matters less once apps run in containers."
    ],
+   "closing": "We started with notes on fridges and a spare key's hiding place on a photocopied list. Now each note has its place and a clear order of who wins, one template fills in every server's files, and the secret sits in git as unreadable text.\n\nIn the lab, pick any variable and run `ansible web -m ansible.builtin.debug -a var=NAME`. If the answer surprises you, search for that name across `group_vars`, `host_vars` and the role, and see how many notes it has.\n\nNext, we'll leave servers we repair and meet a system that replaces things instead. What if a manager kept every table staffed, no matter who called in sick?",
    "check": [
     {
      "q": "A role's `vars/main.yml` sets `app_port: 9000`. A teammate puts `app_port: 8000` in host_vars/app1.yml and runs the playbook. Which port does app1 get?",
@@ -849,7 +857,7 @@
       "An error about a variable defined twice"
      ],
      "answer": 1,
-     "why": "Role vars sit above all inventory variables in the precedence list; move the value to defaults/ so the inventory can change it."
+     "why": "Role vars sit above all inventory variables in the precedence list. Move the value to defaults/ so the inventory can change it."
     },
     {
      "q": "`group_vars/db/vault.yml` is one whole file encrypted with ansible-vault. A teammate without the password runs `ansible db -m ansible.builtin.ping`. What happens?",
@@ -860,7 +868,7 @@
       "It asks for the password and carries on if you press Enter"
      ],
      "answer": 2,
-     "why": "A fully encrypted vars file is decrypted when the inventory loads; values made with encrypt_string are decrypted only when a task uses them."
+     "why": "A fully encrypted vars file is decrypted when the inventory loads. Values made with encrypt_string are decrypted only when a task uses them."
     },
     {
      "q": "With the lab's `hello.aws_ec2.yml`, you start a new instance tagged `Project=hello-devops` and `Role=db`. Where does it appear in `ansible-inventory --graph`?",
@@ -881,16 +889,16 @@
     },
     {
      "q": "How do you keep secrets in an Ansible repository?",
-     "a": "I encrypt them with Ansible Vault, usually value by value with encrypt_string, in a vault_-prefixed variable that a plain vars file refers to. The vault password stays outside git: in a password manager, a CI secret or a mode-600 file listed in .gitignore. Tasks that write secrets get `diff: false` or `no_log`, and ansible-core 2.22 also masks decrypted values in its output. When there are many secrets or they rotate often, teams read them at run time from a secrets manager with a lookup plugin instead."
+     "a": "I encrypt them with Ansible Vault, usually value by value with encrypt_string, in a vault_-prefixed variable that a plain vars file refers to. The vault password stays outside git: in a password manager, a CI secret or a mode-600 file listed in .gitignore. Tasks that write secrets get `diff: false` or `no_log`, and ansible-core 2.22 also masks decrypted values in its output. When there are many secrets, or they change often, teams read them at run time from a secrets manager with a lookup plugin instead."
     },
     {
      "q": "When would you choose Ansible, and when Packer, cloud-init or Kubernetes?",
-     "a": "cloud-init runs once at first boot, which suits simple servers that never change. Ansible fits long-lived servers that need repeated changes and drift fixes, and it also manages network devices. Packer bakes the same changes into an image, so new servers start ready and nothing changes in place, which pairs well with autoscaling. For containerized apps, Kubernetes replaces containers instead of changing them, and Ansible's job shrinks to preparing the nodes."
+     "a": "cloud-init runs once at first boot, which suits simple servers that never change. Ansible fits long-lived servers that need repeated changes and drift fixes, and it also manages network devices. Packer bakes the same changes into an image, so new servers start ready and nothing changes in place, which pairs well with autoscaling (adding and removing servers as load changes). For apps in containers, Kubernetes replaces containers instead of changing them, and Ansible's job shrinks to preparing the machines underneath."
     }
    ],
    "deeper": {
     "minutes": 15,
-    "body": "The aws_ec2 plugin only reads from AWS, so you can try it against an emulator. The moto library imitates AWS APIs in Python, and its server mode answers on a local port. Everything below is free and stays on your Mac.\n\n1. Give Ansible boto3 and the collection: `uv tool install ansible-core --with boto3`, then `ansible-galaxy collection install -r requirements.yml`.\n2. In a second terminal, start the emulator: `uvx --from 'moto[server]' moto_server -p 5055`.\n3. Back in the lab folder, use fake credentials so nothing can reach a real account: `export AWS_ACCESS_KEY_ID=testing AWS_SECRET_ACCESS_KEY=testing AWS_URL=http://127.0.0.1:5055`. The plugin reads `AWS_URL` as its endpoint.\n4. Create two instances with the course tag and one without, using `aws ec2 run-instances` from Day 13 with `--endpoint-url http://127.0.0.1:5055 --region us-east-1`. moto accepts any image ID, such as `ami-12345678`. Tag them with `--tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=hello-web-1},{Key=Project,Value=hello-devops},{Key=Role,Value=web}]'`.\n5. Run `ansible-inventory -i aws/hello.aws_ec2.yml --graph`.\n\nWhen we did this, the graph showed `hello-web-1` and `hello-web-2` in two groups, `aws_ec2` and `role_web`. The third instance, tagged `Project=billing`, was missing, because the filter dropped it. Running `ansible-inventory -i aws/hello.aws_ec2.yml --host hello-web-1` printed what AWS knows about the host, including `ec2_tags`, `instance_type`, `private_ip_address` and the `ansible_host` that `compose` set from the public IP.\n\nTwo details matter before you use this for real. First, the plugin's old `tags` host variable is being replaced by `ec2_tags`, and `use_deprecated_tags: false` in the lab's file switches the old one off now. Second, a dynamic inventory works with group_vars like any other. A file `group_vars/role_web.yml` next to your playbooks applies to every instance tagged `Role=web`, whatever its name. With `--playbook-dir .`, `ansible-inventory --host` showed a test variable from such a file on hello-web-1.\n\nTwo `-i` options merge inventories: `ansible-inventory -i inventory.ini -i aws/hello.aws_ec2.yml --graph` printed the lab's three containers and the cloud hosts in one tree. Stop moto with Ctrl+C when you are done. Nothing was created in AWS."
+    "body": "The aws_ec2 plugin only reads from AWS, so you can try it against an emulator. The moto library imitates AWS in Python, and its server mode answers on a local port. Everything below is free and stays on your Mac.\n\n1. Give Ansible boto3 and the collection: `uv tool install ansible-core --with boto3`, then `ansible-galaxy collection install -r requirements.yml`.\n2. In a second terminal, start the emulator: `uvx --from 'moto[server]' moto_server -p 5055`.\n3. Back in the lab folder, use fake credentials so nothing can reach a real account: `export AWS_ACCESS_KEY_ID=testing AWS_SECRET_ACCESS_KEY=testing AWS_URL=http://127.0.0.1:5055`. The plugin reads `AWS_URL` as the address to send its requests to.\n4. Create two instances with the course tag and one without, using `aws ec2 run-instances` from Day 13 with `--endpoint-url http://127.0.0.1:5055 --region us-east-1`. moto accepts any image ID, such as `ami-12345678`. Tag them with `--tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=hello-web-1},{Key=Project,Value=hello-devops},{Key=Role,Value=web}]'`.\n5. Run `ansible-inventory -i aws/hello.aws_ec2.yml --graph`.\n\nWhen we did this, the graph showed `hello-web-1` and `hello-web-2` in two groups, `aws_ec2` and `role_web`. The third instance, tagged `Project=billing`, was missing, because the filter dropped it. Running `ansible-inventory -i aws/hello.aws_ec2.yml --host hello-web-1` printed what AWS knows about the host, including `ec2_tags`, `instance_type`, `private_ip_address` and the `ansible_host` that `compose` set from the public IP.\n\nTwo details matter before you use this for real. First, the plugin's old `tags` host variable is being replaced by `ec2_tags`, and `use_deprecated_tags: false` in the lab's file switches the old one off now. Second, a dynamic inventory works with group_vars like any other. A file `group_vars/role_web.yml` next to your playbooks applies to every instance tagged `Role=web`, whatever its name. With `--playbook-dir .`, `ansible-inventory --host` showed a test variable from such a file on hello-web-1.\n\nTwo `-i` options merge inventories: `ansible-inventory -i inventory.ini -i aws/hello.aws_ec2.yml --graph` printed the lab's three containers and the cloud hosts in one tree. Stop moto with Ctrl+C when you are done. Nothing was created in AWS."
    },
    "sources": [
     {
@@ -913,21 +921,21 @@
   }
  ],
  "recap": [
-  "Configuration management keeps servers matching what your files say; Terraform makes servers, Ansible sets them up.",
+  "Configuration management keeps servers matching what your files say. Terraform makes servers, and Ansible sets them up.",
   "Ansible is agentless: it logs in over SSH, runs a Python module, reads the JSON result and cleans up.",
-  "An inventory lists hosts in groups; the ansible.cfg in your project folder holds the defaults.",
-  "Modules describe a state and report ok or changed, so a second run should show changed=0.",
+  "An inventory lists hosts in groups, and the ansible.cfg in your project folder holds the defaults.",
+  "Modules describe a result and report ok or changed, so a second run should show changed=0.",
   "--check --diff previews a run against the real servers, since Ansible keeps no state file.",
   "Precedence runs from role defaults up through group_vars, host_vars, play vars and role vars to -e, which always wins.",
-  "Roles package tasks, handlers, templates and defaults; collections package modules and come from requirements.yml.",
+  "Roles package tasks, handlers, templates and defaults. Collections package modules and come from requirements.yml.",
   "Vault keeps secrets encrypted in git, and the vault password never goes into the repo.",
-  "ansible-lint and --syntax-check run in CI; Molecule tests roles end to end on throwaway servers.",
+  "ansible-lint and --syntax-check run in CI, and Molecule tests roles from start to finish on throwaway servers.",
   "The aws_ec2 dynamic inventory finds cloud servers by tag instead of a hand-written list."
  ],
  "flashcards": [
   {
    "front": "What does Ansible do that Terraform does not?",
-   "back": "It configures what runs inside existing servers (packages, files, services) over SSH, and can repeat that any time."
+   "back": "It sets up what runs inside existing servers (packages, files, services) over SSH, and can repeat that any time."
   },
   {
    "front": "What does a Linux server need before Ansible can manage it?",
@@ -947,7 +955,7 @@
   },
   {
    "front": "What do ok and changed count in PLAY RECAP?",
-   "back": "ok counts tasks that succeeded; changed counts the ones that also changed something on the server."
+   "back": "ok counts tasks that succeeded. changed counts the ones that also changed something on the server."
   },
   {
    "front": "When does a handler run?",
@@ -955,7 +963,7 @@
   },
   {
    "front": "What do --check and --diff do?",
-   "back": "--check predicts changes without making them; --diff shows the lines a task changes in a file."
+   "back": "--check predicts changes without making them. --diff shows the lines a task changes in a file."
   },
   {
    "front": "Order these from weakest to strongest: host_vars, role defaults, -e, group_vars.",
@@ -975,11 +983,11 @@
   },
   {
    "front": "encrypt or encrypt_string for a secret in group_vars?",
-   "back": "encrypt_string. One encrypted value is decrypted only when used; a whole encrypted file needs the password for every command."
+   "back": "encrypt_string. One encrypted value is decrypted only when used, while a whole encrypted file needs the password for every command."
   },
   {
    "front": "Where should the vault password live?",
-   "back": "Outside git: a password manager, a CI secret, or a mode-600 file listed in .gitignore."
+   "back": "Outside git: in a password manager, a CI secret, or a mode-600 file listed in .gitignore."
   },
   {
    "front": "What does the aws_ec2 inventory plugin do?",
@@ -987,7 +995,7 @@
   },
   {
    "front": "What does Molecule test?",
-   "back": "A role or playbook end to end: it creates test servers, applies it twice to check idempotence, verifies and deletes."
+   "back": "A role or playbook from start to finish: it creates test servers, applies it twice to check that the second run changes nothing, checks the result and deletes everything."
   }
  ],
  "resources": [
@@ -1007,7 +1015,7 @@
    "title": "Using variables",
    "url": "https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_variables.html",
    "kind": "docs",
-   "why": "The full list of 22 precedence levels, for when the simplified ladder from Day 37 is not enough."
+   "why": "The full list of 22 precedence levels, for when the short ladder from Day 37 is not enough."
   },
   {
    "title": "Ansible Vault",
@@ -1025,7 +1033,7 @@
    "title": "Ansible Molecule",
    "url": "https://docs.ansible.com/projects/molecule/",
    "kind": "docs",
-   "why": "Guides for testing a role, a playbook or a collection, when you want the Day 37 checks automated."
+   "why": "Guides for testing a role, a playbook or a collection, when you want the Day 37 checks to run by themselves."
   },
   {
    "title": "amazon.aws.aws_ec2 inventory plugin",
@@ -1037,7 +1045,7 @@
    "title": "Ansible 101 series (Jeff Geerling)",
    "url": "https://www.youtube.com/playlist?list=PL2_OBreMn7FqZkvMYt6ATmgC0KAGGJNAN",
    "kind": "watch",
-   "why": "A live-streamed course from 2020 that goes from ad-hoc commands to roles, Vault and Molecule; some module names have changed since."
+   "why": "A live-streamed course from 2020 that goes from ad-hoc commands to roles, Vault and Molecule. Some module names have changed since."
   },
   {
    "title": "Getting started with Ansible (Learn Linux TV)",
@@ -1055,7 +1063,7 @@
    "title": "Packer Ansible provisioner",
    "url": "https://developer.hashicorp.com/packer/integrations/hashicorp/ansible/latest/components/provisioner/ansible",
    "kind": "docs",
-   "why": "How to run your roles inside a Packer build, so new servers boot with everything already installed."
+   "why": "How to run your roles inside a Packer build, so new servers start with everything already installed."
   }
  ],
  "quiz": [
@@ -1068,7 +1076,7 @@
     "Ansible stops and asks which version of the file to keep"
    ],
    "answer": 1,
-   "why": "Each host is checked on its own, and only the server whose file differs from the rendered template gets changed."
+   "why": "Each host is checked on its own, and only the server whose file differs from the filled-in template gets changed."
   },
   {
    "q": "Why does Ansible need no agent on the servers it manages?",
@@ -1090,7 +1098,7 @@
     "Ad-hoc commands cannot take arguments with slashes"
    ],
    "answer": 2,
-   "why": "Globs like * are expanded by a shell; use the shell module, or the find module, for this."
+   "why": "A shell is what expands patterns like *. Use the shell module, or the find module, for this."
   },
   {
    "q": "A role default sets `app_port: 8000`, the play's vars set `8080`, and you run with `-e app_port=9090`. Which port is used?",
@@ -1104,7 +1112,7 @@
    "why": "Extra vars sit at the top of the precedence list."
   },
   {
-   "q": "Which command encrypts one value so you can paste it into an otherwise readable vars file?",
+   "q": "Which command encrypts one value, so you can paste it into an otherwise readable vars file?",
    "options": [
     "ansible-vault encrypt group_vars/all/vars.yml",
     "ansible-vault encrypt_string --name db_password 'x'",
@@ -1137,7 +1145,7 @@
    "why": "Defaults have the lowest precedence, so group_vars, host_vars or -e can override them."
   },
   {
-   "q": "Terraform and Ansible both describe servers in files. Which keeps a record of what it created, so that it can delete those things later?",
+   "q": "Terraform and Ansible both describe servers in files. Which one keeps a record of what it created, so that it can delete those things later?",
    "options": [
     "Ansible, in its PLAY RECAP",
     "Both, in their state files",
@@ -1145,7 +1153,7 @@
     "Terraform, in its state file"
    ],
    "answer": 3,
-   "why": "Terraform's state maps code to real resources (Day 33); Ansible keeps no state, so deleting a task never removes what it installed.",
+   "why": "Terraform's state links code to real resources (Day 33). Ansible keeps no state, so deleting a task never removes what it installed.",
    "from": "Part 8"
   },
   {
