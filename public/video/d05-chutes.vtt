@@ -1,0 +1,385 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:03.373
+Nine a.m.
+
+2
+00:00:03.373 --> 00:00:05.020
+Your manager stops by.
+
+3
+00:00:05.020 --> 00:00:07.789
+Traffic to the shop jumped overnight.
+
+4
+00:00:07.789 --> 00:00:10.707
+Who is calling us, and what is failing?
+
+5
+00:00:10.707 --> 00:00:12.952
+A short report by ten, please.
+
+6
+00:00:13.167 --> 00:00:16.568
+You have the web server's logbook, a few hundred lines.
+
+7
+00:00:16.568 --> 00:00:20.711
+grep can pick out lines, but the manager wants counts and rankings.
+
+8
+00:00:20.933 --> 00:00:26.801
+The first idea is to copy everything into a spreadsheet and count by hand.
+
+9
+00:00:26.801 --> 00:00:27.514
+It works.
+
+10
+00:00:27.514 --> 00:00:28.545
+By lunchtime.
+
+11
+00:00:28.545 --> 00:00:29.259
+Tomorrow.
+
+12
+00:00:29.467 --> 00:00:33.420
+There's a better way, and it starts with how paper moves between desks.
+
+13
+00:00:33.633 --> 00:00:36.162
+Every desk in the building has three trays.
+
+14
+00:00:36.162 --> 00:00:38.161
+Work comes in through the in-tray.
+
+15
+00:00:38.161 --> 00:00:40.160
+Finished pages go in the out-tray.
+
+16
+00:00:40.367 --> 00:00:44.299
+And complaints go in a third tray, so they never mix with the good work.
+
+17
+00:00:44.500 --> 00:00:48.472
+Every Linux program has the same three trays, called streams.
+
+18
+00:00:48.472 --> 00:00:51.532
+Standard input, number zero, is where it reads.
+
+19
+00:00:51.733 --> 00:00:55.328
+Standard output, number one, is where it writes its results.
+
+20
+00:00:55.328 --> 00:00:59.043
+Standard error, number two, is where it writes its complaints.
+
+21
+00:00:59.267 --> 00:01:03.721
+By default, input is your keyboard, and both outputs go to your screen.
+
+22
+00:01:03.721 --> 00:01:08.112
+And here's the key: the shell that starts a program sets up its trays.
+
+23
+00:01:08.333 --> 00:01:11.940
+The program writes to tray one the same way, wherever it leads.
+
+24
+00:01:11.940 --> 00:01:16.176
+So the shell can point a tray somewhere else, and the program never knows.
+
+25
+00:01:16.400 --> 00:01:19.577
+Pointing a tray at a file is called redirection.
+
+26
+00:01:19.577 --> 00:01:25.203
+Here the shell opens note dot text, points tray one at it, and only then starts echo.
+
+27
+00:01:25.433 --> 00:01:27.778
+One greater than replaces the file.
+
+28
+00:01:27.778 --> 00:01:29.051
+Two add to the end.
+
+29
+00:01:29.051 --> 00:01:35.885
+And two, greater than, dev null, sends complaints to the bin: a special file that discards everything.
+
+30
+00:01:36.700 --> 00:01:37.559
+Now a guess.
+
+31
+00:01:37.559 --> 00:01:42.928
+To sort a file in place, you type: sort names.txt, greater than, names.txt.
+
+32
+00:01:42.928 --> 00:01:45.147
+What is in the file afterwards?
+
+33
+00:01:48.367 --> 00:01:48.916
+Nothing.
+
+34
+00:01:48.916 --> 00:01:49.672
+It's empty.
+
+35
+00:01:49.672 --> 00:01:56.472
+The shell sets up the trays before the program starts, and opening the file for writing empties it.
+
+36
+00:01:56.700 --> 00:01:58.368
+Only then does sort start.
+
+37
+00:01:58.368 --> 00:02:02.089
+It reads the file, finds nothing, and writes nothing back.
+
+38
+00:02:02.300 --> 00:02:04.000
+The shell is very efficient.
+
+39
+00:02:04.000 --> 00:02:07.156
+It cleared the desk before the worker even sat down.
+
+40
+00:02:07.367 --> 00:02:11.697
+So: a single greater than empties the file before the command starts.
+
+41
+00:02:11.697 --> 00:02:14.521
+Never redirect into the file you are reading.
+
+42
+00:02:14.521 --> 00:02:17.157
+Write a new file, then move it into place.
+
+43
+00:02:17.967 --> 00:02:20.828
+A better place to send a tray is another desk.
+
+44
+00:02:20.828 --> 00:02:24.871
+Imagine a chute from one out-tray straight into the next in-tray.
+
+45
+00:02:25.100 --> 00:02:28.261
+That chute is the pipe, the vertical bar.
+
+46
+00:02:28.261 --> 00:02:34.121
+grep picks the error lines, the pipe drops them into wc, and wc counts them.
+
+47
+00:02:34.121 --> 00:02:34.507
+Four.
+
+48
+00:02:34.733 --> 00:02:37.278
+Notice, only tray one goes down the chute.
+
+49
+00:02:37.278 --> 00:02:42.064
+Complaints skip it and land on your screen, which is exactly what they are for.
+
+50
+00:02:42.267 --> 00:02:44.703
+Neither worker knows the other exists.
+
+51
+00:02:44.703 --> 00:02:49.960
+Programs that read lines, keep or change some, and write lines are called filters.
+
+52
+00:02:50.767 --> 00:02:56.576
+Now the manager's report, built one desk at a time, looking at the output after each step.
+
+53
+00:02:56.800 --> 00:02:59.352
+Desk one is awk, a tool for columns.
+
+54
+00:02:59.352 --> 00:03:08.781
+Dollar one is the first column, and in access.log that's the client's IP address, the number that identifies a computer on a network.
+
+55
+00:03:09.000 --> 00:03:11.455
+One IP per request.
+
+56
+00:03:11.455 --> 00:03:12.747
+238 lines.
+
+57
+00:03:12.967 --> 00:03:14.607
+We want a count per IP.
+
+58
+00:03:14.607 --> 00:03:17.532
+uniq, with dash C, counts repeated lines.
+
+59
+00:03:17.532 --> 00:03:19.387
+Let's drop it straight in.
+
+60
+00:03:19.600 --> 00:03:23.462
+And the counts are ones, with the odd two or three.
+
+61
+00:03:23.462 --> 00:03:27.172
+198 lines of counts, for only nine different IPs.
+
+62
+00:03:27.172 --> 00:03:27.550
+Well.
+
+63
+00:03:27.550 --> 00:03:29.973
+That's not the report we wanted.
+
+64
+00:03:30.200 --> 00:03:30.931
+Here's why.
+
+65
+00:03:30.931 --> 00:03:35.652
+uniq merges repeated lines only when they sit right next to each other.
+
+66
+00:03:35.652 --> 00:03:39.308
+It remembers just the line before, which keeps it fast.
+
+67
+00:03:39.533 --> 00:03:44.105
+It is the colleague who only remembers the last person who walked past.
+
+68
+00:03:44.105 --> 00:03:48.933
+The same visitor came back sixty-one times, but hardly ever twice in a row.
+
+69
+00:03:49.167 --> 00:03:53.305
+So the point is: put the same IPs next to each other first.
+
+70
+00:03:53.305 --> 00:03:54.919
+That is a job for sort.
+
+71
+00:03:55.133 --> 00:03:56.897
+Insert sort before uniq.
+
+72
+00:03:56.897 --> 00:04:01.013
+Now identical IPs sit together, and uniq can count them.
+
+73
+00:04:01.233 --> 00:04:04.305
+Nine IPs, each with a real count.
+
+74
+00:04:04.305 --> 00:04:09.332
+Notice that sort orders text, so 10.0.0.2 comes first.
+
+75
+00:04:09.533 --> 00:04:10.550
+Now rank them.
+
+76
+00:04:10.550 --> 00:04:14.688
+sort dash R N sorts the counts as numbers, largest first.
+
+77
+00:04:14.688 --> 00:04:16.721
+And head keeps the top five.
+
+78
+00:04:16.933 --> 00:04:19.374
+There is your first answer.
+
+79
+00:04:19.374 --> 00:04:22.899
+One client sent 61 of the 238 requests.
+
+80
+00:04:23.100 --> 00:04:28.625
+Save it to report dot text with one greater than, then add the failing pages with two.
+
+81
+00:04:28.625 --> 00:04:32.159
+Use one twice by mistake, and the first answer is gone.
+
+82
+00:04:32.767 --> 00:04:35.381
+Notice how we got here: one desk at a time.
+
+83
+00:04:35.381 --> 00:04:40.609
+That's how we caught uniq in the act, instead of hunting for a broken step at the end.
+
+84
+00:04:41.133 --> 00:04:44.680
+And the honest limit: these tools read one machine's files.
+
+85
+00:04:44.680 --> 00:04:49.488
+For hundreds of servers, you need a central place for logs, later in the course.
+
+86
+00:04:50.300 --> 00:04:52.050
+So, the moral of the story.
+
+87
+00:04:52.050 --> 00:04:57.428
+Every program has three trays, and the shell points them before the program starts.
+
+88
+00:04:57.428 --> 00:05:01.057
+A pipe is a chute from one out-tray to the next in-tray.
+
+89
+00:05:01.057 --> 00:05:04.556
+Small filters, chained, turn raw lines into an answer.
+
+90
+00:05:05.267 --> 00:05:06.213
+A quick check.
+
+91
+00:05:06.213 --> 00:05:11.619
+A job sends its output to backup dot log, but its errors still appear on screen.
+
+92
+00:05:11.619 --> 00:05:17.702
+Read two, greater than, ampersand one, as: send tray two wherever tray one goes right now.
+
+93
+00:05:17.702 --> 00:05:19.053
+Which line fixes it?
+
+94
+00:05:22.267 --> 00:05:23.237
+The second one.
+
+95
+00:05:23.237 --> 00:05:26.018
+The shell reads redirections left to right.
+
+96
+00:05:26.018 --> 00:05:30.287
+First tray one points at the file, then tray two follows it there.

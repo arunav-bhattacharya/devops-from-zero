@@ -1,0 +1,273 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:07.446
+Your friend's café did well, and now she wants three, in three parts of town.
+
+2
+00:00:07.446 --> 00:00:12.377
+So you copy the drawing three times, and change the street on each copy by hand.
+
+3
+00:00:12.600 --> 00:00:14.426
+On the third copy you forget.
+
+4
+00:00:14.426 --> 00:00:17.008
+The builder turns up at the wrong street.
+
+5
+00:00:17.008 --> 00:00:18.330
+The drawing was fine.
+
+6
+00:00:18.330 --> 00:00:20.093
+The copying was the problem.
+
+7
+00:00:20.900 --> 00:00:24.021
+What we want is one drawing and a list of names.
+
+8
+00:00:24.021 --> 00:00:28.572
+Terraform has two ways to make one copy per name: count, and for_each.
+
+9
+00:00:28.800 --> 00:00:32.181
+And here is the question that sounds too simple to ask.
+
+10
+00:00:32.181 --> 00:00:33.595
+Both make three copies.
+
+11
+00:00:33.595 --> 00:00:36.116
+Does it really matter which one you pick?
+
+12
+00:00:36.733 --> 00:00:41.205
+Picture a builder making garden sheds for three families on that list.
+
+13
+00:00:41.205 --> 00:00:44.909
+This builder numbers the sheds by their place on the list.
+
+14
+00:00:44.909 --> 00:00:48.423
+Alpha gets shed zero, bravo shed one, charlie shed two.
+
+15
+00:00:48.633 --> 00:00:49.641
+That is count.
+
+16
+00:00:49.641 --> 00:00:57.344
+count equals three makes local_file.by_count zero, one and two, and count.index tells each copy its number.
+
+17
+00:00:57.344 --> 00:01:01.304
+Each one is a small file that says hello to its family.
+
+18
+00:01:01.533 --> 00:01:02.842
+Now alpha cancels.
+
+19
+00:01:02.842 --> 00:01:05.749
+We remove alpha from the list, and plan.
+
+20
+00:01:05.967 --> 00:01:08.128
+How many sheds does the builder touch?
+
+21
+00:01:10.767 --> 00:01:12.446
+The obvious answer is one.
+
+22
+00:01:12.446 --> 00:01:15.546
+Knock down alpha's shed, leave the others alone.
+
+23
+00:01:15.546 --> 00:01:17.677
+Let's see if that is really true.
+
+24
+00:01:18.200 --> 00:01:20.320
+The builder reads the new list.
+
+25
+00:01:20.320 --> 00:01:23.467
+Bravo is first now, so bravo gets number zero.
+
+26
+00:01:23.467 --> 00:01:26.135
+Charlie is second, so charlie gets one.
+
+27
+00:01:26.367 --> 00:01:29.631
+So shed zero is torn down and rebuilt for bravo.
+
+28
+00:01:29.631 --> 00:01:32.759
+Shed one is torn down and rebuilt for charlie.
+
+29
+00:01:32.967 --> 00:01:37.272
+And shed two has nobody left on the list, so it is knocked down.
+
+30
+00:01:37.272 --> 00:01:38.617
+One cancelled order.
+
+31
+00:01:38.617 --> 00:01:39.963
+Three sheds touched.
+
+32
+00:01:40.367 --> 00:01:40.887
+Well...
+
+33
+00:01:40.887 --> 00:01:45.649
+bravo and charlie just got brand new sheds they never asked for.
+
+34
+00:01:45.867 --> 00:01:48.183
+The real plan says the same thing.
+
+35
+00:01:48.183 --> 00:01:54.042
+Copy zero's content changes from hello alpha to hello bravo, which forces replacement.
+
+36
+00:01:54.042 --> 00:01:58.879
+And copy two is destroyed, because index two is out of range for count.
+
+37
+00:01:59.100 --> 00:02:01.234
+Now the second builder, for_each.
+
+38
+00:02:01.234 --> 00:02:05.114
+Same list, but this builder nails a name card to every shed.
+
+39
+00:02:05.114 --> 00:02:09.381
+The address is the name: local_file.by_each alpha, bravo, charlie.
+
+40
+00:02:09.600 --> 00:02:10.790
+Alpha cancels again.
+
+41
+00:02:10.790 --> 00:02:15.195
+The builder looks for the card that says alpha, and knocks down that shed.
+
+42
+00:02:15.195 --> 00:02:19.540
+Bravo's and charlie's sheds keep their cards, so nothing happens to them.
+
+43
+00:02:20.067 --> 00:02:25.761
+The lab's practice folder does both at once, so here is its real summary line.
+
+44
+00:02:25.761 --> 00:02:28.827
+Plan: 2 to add, 0 to change, 4 to destroy.
+
+45
+00:02:29.033 --> 00:02:33.197
+Three of those four destroys come from count, for one removed name.
+
+46
+00:02:33.197 --> 00:02:34.999
+Only one comes from for_each.
+
+47
+00:02:35.600 --> 00:02:38.119
+So here is the whole idea in one line.
+
+48
+00:02:38.119 --> 00:02:40.307
+A copy's address is its identity.
+
+49
+00:02:40.307 --> 00:02:44.285
+With count, the identity is a position, and positions shift.
+
+50
+00:02:44.285 --> 00:02:47.467
+With for_each, it is a name, and names stay put.
+
+51
+00:02:48.100 --> 00:02:49.688
+So when is count fine?
+
+52
+00:02:49.688 --> 00:02:56.327
+For nearly identical copies, or as an on-off switch: count equals one if enabled, else zero.
+
+53
+00:02:56.533 --> 00:03:00.350
+Use for_each when each copy has its own name or settings.
+
+54
+00:03:00.350 --> 00:03:01.957
+It takes a map or a set.
+
+55
+00:03:01.957 --> 00:03:07.113
+A plain list is rejected with Invalid for_each argument, so wrap it in toset.
+
+56
+00:03:07.333 --> 00:03:09.096
+One limit applies to both.
+
+57
+00:03:09.096 --> 00:03:17.843
+Terraform must know the count or the keys before anything exists, so they cannot come from a value that appears only after apply.
+
+58
+00:03:18.067 --> 00:03:20.035
+And files are cheap to replace.
+
+59
+00:03:20.035 --> 00:03:23.399
+Containers with data, or servers in a cloud, are not.
+
+60
+00:03:23.399 --> 00:03:26.129
+That is when a shifted number really hurts.
+
+61
+00:03:26.733 --> 00:03:30.670
+The moral of the story: give named things names, not numbers.
+
+62
+00:03:30.670 --> 00:03:33.381
+Then one cancelled order touches one shed.
+
+63
+00:03:34.000 --> 00:03:34.975
+A quick check.
+
+64
+00:03:34.975 --> 00:03:37.829
+In the for_each sheds, bravo cancels too.
+
+65
+00:03:37.829 --> 00:03:40.335
+How many copies does the plan touch?
+
+66
+00:03:43.000 --> 00:03:43.307
+One.
+
+67
+00:03:43.307 --> 00:03:46.067
+Only the shed whose card says bravo.
+
+68
+00:03:46.067 --> 00:03:48.673
+Charlie's card still says charlie.

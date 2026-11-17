@@ -1,3 +1,24 @@
 {
- "d23": [{"slug": "d23-two-green", "title": "Two green pull requests, one broken main: what the checks really test", "after": 0, "file": "p6/d23_two_green.py", "scene": "D23TwoGreen", "poster_at": 250.0, "replaces": "d23-pull-request"}]
+ "d23": [
+  {
+   "slug": "d23-two-green",
+   "title": "Two green pull requests, one broken main: what the checks really test",
+   "after": 0,
+   "file": "p6/d23_two_green.py",
+   "scene": "D23TwoGreen",
+   "poster_at": 250.0,
+   "replaces": "d23-pull-request"
+  }
+ ],
+ "d24": [
+  {
+   "slug": "d24-fresh-station",
+   "title": "Who tastes the soup when you push: events, workflows, runners and exit codes",
+   "after": 0,
+   "file": "p6/d24_fresh_station.py",
+   "scene": "D24FreshStation",
+   "poster_at": 247.4,
+   "replaces": "d24-push"
+  }
+ ]
 }
