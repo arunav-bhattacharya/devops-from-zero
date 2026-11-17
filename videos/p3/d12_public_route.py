@@ -53,7 +53,7 @@ class D12PublicRoute(VoiceScene):
         ok = tick(True, 0.3).next_to(h2, DOWN, buff=0.3)
         self.beat("For a friend's wedding in another city, you book a hotel room for two nights. Nobody builds a house for a weekend. Renting computers that way is the cloud.",
                   FadeIn(h1), Succession(Wait(2.4), AnimationGroup(Create(x), FadeIn(h2))), Succession(Wait(4.0), Create(ok)), run_time=7.0)
-        q = T("If I call a subnet “public”, is it public?", 34, YELLOW_M).move_to(DOWN * 1.8)
+        q = T("If I call a network “public”, is it public?", 34, YELLOW_M).move_to(DOWN * 1.8)
         self.beat("Today we rent a whole private floor of the hotel, and decide which rooms the street can reach. And here's the question people are shy to ask. If I call a network public, is it public? Hold that thought.",
                   Succession(Wait(6.0), FadeIn(q, shift=UP * 0.1)), run_time=9.0)
         self.play(FadeOut(VGroup(hg, x, ok, q)), run_time=0.6)
@@ -105,8 +105,8 @@ class D12PublicRoute(VoiceScene):
                   Indicate(rt[2][0][0], color=GREY_B, scale_factor=1.2), run_time=2.0)
 
         # ---------- 4. private subnets: the mail desk
-        nat_a = thing("NAT gateway", NAT, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.25 + RIGHT * 0.6)
-        lb = thing("load balancer", LB, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.25 + LEFT * 0.75)
+        nat_a = thing("NAT", NAT, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.25 + RIGHT * 1.05)
+        lb = thing("load balancer", LB, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.25 + LEFT * 0.6)
         self.play(FadeOut(rt), run_time=0.5)
         rtp = rt_card("private-a's route table", [("10.0.0.0/16", "local", GREY_B), ("0.0.0.0/0", "NAT gateway", NAT)], PRIV).move_to([4.35, -1.2, 0])
         self.beat("The private subnets get a different second line. 0.0.0.0/0 goes to a NAT gateway instead, which sits in a public subnet.",
@@ -131,9 +131,9 @@ class D12PublicRoute(VoiceScene):
 
         # ---------- 5. locks on the doors: security groups in a chain
         self.play(FadeOut(rtp), run_time=0.5)
-        sg = VGroup(M("lb-sg    inbound 443    from 0.0.0.0/0", 22, LB), M("app-sg   inbound 8000   from lb-sg", 22, APP),
-                    M("db-sg    inbound 5432   from app-sg", 22, DB)).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
-        sgt = T("security groups", 26, WHITE)
+        sg = VGroup(M("lb-sg   443  from 0.0.0.0/0", 22, LB), M("app-sg  8000 from lb-sg", 22, APP),
+                    M("db-sg   5432 from app-sg", 22, DB)).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        sgt = T("security groups, inbound", 26, WHITE)
         sgb = RoundedRectangle(corner_radius=0.12, width=sg.width + 0.5, height=sg.height + 1.1, stroke_color=GREY_B, stroke_width=2.5).set_fill(BLACK, 1)
         sgt.move_to(sgb.get_top() + DOWN * 0.32)
         sg.next_to(sgt, DOWN, buff=0.22)
@@ -158,7 +158,7 @@ class D12PublicRoute(VoiceScene):
         self.play(FadeOut(sgg), run_time=0.5)
 
         # ---------- 6. two zones: one goes dark
-        nat_b = thing("NAT gateway", NAT, 22).move_to(subs["pb"][0].get_center() + DOWN * 0.25 + RIGHT * 0.6)
+        nat_b = thing("NAT", NAT, 22).move_to(subs["pb"][0].get_center() + DOWN * 0.25 + RIGHT * 1.05)
         app_b = thing("app", APP).move_to(subs["vb"][0].get_center() + DOWN * 0.2 + LEFT * 0.75)
         db_b = thing("database", DB).move_to(subs["vb"][0].get_center() + DOWN * 0.2 + RIGHT * 0.7)
         self.beat("Zone b gets the same set. Its own app and database, and its own NAT gateway.",
@@ -171,16 +171,16 @@ class D12PublicRoute(VoiceScene):
                   FadeIn(tb, shift=LEFT * 0.2), run_time=2.0)
         self.beat("Pause and guess. Zone a loses power. Can the app in zone b still reach out?",
                   Indicate(azs[0][1], color=RED_M, scale_factor=1.3), run_time=1.6, after=2.2)
-        za = VGroup(subs["pa"], subs["va"], lb, nat_a, app, db, azs[0], door)
+        za = Rectangle(width=3.8, height=4.4, stroke_width=0).set_fill(BLACK, 0.8).move_to(azs[0][0])
         darkx = tick(False, 0.6).move_to(azs[0][0])
         self.beat("Zone a goes dark. But zone b's route goes to its own NAT gateway, so zone b can still reach out, and keeps working.",
-                  za.animate.set_opacity(0.2), Create(darkx), Succession(Wait(3.0), MoveAlongPath(Dot(color=NAT, radius=0.08), VMobject().set_points_as_corners([app_b.get_top(), nat_b.get_bottom()]), run_time=1.2)), run_time=6.0)
+                  FadeIn(za), Create(darkx), Succession(Wait(3.0), MoveAlongPath(Dot(color=NAT, radius=0.08), VMobject().set_points_as_corners([app_b.get_top(), nat_b.get_bottom()]), run_time=1.2)), run_time=6.0)
         for m in list(self.mobjects):
             if isinstance(m, Dot):
                 self.remove(m)
         self.beat("One shared NAT gateway would be cheaper, and many teams accept that for test environments. They just know that zone b then depends on zone a.",
                   Indicate(nat_b[1], color=NAT), run_time=1.6)
-        self.play(FadeOut(darkx), za.animate.set_opacity(1), FadeOut(tb), run_time=0.7)
+        self.play(FadeOut(darkx), FadeOut(za), FadeOut(tb), run_time=0.7)
 
         # ---------- 7. guardrail: the rooms nobody sleeps in
         hour = VGroup(lb, nat_a, nat_b)

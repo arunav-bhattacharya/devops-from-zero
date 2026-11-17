@@ -111,7 +111,7 @@ class D34OnePlan(VoiceScene):
         self.play(FadeOut(ad1), FadeOut(ad2), run_time=0.3)
         dr3 = drip(h1[0].get_right() + LEFT * 0.35 + DOWN * 0.1)
         self.beat("Now the tap drips again, in the show home. You fix it inside the module, once.",
-                  FadeIn(dr3, lag_ratio=0.3), Succession(Wait(1.6), Indicate(mp, color=BLUE_M, scale_factor=1.03)), run_time=2.8)
+                  FadeIn(dr3, lag_ratio=0.3), Succession(Wait(1.6), Indicate(ml, color=BLUE_M)), run_time=2.8)
         q = T("one fix in the module. How many stacks change?", 28, YELLOW_M).move_to([0, -0.6, 0])
         self.beat("How many stacks change on their next apply?", FadeIn(q), run_time=1.4)
         self.guess([0, -1.3, 0])
@@ -124,6 +124,7 @@ class D34OnePlan(VoiceScene):
 
         # 5. where each house keeps its book  [QUESTION, BREAK]
         q2 = T("but where does each environment keep its book?", 28, YELLOW_M).move_to([0, 0.35, 0])
+        self.play(FadeOut(VGroup(h1, h2, l1, l2)), run_time=0.5)
         self.beat("Now a real team has a dev environment and a prod environment, the real one your users depend on. Remember the state, Terraform's book? Where does each one keep it?",
                   FadeIn(q2), run_time=3.2)
         ws = VGroup(M("envs/dev", 24, TEAL_M), M("terraform workspace new qa", 22, GREY_B)).arrange(DOWN, buff=0.15).move_to([0, 0.35, 0])
@@ -148,7 +149,8 @@ class D34OnePlan(VoiceScene):
         fp = panel(3.6, 1.3, GREEN_M, 0.1).move_to([3.6, 0.35, 0])
         fdl = VGroup(M("envs/dev", 24, TEAL_M), M("terraform.tfstate", 22, GOLD_M)).arrange(DOWN, buff=0.15).move_to(fd)
         fpl = VGroup(M("envs/prod", 24, GREEN_M), M("terraform.tfstate", 22, GOLD_M)).arrange(DOWN, buff=0.15).move_to(fp)
-        self.play(l1.animate.become(T("dev", 26, TEAL_M).move_to(l1)), l2.animate.become(T("prod", 26, GREEN_M).move_to(l2)), run_time=0.5)
+        l1 = T("dev", 26, TEAL_M).move_to(l1); l2 = T("prod", 26, GREEN_M).move_to(l2)
+        self.play(FadeIn(VGroup(h1, h2, l1, l2)), run_time=0.5)
         self.beat("So most teams give each long-lived environment its own folder: envs/dev and envs/prod. Each is a short root that calls the shared module, with its own backend and its own book.",
                   Create(fd), Create(fp), FadeIn(fdl), FadeIn(fpl), run_time=3.4)
         b1 = Arrow(mp.get_bottom() + LEFT * 1.4, fd.get_top() + RIGHT * 0.6, buff=0.12, stroke_width=3, color=BLUE_M, max_tip_length_to_length_ratio=0.15)

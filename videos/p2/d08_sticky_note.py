@@ -162,22 +162,20 @@ class D08StickyNote(VoiceScene):
                  ("d6aad6e HEAD@{2}: commit: Group thousands in prices", WHITE),
                  ("c711550 (HEAD -> main) HEAD@{3}: checkout: moving from currency-first to main", WHITE)]
         rl = VGroup(*[M(s, 22, c) for s, c in lines]).arrange(DOWN, aligned_edge=LEFT, buff=0.26)
-        fit(rl, 12.0)
-        book = RoundedRectangle(corner_radius=0.15, width=rl.width + 0.7, height=rl.height + 0.8, stroke_color=CAB, stroke_width=3).set_fill("#0d0a10", 1)
+        fit(rl, 12.5)
+        book = RoundedRectangle(corner_radius=0.15, width=rl.width + 0.5, height=rl.height + 0.8, stroke_color=CAB, stroke_width=3).set_fill("#0d0a10", 1)
         logg = VGroup(book, rl.move_to(book)).move_to(DOWN * 0.6)
         btitle = T("the clerk's logbook", 28, CAB).next_to(book, UP, buff=0.25)
         rcmd = M("$ git reflog -4", 24).move_to(cf)
         nlink.clear_updaters(); hlink.clear_updaters(); here.clear_updaters()
         self.beat("But how do you find a photo whose name you forgot? The clerk keeps a logbook. Every time HEAD moves, the logbook gets a line, newest first. That's git reflog.",
-                  FadeOut(VGroup(cf, cfo)), FadeOut(nlink), FadeOut(hlink), main_pic.animate.set_opacity(0.08), note.animate.set_opacity(0.08), head.animate.set_opacity(0.08), here.animate.set_opacity(0.08),
+                  FadeOut(VGroup(cf, cfo)), FadeOut(nlink), FadeOut(hlink), FadeOut(VGroup(main_pic, note, head, here)),
                   Succession(Wait(3.0), AnimationGroup(Create(book), FadeIn(btitle))), Succession(Wait(6.4), Write(rcmd), LaggedStart(*[FadeIn(l, shift=DOWN * 0.08) for l in rl], lag_ratio=0.3)), run_time=10.0)
         self.beat("Read it from the top. We reset, moving to HEAD~2. Before that, we committed, Say that prices include VAT. There's our lost commit, one line down, 6e176d6.",
                   Succession(Indicate(rl[0], color=WHITE, scale_factor=1.04), Wait(2.2), Indicate(rl[1], color=YELLOW_M, scale_factor=1.06)), run_time=7.0)
 
         # ---------- 8. two ways back
-        self.play(FadeOut(VGroup(logg, btitle)), main_pic.animate.set_opacity(1),
-                  note.animate.set_opacity(1), head.animate.set_opacity(1), here.animate.set_opacity(1), run_time=0.8)
-        self.play(gone.animate.set_opacity(0.55), run_time=0.4)
+        self.play(FadeOut(VGroup(logg, btitle)), FadeIn(VGroup(main_pic, note, head, here)), run_time=0.8)
         nlink = always_redraw(lambda: Arrow(note.get_left(), np.array([rows["d6aad6e"][0].get_right()[0], note.get_center()[1], 0]), buff=0.08, stroke_width=3, color=NOTE, max_tip_length_to_length_ratio=0.3))
         hlink = always_redraw(lambda: Arrow(head.get_left(), note.get_right(), buff=0.08, stroke_width=3, color=HEADC, max_tip_length_to_length_ratio=0.3))
         here.add_updater(lambda m: m.next_to(head, UP, buff=0.2))
@@ -200,8 +198,8 @@ class D08StickyNote(VoiceScene):
                   FadeIn(rule, shift=DOWN * 0.1), run_time=2.0)
 
         # ---------- 9. the limit: the desk
-        self.play(FadeOut(VGroup(main_pic, note, head, here, rule)), FadeOut(nlink), FadeOut(hlink), run_time=0.7)
         nlink.clear_updaters(); hlink.clear_updaters(); here.clear_updaters()
+        self.play(FadeOut(VGroup(main_pic, note, head, here, rule)), FadeOut(nlink), FadeOut(hlink), run_time=0.7)
         desk, ds = place(None, DESK, "desk", "working tree", -3.2)
         cab2, cs2 = place(None, CAB, "cabinet", "repository (.git)", 3.2)
         ph = VGroup(*[RoundedRectangle(corner_radius=0.06, width=1.0, height=0.75, stroke_color=PHOTO, stroke_width=2.5).set_fill("#151515", 1) for _ in range(3)])
@@ -209,8 +207,8 @@ class D08StickyNote(VoiceScene):
         draft = chip("Draft note, never committed", DESK, 22).move_to(desk[0])
         self.beat("But every tool has a limit, and here's this one's. The logbook only knows about commits. Picture an edit that lived only on your desk.",
                   FadeIn(VGroup(desk, ds, cab2, cs2, ph)), Succession(Wait(4.8), FadeIn(draft, scale=0.8)), run_time=7.0)
-        lim = VGroup(M("$ git reset --hard", 24), M("$ grep -c 'Draft note' README.md", 24), M("0", 24, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
-        lim.move_to(UP * 2.75)
+        lim = VGroup(M("$ git reset --hard", 24), M("$ grep -c 'Draft note' README.md", 24), M("0", 24, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+        lim.move_to(UP * 2.85)
         xd = tick(False, 0.45).move_to(draft)
         self.beat("Run git reset --hard, and the desk is wiped to match the last photo. The reflog has no entry for that draft. grep counts zero lines. It's gone.",
                   Write(lim[0]), Succession(Wait(1.8), AnimationGroup(draft.animate.set_opacity(0.25), Create(xd))),

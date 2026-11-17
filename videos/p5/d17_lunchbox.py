@@ -45,9 +45,9 @@ class D17Lunchbox(VoiceScene):
                   Create(home), FadeIn(hl), GrowFromCenter(dish), FadeIn(dl), run_time=2.0)
         away = RoundedRectangle(corner_radius=0.15, width=4.6, height=3.2, stroke_color=RED_M, stroke_width=3).move_to([3.4, 0.2, 0])
         al = T("your friend's kitchen", 26, RED_M).next_to(away, UP, buff=0.2)
-        diffs = VGroup(T("hotter oven", 26, RED_M), T("no fresh garlic", 26, RED_M), T("different salt", 26, RED_M)).arrange(DOWN, buff=0.18).move_to(away.get_center() + UP * 0.65)
+        diffs = VGroup(T("hotter oven", 26, RED_M), T("no fresh garlic", 26, RED_M), T("different salt", 26, RED_M)).arrange(DOWN, buff=0.18).move_to(away.get_center() + UP * 0.8)
         self.steps("At your friend's house, the oven runs hotter, there is no fresh garlic, and the salt is a different kind.",
-                   (0.8, Create(away), FadeIn(al)), (0.8, VGroup(dish, dl).animate.move_to(away.get_center() + DOWN * 0.75)),
+                   (0.8, Create(away), FadeIn(al)), (0.8, VGroup(dish, dl).animate.move_to(away.get_center() + DOWN * 0.5)),
                    (0.5, FadeIn(diffs[0])), (0.7, FadeIn(diffs[1])), (0.6, FadeIn(diffs[2])))
         self.beat("The dish fails, and you stand in their kitchen saying: but it works at home.",
                   dish.animate.set_stroke(RED_M).set_fill(tint(RED_M, 0.25)), Wiggle(dish), run_time=1.6)
@@ -58,10 +58,10 @@ class D17Lunchbox(VoiceScene):
         self.play(FadeOut(VGroup(home, hl, away, al, code, tests)), VGroup(dish, dl).animate.move_to([-4.2, 0.4, 0]), dish.animate.set_stroke(GOLD_M).set_fill(tint(GOLD_M, 0.25)), run_time=0.8)
 
         # 2. the wish: pack the kitchen with the dish
-        box_ = lunchbox(GOLD_M, 3.6, 2.4).move_to([0.6, 0.2, 0])
+        box_ = lunchbox(GOLD_M, 4.8, 2.7).move_to([0.6, 0.2, 0])
         self.beat("Wouldn't it be nice to carry the kitchen along with the dish? Pack it like a lunchbox: the meal plus its own fork, salt and napkin.",
                   Create(box_), run_time=1.6)
-        items = VGroup(chip("app", GOLD_M, 26), chip("Python 3.14", BLUE_M, 26), chip("libraries", TEAL_M, 26), chip("settings", PURPLE_M, 26))
+        items = VGroup(chip("app", GOLD_M, 24), chip("Python 3.14", BLUE_M, 24), chip("libraries", TEAL_M, 24), chip("settings", PURPLE_M, 24))
         items.arrange_in_grid(2, 2, buff=0.2).move_to(box_[0])
         self.steps("Into the box goes the app, the runtime that runs its code, the libraries it uses, and its settings.",
                    (0.8, ReplacementTransform(VGroup(dish, dl), items[0])), (0.6, FadeIn(items[1], shift=DOWN * 0.1)), (0.6, FadeIn(items[2], shift=DOWN * 0.1)), (0.6, FadeIn(items[3], shift=DOWN * 0.1)))
@@ -72,16 +72,18 @@ class D17Lunchbox(VoiceScene):
         self.beat("And the same image runs the same way on your Mac, on a CI machine, and on a cloud server. The kitchen travels with the dish.",
                   Indicate(seal, color=GOLD_M), run_time=1.4)
         self.play(FadeOut(VGroup(items, sub)), box_[0].animate.set_stroke(width=3.5), run_time=0.5)
-        image = VGroup(box_, seal)
-        self.play(image.animate.scale(0.55).move_to([-5.1, 2.2, 0]), run_time=0.8)
+        self.play(FadeOut(seal), box_.animate.scale(0.42).move_to([-5.3, 2.55, 0]), run_time=0.8)
+        imgl = T("image", 24, GOLD_M).next_to(box_, DOWN, buff=0.12)
+        self.play(FadeIn(imgl), run_time=0.3)
+        image = VGroup(box_, imgl)
 
         # 3. the wrong model: a tiny computer
         q = T("so what is running? a tiny computer?", 30, YELLOW_M).move_to([1.0, 2.9, 0])
         self.beat("Now open one box and run it. So what is actually running? A tiny computer inside your computer?",
                   FadeIn(q, shift=DOWN * 0.1), run_time=1.6)
-        vm = RoundedRectangle(corner_radius=0.15, width=4.2, height=3.6, stroke_color=BLUE_M, stroke_width=3).move_to([1.0, -0.4, 0])
-        vml = VGroup(box("virtual hardware", BLUE_M, w=3.6, h=0.6, size=26), box("its own kernel", BLUE_M, w=3.6, h=0.6, size=26),
-                     box("a whole operating system", BLUE_M, w=3.6, h=0.6, size=26), box("your app", GOLD_M, w=3.6, h=0.6, size=26))
+        vm = RoundedRectangle(corner_radius=0.15, width=4.8, height=3.6, stroke_color=BLUE_M, stroke_width=3).move_to([1.0, -0.4, 0])
+        vml = VGroup(box("virtual hardware", BLUE_M, w=4.3, h=0.6, size=26), box("its own kernel", BLUE_M, w=4.3, h=0.6, size=26),
+                     box("a whole operating system", BLUE_M, w=4.3, h=0.6, size=26), box("your app", GOLD_M, w=4.3, h=0.6, size=26))
         vml.arrange(UP, buff=0.12).move_to(vm)
         vmn = T("a virtual machine", 28, BLUE_M).next_to(vm, RIGHT, buff=0.4)
         self.steps("That is a fair guess, because there is an older way that works exactly like that: a virtual machine, or VM. It pretends to be a whole computer.",
@@ -141,7 +143,7 @@ class D17Lunchbox(VoiceScene):
         ops = VGroup(proc(BLUE_M, 0.22).move_to(others[0][0]), proc(GREEN_M, 0.22).move_to(others[1][0]))
         lines = VGroup(*[DashedLine(m.get_bottom(), kern.get_top() + RIGHT * (m.get_x() - kern.get_x()) * 0.9, stroke_width=2, color=TEAL_M) for m in (others[0][0], walls[0], others[1][0])])
         self.steps("Start two more containers, and here is the twist. They all use the same kernel, like lunches that all go through one office microwave.",
-                   (1.0, FadeOut(host), LaggedStart(Create(others[0]), Create(others[1]), lag_ratio=0.3), FadeIn(ops)), (2.0, Wait(2.0)), (1.2, LaggedStart(*[Create(l) for l in lines], lag_ratio=0.25)))
+                   (1.0, FadeOut(host), FadeOut(VGroup(ns, bud, cap, bl)), LaggedStart(Create(others[0]), Create(others[1]), lag_ratio=0.3), FadeIn(ops)), (2.0, Wait(2.0)), (1.2, LaggedStart(*[Create(l) for l in lines], lag_ratio=0.25)))
         fast = T("no kernel to boot: starts in about a second", 26, TEAL_M).next_to(kern, UP, buff=0.15)
         self.beat("Nothing has to boot. So a container starts in about a second.", FadeIn(fast, shift=UP * 0.1), run_time=1.2)
         self.play(FadeOut(fast), run_time=0.4)
@@ -150,7 +152,7 @@ class D17Lunchbox(VoiceScene):
         mac = RoundedRectangle(corner_radius=0.2, width=12.6, height=6.6, stroke_color=GREY_B, stroke_width=2.5).move_to([0.2, -0.05, 0])
         macl = T("your Mac", 26, GREY_B).move_to([-5.0, 2.95, 0])
         self.beat("Now a puzzle for Mac users. A Mac has its own kernel, and it is not Linux. So which kernel runs these containers? Pause and guess.",
-                  FadeOut(VGroup(ns, bud, cap, bl)), FadeOut(image), Create(mac), FadeIn(macl), run_time=2.0)
+                  FadeOut(image), Create(mac), FadeIn(macl), run_time=2.0)
         self.wait(2.0)
         vm2 = DashedVMobject(RoundedRectangle(corner_radius=0.15, width=11.8, height=4.6, stroke_color=TEAL_M, stroke_width=2.5), num_dashes=70).move_to([0.4, -0.6, 0])
         vml2 = T("one small Linux VM, run by Docker Desktop", 26, TEAL_M).move_to([0.9, 2.15, 0])
@@ -159,7 +161,7 @@ class D17Lunchbox(VoiceScene):
         self.play(FadeOut(VGroup(mac, macl, vm2, vml2)), run_time=0.6)
 
         # 6. one image, many opened boxes, each with its own ketchup
-        image.move_to([-5.1, 2.2, 0])
+        image.move_to([-5.3, 2.35, 0])
         self.play(FadeIn(image), run_time=0.5)
         lid = T("one image, many containers", 28, GOLD_M).move_to([0.8, 2.6, 0])
         self.beat("Back to the lunchbox shop. One sealed image can start many containers, and each one is its own opened copy.",
@@ -180,7 +182,7 @@ class D17Lunchbox(VoiceScene):
                    T("what a container writes is lost with docker rm", 26, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to([0.6, 1.55, 0])
         self.steps("Speed has a price, though. Because every container shares one kernel, a kernel bug can affect all of them. A container can only run programs built for that kernel and that processor. And whatever it writes is lost when you remove it.",
                    (0.8, FadeIn(g[0], shift=UP * 0.1)), (4.0, Wait(4.0)), (0.8, FadeIn(g[1], shift=UP * 0.1)), (2.4, Wait(2.4)), (0.8, FadeIn(g[2], shift=UP * 0.1)))
-        self.play(FadeOut(g), run_time=0.5)
+        self.play(FadeOut(g), FadeOut(image), run_time=0.5)
 
         # 8. moral and quick check
         mor = VGroup(T("image: the sealed box", 28, GOLD_M), T("container: an opened copy, a process with walls and a budget", 28, WHITE),
@@ -188,8 +190,7 @@ class D17Lunchbox(VoiceScene):
         fit(mor, 11.0)
         self.steps("So the moral of the story. The image is the sealed box. A container is an opened copy: just a process, with walls and a budget. And they all share one kernel, the office microwave.",
                    (0.6, FadeIn(mor[0], shift=UP * 0.1)), (1.6, Wait(1.6)), (0.6, FadeIn(mor[1], shift=UP * 0.1)), (3.0, Wait(3.0)), (0.6, FadeIn(mor[2], shift=UP * 0.1)))
-        quiz = T("Quick check: ten containers from one image. One writes a file. Do the others see it?", 26, YELLOW_M).move_to([0.4, -3.55 + 0.25, 0])
-        fit(quiz, 12.4)
+        quiz = VGroup(T("Quick check: ten containers from one image.", 28, YELLOW_M), T("One writes a file. Do the others see it?", 28, YELLOW_M)).arrange(DOWN, buff=0.12)
         self.play(FadeOut(mor), run_time=0.4)
         quiz.move_to([0.4, 1.6, 0])
         self.beat("Quick check. You start ten containers from one image, and one of them writes a file. Do the other nine see it?",

@@ -79,10 +79,10 @@ class D03Clerk(VoiceScene):
                   FadeIn(bar), FadeIn(p), AddTextLetterByLetter(t), run_time=2.4)
         q = T("what does the rm program actually receive?", 32, YELLOW_M).move_to(UP * 0.8)
         opts = VGroup(T("the text *.log, which rm matches itself", 28, GREY_B), T("two file names", 28, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.25).next_to(q, DOWN, buff=0.45)
-        self.beat("But here is a question most people never think to ask. What does the rm program actually receive? Does rm know what a star means?",
-                  FadeIn(q, shift=UP * 0.1), Succession(Wait(3.0), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.5)), run_time=5.0)
+        self.beat("But here's a question most people never ask. What does rm actually receive? Does rm even know what a star means?",
+                  FadeIn(q, shift=UP * 0.1), Succession(Wait(2.4), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.5)), run_time=4.4)
         self.countdown(DOWN * 1.9)
-        self.beat("Hold on to your guess. We'll come back to it once we've met the people who handle your line.",
+        self.beat("Hold on to your guess. We'll come back to it.",
                   FadeOut(VGroup(q, opts, bar, p, t)), run_time=1.6)
 
         # ---------- 2. the office: window, clerk, worker
@@ -91,25 +91,25 @@ class D03Clerk(VoiceScene):
         you = person(WHITE).next_to(win, LEFT, buff=0.55)
         clerk = person(BLUE_M).move_to(win)
         clerkl = T("the clerk", 26, BLUE_M).next_to(win, DOWN, buff=0.25)
-        self.beat("Picture your first day in a big office building. You stand at a small window in the lobby, and behind it sits a clerk who reads each note you pass through.",
-                  FadeIn(you, shift=RIGHT * 0.2), Create(win), FadeIn(winl), Succession(Wait(3.2), AnimationGroup(FadeIn(clerk), FadeIn(clerkl)))), run_time=5.0)
+        self.beat("Picture your first day in a big office building. At a small window in the lobby sits a clerk who reads each note you pass through.",
+                  FadeIn(you, shift=RIGHT * 0.2), Create(win), FadeIn(winl), Succession(Wait(2.6), AnimationGroup(FadeIn(clerk), FadeIn(clerkl))), run_time=4.2)
         room = RoundedRectangle(corner_radius=0.12, width=3.0, height=2.6, stroke_color=GOLD_M, stroke_width=3).move_to(RIGHT * 3.6 + DOWN * 0.1)
         worker = person(GOLD_M).move_to(room)
         workl = T("a worker", 26, GOLD_M).next_to(room, DOWN, buff=0.25)
         lk = DashedLine(win.get_right(), room.get_left(), dash_length=0.12, stroke_width=2, color=GREY_B)
-        self.beat("The clerk doesn't do most jobs. The clerk knows which worker in which room does each job, calls that worker, and passes back whatever the worker says.",
+        self.beat("The clerk doesn't do most jobs. It knows which worker does each one, calls them, and passes back what they say.",
                   Create(room), FadeIn(worker), FadeIn(workl), Succession(Wait(2.4), Create(lk)), run_time=4.2)
         m1 = T("terminal", 30, GREY_B).move_to(winl)
         m2 = T("shell: zsh, bash", 30, BLUE_M).move_to(clerkl)
         m3 = T("command: /usr/bin/ls", 30, GOLD_M).move_to(workl)
         self.beat("Let's map it. The terminal is the window: the app you type into.", Transform(winl, m1), run_time=1.4)
-        self.beat("The shell is the clerk: the program inside that window that reads your line and starts other programs. Your Mac uses zsh. Linux servers usually use bash.",
+        self.beat("The shell is the clerk: the program inside the window that reads your line and starts other programs. zsh on your Mac, usually bash on Linux servers.",
                   Transform(clerkl, m2), run_time=1.8)
-        self.beat("And a command is the worker. Usually it is a program file on disk. ls, which lists files, is the file /usr/bin/ls. The clerk finds it by searching the folders on your PATH.",
+        self.beat("A command is the worker, usually a program file on disk. ls, which lists files, is the file /usr/bin/ls. The clerk finds it through your PATH.",
                   Transform(workl, m3), run_time=2.0)
         bi = T("cd: a job the clerk does itself", 24, BLUE_M).move_to(DOWN * 2.6 + LEFT * 3.9)
         self.beat("A few commands, like cd, are jobs the clerk does itself. Those are called builtins.", FadeIn(bi, shift=UP * 0.1), run_time=1.6)
-        self.beat("And here is the thing about this clerk. Brilliant at reading. Hopeless at guessing. It does exactly what your note says, nothing more.",
+        self.beat("And here's the thing about this clerk. Brilliant at reading. Hopeless at guessing. It does exactly what the note says.",
                   Indicate(clerk, color=BLUE_M), run_time=1.6)
         office = VGroup(win, winl, you, clerk, clerkl, room, worker, workl, lk, bi)
         self.play(office.animate.scale(0.42).to_corner(DL, buff=0.6), FadeOut(bi), run_time=0.8)
@@ -135,7 +135,7 @@ class D03Clerk(VoiceScene):
         opt = VGroup(M("-l  -a", 24), T("short options", 24, GREY_B), M("-lh = -l -h", 24), T("grouped", 24, GREY_B),
                      M("--all", 24), T("long options", 24, GREY_B)).arrange_in_grid(rows=3, cols=2, buff=(0.4, 0.18), col_alignments="lr")
         opt.move_to(RIGHT * 3.2 + DOWN * 2.75)
-        self.beat("By habit, words that start with a dash are options, also called flags. Short ones are one letter, and can usually be grouped. Long ones are whole words after two dashes.",
+        self.beat("By habit, words that start with a dash are options, or flags. Short ones are one letter and can be grouped. Long ones are words after two dashes.",
                   FadeOut(dk), Succession(Wait(1.6), LaggedStart(*[FadeIn(o) for o in opt], lag_ratio=0.25)), run_time=5.0)
         self.play(FadeOut(VGroup(chips, sl, pb, lab, cells, opt)), run_time=0.5)
 
@@ -157,7 +157,7 @@ class D03Clerk(VoiceScene):
         t3 = M(line3, 30).next_to(p, RIGHT, buff=0.3)
         chips3 = VGroup(wchip("ls", BLUE_M), wchip('"my notes.txt"', BLUE_M)).arrange(RIGHT, buff=0.45).move_to([0, 1.2, 0])
         pb3, lab3, cells3 = self.argrow("ls", ["my notes.txt"])
-        self.beat("Quote the name, and it stays one word. A backslash before the space works too. Better still, keep spaces out of the file names you create.",
+        self.beat("Quote the name, or put a backslash before the space, and it stays one word. Better still, keep spaces out of your file names.",
                   FadeOut(errs), Transform(t, t3), Transform(chips2, chips3), Transform(VGroup(pb2, lab2), VGroup(pb3, lab3)), Transform(cells2, cells3), run_time=2.0)
         self.play(FadeOut(VGroup(chips2, pb2, lab2, cells2)), run_time=0.5)
 
@@ -167,8 +167,8 @@ class D03Clerk(VoiceScene):
                   FadeOut(VGroup(bar, p, t)), FadeIn(oct_, shift=DOWN * 0.1), run_time=1.6)
         lst = VGroup(M("oct-03.pdf", 26, PURPLE_M), M("oct-17.pdf", 26, PURPLE_M), M("oct-29.pdf", 26, PURPLE_M)).arrange(RIGHT, buff=0.5).move_to(DOWN * 0.3)
         hear = T("the worker never hears the word October", 26, GREY_B).next_to(lst, DOWN, buff=0.45)
-        self.beat("The clerk walks to the drawer, writes down the name of every October report, and hands the worker that list. The worker never hears the word October. It only gets names.",
-                  Succession(Wait(2.4), LaggedStart(*[FadeIn(l, shift=DOWN * 0.1) for l in lst], lag_ratio=0.3)), Succession(Wait(5.0), FadeIn(hear)), run_time=6.6)
+        self.beat("The clerk walks to the drawer, writes down every October report's name, and hands the worker that list. The worker never hears the word October.",
+                  Succession(Wait(2.0), LaggedStart(*[FadeIn(l, shift=DOWN * 0.1) for l in lst], lag_ratio=0.3)), Succession(Wait(4.2), FadeIn(hear)), run_time=5.6)
         self.play(FadeOut(VGroup(oct_, lst, hear)), run_time=0.5)
 
         files = ["access.log", "app.log", "events.jsonl", "logs", "pods.json", "server", "start-lab.sh"]
@@ -197,7 +197,7 @@ class D03Clerk(VoiceScene):
         out = M("access.log app.log", 26).move_to([LX, -2.6, 0])
         self.steps("The program never sees the pattern, only the names. And echo just prints the arguments it receives.",
                    (1.2, FadeIn(pb4), FadeIn(lab4), TransformFromCopy(VGroup(mm1, mm2), cells4)), (1.8, Wait(1.8)), (0.8, FadeIn(out, shift=UP * 0.1)))
-        self.beat("So now, back to our opening question. What did rm receive? Not a star. Two file names, access.log and app.log. rm never saw the pattern at all.",
+        self.beat("So, back to our opening question. What did rm receive? Not a star. Two file names.",
                   Indicate(cells4, color=GREEN_M), run_time=2.0)
         nm = T("a pattern like *.log is called a glob, or wildcard", 26, GREY_B).move_to([LX, -3.3, 0])
         self.beat("A pattern like this is called a glob, or a wildcard. Now you know who does the matching. The clerk, not the worker.",
@@ -208,7 +208,7 @@ class D03Clerk(VoiceScene):
         t5 = M('echo "*.log"', 30).next_to(p, RIGHT, buff=0.3)
         q5 = VGroup(wchip("echo", BLUE_M), wchip('"*.log"', GREY_B)).arrange(RIGHT, buff=0.45).move_to([LX, 1.2, 0])
         o5 = M("*.log", 26).move_to([LX, -0.6, 0])
-        self.steps("Quotes switch globbing off. Put *.log in quotes, and echo prints the star itself. And a star also skips hidden files, the ones whose names start with a dot.",
+        self.steps("Quotes switch globbing off: in quotes, echo prints the star itself. And a star skips hidden files, whose names start with a dot.",
                    (0.8, Transform(t, t5), FadeOut(VGroup(chips4[0], mm1, mm2)), FadeIn(q5), fl.animate.set_opacity(1).set_color(WHITE)),
                    (1.4, Wait(1.4)), (0.8, FadeIn(o5, shift=UP * 0.1)))
         t6 = M("echo *.txt", 30).next_to(p, RIGHT, buff=0.3)
@@ -216,7 +216,7 @@ class D03Clerk(VoiceScene):
         o6 = VGroup(T("bash:", 26, BLUE_M), M("*.txt", 26)).arrange(RIGHT, buff=0.3)
         o7 = VGroup(T("zsh:", 26, PURPLE_M), M("no matches found: *.txt", 24, PURPLE_M)).arrange(RIGHT, buff=0.3)
         VGroup(o6, o7).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to([LX, -1.2, 0])
-        self.steps("And when nothing matches? bash and zsh disagree. In bash the pattern passes on unchanged, as if the clerk found no October reports and handed over the words every report from October.",
+        self.steps("And when nothing matches? In bash the pattern passes on unchanged, as if the clerk found no October reports and handed over the words themselves.",
                    (0.8, Transform(t, t6), FadeOut(o5), Transform(q5, q6)), (1.0, Wiggle(fl)), (2.6, Wait(2.6)), (0.8, FadeIn(o6, shift=UP * 0.1)))
         self.beat("In zsh, the shell refuses to run the line at all. You will see the zsh way on your Mac, and the bash way on every server.",
                   FadeIn(o7, shift=UP * 0.1), run_time=1.6)
@@ -233,7 +233,7 @@ class D03Clerk(VoiceScene):
                    (1.0, FadeIn(chips8)), (0.8, Wait(0.8)), (1.2, FadeIn(pb8), FadeIn(lab8), TransformFromCopy(chips8[1:], cells8)),
                    (0.5, Indicate(cells8[1], color=RED_M)), (0.5, Indicate(cells8[2], color=RED_M)))
         gone = T("both deleted. rm has no trash and no undo.", 28, RED_M).move_to([0, -2.55, 0])
-        self.beat("It deletes both. rm has no trash and no undo. The Trash on your Mac belongs to Finder. rm just removes the names, and nothing keeps a copy.",
+        self.beat("It deletes both. rm has no trash and no undo. The Mac's Trash belongs to Finder. rm just removes the names.",
                   FadeIn(gone, shift=UP * 0.1), run_time=1.8)
         self.play(FadeOut(VGroup(chips8, pb8, lab8, cells8, gone)), run_time=0.5)
         habits = VGroup(
@@ -255,8 +255,8 @@ class D03Clerk(VoiceScene):
         # ---------- 7. moral, recap, check
         rc = VGroup(T("1. split the line on spaces", 30, BLUE_M), T("2. swap patterns for real names", 30, YELLOW_M),
                     T("3. hand the worker a plain list", 30, GOLD_M)).arrange(DOWN, buff=0.35, aligned_edge=LEFT).move_to([0.6, 0.6, 0])
-        self.beat("So that's the whole path of one note. The clerk splits it on spaces, swaps patterns for real names, and hands the worker a plain list. Only then does the program start.",
-                  office.animate.set_opacity(1), LaggedStart(*[FadeIn(x, shift=UP * 0.1) for x in rc], lag_ratio=0.6), run_time=6.0)
+        self.beat("So that's the whole path of one note. The clerk splits it on spaces, swaps patterns for real names, and hands the worker a plain list.",
+                  office.animate.set_opacity(1), LaggedStart(*[FadeIn(x, shift=UP * 0.1) for x in rc], lag_ratio=0.6), run_time=5.0)
         self.beat("The program only ever sees what the clerk wrote down. So when in doubt, ask echo to read the clerk's list aloud.",
                   Indicate(rc[2], color=GOLD_M), run_time=1.6)
         self.play(FadeOut(rc), FadeOut(office), run_time=0.6)

@@ -7,6 +7,15 @@ SAY.extend([(r"\.github/workflows/", "dot github slash workflows"), (r"\.github/
             (r"\btimeout-minutes\b", "timeout minutes"), (r"\bci\.yml\b", "C I dot yammel")])
 
 
+def fix_indent(g, size):
+    """Text drops leading spaces when lines are left-aligned; shift each line by its indent."""
+    cw = M("x" * 20, size).width / 20
+    for m in g:
+        s = getattr(m, "original_text", "")
+        m.shift(RIGHT * (len(s) - len(s.lstrip(" "))) * cw)
+    return g
+
+
 def tint(c, k=0.14):
     return interpolate_color(ManimColor("#000000"), ManimColor(c), k)
 
@@ -122,6 +131,7 @@ class D24FreshStation(VoiceScene):
         y1 = VGroup(M("runs-on: ubuntu-latest", 24), M("steps:", 24),
                     M("  - run: pip install -r requirements-dev.txt", 24, GOLD_M),
                     M("  - run: pytest -q", 24, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to([-0.6, 1.5, 0])
+        fix_indent(y1, 24)
         self.beat("Now let's write the job the obvious way. Install the packages the tests need, then run the tests. Exactly what you type on your laptop.",
                   LaggedStart(*[FadeIn(l, shift=RIGHT * 0.1) for l in y1], lag_ratio=0.25), run_time=2.6)
         gq = T("green or red?", 30, YELLOW_M).move_to([0, -1.0, 0])
@@ -138,6 +148,7 @@ class D24FreshStation(VoiceScene):
                     M('    with:', 24, TEAL_M), M('      python-version: "3.14"', 24, TEAL_M),
                     M("  - run: pip install -r requirements-dev.txt", 24, GOLD_M),
                     M("  - run: pytest -q", 24, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.16).move_to([-0.6, 1.1, 0])
+        fix_indent(y2, 24)
         self.beat("So nearly every job begins with actions/checkout, which copies your repository onto the machine. Fetch the ingredients first.",
                   FadeOut(x1), FadeOut(why), Transform(y1[0], y2[0]), Transform(y1[1], y2[1]), Transform(y1[2], y2[6]), Transform(y1[3], y2[7]),
                   FadeIn(y2[2], shift=RIGHT * 0.1), run_time=2.4)

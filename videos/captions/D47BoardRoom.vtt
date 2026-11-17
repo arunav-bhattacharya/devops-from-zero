@@ -1,0 +1,393 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:05.806
+Picture a small restaurant on a busy Friday night.
+
+2
+00:00:05.806 --> 00:00:09.125
+On the kitchen wall hangs a board with tonight's plan.
+
+3
+00:00:09.267 --> 00:00:12.580
+And out front is the room, where the plan really happens.
+
+4
+00:00:12.733 --> 00:00:16.452
+Around seven, a waiter joins two tables for a big group.
+
+5
+00:00:17.133 --> 00:00:19.828
+A cook takes the fish off, because it ran out.
+
+6
+00:00:20.000 --> 00:00:22.225
+Nobody writes any of it on the board.
+
+7
+00:00:22.400 --> 00:00:25.782
+By nine, the board and the room tell two different stories.
+
+8
+00:00:25.782 --> 00:00:27.960
+And the next shift believes the board.
+
+9
+00:00:28.133 --> 00:00:29.690
+So here is the question.
+
+10
+00:00:29.690 --> 00:00:32.349
+Who keeps the board and the room in step?
+
+11
+00:00:33.867 --> 00:00:35.854
+Software has the same problem.
+
+12
+00:00:35.854 --> 00:00:41.882
+So far, you told the cluster, the machines that run your app, what to run from your laptop.
+
+13
+00:00:41.882 --> 00:00:43.273
+For one person, fine.
+
+14
+00:00:44.067 --> 00:00:46.624
+Add colleagues, and it breaks quietly.
+
+15
+00:00:46.624 --> 00:00:49.787
+A fix by hand at night never reaches the files.
+
+16
+00:00:49.787 --> 00:00:54.497
+And the last apply wins: fine for a pillow fight, poor for real users.
+
+17
+00:00:54.667 --> 00:00:58.434
+That gap between the files and what really runs is called drift.
+
+18
+00:00:58.434 --> 00:01:03.085
+We want one place for every change, and someone who keeps the room equal to it.
+
+19
+00:01:04.267 --> 00:01:06.640
+Back to the restaurant, with new names.
+
+20
+00:01:06.640 --> 00:01:11.021
+The board is git, the tool that keeps every saved version of your files.
+
+21
+00:01:11.200 --> 00:01:18.183
+On the board: a file that sets the greeting of hello-devops, our tiny web app, and how many copies should run.
+
+22
+00:01:18.333 --> 00:01:21.284
+The room is the cluster, where the app really runs.
+
+23
+00:01:21.467 --> 00:01:25.913
+And the floor manager is a program that lives inside the cluster.
+
+24
+00:01:25.913 --> 00:01:27.965
+Here, that program is Argo CD.
+
+25
+00:01:28.133 --> 00:01:29.582
+Notice the direction.
+
+26
+00:01:29.582 --> 00:01:32.205
+Nobody phones changes in from outside.
+
+27
+00:01:32.205 --> 00:01:35.172
+The manager walks over and reads the board.
+
+28
+00:01:35.333 --> 00:01:39.558
+Then it compares the room with the board, and applies only the difference.
+
+29
+00:01:39.558 --> 00:01:45.267
+It reads git about every three minutes, and watches the room, so a change there shows up in seconds.
+
+30
+00:01:45.467 --> 00:01:47.768
+Now this idea has earned its name.
+
+31
+00:01:47.768 --> 00:01:53.453
+Files in git say what should run, and a program keeps the real system matching them.
+
+32
+00:01:53.453 --> 00:01:54.468
+That is GitOps.
+
+33
+00:01:54.667 --> 00:01:58.414
+And your build pipeline no longer needs a key to the cluster.
+
+34
+00:01:58.414 --> 00:02:00.995
+It changes a file in git, and that is all.
+
+35
+00:02:01.667 --> 00:02:04.024
+The manager notes two separate things.
+
+36
+00:02:04.024 --> 00:02:06.691
+Sync status: does the room match the board?
+
+37
+00:02:06.691 --> 00:02:09.111
+And health: does the app actually work?
+
+38
+00:02:09.267 --> 00:02:12.224
+Now play the colleague who fixes things by hand.
+
+39
+00:02:12.224 --> 00:02:15.552
+Change the greeting in the live cluster, and skip git.
+
+40
+00:02:15.733 --> 00:02:18.498
+Argo CD runs with its default settings.
+
+41
+00:02:18.498 --> 00:02:20.696
+What happens to that hand edit?
+
+42
+00:02:23.800 --> 00:02:24.833
+The edit stays.
+
+43
+00:02:24.833 --> 00:02:29.309
+Argo CD sees it within seconds, and only marks the app OutOfSync.
+
+44
+00:02:29.309 --> 00:02:32.545
+It is still Healthy, because the app runs fine.
+
+45
+00:02:32.733 --> 00:02:37.028
+Out of the box, Argo CD is a manager who only takes notes.
+
+46
+00:02:37.028 --> 00:02:37.916
+Very polite.
+
+47
+00:02:37.916 --> 00:02:40.433
+Not much help at nine on a Friday.
+
+48
+00:02:41.000 --> 00:02:43.663
+Three switches decide how strict it is.
+
+49
+00:02:43.663 --> 00:02:46.736
+Automated sync applies new commits by itself.
+
+50
+00:02:46.736 --> 00:02:50.833
+Self-heal undoes changes made in the cluster but not in git.
+
+51
+00:02:51.000 --> 00:02:53.737
+And prune deletes what you removed from git.
+
+52
+00:02:53.737 --> 00:02:59.397
+Self-heal and prune are off by default, a careful choice for a tool that can delete things.
+
+53
+00:02:59.533 --> 00:03:02.596
+Turn self-heal on, and watch the hand edit.
+
+54
+00:03:02.596 --> 00:03:06.158
+After a short pause, Argo CD puts git's text back.
+
+55
+00:03:06.158 --> 00:03:07.297
+You did nothing.
+
+56
+00:03:07.467 --> 00:03:12.828
+To change the greeting for good, you change the board: edit the file, commit, and push.
+
+57
+00:03:13.733 --> 00:03:14.902
+So far so good.
+
+58
+00:03:14.902 --> 00:03:16.460
+Now let's be unkind.
+
+59
+00:03:16.460 --> 00:03:23.161
+On Day 43 you added an autoscaler, a controller that adds copies when the app is busy.
+
+60
+00:03:23.333 --> 00:03:24.468
+A rush comes in.
+
+61
+00:03:24.468 --> 00:03:28.296
+The autoscaler sets five copies, where git says three.
+
+62
+00:03:28.467 --> 00:03:33.545
+Self-heal sees a difference from git, and sets it back to three.
+
+63
+00:03:33.545 --> 00:03:36.004
+The autoscaler raises it again.
+
+64
+00:03:36.004 --> 00:03:36.481
+Three.
+
+65
+00:03:36.481 --> 00:03:36.877
+Five.
+
+66
+00:03:36.877 --> 00:03:37.353
+Three.
+
+67
+00:03:37.533 --> 00:03:44.580
+They fight as long as the rush lasts: the manager sending home the extra waiters the head waiter just called in.
+
+68
+00:03:44.733 --> 00:03:50.246
+The lab gives that field one owner: it tells Argo CD to ignore the replica count.
+
+69
+00:03:50.246 --> 00:03:52.832
+Leaving replicas out of git works too.
+
+70
+00:03:53.000 --> 00:03:56.428
+Two controllers fighting over one field never stop.
+
+71
+00:03:56.428 --> 00:03:58.176
+Give each field one owner.
+
+72
+00:03:59.733 --> 00:04:05.799
+Now a bad change gets into git itself: a typo in the image tag, the app's version name.
+
+73
+00:04:05.933 --> 00:04:08.727
+Argo CD applies it, so the app is Synced.
+
+74
+00:04:08.727 --> 00:04:12.816
+But the new copies cannot pull an image that does not exist.
+
+75
+00:04:12.816 --> 00:04:13.633
+Not Healthy.
+
+76
+00:04:13.800 --> 00:04:17.996
+You might be thinking: there is a one command undo, from Day 40.
+
+77
+00:04:17.996 --> 00:04:19.373
+It fixes the cluster.
+
+78
+00:04:19.373 --> 00:04:21.799
+With self-heal on, what happens next?
+
+79
+00:04:24.867 --> 00:04:29.744
+The board still says the typo, so Argo CD puts the bad version straight back.
+
+80
+00:04:29.744 --> 00:04:33.797
+Our manager is loyal to the board, even when the board is wrong.
+
+81
+00:04:34.333 --> 00:04:36.011
+So a rollback is a commit.
+
+82
+00:04:36.011 --> 00:04:41.429
+git revert makes a new commit that undoes the bad one, and the history stays intact.
+
+83
+00:04:41.600 --> 00:04:42.195
+Push it.
+
+84
+00:04:42.195 --> 00:04:46.584
+Argo CD reads the board, and deploys the state from before.
+
+85
+00:04:47.733 --> 00:04:48.893
+One honest limit.
+
+86
+00:04:48.893 --> 00:04:56.530
+In a real emergency, turn off automated sync for that app, fix the cluster by hand, and write down every change.
+
+87
+00:04:56.530 --> 00:05:00.212
+Then put the same fix into git, and turn sync back on.
+
+88
+00:05:00.400 --> 00:05:04.161
+Skip step three, and the next sync quietly undoes your fix.
+
+89
+00:05:04.933 --> 00:05:06.707
+So the moral of the story.
+
+90
+00:05:06.707 --> 00:05:09.640
+A change that is not in git did not happen.
+
+91
+00:05:09.800 --> 00:05:12.712
+Git is the board, Argo CD the manager.
+
+92
+00:05:12.712 --> 00:05:14.244
+One owner per field.
+
+93
+00:05:14.244 --> 00:05:16.007
+A rollback is a commit.
+
+94
+00:05:16.733 --> 00:05:17.620
+A quick check.
+
+95
+00:05:17.620 --> 00:05:20.472
+You delete a file from git, and prune is off.
+
+96
+00:05:20.472 --> 00:05:23.196
+What happens to that object in the cluster?
+
+97
+00:05:26.267 --> 00:05:26.962
+It stays.
+
+98
+00:05:26.962 --> 00:05:31.059
+Argo CD only marks it for pruning, and waits for you.

@@ -89,7 +89,7 @@ class D48SignedCard(VoiceScene):
         base = mbox("k8s/  shared files", TEAL_M, size=22, w=3.6, h=0.7).move_to(GC + UP * 1.35)
         od = mbox("overlays/dev", BLUE_M, size=22, w=3.6, h=0.7).move_to(GC + DOWN * 0.05)
         op = mbox("overlays/prod", GOLD_M, size=22, w=3.6, h=0.7).move_to(GC + DOWN * 1.35)
-        self.beat("Both rooms run from one board. The shared files sit in one folder, and each environment gets an overlay: a folder that changes a few settings on top.",
+        self.beat("Both rooms run from one board. Shared files sit in one folder, and each environment gets an overlay: a folder of small changes on top.",
                   Create(git), Write(git_t), FadeIn(base), FadeIn(od, shift=DOWN * 0.1), FadeIn(op, shift=DOWN * 0.1), run_time=3.0)
         # tags in the overlays
         dtag = M('newTag: "1.2.0"', 22, BLUE_M).next_to(od, DOWN, buff=0.12)
@@ -120,7 +120,7 @@ class D48SignedCard(VoiceScene):
                   run_time=None)
         self.beat("An ApplicationSet writes those copies for you. It has a template: an ordinary Application with gaps in it.",
                   Create(tb), Write(tmpl), FadeIn(tg_t), run_time=2.4)
-        self.beat("And it has a list that says which word goes in the gaps. In the restaurant, it is a blank board, filled in once for each room.",
+        self.beat("And a list of words for the gaps. In the restaurant, a blank board, filled in once for each room.",
                   Create(lb), Write(lst), FadeIn(lg_t), run_time=2.4)
         a1 = lchip("hello-devops-dev", BLUE_M, 24, mono=True).move_to([-2.0, -1.5, 0])
         a2 = lchip("hello-devops-prod", GOLD_M, 24, mono=True).move_to([2.4, -1.5, 0])
@@ -141,7 +141,7 @@ class D48SignedCard(VoiceScene):
                       T("C. copy the 1.2.0 tag into the prod folder with a pull request", 28), T("D. click Sync on the prod app", 28))
         opts.arrange(DOWN, aligned_edge=LEFT, buff=0.38).move_to(UP * 0.1)
         fit(opts, 12.4)
-        self.beat("Four answers. Rebuild the image for prod. Change prod by hand with kubectl. Copy the tag into the prod folder with a pull request. Or click Sync on prod.",
+        self.beat("Four answers. Rebuild the image for prod. Change prod by hand. Copy the tag into the prod folder with a pull request. Or click Sync.",
                   LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.5), run_time=6.0)
         self.guess([0, -2.6, 0])
         xs = [tick(False, 0.25).next_to(opts[i], LEFT, buff=0.2) for i in (0, 1, 3)]
@@ -173,7 +173,7 @@ class D48SignedCard(VoiceScene):
         pr2 = lchip("pull request: prod to 1.2.0", GOLD_M, 22).move_to(pr1)
         sign = lchip("reviewed, merged: prod to 1.2.0", GREEN_M, 22).move_to(pr2)
         ptag2 = M('newTag: "1.2.0"', 22, GOLD_M).move_to(ptag)
-        self.beat("Step four. A second pull request sets the prod overlay to the same 1.2.0. Someone reviews it and merges it. That is the head chef's signature on the card.",
+        self.beat("Step four. A second pull request sets prod to the same 1.2.0. Someone reviews and merges it: the head chef's signature on the card.",
                   FadeOut(pr1), FadeIn(pr2), Succession(Wait(1.0), AnimationGroup(ReplacementTransform(ptag, ptag2), ReplacementTransform(pr2, sign))), run_time=3.4)
         ptag = ptag2
         self.beat("Argo CD sees the change, and deploys prod.",
@@ -229,7 +229,7 @@ class D48SignedCard(VoiceScene):
         gt = T("Guardrails", 30, GOLD_M).next_to(g, UP, buff=0.4).align_to(g, LEFT)
         self.beat("A few guardrails. Prod moves only by a reviewed pull request.", Write(gt), FadeIn(g[0], shift=RIGHT * 0.1), run_time=1.6)
         self.beat("Never latest. Use a version, or better, a digest.", FadeIn(g[1], shift=RIGHT * 0.1), run_time=1.2)
-        self.beat("An add-on, Argo CD Image Updater, can write new tags for you, but it commits straight to the branch, with no signature. My advice: let it handle dev at most, and keep prod on pull requests.",
+        self.beat("An add-on, Argo CD Image Updater, can write new tags for you, but it commits with no signature. My advice: dev at most, and keep prod on pull requests.",
                   FadeIn(g[2], shift=RIGHT * 0.1), run_time=1.6)
         self.beat("And nobody writes the safe's code on the board. A password in git is no longer a secret, so commit only locked secrets, or pointers to them.",
                   FadeIn(g[3], shift=RIGHT * 0.1), run_time=1.6)
@@ -243,7 +243,7 @@ class D48SignedCard(VoiceScene):
                      T("one blank board, filled in per room: the ApplicationSet", 28, TEAL_M),
                      T("promotion: a pull request copies the tested tag", 28, GREEN_M),
                      T("a rebuild or latest is a new soup with an old name", 28, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(DOWN * 0.1)
-        self.beat("Dev is the test kitchen, prod the main room. One blank board, filled in per room. A dish moves as a signed card that copies the tag dev already ran. And a rebuild, or latest, is a new soup with an old name.",
+        self.beat("Dev is the test kitchen, prod the main room. One blank board, filled in per room. A dish moves as a signed card. And a rebuild, or latest, is a new soup with an old name.",
                   LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in rec], lag_ratio=0.7), run_time=8.0)
         self.play(FadeOut(rec), run_time=0.5)
         c1 = T("Quick check: you add  env: staging  to the ApplicationSet's list.", 30).move_to(UP * 0.4)

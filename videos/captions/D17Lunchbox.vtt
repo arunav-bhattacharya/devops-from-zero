@@ -1,0 +1,345 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:05.830
+Picture cooking your best dish for a friend's party.
+
+2
+00:00:05.830 --> 00:00:08.272
+At home, it comes out perfect every time.
+
+3
+00:00:08.467 --> 00:00:14.511
+At your friend's house, the oven runs hotter, there is no fresh garlic, and the salt is a different kind.
+
+4
+00:00:14.667 --> 00:00:18.919
+The dish fails, and you stand in their kitchen saying: but it works at home.
+
+5
+00:00:19.067 --> 00:00:21.419
+Software has the same problem.
+
+6
+00:00:21.419 --> 00:00:29.103
+Your test passes on your Mac with Python 3.14, and fails on the CI machine, which has Python 3.12.
+
+7
+00:00:29.103 --> 00:00:30.985
+Nobody touched the code.
+
+8
+00:00:30.985 --> 00:00:33.259
+Everything around it changed.
+
+9
+00:00:34.200 --> 00:00:37.780
+Wouldn't it be nice to carry the kitchen along with the dish?
+
+10
+00:00:37.780 --> 00:00:41.829
+Pack it like a lunchbox: the meal plus its own fork, salt and napkin.
+
+11
+00:00:42.000 --> 00:00:48.257
+Into the box goes the app, the runtime that runs its code, the libraries it uses, and its settings.
+
+12
+00:00:48.400 --> 00:00:49.549
+Then you seal it.
+
+13
+00:00:49.549 --> 00:00:52.927
+That sealed, read-only package is called an image.
+
+14
+00:00:52.927 --> 00:00:56.441
+Docker is the tool that builds images and runs them.
+
+15
+00:00:56.600 --> 00:01:02.352
+And the same image runs the same way on your Mac, on a CI machine, and on a cloud server.
+
+16
+00:01:02.352 --> 00:01:04.549
+The kitchen travels with the dish.
+
+17
+00:01:06.067 --> 00:01:08.012
+Now open one box and run it.
+
+18
+00:01:08.012 --> 00:01:09.958
+So what is actually running?
+
+19
+00:01:09.958 --> 00:01:12.529
+A tiny computer inside your computer?
+
+20
+00:01:12.667 --> 00:01:19.718
+That is a fair guess, because there is an older way that works exactly like that: a virtual machine, or VM.
+
+21
+00:01:19.718 --> 00:01:22.024
+It pretends to be a whole computer.
+
+22
+00:01:22.200 --> 00:01:25.555
+It boots a full operating system with its own kernel.
+
+23
+00:01:25.555 --> 00:01:32.581
+The kernel is the core of an operating system: it starts programs, hands out memory, and talks to the hardware.
+
+24
+00:01:32.733 --> 00:01:35.003
+Booting all of that takes many seconds.
+
+25
+00:01:35.003 --> 00:01:38.379
+If a container were that, it would be a busy little place.
+
+26
+00:01:38.533 --> 00:01:39.578
+Let's test it.
+
+27
+00:01:39.578 --> 00:01:41.743
+Alpine is a tiny Linux image.
+
+28
+00:01:41.743 --> 00:01:44.953
+We ask it to list every process it can see.
+
+29
+00:01:45.133 --> 00:01:47.977
+A real computer runs hundreds of programs.
+
+30
+00:01:47.977 --> 00:01:50.278
+How many will this container list?
+
+31
+00:01:50.278 --> 00:01:51.361
+Pause and guess.
+
+32
+00:01:53.533 --> 00:01:53.858
+One.
+
+33
+00:01:53.858 --> 00:01:56.538
+Just ps itself, running as PID 1.
+
+34
+00:01:56.538 --> 00:02:03.196
+A PID is the number Linux gives each running program, and 1 goes to the first one.
+
+35
+00:02:03.333 --> 00:02:05.636
+Well, that is not a busy computer.
+
+36
+00:02:05.636 --> 00:02:07.464
+That is one lonely program.
+
+37
+00:02:08.133 --> 00:02:09.943
+Here is what really happens.
+
+38
+00:02:09.943 --> 00:02:13.045
+Down at the bottom is the kernel of the machine.
+
+39
+00:02:13.045 --> 00:02:16.729
+Above it run lots of ordinary programs, called processes.
+
+40
+00:02:16.867 --> 00:02:19.251
+A container is one more of those.
+
+41
+00:02:19.251 --> 00:02:20.912
+A normal Linux process.
+
+42
+00:02:20.912 --> 00:02:23.585
+No second computer, no second kernel.
+
+43
+00:02:23.733 --> 00:02:26.492
+But the kernel gives it two extra things.
+
+44
+00:02:26.492 --> 00:02:27.367
+First, walls.
+
+45
+00:02:27.367 --> 00:02:32.818
+Like a lunchbox in the office fridge: the food inside cannot see the other boxes.
+
+46
+00:02:32.818 --> 00:02:35.173
+Linux calls these walls namespaces.
+
+47
+00:02:35.333 --> 00:02:42.667
+Inside its walls, the process gets its own list of programs, its own network, its own name, and its own files.
+
+48
+00:02:42.667 --> 00:02:44.733
+That is why ps saw only itself.
+
+49
+00:02:44.933 --> 00:02:46.110
+Second, a budget.
+
+50
+00:02:46.110 --> 00:02:49.915
+A cap on how much processor time and memory it may use.
+
+51
+00:02:49.915 --> 00:02:53.444
+Linux calls this a cgroup, short for control group.
+
+52
+00:02:53.600 --> 00:02:56.700
+Go past the memory cap, and the kernel kills it.
+
+53
+00:02:57.467 --> 00:03:01.124
+So a container is a process, with walls and a budget.
+
+54
+00:03:01.124 --> 00:03:02.504
+Not a tiny computer.
+
+55
+00:03:02.504 --> 00:03:06.852
+A process that was told, very firmly, to mind its own business.
+
+56
+00:03:07.400 --> 00:03:10.407
+Start two more containers, and here is the twist.
+
+57
+00:03:10.407 --> 00:03:15.563
+They all use the same kernel, like lunches that all go through one office microwave.
+
+58
+00:03:15.733 --> 00:03:17.089
+Nothing has to boot.
+
+59
+00:03:17.089 --> 00:03:19.800
+So a container starts in about a second.
+
+60
+00:03:20.333 --> 00:03:22.171
+Now a puzzle for Mac users.
+
+61
+00:03:22.171 --> 00:03:25.303
+A Mac has its own kernel, and it is not Linux.
+
+62
+00:03:25.303 --> 00:03:27.889
+So which kernel runs these containers?
+
+63
+00:03:27.889 --> 00:03:28.979
+Pause and guess.
+
+64
+00:03:31.133 --> 00:03:33.315
+The Linux kernel of one small VM.
+
+65
+00:03:33.315 --> 00:03:41.579
+Docker Desktop, the Mac app that installs Docker, quietly starts it in the background, and every container shares its kernel.
+
+66
+00:03:42.867 --> 00:03:44.639
+Back to the lunchbox shop.
+
+67
+00:03:44.639 --> 00:03:50.091
+One sealed image can start many containers, and each one is its own opened copy.
+
+68
+00:03:50.267 --> 00:03:56.306
+When the app writes a file, it lands in a thin writable layer that belongs to that copy only.
+
+69
+00:03:56.306 --> 00:03:58.579
+Like ketchup you add after opening.
+
+70
+00:03:58.579 --> 00:04:00.463
+The other boxes never see it.
+
+71
+00:04:00.600 --> 00:04:03.952
+Remove the container, and its ketchup goes with it.
+
+72
+00:04:03.952 --> 00:04:05.989
+The image itself never changes.
+
+73
+00:04:06.867 --> 00:04:08.444
+Speed has a price, though.
+
+74
+00:04:08.444 --> 00:04:13.238
+Because every container shares one kernel, a kernel bug can affect all of them.
+
+75
+00:04:13.238 --> 00:04:17.790
+A container can only run programs built for that kernel and that processor.
+
+76
+00:04:17.790 --> 00:04:20.824
+And whatever it writes is lost when you remove it.
+
+77
+00:04:21.533 --> 00:04:23.320
+So the moral of the story.
+
+78
+00:04:23.320 --> 00:04:25.245
+The image is the sealed box.
+
+79
+00:04:25.245 --> 00:04:30.125
+A container is an opened copy: just a process, with walls and a budget.
+
+80
+00:04:30.125 --> 00:04:33.699
+And they all share one kernel, the office microwave.
+
+81
+00:04:34.267 --> 00:04:35.039
+Quick check.
+
+82
+00:04:35.039 --> 00:04:39.610
+You start ten containers from one image, and one of them writes a file.
+
+83
+00:04:39.610 --> 00:04:41.220
+Do the other nine see it?
+
+84
+00:04:43.400 --> 00:04:43.611
+No.
+
+85
+00:04:43.611 --> 00:04:47.472
+It sits in that one container's own layer, its ketchup.
+
+86
+00:04:47.472 --> 00:04:50.631
+The image, and the other boxes, never change.

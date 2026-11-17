@@ -104,8 +104,6 @@ class D22KnifeInBox(VoiceScene):
                    (1.4, Wait(1.4)), (0.6, FadeIn(scan[0])), (3.4, Wait(3.4)), (0.8, FadeIn(scan[1]), pipk.animate.set_opacity(0.1)))
         self.steps("The 44 that stayed come from the Debian base, and on the day we scanned, none of them had a fix yet. You rebuild when Debian ships one. Your numbers will differ, because new bugs are published every day.",
                    (0.8, FadeIn(scan[2])))
-        self.steps("For a bigger app the size gap is real. A Kotlin service builds with a JDK and Gradle, big build tools, and ships with only a Java runtime and the jar.",
-                   (0.6, Indicate(kit, color=BLUE_M)))
         sz.clear_updaters()
         self.play(FadeOut(VGroup(sz, was, scan, arr)), run_time=0.4)
 

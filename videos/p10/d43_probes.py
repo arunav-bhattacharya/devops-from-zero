@@ -119,7 +119,7 @@ class D43Probes(VoiceScene):
         self.beat("One question isn't enough. A good manager asks three, and each answer has its own action.",
                   FadeIn(heads), run_time=1.4)
         figs = VGroup(*[waiter(TEAL_M, 0.75).move_to([-5.6, y, 0]) for y in Y])
-        quest = VGroup(*[T(q, 26).move_to([-1.9, y, 0]) for q, y in zip(
+        quest = VGroup(*[T(q, 24).move_to([-1.85, y, 0]) for q, y in zip(
             ("\"Have you finished starting?\"", "\"Are you stuck?\"", "\"Can you take tables right now?\""), Y)])
 
         def action(lines, c, y):
@@ -146,7 +146,7 @@ class D43Probes(VoiceScene):
         self.beat("While it's no, no new tables go to that waiter. But nobody goes home.",
                   GrowArrow(arrs[2]), FadeIn(acts[2]), run_time=1.8)
 
-        names = VGroup(*[M(n, 26, c).move_to([-5.5, y, 0]) for n, c, y in zip(("startup", "liveness", "readiness"), COL, Y)])
+        names = VGroup(*[M(n, 26, c).move_to([-5.6, y, 0]) for n, c, y in zip(("startup", "liveness", "readiness"), COL, Y)])
         self.steps("Now the names: the startup probe, the liveness probe, and the readiness probe.",
                    (0.9, FadeOut(heads)), (0.7, Transform(figs[0], names[0])), (0.7, Transform(figs[1], names[1])), (0.7, Transform(figs[2], names[2])))
         sub = T("wait, restart, or stop sending visitors", 28, YELLOW_M).move_to([0, 3.2, 0])
@@ -261,11 +261,11 @@ class D43Probes(VoiceScene):
         fit(lim, 12.4)
         zero = VGroup(*[M("0/1", 24, BLUE_M).move_to(r[0]) for r in rows])
         self.beat("One honest limit. If every Pod fails readiness at once, the Service has no ready Pods left, and users get errors.",
-                  *[Transform(r[0], z) for r, z in zip(rows, zero)], FadeIn(lim, shift=UP * 0.1), run_time=2.4)
+                  *[Transform(r[0], z) for r, z in zip(rows, zero)], FadeIn(lim, shift=UP * 0.1), FadeOut(good), run_time=2.4)
         lab = VGroup(chip("timeoutSeconds: 2", BLUE_M, 24, mono=True), chip("failureThreshold: 2", BLUE_M, 24, mono=True)).arrange(RIGHT, buff=0.6).move_to([0, -1.95, 0])
         self.beat("So the lab's readiness probe isn't too strict: a two second timeout, and two failures.",
                   LaggedStart(*[FadeIn(c, shift=UP * 0.1) for c in lab], lag_ratio=0.4), run_time=2.0)
-        self.play(FadeOut(VGroup(cmd, tabl, lim, lab, good)), run_time=0.6)
+        self.play(FadeOut(VGroup(cmd, tabl, lim, lab)), run_time=0.6)
 
         # ---------- 9. moral and a quick check
         mor = VGroup(T("Being present is not the same as working.", 32, WHITE),

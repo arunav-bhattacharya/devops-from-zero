@@ -5,6 +5,15 @@ SAY.extend([(r"!cancelled\(\)", "not cancelled"), (r"success\(\)", "success"), (
             (r"\bbreak-build\b", "break build")])
 
 
+def fix_indent(g, size):
+    """Text drops leading spaces when lines are left-aligned; shift each line by its indent."""
+    cw = M("x" * 20, size).width / 20
+    for m in g:
+        s = getattr(m, "original_text", "")
+        m.shift(RIGHT * (len(s) - len(s.lstrip(" "))) * cw)
+    return g
+
+
 def tint(c, k=0.14):
     return interpolate_color(ManimColor("#000000"), ManimColor(c), k)
 
@@ -147,6 +156,7 @@ class D26HiddenSuccess(VoiceScene):
         xb = tick(False, 0.2).next_to(jb, DOWN, buff=0.25)
         kv = tick(True, 0.2).next_to(jv, DOWN, buff=0.25)
         out = VGroup(M("Job results were [", 22), M('  "success",', 22, GREEN_M), M('  "failure"', 22, RED_M), M("]", 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.08)
+        fix_indent(out, 22)
         out.move_to([3.6, -1.75, 0])
         self.beat("Version passes. Build exits with 1. And report still runs, thanks to always(), and prints what it saw: one success, one failure.",
                   Create(kv), Succession(Wait(0.8), AnimationGroup(Create(xb), jb[0].animate.set_stroke(RED_M))),

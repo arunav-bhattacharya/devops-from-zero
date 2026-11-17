@@ -27,7 +27,7 @@ def note(text, color, size=22, w=None):
 
 
 LEVELS = [("role defaults", GREEN_M), ("group_vars/all", TEAL_M), ("group_vars/web", TEAL_M), ("host_vars/web2", TEAL_M),
-          ("vars: in the play", BLUE_M), ("role vars", PURPLE_M), ("-e on the command line", GOLD_M)]
+          ("vars: in the play", BLUE_M), ("role vars", PURPLE_M), ("-e extra vars", GOLD_M)]
 
 
 class D37Notes(VoiceScene):
@@ -61,7 +61,7 @@ class D37Notes(VoiceScene):
         side = DashedLine([0.2, -0.9, 0], [6.4, -0.9, 0], dash_length=0.12, color=GREY_D)
         self.beat("Our house sitter now looks after a whole street, and the owners start leaving notes.",
                   FadeIn(hA), FadeIn(hB), Create(side), run_time=2.0)
-        chk = note("checklist: heating 20 degrees", GREEN_M, 24).move_to([-3.6, 2.4, 0])
+        chk = note("checklist: heating 20 degrees", GREEN_M, 24).move_to([3.3, 2.9, 0])
         self.beat("The printed checklist says: heating at twenty degrees. That's the author's suggestion, for any house.",
                   FadeIn(chk, shift=DOWN * 0.15), run_time=2.0)
         sideN = note("left side of the street: 19", TEAL_M, 24).move_to([3.3, -1.5, 0])
@@ -70,10 +70,10 @@ class D37Notes(VoiceScene):
         door = note("22, please", TEAL_M, 22).next_to(hB[2], UP, buff=0.08)
         self.beat("And a sticky note on one front door: twenty-two, please.",
                   FadeIn(door, scale=0.7), run_time=1.6)
-        phone = note("phone call tonight: 18, we're away", GOLD_M, 24).move_to([-3.6, -2.4, 0])
+        phone = note("phone call tonight: 18, we're away", GOLD_M, 24).move_to([3.3, -2.55, 0])
         self.beat("Then the owners phone tonight. Eighteen degrees everywhere, we're away.",
                   FadeIn(phone, shift=UP * 0.15), run_time=1.8)
-        qm = T("which note wins?", 30, YELLOW_M).move_to([-3.6, 0.0, 0])
+        qm = T("which note wins?", 30, YELLOW_M).move_to([-3.4, 0.3, 0])
         self.beat("Four notes, and they disagree. A real sitter would ring somebody and ask. Ansible never asks. It picks a winner by a fixed list, silently.",
                   FadeIn(qm), run_time=2.8)
         self.wait(0.3)
@@ -106,8 +106,8 @@ class D37Notes(VoiceScene):
         self.add(gapb)
 
         # ---------- 4. shrink, predict, show: the lab's real files
-        w1 = house().scale(0.8).move_to([3.2, 1.6, 0])
-        w2 = house().scale(0.8).move_to([5.3, 1.6, 0])
+        w1 = house().scale(0.8).move_to([2.6, 1.6, 0])
+        w2 = house().scale(0.8).move_to([5.2, 1.6, 0])
         self.play(ReplacementTransform(hA, w1), ReplacementTransform(hB, w2), FadeOut(side), run_time=0.8)
         n1 = M("web1", 26, BLUE_M).next_to(w1, DOWN, buff=0.15)
         n2 = M("web2", 26, BLUE_M).next_to(w2, DOWN, buff=0.15)
@@ -131,7 +131,7 @@ class D37Notes(VoiceScene):
         def two(a, b, color, x):
             g = VGroup(T(a, 24, color), T(b, 24, color)) if b else VGroup(T(a, 24, color))
             return g.arrange(DOWN, buff=0.12).move_to([x, -0.2, 0])
-        X1, X2 = 3.2, 5.3
+        X1, X2 = 2.6, 5.2
         a1 = two("Hello from", "Ansible", TEAL_M, X1)
         a2 = two("Hello from web2,", "the canary", TEAL_M, X2)
         self.beat("web1 isn't in host_vars, so its strongest note is the group's: Hello from Ansible.",

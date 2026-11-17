@@ -7,6 +7,15 @@ SAY.extend([(r"\./gradlew\b", "gradle W"), (r"\bcompileKotlin\b", "compile Kotli
             (r"\bMain\.kt\b", "main dot K T"), (r"\.gradle\b", "dot gradle")])
 
 
+def fix_indent(g, size):
+    """Text drops leading spaces when lines are left-aligned; shift each line by its indent."""
+    cw = M("x" * 20, size).width / 20
+    for m in g:
+        s = getattr(m, "original_text", "")
+        m.shift(RIGHT * (len(s) - len(s.lstrip(" "))) * cw)
+    return g
+
+
 def tint(c, k=0.14):
     return interpolate_color(ManimColor("#000000"), ManimColor(c), k)
 
@@ -140,6 +149,7 @@ class D28PrepList(VoiceScene):
                       M('    println("2b. configuration")', 22, TEAL_M),
                       M('    doLast { println("3. execution") }', 22, GOLD_M),
                       M('}', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-1.6, -1.3, 0])
+        fix_indent(code, 22)
         shn = T("(print texts shortened)", 20, GREY_B).next_to(code, DOWN, buff=0.15).align_to(code, LEFT)
         self.add(shn)
         self.beat("Here's a test from the lesson. Four print lines: one in settings, one at the top of the build script, one inside the hello task's setup block, and one inside doLast.",

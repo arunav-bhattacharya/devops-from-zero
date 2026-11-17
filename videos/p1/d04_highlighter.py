@@ -75,11 +75,11 @@ class D04Highlighter(VoiceScene):
         bl = T("four logbooks, a few thousand lines each", 26, GREY_B).next_to(books, DOWN, buff=0.35)
         self.beat("The phone rings at the office front desk. A customer's order failed this morning, and they read you a reference: 7f3a9c.",
                   FadeIn(ref, shift=DOWN * 0.15), run_time=2.0)
-        self.beat("Somewhere in the building, four departments each keep a logbook, a few thousand lines long. The answer is in there, and the customer is waiting on the line.",
+        self.beat("Four departments each keep a logbook, a few thousand lines long. The answer is in there, and the customer is waiting.",
                   LaggedStart(*[FadeIn(b, shift=UP * 0.1) for b in books], lag_ratio=0.2), FadeIn(bl), run_time=3.0)
         q = T("your search prints nothing. good news?", 32, YELLOW_M).move_to(DOWN * 2.75)
-        self.beat("Nobody reads four logbooks from the top. You ask the building questions instead. But here is one nobody thinks to ask: when your search prints nothing at all, is that good news?",
-                  Succession(Wait(5.0), FadeIn(q, shift=UP * 0.1)), run_time=6.4)
+        self.beat("Nobody reads four logbooks from the top. You ask questions instead. But here's one nobody asks: when your search prints nothing at all, is that good news?",
+                  Succession(Wait(4.2), FadeIn(q, shift=UP * 0.1)), run_time=5.4)
         self.beat("Hold on to that one. By the end, you'll know why silence can lie.", Indicate(q, color=YELLOW_M), run_time=1.6)
         self.play(FadeOut(VGroup(ref, books, bl, q)), run_time=0.6)
 
@@ -98,9 +98,9 @@ class D04Highlighter(VoiceScene):
                       .move_to([L.get_center()[0], r.get_center()[1], 0]) for r in L])
         cap = T("app.log, lines 6 to 20 (trimmed to fit)", 22, GREY_B).next_to(L, DOWN, buff=0.22).align_to(L, LEFT)
         self.add(hl)
-        self.beat("Every department keeps a logbook at its door, one line per visitor. A log file is the same idea: a plain text file that a program adds to, one line per event.",
+        self.beat("Every department keeps a logbook at its door. A log file is the same idea: a plain text file a program adds to, one line per event.",
                   LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in L], lag_ratio=0.08), FadeIn(cap), run_time=3.6)
-        self.beat("Here is one page of the lab's app.log. The whole file has 37 lines. Each holds a level, like INFO or ERROR, a request ID, and a message.",
+        self.beat("Here is one page of the lab's app.log, which has 37 lines. Each line holds a time, a level like INFO or ERROR, a service name, a request ID and a message. We trimmed them to fit.",
                   Succession(Wait(2.6), Indicate(VGroup(*[glyphs(r[1], PAGE[i][1], PAGE[i][1].split(' ')[0]) for i, r in enumerate(L)]), scale_factor=1.05)), run_time=4.0)
 
         cmd_pos = np.array([-6.4, 3.0, 0])
@@ -132,13 +132,13 @@ class D04Highlighter(VoiceScene):
         self.steps("grep reads its input one line at a time, checks whether the pattern appears anywhere in the line, and keeps the lines where it does.",
                    (1.0, Write(c1)), *sweep([6, 7, 8, 9]))
         o1 = VGroup(T("4 lines:", 28, YELLOW_M), T("one customer's request", 26, GREY_B)).arrange(DOWN, buff=0.15).move_to([RX, 0.3, 0])
-        self.beat("Four lines, the whole story of the customer's request on this page. The highlighter is the pattern. The page is the input. The marked lines are the output.",
+        self.beat("Four lines: the customer's request on this page. The highlighter is the pattern, the page is the input, and the marked lines are the output.",
                   FadeIn(o1, shift=LEFT * 0.1), run_time=2.4)
         self.play(*reset(), FadeOut(o1), run_time=0.5)
 
         # options as questions
         c2 = cmd("grep ERROR app.log")
-        self.steps("Each option answers a question you will ask when something is broken. Start plain: grep ERROR, in capitals.",
+        self.steps("Each option answers a question you'll ask when something breaks. Start plain: grep ERROR, in capitals.",
                    (0.6, Transform(c1, c2)), *sweep([2, 8, 14]))
         o2 = VGroup(T("4 lines in the file", 28, RED_M), T("(3 on this page)", 24, GREY_B)).arrange(DOWN, buff=0.15).move_to([RX, 0.3, 0])
         self.beat("In the whole file, that is 4 lines. You can see three of them here.", FadeIn(o2), run_time=1.4)
@@ -160,9 +160,9 @@ class D04Highlighter(VoiceScene):
         ec = VGroup(VGroup(M("0", 30, GREEN_M), T("found a match", 26, GREY_B)).arrange(RIGHT, buff=0.3),
                     VGroup(M("1", 30, YELLOW_M), T("no match", 26, GREY_B)).arrange(RIGHT, buff=0.3),
                     VGroup(M("2", 30, RED_M), T("something went wrong", 26, GREY_B)).arrange(RIGHT, buff=0.3)).arrange(DOWN, aligned_edge=LEFT, buff=0.25).move_to([RX, 0.3, 0])
-        self.beat("grep also hands back a number when it ends, called its exit code. The shell keeps the last one in $?. Quiet grep, then echo $?, prints 0.",
+        self.beat("grep also hands back a number when it ends, called its exit code. The shell keeps the last one in $?. After a quiet grep -q, echo $? prints 0.",
                   Transform(c1, c5), Succession(Wait(3.0), FadeIn(ec[0])), run_time=4.4)
-        self.beat("Zero means found a match. One means no match. Two means something went wrong, like a missing file. Keep that one in your pocket.",
+        self.beat("Zero means found. One means no match. Two means something went wrong, like a missing file.",
                   LaggedStart(FadeIn(ec[1]), FadeIn(ec[2]), lag_ratio=0.6), run_time=2.4)
         self.play(FadeOut(ec), run_time=0.4)
 
@@ -180,7 +180,7 @@ class D04Highlighter(VoiceScene):
                   LaggedStart(*[FadeIn(r, shift=LEFT * 0.1) for r in rx], lag_ratio=0.5), run_time=3.0)
         c6 = cmd("grep -o -E '[0-9]+ms' app.log")
         marks = VGroup(*[glyphs(L[i][1], PAGE[i][1], d) for i, d in durs])
-        self.steps("Run it with dash O, which prints only the part that matched, and dash E, which we'll come back to in a moment. Out come the durations, one per line.",
+        self.steps("Run it with -o, which prints only the matched part, and -E, more on that soon. Out come the durations.",
                    (0.8, Transform(c1, c6)), (1.6, LaggedStart(*[m.animate.set_color(YELLOW_M) for m in marks], lag_ratio=0.12)))
         more = VGroup(VGroup(M(".", 28, BLUE_M), T("any one character", 24, GREY_B)).arrange(RIGHT, buff=0.3),
                       VGroup(M("*", 28, BLUE_M), T("repeat: zero or more", 24, GREY_B)).arrange(RIGHT, buff=0.3),
@@ -202,7 +202,7 @@ class D04Highlighter(VoiceScene):
         self.add(nothing)
         lit = M("ERROR|WARN", 30, YELLOW_M).move_to([RX, -1.4, 0])
         litl = T("searched as plain text", 24, GREY_B).next_to(lit, DOWN, buff=0.15)
-        self.beat("Here is why. Plain grep speaks the older, basic dialect of regex. In it, the bar is an ordinary character. So grep looked for the exact text E R R O R, bar, W A R N.",
+        self.beat("Here's why. Plain grep speaks an older, basic dialect of regex, where the bar is an ordinary character. So grep looked for the exact text E R R O R, bar, W A R N.",
                   Succession(Wait(4.6), AnimationGroup(FadeIn(lit), FadeIn(litl))), run_time=6.0)
         self.beat("And not a single line in this logbook contains that.", Wiggle(lit), run_time=1.4)
         c8 = cmd("grep -E 'ERROR|WARN' app.log")
@@ -213,7 +213,7 @@ class D04Highlighter(VoiceScene):
                   Indicate(c1, color=YELLOW_M), run_time=1.6)
         rule = VGroup(T("An empty result answers your pattern,", 28, YELLOW_M), T("not your question. Check the pattern.", 28, YELLOW_M)).arrange(DOWN, buff=0.12).move_to([RX, -1.7, 0])
         fit(rule, 4.2)
-        self.beat("And that is the open question from the start. An empty result is an answer to your pattern, not to your question. So check the pattern before you trust the silence. And echo $? tells you whether grep found nothing, or failed.",
+        self.beat("That's our open question from the start. An empty result answers your pattern, not your question. So check the pattern before you trust the silence. And echo $? tells you whether grep found nothing, or failed.",
                   FadeIn(rule, shift=UP * 0.1), run_time=2.4)
         self.play(*reset(), FadeOut(VGroup(o8, rule)), run_time=0.6)
 
@@ -224,7 +224,7 @@ class D04Highlighter(VoiceScene):
                     T("unquoted: expanded to file names", 24, GREY_B)).arrange(DOWN, buff=0.2).move_to([-3.3, 0.2, 0])
         wk = VGroup(T("grep (regex) reads", 26, GOLD_M), M("*  =  zero or more", 26, GOLD_M), M("'ERROR|WARN'", 26, GOLD_M),
                     T("in single quotes: left alone", 24, GREY_B)).arrange(DOWN, buff=0.2).move_to([3.3, 0.2, 0])
-        self.beat("One more trap. Last time, the clerk at the front desk read a star as any file name. Inside grep, a star means zero or more of the last character. Two languages, same symbols.",
+        self.beat("One more trap. Last time, the clerk read a star as any file name. Inside grep, a star means zero or more of the last character. Same symbols, two languages.",
                   Transform(c1, c9), FadeIn(cl[:2]), Succession(Wait(3.4), FadeIn(wk[:2])), run_time=6.0)
         self.beat("In this one command, both live side by side. The clerk expands the unquoted logs/*.log into file names. It leaves the regex alone, because it sits in single quotes.",
                   FadeIn(cl[2:]), Succession(Wait(3.0), FadeIn(wk[2:])), run_time=5.0)
@@ -238,7 +238,7 @@ class D04Highlighter(VoiceScene):
         # ---------- 7. moral, check
         m = VGroup(T("grep keeps the lines that match a pattern.", 30, YELLOW_M),
                    T("A regex describes a shape. Silence is an answer to your pattern.", 28, GREY_B)).arrange(DOWN, buff=0.3).move_to(UP * 0.3)
-        self.beat("So, the moral of the story. grep is a highlighter: it keeps the lines that match a pattern. A regex describes text by its shape. And when grep goes quiet, that silence is an answer to your pattern. Check it, before you tell the customer all is well.",
+        self.beat("So, the moral of the story. grep is a highlighter: it keeps the lines that match a pattern. A regex describes text by its shape. And silence is an answer to your pattern. Check it, before you tell the customer all is well.",
                   FadeIn(m[0], shift=UP * 0.1), Succession(Wait(4.0), FadeIn(m[1], shift=UP * 0.1)), run_time=6.0)
         self.play(FadeOut(m), run_time=0.5)
         cq = VGroup(T("Which command counts the lines of", 30), M("app.log", 28), T("that end with", 30), M("ms", 28), T("?", 30)).arrange(RIGHT, buff=0.18).move_to(UP * 1.8)

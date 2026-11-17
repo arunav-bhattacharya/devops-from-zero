@@ -130,26 +130,24 @@ class D16SilentPhone(VoiceScene):
         self.play(FadeOut(VGroup(sets, idem)), run_time=0.5)
 
         # backoff: wait longer each time
-        ax = Line([-5.0, -2.0, 0], [5.0, -2.0, 0], stroke_width=2, color=GREY_D)
+        ax = Line([-5.0, -2.4, 0], [5.0, -2.4, 0], stroke_width=2, color=GREY_D)
         xs = [-4.6, -3.4, -0.9, 3.9]
-        tries = VGroup(*[chip(t, c, 24, mono=True).move_to([x, -1.35, 0]) for t, c, x in zip(("502", "502", "502", "200"), (RED_M, RED_M, RED_M, GREEN_M), xs)])
-        gaps = VGroup(*[T(w, 26, GREY_B).move_to([(a + b) / 2, -2.45, 0]) for w, a, b in zip(("0 s", "2 s", "4 s"), xs[:-1], xs[1:])])
-        marks = VGroup(*[Line([x, -1.9, 0], [x, -2.1, 0], stroke_width=3, color=GREY_B) for x in xs])
-        bl = T("backoff: wait longer after each failed try", 26, GREY_B).move_to([0, -3.15, 0])
+        tries = VGroup(*[chip(t, c, 24, mono=True).move_to([x, -1.8, 0]) for t, c, x in zip(("502", "502", "502", "200"), (RED_M, RED_M, RED_M, GREEN_M), xs)])
+        gaps = VGroup(*[T(w, 26, GREY_B).move_to([(a + b) / 2, -2.8, 0]) for w, a, b in zip(("0 s", "2 s", "4 s"), xs[:-1], xs[1:])])
+        marks = VGroup(*[Line([x, -2.3, 0], [x, -2.5, 0], stroke_width=3, color=GREY_B) for x in xs])
+        bl = T("backoff: wait longer after each failed try", 26, GREY_B).move_to([0, -3.35, 0])
         self.steps("If the line stays busy, the helper waits a little longer each time, so the server can recover. With a backoff factor of 1, that is zero, then two, then four seconds.",
                    (0.6, Create(ax), FadeIn(bl)), (0.6, FadeIn(tries[0]), Create(marks[0])), (1.6, Wait(1.6)),
                    (0.6, FadeIn(gaps[0]), FadeIn(tries[1]), Create(marks[1])), (0.8, FadeIn(gaps[1]), FadeIn(tries[2]), Create(marks[2])),
                    (1.0, FadeIn(gaps[2]), FadeIn(tries[3]), Create(marks[3])))
         tl = VGroup(ax, tries, gaps, marks, bl)
-        self.beat("And if the server sends a Retry-After header, saying when to call back, it obeys that.",
-                  Indicate(gaps[2], color=YELLOW_M), run_time=1.2)
         self.play(FadeOut(tl), run_time=0.5)
 
         # 5. how to test the bad days: the friend
         self.beat("So far so good. But how do you test the busy line? You cannot ask GitHub to be busy on Tuesday at ten so the helper can practise.",
                   Wiggle(api), run_time=1.6)
         slow = VGroup(T("slow", 26, RED_M), T("flaky", 26, RED_M), T("needs secrets", 26, RED_M)).arrange(RIGHT, buff=0.7).move_to([0, -2.0, 0])
-        self.beat("And tests that call the real service are slow, flaky, which means they fail now and then for reasons outside your code, and they need secrets in CI.",
+        self.beat("And tests that call the real service are slow, they fail now and then for reasons outside your code, and they need secrets in CI.",
                   LaggedStart(*[FadeIn(s, shift=UP * 0.1) for s in slow], lag_ratio=0.5), run_time=3.0)
         self.play(FadeOut(slow), run_time=0.4)
         friend = person(TEAL_M).move_to(sup)
@@ -159,14 +157,14 @@ class D16SilentPhone(VoiceScene):
         script = VGroup(cr, card.move_to(cr)).next_to(friend, UP, buff=0.35)
         self.steps("So, a friend plays the supplier. The friend answers the phone and says whatever you wrote down.",
                    (0.8, FadeOut(sup), FadeOut(sl), FadeOut(api), FadeIn(friend), FadeIn(fl)), (1.4, Wait(1.4)), (0.8, FadeIn(script, shift=DOWN * 0.1)))
-        self.beat("Notice what did not change. The helper is the same. Its checklist is the same. Only the far end of the line is pretend.",
+        self.beat("Notice what did not change. The helper and its checklist are the same. Only the far end of the line is pretend.",
                   Indicate(helper[0], color=WHITE), Indicate(wire, color=WHITE), run_time=2.0)
 
         # map: responses and the test
         lib = mbox("responses", TEAL_M, size=24).next_to(script, LEFT, buff=0.4)
         self.beat("In Python, that friend is a library called responses. It steps in exactly where requests hands data to the network.",
                   FadeIn(lib, shift=RIGHT * 0.1), run_time=1.6)
-        reg = M("registries.OrderedRegistry", 22, TEAL_M).next_to(code, DOWN, buff=0.2)
+        reg = M("registries.OrderedRegistry", 22, TEAL_M).move_to([-2.4, 1.7, 0])
         self.beat("The test writes the answers down in order. A 502 first, then a 200.",
                   FadeIn(reg), Indicate(card[0], color=TEAL_M), Succession(Wait(0.6), Indicate(card[1], color=TEAL_M)), run_time=2.0)
         self.beat("Now we run the real code against the friend. What will the test see? Pause and guess.", run_time=None)
@@ -201,8 +199,8 @@ class D16SilentPhone(VoiceScene):
                   FadeIn(rule2, shift=UP * 0.1), run_time=1.4)
         first = T("and start the mock before you create any client", 26, GREY_B).move_to(lim[1])
         self.beat("One more rule from the moto docs. Start the mock before you create any client. A client made earlier is not mocked.",
-                  Transform(lim[1], first), run_time=1.4)
-        self.play(FadeOut(VGroup(lim, rule2, script, lib)), run_time=0.5)
+                  FadeOut(lim[1]), FadeIn(first), run_time=1.4)
+        self.play(FadeOut(VGroup(lim, first, rule2, script, lib)), run_time=0.5)
 
         # 7. moral and quick check
         mor = VGroup(T("hang up in time", 28, BLUE_M), T("call back only when it can help", 28, GREEN_M),

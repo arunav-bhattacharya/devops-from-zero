@@ -1,0 +1,3 @@
+{
+ "d35": [{"slug": "d35-key-card", "title": "A key under the doormat or a hotel card: how the pipeline gets into AWS with OIDC", "after": 3, "file": "p8/d35_keycard.py", "scene": "D35KeyCard", "poster_at": 313.0, "replaces": "d35-ci-oidc"}]
+}

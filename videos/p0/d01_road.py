@@ -40,6 +40,7 @@ def step(n, name, color):
     r.set_fill(BLACK if ManimColor(color).to_hex().upper() == "#FFFFFF" else tint(color), opacity=1)
     lab = T(name, 30).move_to(r)
     num = M(str(n), 20, GREY_B).move_to(r.get_corner(UL) + RIGHT * 0.22 + DOWN * 0.24)
+    lab.set_z_index(3); num.set_z_index(3)
     return VGroup(r, lab, num)
 
 
@@ -72,9 +73,8 @@ class D01Road(VoiceScene):
         # ---------- 1. the shy question
         q1 = T("the code is written.", 40).move_to(UP * 0.6)
         q2 = T("so the job is done?", 40, YELLOW_M).next_to(q1, DOWN, buff=0.45)
-        self.beat("Here is a question people are often too polite to ask. If programmers write the code, what is all this other work about?",
-                  Write(q1), run_time=2.0)
-        self.beat("Surely the job is done when the code is written. Right?", FadeIn(q2, shift=UP * 0.15), run_time=1.4)
+        self.beat("Here is a question people are often too polite to ask. Surely the job is done when the code is written. Right?",
+                  Write(q1), Succession(Wait(2.6), FadeIn(q2, shift=UP * 0.15)), run_time=3.6)
         self.beat("Let's answer that one in a kitchen.", FadeOut(VGroup(q1, q2)), run_time=1.0)
 
         # ---------- 2. the bakery: one loaf, then forty
@@ -89,14 +89,14 @@ class D01Road(VoiceScene):
         self.beat("Then the café down the street asks for forty loaves, every morning, starting Monday.",
                   FadeIn(cafe, shift=LEFT * 0.2), Succession(Wait(1.4), AnimationGroup(ReplacementTransform(one, grid[0]),
                   LaggedStart(*[GrowFromCenter(g) for g in grid[1:]], lag_ratio=0.03))), FadeIn(forty), run_time=4.0)
-        self.beat("Baking one good loaf was never the hard part. The hard part is forty good loaves, on time, every single morning, while you keep improving the recipe.",
+        self.beat("Baking one good loaf was never the hard part. The hard part is forty good loaves, every morning, while you keep improving the recipe.",
                   Indicate(forty, color=TEAL_M), run_time=1.6)
         burnt = grid[13]
         self.beat("And nobody gets a burnt one.",
                   burnt[0].animate.set_stroke(GREY_D).set_fill(GREY_D, 1), burnt[1].animate.set_color(BLACK), run_time=1.0)
         self.play(burnt[0].animate.set_stroke(GOLD_M).set_fill(tint(GOLD_M, 0.3), 1), burnt[1].animate.set_color(GOLD_M), run_time=0.5)
         sw = T("software: it only helps people while it runs, every day, after every change", 26, GREY_B).move_to(DOWN * 3.3)
-        self.beat("Software has the same problem. A program helps nobody until it runs for real people, every day, and keeps running after each change.",
+        self.beat("Software has the same problem. A program helps nobody until it runs for real people, every day, after every change.",
                   FadeIn(sw, shift=UP * 0.1), run_time=2.0)
         self.play(FadeOut(VGroup(grid, forty, sw)), run_time=0.6)
 
@@ -105,7 +105,7 @@ class D01Road(VoiceScene):
         cousin = person(GOLD_M).move_to(RIGHT * 0.9 + UP * 0.2)
         cl = T("your cousin", 26, GOLD_M).next_to(cousin, DOWN, buff=0.2)
         v = van().next_to(cousin, RIGHT, buff=0.5).shift(DOWN * 0.1)
-        self.beat("Let's grow the bakery a little. You bake, and your cousin drives the loaves to the café.",
+        self.beat("Now you bake, and your cousin drives the loaves to the café.",
                   FadeIn(cousin, shift=UP * 0.2), FadeIn(cl), Succession(Wait(1.6), FadeIn(v, shift=RIGHT * 0.3)), run_time=3.0)
         wall = Line(UP * 1.9 + LEFT * 1.85, DOWN * 1.6 + LEFT * 1.85, stroke_width=10, color=GREY_D)
         call = T("7:00  the bread is flat!", 28, RED_M).next_to(cafe, DOWN, buff=0.3).align_to(cafe, RIGHT)
@@ -113,12 +113,12 @@ class D01Road(VoiceScene):
                   Create(wall), FadeIn(call, shift=DOWN * 0.1), cafe[0].animate.set_stroke(RED_M), run_time=1.8)
         sb1 = T("the hot van!", 26, BLUE_M).next_to(you, UP, buff=0.35)
         sb2 = T("the dough!", 26, GOLD_M).next_to(cousin, UP, buff=0.35)
-        self.beat("Your cousin can't fix it, because only you know the recipe. So you blame the hot van, and your cousin blames the dough.",
+        self.beat("Only you know the recipe. So you blame the hot van, and your cousin blames the dough.",
                   Succession(Wait(2.4), FadeIn(sb1, shift=DOWN * 0.1), Wait(0.6), FadeIn(sb2, shift=DOWN * 0.1)), run_time=4.2)
         nob = T("still no bread", 26, RED_M).next_to(call, DOWN, buff=0.2).align_to(call, RIGHT)
         self.beat("And the café? Still no bread. The only thing that arrived on time was the blame.",
                   FadeIn(nob), run_time=1.6)
-        self.beat("So the point is: with a wall in the middle, nobody owns the whole road from oven to shelf.",
+        self.beat("So the point is: with a wall in the middle, nobody owns the whole road.",
                   Indicate(wall, color=GREY_B), run_time=1.6)
 
         # map onto software
@@ -126,16 +126,16 @@ class D01Road(VoiceScene):
         ops = T("operations", 28, GOLD_M).move_to(cl)
         srv = T("write the code", 24, GREY_B).next_to(dev, DOWN, buff=0.15)
         srv2 = T("run it on servers", 24, GREY_B).next_to(ops, DOWN, buff=0.15)
-        self.beat("Software companies were split the same way for years. Developers wrote the code, the instructions that tell a computer what to do.",
+        self.beat("Software teams were split the same way for years. Developers wrote the code, the instructions for a computer.",
                   FadeOut(VGroup(sb1, sb2, nob, call)), cafe[0].animate.set_stroke(TEAL_M), Transform(youl, dev), FadeIn(srv), run_time=2.4)
-        self.beat("A second team, operations, ran that code on servers. A server is a computer that stays on day and night, and answers other computers.",
+        self.beat("Operations ran it on servers, computers that stay on day and night and answer other computers.",
                   Transform(cl, ops), FadeIn(srv2), run_time=2.4)
         clock = T("2 a.m.", 30, RED_M).next_to(cousin, UP, buff=0.35)
-        self.beat("When the app broke at two in the morning, operations got the call. But only the developers understood the code.",
+        self.beat("At two in the morning the app broke, and operations got the call. But only developers understood the code.",
                   FadeIn(clock, shift=DOWN * 0.1), Succession(Wait(2.4), Indicate(you[1], color=BLUE_M)), run_time=3.4)
         crate = box("release", PURPLE_M, w=1.5, h=0.7, size=24).move_to(LEFT * 4.6 + DOWN * 2.6)
-        self.beat("So both sides made releases rare. A release is one batch of changes handed to users. Rare releases grew huge, and everyone dreaded them.",
-                  FadeIn(crate), Succession(Wait(2.2), crate.animate(run_time=2.4).move_to(RIGHT * 0.9 + DOWN * 2.55).scale(1.6)), run_time=4.6)
+        self.beat("So releases, batches of changes for users, became rare, huge and dreaded.",
+                  FadeIn(crate), Succession(Wait(1.6), crate.animate(run_time=2.4).move_to(RIGHT * 0.9 + DOWN * 2.55).scale(1.6)), run_time=4.0)
         wish = T("wouldn't it be nice if the one who knows the recipe also got the 7 a.m. call?", 26, YELLOW_M).move_to(UP * 3.05)
         fit(wish, 11.4)
         self.beat("Wouldn't it be nice if the person who knows the recipe also heard about the flat bread?",
@@ -147,7 +147,7 @@ class D01Road(VoiceScene):
         self.beat("That wish has a name. DevOps: a way of working where the people who build software also share the work of running it.",
                   FadeOut(VGroup(wish, clock, crate, srv, srv2)), Uncreate(wall), Create(team), FadeIn(teaml), run_time=3.0)
         oc = T("on-call: take turns answering the early call", 26, GREY_B).move_to(DOWN * 2.6)
-        self.beat("In the bakery, you and your cousin share one goal, good bread at seven, and you take turns answering the early call. Teams call that on-call duty.",
+        self.beat("You share one goal, good bread at seven, and take turns on the early call. That's on-call duty.",
                   FadeIn(oc, shift=UP * 0.1), run_time=2.4)
         cols = [("culture", TEAL_M, "share the goal"), ("practices", GOLD_M, "small changes, taste every batch"), ("tools", BLUE_M, "the timer and the mixer")]
         three = VGroup()
@@ -156,10 +156,10 @@ class D01Road(VoiceScene):
             s = T(sub, 22, GREY_B).next_to(ch, DOWN, buff=0.2)
             three.add(VGroup(ch, s))
         three.arrange(RIGHT, buff=0.7).move_to(DOWN * 2.75)
-        self.beat("You make small recipe changes, taste every batch, and watch the café shelf. Then you buy the timer and the mixer that make those habits cheap. Teams call those three layers culture, practices and tools.",
-                  FadeOut(oc), Succession(Wait(5.2), LaggedStart(*[FadeIn(g, shift=UP * 0.15) for g in three], lag_ratio=0.5)), run_time=7.6)
-        self.beat("Notice the order, though. A shiny new mixer never got two people talking. Buy every tool and keep the wall, and you still have the wall.",
-                  Indicate(three[2][0], color=BLUE_M), Succession(Wait(2.6), Indicate(three[0][0], color=TEAL_M)), run_time=4.2)
+        self.beat("You make small changes, taste every batch, and buy the timer and mixer that make those habits cheap. Culture, practices and tools.",
+                  FadeOut(oc), Succession(Wait(3.4), LaggedStart(*[FadeIn(g, shift=UP * 0.15) for g in three], lag_ratio=0.5)), run_time=5.4)
+        self.beat("Notice the order, though. A shiny new mixer never got two people talking.",
+                  Indicate(three[2][0], color=BLUE_M), Succession(Wait(1.6), Indicate(three[0][0], color=TEAL_M)), run_time=3.0)
         self.beat("Tools make good habits cheap. They don't create them.", run_time=None)
         self.play(FadeOut(VGroup(team, teaml, three, you, youl, cousin, cl, v, cafe)), run_time=0.7)
 
@@ -170,7 +170,7 @@ class D01Road(VoiceScene):
         chg = T("change: less sugar", 28, YELLOW_M).move_to(UP * 2.6)
         self.beat("Now follow one change down the road. Say you decide to use less sugar.",
                   FadeIn(chg, shift=DOWN * 0.1), run_time=1.6)
-        self.steps("You write it on the recipe card, bake a test batch, and taste it. You bag the loaves, the van takes them to the café, and you watch who buys a second one.",
+        self.steps("You write it on the recipe card, bake a test batch and taste it. Then the bag, the van, and the café shelf.",
                    (0.6, FadeIn(road[0])), (0.5, GrowArrow(ra[0]), FadeIn(road[1])), (0.5, GrowArrow(ra[1]), FadeIn(road[2])),
                    (1.0, Wait(1.0)), (0.5, GrowArrow(ra[2]), FadeIn(road[3])), (0.5, GrowArrow(ra[3]), FadeIn(road[4])), (0.5, GrowArrow(ra[4]), FadeIn(road[5])))
         x = tick(False, 0.35).move_to(road[2])
@@ -184,7 +184,7 @@ class D01Road(VoiceScene):
                   FadeIn(fri), FadeIn(com, shift=UP * 0.1), road[5][0].animate.set_stroke(RED_M), run_time=2.0)
         self.beat("The mistake was made on Tuesday. You paid for it on Friday, far down the road.",
                   FadeIn(tue), Succession(Wait(1.4), GrowArrow(far)), run_time=3.0)
-        self.beat("Hold on to that distance, from where a mistake is made to where it is found. It is the whole story of today.",
+        self.beat("Hold on to that distance. It is the whole story of today.",
                   Indicate(far, color=RED_M), run_time=1.8)
         self.play(FadeOut(VGroup(road, ra, x, tue, fri, far, com, chg)), run_time=0.7)
 
@@ -199,36 +199,33 @@ class D01Road(VoiceScene):
             return AnimationGroup(Create(S[i][0]), Write(S[i][1]), FadeIn(S[i][2]))
 
         head = T("the pipeline", 30, GREY_B).move_to(UP * 0.45)
-        self.beat("Software takes the same road. It is called the pipeline: a fixed series of steps, run by machines, that carries a change to real users.",
+        self.beat("Software takes the same road, called the pipeline: fixed steps, run by machines, from your laptop to real users.",
                   FadeIn(head), run_time=1.4)
-        self.beat("Code. You change code on your laptop, and commit it to git, a tool that saves snapshots of your files.", show(0), run_time=1.4)
+        self.beat("Code. You change code, and commit it to git, a tool that saves snapshots of your files.", show(0), run_time=1.4)
 
         def go(i, text, rt=1.6):
             self.beat(text, GrowArrow(A[i - 1]), Succession(Wait(0.3), travel(A[i - 1], YELLOW_M, 0.5)), Succession(Wait(0.6), show(i)), run_time=rt)
 
         go(1, "Build. A machine turns the code into something that can run.")
-        go(2, "Test. Automated tests, small programs that check your program, make sure the change works and broke nothing else.")
-        go(3, "Package. The app and everything it needs go into one bundle, a container image, so it runs the same on any machine.")
-        go(4, "Release. The package gets a version number, and goes to a shared store, called a registry.")
+        go(2, "Test. Small programs check that the change works, and broke nothing else.")
+        go(3, "Package. The app and everything it needs go into one bundle, a container image.")
+        go(4, "Release. It gets a version number, and goes to a shared store, a registry.")
         go(5, "Deploy. The new version replaces the old one on the servers.")
-        go(6, "Run. Software on the servers keeps the app alive, and restarts it if it crashes.")
+        go(6, "Run. Software keeps the app alive, and restarts it if it crashes.")
         go(7, "Observe. Graphs, logs and alerts show how the app behaves.")
         go(8, "Feedback. What you learn shapes the next change.")
         self.beat("And the loop starts again.", FadeOut(head), GrowArrow(A[8]), Succession(Wait(0.3), travel(A[8], YELLOW_M, 0.6)), run_time=1.2)
 
-        brace = Brace(VGroup(S[5], S[6]), DOWN, buff=0.15, color=GREY_B)
-        prod = T("production: the real, live system", 26, GREY_B).next_to(brace, DOWN, buff=0.12)
-        self.beat("The real, live system that your users use is called production.", GrowFromCenter(brace), FadeIn(prod), run_time=1.6)
         bk = [(0, "recipe card"), (2, "tasting"), (3, "bag")]
         bl = VGroup(*[T(t, 24, GOLD_M).next_to(S[i][0], UP, buff=0.15) for i, t in bk])
         vl = T("van", 24, GOLD_M).next_to(S[5][0], UP, buff=0.12)
-        self.beat("And here is the bakery, mapped. The recipe card is the code. The tasting is the test. The bag is the package. And the van is the deploy.",
-                  FadeOut(VGroup(brace, prod)), Succession(Wait(1.6), FadeIn(bl[0]), Wait(0.9), FadeIn(bl[1]), Wait(0.9), FadeIn(bl[2]), Wait(0.9), FadeIn(vl)), run_time=6.0)
+        self.beat("The bakery, mapped: the recipe card is the code, the tasting is the test, the bag is the package, and the van is the deploy.",
+                  Succession(Wait(1.6), FadeIn(bl[0]), Wait(0.9), FadeIn(bl[1]), Wait(0.9), FadeIn(bl[2]), Wait(0.9), FadeIn(vl)), run_time=6.0)
 
         # ---------- 7. predict: where does the mistake get caught?
-        diff = VGroup(M("hello-devops", 24, GREY_B), M('- "Hello, DevOps!"', 24, RED_M), M('+ "Hi there"', 24, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
-        diff.move_to(UP * 0.45)
-        self.beat("Let's send one tiny change down this road. Tomorrow you create hello-devops, a tiny web app that answers every visit with a greeting and a count of visits so far.",
+        diff = VGroup(M("hello-devops", 24, GREY_B), M('- "Hello, DevOps!"', 24, RED_M), M('+ "Hi there"', 24, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
+        diff.move_to(UP * 0.5)
+        self.beat("Let's send one tiny change down this road. Tomorrow you create hello-devops, a tiny web app that greets every visitor and counts the visits.",
                   FadeOut(VGroup(bl, vl)), FadeIn(diff[0]), run_time=1.6)
         self.beat("You change its greeting from Hello, DevOps! to Hi there, and push. But one test still expects the old greeting.",
                   LaggedStart(FadeIn(diff[1], shift=RIGHT * 0.2), FadeIn(diff[2], shift=RIGHT * 0.2), lag_ratio=0.6), run_time=2.4)
@@ -240,12 +237,12 @@ class D01Road(VoiceScene):
                    (0.6, S[2][0].animate.set_stroke(RED_M, width=6), Create(cross)))
         soon = T("found 2 minutes later, on your own branch", 28, GREEN_M).move_to(DOWN * 2.45)
         late = T("not from a user on Friday night", 26, GREY_B).next_to(soon, DOWN, buff=0.2)
-        self.beat("You find out two minutes later, on your own branch, instead of from a user on Friday night. A branch is your own line of work, kept apart from everyone else's.",
+        self.beat("You find out two minutes later, on your own branch, your own line of work, instead of from a user on Friday night.",
                   FadeIn(soon, shift=UP * 0.1), Succession(Wait(2.4), FadeIn(late)), run_time=3.4)
-        self.beat("Remember the tasting we skipped on Tuesday? This is that tasting, done by a machine, every single time.",
+        self.beat("Remember the tasting we skipped? This is that tasting, done by a machine, every single time.",
                   Indicate(S[2][1], color=RED_M), run_time=1.6)
         rule = T("each step catches its own mistake, close to where it was made", 28, YELLOW_M).move_to(DOWN * 2.6)
-        self.beat("And every step catches a different kind of mistake, as close as possible to where it was made.",
+        self.beat("Every step catches its own kind of mistake, as close as possible to where it was made.",
                   FadeOut(VGroup(soon, late, diff)), FadeIn(rule, shift=UP * 0.1), run_time=2.0)
         ok = tick(True, 0.22).move_to(cross)
         self.beat("Fix the test, push again, and the change moves on.",
@@ -261,10 +258,8 @@ class D01Road(VoiceScene):
         cit = T("continuous integration: small changes, often, each one built and tested", 26, GREY_B).move_to(DOWN * 2.35)
         cdt = T("continuous delivery: every change that passes is ready to release", 26, GREY_B).next_to(cit, DOWN, buff=0.25)
         fit(VGroup(cit, cdt), 12.6)
-        self.beat("Continuous integration means you add small changes to the shared code often, and a machine builds and tests each one.",
-                  FadeIn(cit, shift=UP * 0.1), run_time=1.6)
-        self.beat("Continuous delivery means every change that passes is ready to release, at any time. You build both in Part 6.",
-                  FadeIn(cdt, shift=UP * 0.1), run_time=1.6)
+        self.beat("Continuous integration: small changes, added often, each built and tested by a machine. Continuous delivery: every change that passes is ready to release. Part 6 builds both.",
+                  FadeIn(cit, shift=UP * 0.1), Succession(Wait(3.8), FadeIn(cdt, shift=UP * 0.1)), run_time=5.0)
         self.play(*[s[0].animate.set_stroke(width=3) for s in ci], FadeOut(VGroup(cit, cdt, cil)), run_time=0.6)
 
         # ---------- 9. guardrails
@@ -276,38 +271,23 @@ class D01Road(VoiceScene):
         self.beat("When a step goes the same way every time, give it to a machine.", FadeIn(r1, shift=UP * 0.1), run_time=1.6)
         self.play(FadeOut(VGroup(p1, p2, r1)), run_time=0.5)
 
-        chs = VGroup(chip("flour", GOLD_M, 26), chip("oven", GOLD_M, 26), chip("time", GOLD_M, 26)).arrange(RIGHT, buff=0.35).move_to(LEFT * 1.6 + UP * 0.45)
-        dry = VGroup(loaf(0.8), T("dry", 26, RED_M)).arrange(RIGHT, buff=0.25).next_to(chs, RIGHT, buff=0.9)
-        qm = T("which one?", 28, RED_M).move_to(DOWN * 2.45)
-        self.beat("One more guardrail. Say you change the flour, the oven setting and the baking time, all on the same day. The bread comes out dry.",
-                  LaggedStart(*[FadeIn(c, shift=UP * 0.1) for c in chs], lag_ratio=0.5), Succession(Wait(3.6), FadeIn(dry)), run_time=4.6)
-        self.beat("Which change did it? You can't tell. A release with 300 changes in it can fail in 300 places.",
-                  FadeIn(qm), Succession(Wait(1.0), Wiggle(chs)), run_time=2.6)
-        r2 = T("Change one thing at a time, and you will know what broke.", 28, YELLOW_M).move_to(DOWN * 2.45)
-        self.beat("So change one thing at a time, and you will know what broke.", FadeOut(qm), FadeIn(r2, shift=UP * 0.1), run_time=1.6)
-        self.play(FadeOut(VGroup(chs, dry, r2)), run_time=0.5)
-        nt = chip("a new tool?", YELLOW_M, size=28).move_to(UP * 0.45)
-        self.beat("Every part of this course owns one stretch of this road. When a new tool shows up, come back here and ask which step it owns.",
-                  FadeIn(nt, scale=0.9), Succession(Wait(2.6), LaggedStart(*[Indicate(s[0], color=YELLOW_M, scale_factor=1.04) for s in S], lag_ratio=0.15)), run_time=5.0)
-        self.play(FadeOut(nt), run_time=0.4)
-
         # ---------- 10. moral, recap, check
         d1 = T("finished code: the halfway point", 28, GREY_B).move_to(UP * 0.7)
         d2 = T("done: it runs well in production, and you can see it", 28, GREEN_M).next_to(d1, DOWN, buff=0.25)
-        self.beat("So, is the job done when the code is written? Not quite. In a DevOps team, finished code is only the halfway point.",
+        self.beat("So, is the job done when the code is written? No. Finished code is only the halfway point.",
                   FadeIn(d1, shift=UP * 0.1), run_time=2.0)
-        self.beat("You are done when the change runs well in production, and you can see that it does.",
+        self.beat("You are done when it runs well in production, the live system your users use, and you can see that it does.",
                   FadeIn(d2, shift=UP * 0.1), Indicate(S[6][1], color=GREEN_M), Succession(Wait(1.6), Indicate(S[7][1], color=YELLOW_M)), run_time=3.0)
-        self.beat("One team owns the whole road. Every step catches its own mistake, close to where it was made. And whatever repeats goes to a machine.",
-                  Succession(Wait(3.6), *[travel(a, YELLOW_M, 0.35) for a in A]), run_time=6.4)
+        self.beat("One team owns the whole road. Each step catches its own mistake. And whatever repeats goes to a machine.",
+                  Succession(Wait(1.6), *[travel(a, YELLOW_M, 0.3) for a in A]), run_time=4.4)
         self.play(FadeOut(VGroup(d1, d2)), *[FadeOut(s) for s in S], *[FadeOut(a) for a in A], run_time=0.8)
 
         cq = T("A script builds the app and runs the tests,", 30).move_to(UP * 1.6)
         cq2 = T("but someone runs it by hand once a week. Best next step?", 30).next_to(cq, DOWN, buff=0.25)
         opts = VGroup(*[T(o, 28, GREY_B) for o in ("keep the script in git", "run it on every push", "write more unit tests", "hire a release manager")])
         opts.arrange(DOWN, aligned_edge=LEFT, buff=0.22).next_to(cq2, DOWN, buff=0.5)
-        self.beat("A quick check before you go. Your team has a script that builds the app and runs the tests, but someone runs it by hand once a week. What is the best next step?",
-                  FadeIn(cq), FadeIn(cq2), Succession(Wait(5.0), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.3)), run_time=7.4)
+        self.beat("A quick check. Your team has a script that builds and tests the app, but someone runs it by hand once a week. Best next step?",
+                  FadeIn(cq), FadeIn(cq2), Succession(Wait(3.6), LaggedStart(*[FadeIn(o, shift=RIGHT * 0.1) for o in opts], lag_ratio=0.3)), run_time=5.6)
         self.countdown(DOWN * 3.0, "pause and think")
         self.beat("Run it on every push. Feedback in minutes beats a tasting once a week.",
                   opts[1].animate.set_color(GREEN_M), *[o.animate.set_opacity(0.35) for i, o in enumerate(opts) if i != 1], run_time=1.6)

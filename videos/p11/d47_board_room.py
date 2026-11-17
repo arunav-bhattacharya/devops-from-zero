@@ -81,7 +81,7 @@ class D47BoardRoom(VoiceScene):
         lap = mbox("kubectl apply -k k8s", GOLD_M, size=24, h=0.8).move_to([-3.8, 0.0, 0])
         lap_l = T("your laptop", 26, GOLD_M).next_to(lap, UP, buff=0.25)
         a0 = Arrow(lap.get_right(), cl.get_left(), buff=0.1, stroke_width=4, color=GOLD_M, max_tip_length_to_length_ratio=0.08)
-        self.beat("Software has the same problem. So far, you told the cluster, the machines that run your app, what to run, with one command from your laptop. For one person, that is fine.",
+        self.beat("Software has the same problem. So far, you told the cluster, the machines that run your app, what to run from your laptop. For one person, fine.",
                   Create(cl), Write(cl_t), LaggedStart(*[GrowFromCenter(p) for p in cl_pods], lag_ratio=0.2), FadeIn(lap), FadeIn(lap_l), GrowArrow(a0),
                   Succession(Wait(2.0), travel(a0, GOLD_M, 1.0)), run_time=4.0)
         laps = VGroup(*[mbox("kubectl apply", GOLD_M, size=22, h=0.7) for _ in range(3)]).arrange(DOWN, buff=0.55).move_to([-3.8, 1.0, 0])
@@ -90,13 +90,13 @@ class D47BoardRoom(VoiceScene):
         pains.set_color(GREY_A)
         self.play(VGroup(cl, cl_t, cl_pods).animate.shift(UP * 1.0), FadeOut(lap_l), lap.animate.move_to(laps[1]), a0.animate.shift(UP * 1.0), run_time=0.6)
         arrs = VGroup(*[Arrow(l.get_right(), cl.get_left() + UP * (0.8 - 0.8 * i), buff=0.1, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.08) for i, l in enumerate(laps)])
-        self.beat("Add a few colleagues, and it breaks quietly. A fix made by hand at night never reaches the files. And the last apply wins: a fine rule for a pillow fight, a poor one for real users.",
+        self.beat("Add colleagues, and it breaks quietly. A fix by hand at night never reaches the files. And the last apply wins: fine for a pillow fight, poor for real users.",
                   ReplacementTransform(lap, laps[1]), FadeIn(laps[0]), FadeIn(laps[2]), ReplacementTransform(a0, arrs[1]), GrowArrow(arrs[0]), GrowArrow(arrs[2]),
                   Succession(Wait(1.2), FadeIn(pains[0], shift=UP * 0.1), Wait(1.0), FadeIn(pains[1], shift=UP * 0.1), travel(arrs[0], GOLD_M, 0.6), travel(arrs[2], RED_M, 0.6)), run_time=6.0)
-        drift = T("drift: the files say one thing, the cluster runs another", 28, RED_M).to_edge(UP, buff=0.55)
+        drift = T("drift: the files say one thing, the cluster runs another", 28, RED_M).to_edge(UP, buff=0.65)
         wish = T("wish: one place for every change, and someone who keeps the room equal to it", 26, YELLOW_M).move_to(drift)
         fit(wish, 12.6)
-        self.beat("That gap between the files and what really runs is called drift. What we want is one place for every change, and someone who keeps the room equal to it, all the time.",
+        self.beat("That gap between the files and what really runs is called drift. We want one place for every change, and someone who keeps the room equal to it.",
                   Succession(Write(drift), Wait(1.6), AnimationGroup(FadeOut(pains), ReplacementTransform(drift, wish))), run_time=5.0)
         self.wait(0.3)
         self.play(FadeOut(VGroup(cl, cl_t, cl_pods, laps, arrs, wish)), run_time=0.7)
@@ -114,7 +114,7 @@ class D47BoardRoom(VoiceScene):
         g_rep = M("replicas: 3", 22).move_to([0, 0.28, 0]).align_to(g_file, LEFT)
         CC = np.array([2.6, 0.45, 0])
         clu = frame(7.5, 4.3, PURPLE_M, CC, fill=0.05)
-        clu_t = T("cluster", 28, PURPLE_M).move_to([-0.55, 2.25, 0])
+        clu_t = T("cluster", 28, PURPLE_M).move_to([2.2, 2.27, 0])
         clu_a = T("the room", 24, GREY_B).next_to(clu_t, RIGHT, buff=0.25)
         LC = np.array([4.35, 1.3, 0])
         live = frame(3.8, 1.4, PURPLE_M, LC, fill=0.14, sw=2.5)
@@ -142,26 +142,25 @@ class D47BoardRoom(VoiceScene):
         cmp_ = Arrow(argo.get_right(), live.get_left() + DOWN * 0.2, buff=0.08, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.25)
         timing = VGroup(T("board: read about every 3 minutes", 22, TEAL_M), T("room: watched, a change seen in seconds", 22, GOLD_M))
         timing.arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([2.6, -2.35, 0])
-        self.beat("Then it compares the room with the board, and applies only the difference. It reads git about every three minutes, and watches the room all the time, so a change there shows up in seconds.",
+        self.beat("Then it compares the room with the board, and applies only the difference. It reads git about every three minutes, and watches the room, so a change there shows up in seconds.",
                   GrowArrow(cmp_), Succession(Wait(0.4), travel(cmp_, GOLD_M, 0.8), travel(pull, TEAL_M, 0.8), travel(cmp_, GOLD_M, 0.8)),
                   Succession(Wait(3.0), FadeIn(timing[0], shift=UP * 0.1), Wait(1.0), FadeIn(timing[1], shift=UP * 0.1)), run_time=7.0)
         name = T("GitOps: files in git say what should run, and a program keeps the real system matching them", 24, YELLOW_M)
-        fit(name, 12.6).to_edge(UP, buff=0.4)
+        fit(name, 12.6).to_edge(UP, buff=0.6)
         self.beat("Now this idea has earned its name. Files in git say what should run, and a program keeps the real system matching them. That is GitOps.",
                   Write(name), run_time=2.6)
-        ci_n = T("CI only changes a file in git: no cluster key", 22, GREY_B).move_to([GC[0], -2.35, 0])
-        fit(ci_n, 4.0)
+        ci_n = VGroup(T("CI only changes a file in git:", 22, GREY_B), T("no cluster key", 22, GREY_B)).arrange(DOWN, buff=0.1).move_to([GC[0], -2.45, 0])
         self.beat("And your build pipeline no longer needs a key to the cluster. It changes a file in git, and that is all.",
                   FadeIn(ci_n, shift=UP * 0.1), run_time=1.4)
         self.play(FadeOut(VGroup(name, timing, ci_n)), run_time=0.5)
 
         # statuses
-        SX = 1.55
+        SX = 1.8
         s_sync = lchip("Synced", GREEN_M, 24).move_to([SX, -0.55, 0])
         s_hl = lchip("Healthy", GREEN_M, 24).move_to([SX, -1.25, 0])
-        s_l1 = T("matches git?", 22, GREY_B).move_to([-0.25, -0.55, 0])
-        s_l2 = T("does it work?", 22, GREY_B).move_to([-0.25, -1.25, 0])
-        self.beat("The manager writes down two separate things. Sync status: does the room match the board? And health: are the guests happy? Does the app actually work?",
+        s_l1 = T("matches git?", 22, GREY_B).move_to([-0.1, -0.55, 0])
+        s_l2 = T("does it work?", 22, GREY_B).move_to([-0.1, -1.25, 0])
+        self.beat("The manager notes two separate things. Sync status: does the room match the board? And health: does the app actually work?",
                   Succession(AnimationGroup(FadeIn(s_l1), FadeIn(s_sync, shift=UP * 0.1)), Wait(1.4), AnimationGroup(FadeIn(s_l2), FadeIn(s_hl, shift=UP * 0.1))), run_time=4.0)
 
         # ---------------- 4. predict: a hand edit with the default settings
@@ -176,7 +175,7 @@ class D47BoardRoom(VoiceScene):
         self.beat("The edit stays. Argo CD sees it within seconds, and only marks the app OutOfSync. It is still Healthy, because the app runs fine.",
                   ReplacementTransform(s_sync, out), Succession(Wait(1.8), Indicate(s_hl[1], color=GREEN_M)), run_time=3.0)
         s_sync = out
-        self.beat("Out of the box, Argo CD is a manager who only takes notes. Very polite. Not much help at nine on a Friday. What it does about a difference is a setting.",
+        self.beat("Out of the box, Argo CD is a manager who only takes notes. Very polite. Not much help at nine on a Friday.",
                   Wiggle(mgr, scale_value=1.15), run_time=1.6)
 
         # ---------------- 5. the switches: automated sync, self-heal, prune
@@ -189,7 +188,7 @@ class D47BoardRoom(VoiceScene):
         self.play(FadeOut(edit), run_time=0.4)
         self.beat("Three switches decide how strict it is. Automated sync applies new commits by itself. Self-heal undoes changes made in the cluster but not in git.",
                   Create(sw_box), FadeIn(sw[0]), FadeIn(sw_n[0]), Succession(Wait(2.4), AnimationGroup(FadeIn(sw[1]), FadeIn(sw_n[1]))), run_time=4.0)
-        self.beat("And prune deletes what you removed from git. Self-heal and prune are both off by default, a careful choice for a tool that can delete things.",
+        self.beat("And prune deletes what you removed from git. Self-heal and prune are off by default, a careful choice for a tool that can delete things.",
                   FadeIn(sw[2]), FadeIn(sw_n[2]), Succession(Wait(2.0), AnimationGroup(Indicate(sw[1], color=GOLD_M), Indicate(sw[2], color=GOLD_M))), run_time=4.0)
         back = T(OLD, 24).move_to(l_val, aligned_edge=LEFT)
         syn = lchip("Synced", GREEN_M, 24).move_to(s_sync)
@@ -212,12 +211,12 @@ class D47BoardRoom(VoiceScene):
         self.beat("Self-heal sees a difference from git, and sets it back to three. The autoscaler raises it again. Three. Five. Three.",
                   Succession(travel(cmp_, GOLD_M, 0.6), Transform(pods, three.copy(), run_time=0.7), Wait(0.8), Transform(pods, five.copy(), run_time=0.7),
                              Transform(pods, three.copy(), run_time=0.6), Transform(pods, five.copy(), run_time=0.6)), run_time=4.6)
-        self.beat("They fight for as long as the rush lasts. It is the manager sending home the extra waiters the head waiter just called in.",
+        self.beat("They fight as long as the rush lasts: the manager sending home the extra waiters the head waiter just called in.",
                   Wiggle(mgr), run_time=2.0)
         fix = lchip("ignoreDifferences: /spec/replicas", TEAL_M, 22, mono=True).move_to([-3.6, -2.55, 0])
         self.beat("The lab gives that field one owner: it tells Argo CD to ignore the replica count. Leaving replicas out of git works too.",
                   FadeIn(fix, shift=UP * 0.1), g_rep.animate.set_opacity(0.35), run_time=1.8)
-        rule = T("Two controllers fighting over one field never stop. Give each field one owner.", 28, YELLOW_M).to_edge(UP, buff=0.4)
+        rule = T("Two controllers fighting over one field never stop. Give each field one owner.", 28, YELLOW_M).to_edge(UP, buff=0.6)
         fit(rule, 12.6)
         self.beat("Two controllers fighting over one field never stop. Give each field one owner.", Write(rule), run_time=1.6)
         self.wait(0.3)
@@ -240,7 +239,7 @@ class D47BoardRoom(VoiceScene):
         self.beat("You might be thinking: there is a one command undo, from Day 40. It fixes the cluster. With self-heal on, what happens next?",
                   FadeIn(undo, shift=DOWN * 0.2), Transform(pods, three.copy()), run_time=2.2)
         self.guess([0.4, 3.0, 0])
-        self.beat("Argo CD compares the room with the board. The board still says the typo, so it puts the bad version straight back. Our manager is loyal to the board, even when the board is wrong.",
+        self.beat("The board still says the typo, so Argo CD puts the bad version straight back. Our manager is loyal to the board, even when the board is wrong.",
                   Succession(travel(pull, TEAL_M, 0.6), travel(cmp_, GOLD_M, 0.6), Transform(pods, bad.copy()), Wiggle(mgr)), run_time=4.0)
         self.play(FadeOut(undo), run_time=0.4)
         rev = lchip("git revert <sha>", TEAL_M, 22, mono=True).move_to([GC[0], 3.0, 0])
@@ -261,7 +260,7 @@ class D47BoardRoom(VoiceScene):
                        T("3. put the same fix into git", 28, YELLOW_M), T("4. turn automated sync back on", 28)).arrange(DOWN, aligned_edge=LEFT, buff=0.32)
         st_t = T("In a real emergency", 32, GOLD_M).next_to(steps, UP, buff=0.5)
         VGroup(st_t, steps).move_to(UP * 0.2)
-        self.beat("One honest limit. In a real emergency you may have to fix the cluster by hand. Then turn off automated sync for that one app, fix it, and write down every change. Put the same fix into git, and turn sync back on.",
+        self.beat("One honest limit. In a real emergency, turn off automated sync for that app, fix the cluster by hand, and write down every change. Then put the same fix into git, and turn sync back on.",
                   Write(st_t), Succession(Wait(1.6), LaggedStart(*[FadeIn(s, shift=RIGHT * 0.1) for s in steps], lag_ratio=0.9)), run_time=10.0)
         self.beat("Skip step three, and the next sync quietly undoes your fix.", Indicate(steps[2], color=YELLOW_M), run_time=1.2)
         self.play(FadeOut(VGroup(st_t, steps)), run_time=0.6)

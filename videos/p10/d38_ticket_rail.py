@@ -118,7 +118,7 @@ class D38TicketRail(Base):
                   Create(api[0]), run_time=1.4)
         self.beat("Kubernetes has a rail too. It is the API server, the front door that every request goes through.",
                   Write(api[1]), FadeIn(api_n), run_time=1.4)
-        PL, PR, PT, PB = 2.0, 6.45, 3.35, -0.75
+        PL, PR, PT, PB = 2.2, 6.45, 3.35, 0.75
         prect = RoundedRectangle(corner_radius=0.15, width=PR - PL, height=PT - PB, stroke_color=GREEN_M, stroke_width=3).move_to([(PL + PR) / 2, (PT + PB) / 2, 0])
         prect.set_fill(tint(GREEN_M, 0.07), 1)
         phead = M("etcd", 24, GREEN_M).move_to([PL + 0.25, PT - 0.3, 0], aligned_edge=LEFT)
@@ -145,7 +145,7 @@ class D38TicketRail(Base):
         # the one rule: everyone watches the rail
         self.play(FadeOut(VGroup(api_n, etcd_n, ctl_n, sch_n, cook_n)), run_time=0.6)
         w_d, w_r, w_s = [link(m, api, GREY_B, sw=2) for m in (dctl, rctl, sch)]
-        kls = VGroup(*[link(n[2], api, GREY_B, sw=2) for n in nodes])
+        kls = VGroup(*[DashedLine(n[2].get_top(), api.get_bottom() + RIGHT * (0.5 * (i - 1)), dash_length=0.08, stroke_width=2, color=GREY_B) for i, n in enumerate(nodes)])
         allw = VGroup(w_d, w_r, w_s, *kls)
         self.beat("Now, the one rule of this kitchen. Nobody calls anybody. Every part keeps one eye on the rail.",
                   LaggedStart(*[Create(w) for w in allw], lag_ratio=0.12), run_time=2.0)
@@ -185,8 +185,8 @@ class D38TicketRail(Base):
                    (1.0, stream(w_d.get_end(), w_d.get_start(), YELLOW_M, 1), glow(dctl)),
                    (1.6, Wait(1.6)),
                    (1.0, hop(w_d.get_start(), w_d.get_end(), IN, color=PURPLE_M, run_time=0.45), FadeIn(r_rs, shift=RIGHT * 0.1), glow(dctl, False)))
-        r_p = [rec("Pod 1", PT - 2.1, TEAL_M), rec("Pod 2", PT - 2.95, TEAL_M)]
-        s_p = [rec("  node: none", PT - 2.5, RED_M), rec("  node: none", PT - 3.35, RED_M)]
+        r_p = [rec("Pod 1", PT - 1.85, TEAL_M), rec("Pod 2", PT - 2.3, TEAL_M)]
+        s_p = [M("node: none", 22, RED_M).next_to(r_p[0], RIGHT, buff=0.3), M("node: none", 22, RED_M).next_to(r_p[1], RIGHT, buff=0.3)]
         self.steps("Step four. The ReplicaSet controller sees the ReplicaSet, and creates two Pod objects. A Pod wraps a container and gives it an address. These two have no node yet.",
                    (0.4, Transform(cap, caption(4, "make two Pods"))),
                    (1.0, stream(w_r.get_end(), w_r.get_start(), PURPLE_M, 1), glow(rctl)),
@@ -196,7 +196,7 @@ class D38TicketRail(Base):
         bars = VGroup(*[Rectangle(width=wd, height=0.14, stroke_width=0, fill_color=BLUE_M, fill_opacity=0.9) for wd in (1.6, 1.3)])
         for b, n in zip(bars, nodes[:2]):
             b.move_to(n[0].get_corner(UL) + UP * 0.22 + RIGHT * 0.12, aligned_edge=LEFT)
-        n_p = [rec("  node: node-1", PT - 2.5, BLUE_M), rec("  node: node-2", PT - 3.35, BLUE_M)]
+        n_p = [M("node: node-1", 22, BLUE_M).next_to(r_p[0], RIGHT, buff=0.3), M("node: node-2", 22, BLUE_M).next_to(r_p[1], RIGHT, buff=0.3)]
         self.steps("Step five. The scheduler sees two Pods without a node. It filters out nodes that cannot take them, scores the rest, and writes a node name into each Pod.",
                    (0.4, Transform(cap, caption(5, "pick a node"))),
                    (1.0, stream(w_s.get_end(), w_s.get_start(), TEAL_M, 1), glow(sch)),
@@ -210,11 +210,11 @@ class D38TicketRail(Base):
                    (1.2, stream(kls[0].get_end(), kls[0].get_start(), BLUE_M, 1), stream(kls[1].get_end(), kls[1].get_start(), BLUE_M, 1), glow(nodes[0][2]), glow(nodes[1][2])),
                    (0.8, glow(nodes[0][2], False), glow(nodes[1][2], False), glow(nodes[0][3]), glow(nodes[1][3])),
                    (1.0, *[FadeOut(n[4]) for n in nodes[:2]], LaggedStart(*[GrowFromCenter(p) for p in pods], lag_ratio=0.3), glow(nodes[0][3], False), glow(nodes[1][3], False)))
-        f_p = [rec("  node-1  Running", PT - 2.5, GREEN_M), rec("  node-2  Running", PT - 3.35, GREEN_M)]
+        f_p = [M("node-1 Running", 22, GREEN_M).next_to(r_p[0], RIGHT, buff=0.3), M("node-2 Running", 22, GREEN_M).next_to(r_p[1], RIGHT, buff=0.3)]
         self.steps("Step seven. The kubelet reports back. The Pod is running, and here is its IP address. The API server stores that in the Pod's status.",
                    (0.4, Transform(cap, caption(7, "report back"))),
                    (1.0, hop(kls[0].get_start(), kls[0].get_end(), color=GREEN_M, run_time=0.9), hop(kls[1].get_start(), kls[1].get_end(), color=GREEN_M, run_time=0.9)),
-                   (0.9, hop(IN, [X0 + 1.0, PT - 2.5, 0], color=GREEN_M, run_time=0.5), Transform(s_p[0], f_p[0]), Transform(s_p[1], f_p[1])))
+                   (0.9, hop(IN, [X0 + 1.0, PT - 1.85, 0], color=GREEN_M, run_time=0.5), Transform(s_p[0], f_p[0]), Transform(s_p[1], f_p[1])))
         self.beat("Seven steps, and every one went through the rail. Nobody sent orders to anybody. Each part acted on what it found there.",
                   FadeOut(cap), allw.animate.set_stroke(GOLD_M, width=3), glow(api), run_time=1.8)
         self.play(allw.animate.set_stroke(GREY_B, width=2), glow(api, False), run_time=0.5)
@@ -253,7 +253,7 @@ class D38TicketRail(Base):
                   Indicate(table[1][0], color=PURPLE_M), Indicate(table[2][0], color=PURPLE_M), Indicate(table[4][0], color=BLUE_M), Indicate(table[6][0], color=TEAL_M), run_time=2.0)
         stop = Line([-4.75, 2.3 - 3.5 * 0.5, 0], [4.2, 2.3 - 3.5 * 0.5, 0], color=RED_M, stroke_width=4)
         stuck = chip("Pending, no node name", RED_M, 24).next_to(stop, RIGHT, buff=0.25).shift(LEFT * 0.0)
-        stuck.move_to([4.95, stop.get_center()[1] - 0.55, 0])
+        stuck.move_to([3.6, stop.get_center()[1] - 0.55, 0])
         self.beat("And when something is stuck, the chain simply stops at one step. A Pod that fits on no node stays Pending, with no node name, and its events say why.",
                   Create(stop), table[4:].animate.set_opacity(0.2), FadeIn(stuck, shift=LEFT * 0.2), run_time=2.4)
         self.beat("That is why, on a team, kubectl get events is often the first command anyone runs after a bad release.",

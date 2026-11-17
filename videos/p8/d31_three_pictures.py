@@ -63,12 +63,12 @@ class D31ThreePictures(VoiceScene):
 
         # 2. the list of steps fails the second time  [PAIN, WISH]
         script = VGroup(M("1. pull the nginx image", 24), M("2. start a container: tf-web", 24), M("3. publish port 8090", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.2)
-        sp = panel(script.width + 0.6, script.height + 0.55, GREY_B, 0.05).move_to([-2.6, 0.6, 0])
+        sp = panel(script.width + 0.6, script.height + 0.55, GREY_B, 0.05).move_to([-2.6, 1.0, 0])
         script.move_to(sp)
         spl = T("a list of steps: a shell script", 26, GREY_B).next_to(sp, UP, buff=0.2)
         self.beat("So we write it down. The first idea is a list of steps, a shell script. On a computer our café is one container, a sealed box running nginx, a program that serves a web page, on port 8090.",
                   FadeIn(spl), Create(sp), LaggedStart(*[FadeIn(s, shift=RIGHT * 0.1) for s in script], lag_ratio=0.4), run_time=4.0)
-        run1 = VGroup(T("run 1:", 26), T("works", 26, GREEN_M)).arrange(RIGHT, buff=0.2).move_to([3.6, 1.2, 0])
+        run1 = VGroup(T("run 1:", 26), T("works", 26, GREEN_M)).arrange(RIGHT, buff=0.2).next_to(sp, DOWN, buff=0.6).align_to(sp, LEFT)
         run2 = VGroup(T("run 2:", 26), T("fails: the name tf-web is taken", 26, RED_M)).arrange(RIGHT, buff=0.2)
         run2.next_to(run1, DOWN, buff=0.45).align_to(run1, LEFT)
         fit(run2, 6.4)
@@ -122,7 +122,7 @@ class D31ThreePictures(VoiceScene):
         ask = CurvedArrow(stp.get_bottom() + RIGHT * 0.8 + DOWN * 0.08, wp.get_bottom() + LEFT * 0.8 + DOWN * 0.08, angle=np.radians(50), color=GOLD_M, stroke_width=3)
         askp = ArcBetweenPoints(stp.get_bottom() + RIGHT * 0.8 + DOWN * 0.08, wp.get_bottom() + LEFT * 0.8 + DOWN * 0.08, angle=np.radians(50))
         self.steps("Watch. First, Terraform asks Docker about every ID in the notebook. Those are the Refreshing state lines. Is 9aa5b095 still there? Yes, with port 8090.",
-                   (0.6, FadeOut(q)), (1.4, Wait(1.4)), (0.6, Create(ask)), (0.8, travel(askp, GOLD_M, 0.8)), (1.4, Wait(1.4)), (0.6, Indicate(box_c, color=GREEN_M)))
+                   (0.6, FadeOut(q)), (1.4, Wait(1.4)), (0.6, Create(ask)), (0.8, travel(askp, GOLD_M, 0.8)), (1.4, Wait(1.4)), (0.6, Indicate(bc, color=GREEN_M)))
         nc = M("No changes. Your infrastructure matches the configuration.", 24, GREY_B).move_to(planp)
         fit(nc, 11.0)
         self.beat("Files, notebook and world all agree. So the plan is empty. No changes.", FadeIn(nc), run_time=1.8)
@@ -134,7 +134,7 @@ class D31ThreePictures(VoiceScene):
 
         # 6. a change in place  [SHOW]
         self.beat("The second rule of the plan: an object in both the files and the state, but with other settings? Change it.", run_time=None)
-        code_r = M('restart = "unless-stopped"', 22).move_to(code[2], aligned_edge=LEFT)
+        code_r = VGroup(M('restart =', 22), M('  "unless-stopped"', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.18).next_to(code[1], DOWN, buff=0.18, aligned_edge=LEFT)
         p2 = M('~ restart = "no" -> "unless-stopped"', 24, YELLOW_M).move_to(planp.get_center() + UP * 0.22)
         s2 = M("Plan: 0 to add, 1 to change, 0 to destroy.", 22, GREY_B).move_to(planp.get_center() + DOWN * 0.3)
         self.steps("Change restart from no to unless-stopped. Docker can change that on a running container. So the plan shows a tilde: update in place. Same container, same ID.",
@@ -178,8 +178,8 @@ class D31ThreePictures(VoiceScene):
         self.beat("So the moral of the story. Write the finished room down, not the steps. Terraform compares your files, its notebook and the real world, and the difference is the plan. That is why running it twice gives you one café, not two.",
                   FadeIn(mor), *[Indicate(m, color=c, scale_factor=1.04) for m, c in ((fl, BLUE_M), (stl, GOLD_M), (wl, GREEN_M))], run_time=5.0)
         self.play(FadeOut(mor), run_time=0.4)
-        chk = T("quick check: a teammate deletes tf-web by hand. You run plan. What does it show?", 26, YELLOW_M).move_to(planp)
-        fit(chk, 12.0)
+        chk = T("quick check: a teammate deletes tf-web by hand. You run plan. What does it show?", 26, YELLOW_M)
+        fit(chk, 10.8).move_to(planp).shift(RIGHT * 0.55)
         self.beat("A quick check. A teammate deletes the tf-web container by hand. You run plan, without changing any file. What does the plan show?",
                   FadeIn(chk), FadeOut(box_c2), FadeOut(bc2), run_time=2.6)
         self.guess([0, -1.4, 0])

@@ -126,11 +126,11 @@ class D11Padlock(VoiceScene):
         # ---------- 5. sealed to whom? the impostor and the certificate
         fake = box("impostor", BAD, w=2.0, h=0.75, size=24).move_to(np.array([HOPS_X[0], PATH_Y - 1.6, 0]))
         self.beat("But wait. A sealed envelope to whom? Someone in the café could play the same trick with you, and pretend to be the ticket site.",
-                  FadeIn(fake, shift=UP * 0.2), Wiggle(fake), run_time=2.6)
+                  Succession(FadeIn(fake, shift=UP * 0.2, run_time=0.6), Wiggle(fake, run_time=1.4)), run_time=2.6)
         self.beat("So the seal is only worth something if you know who holds the other end.",
                   Indicate(srv[1], color=SRV), run_time=1.4)
         cc = cert_card("certificate", ["names: tickets.example", "public key: the site's", "valid: from this date to that"], CERT)
-        cc.move_to(SRVP + UP * 2.0).scale(0.75)
+        cc.scale(0.75).move_to(np.array([4.55, 2.0, 0]))
         self.beat("So the site sends a certificate. It's a signed statement that says: this public key belongs to these names, from this date to that date.",
                   FadeOut(VGroup(k1, k2)), FadeIn(cc, shift=DOWN * 0.2), run_time=2.4)
         sig = chip("signature", CERT, 22).move_to(SRVP + DOWN * 1.5)
@@ -142,7 +142,7 @@ class D11Padlock(VoiceScene):
         world = VGroup(lap, srv, hops, links)
         self.play(world.animate.set_opacity(0.15), cc.animate.scale(1 / 0.75).move_to(np.array([1.6, -2.3, 0])), run_time=0.8)
         ic = cert_card("intermediate CA", ["signs servers' certificates"], CERT, w=4.6).move_to(np.array([1.6, 0.0, 0]))
-        rc = cert_card("root CA", ["key kept offline"], ROOT, w=4.6).move_to(np.array([1.6, 2.2, 0]))
+        rc = cert_card("root CA", ["key kept offline"], ROOT, w=4.6).move_to(np.array([1.6, 1.95, 0]))
         a1 = arrow(cc[0].get_top(), ic[0].get_bottom(), GREY_B)
         a2 = arrow(ic[0].get_top(), rc[0].get_bottom(), GREY_B)
         sl1 = T("signed by", 24, GREY_B).next_to(a1, RIGHT, buff=0.15)
@@ -163,7 +163,7 @@ class D11Padlock(VoiceScene):
                   Create(match), Succession(Wait(1.0), Create(okt)), run_time=2.2)
 
         # break: the self-signed lab certificate
-        err = M("curl: (60) SSL certificate problem: self-signed certificate", 22, RED_M).move_to(UP * 3.3)
+        err = M("curl: (60) SSL certificate problem: self-signed certificate", 22, RED_M).move_to(UP * 3.15)
         fit(err, 12.6)
         self.beat("You'll see that failure in the lab. A certificate you make yourself for localhost is signed by itself, so curl refuses it, and it's right to. It can't tell it from an attacker's.",
                   Write(err), Succession(Wait(3.0), AnimationGroup(FadeOut(VGroup(match, okt)), a1.animate.set_opacity(0.2), ic.animate.set_opacity(0.2), a2.animate.set_opacity(0.2), rc.animate.set_opacity(0.2), sl1.animate.set_opacity(0.2), sl2.animate.set_opacity(0.2))), run_time=8.0)
@@ -209,13 +209,12 @@ class D11Padlock(VoiceScene):
         self.beat("So, the moral of the story. TLS seals the envelope on the way, and checks who holds the other end. Whether the people behind that name deserve your money is still your call.",
                   Write(m1), Succession(Wait(5.0), FadeIn(m2, shift=UP * 0.1)), run_time=8.0)
         self.play(mg.animate.scale(0.75).to_edge(UP, buff=0.8).set_opacity(0.6), run_time=0.6)
-        c1 = M("$ curl -sS https://localhost:8443/", 26)
-        c2 = M("curl: (60) SSL certificate problem: self-signed certificate", 22, RED_M)
-        c3 = T("Is curl broken?", 32, YELLOW_M)
-        cg = VGroup(c1, c2, c3).arrange(DOWN, buff=0.4).move_to(DOWN * 0.4)
-        self.beat("A quick check. In the lab, curl refuses your own localhost certificate. Is curl broken? Pause and guess.",
-                  FadeIn(c1), FadeIn(c2), Succession(Wait(3.6), FadeIn(c3)), run_time=5.0, after=2.2)
-        ans = T("No. The chain ends at no root it trusts. Add --cacert.", 28, GREEN_M).next_to(cg, DOWN, buff=0.5)
-        self.beat("No. The certificate is signed by itself, and no root in the trust store vouches for it. curl is doing its job. Trust that one certificate on purpose, with --cacert.",
-                  FadeIn(ans, shift=UP * 0.1), run_time=1.6)
+        c1 = T("You pay on https://tickets.example from the café.", 30)
+        c2 = T("What can someone on the café Wi-Fi still see?", 32, YELLOW_M)
+        cg = VGroup(c1, c2).arrange(DOWN, buff=0.4).move_to(DOWN * 0.2)
+        self.beat("A quick check. You pay on tickets.example, over HTTPS, from the café. What can someone on the café Wi-Fi still see? Pause and guess.",
+                  FadeIn(c1), Succession(Wait(3.6), FadeIn(c2)), run_time=5.0, after=2.2)
+        ans = VGroup(T("the site's IP address, and usually its name", 28, GREEN_M), T("not your password, not the page", 28, GREEN_M)).arrange(DOWN, buff=0.2).next_to(cg, DOWN, buff=0.6)
+        self.beat("The site's IP address, and usually its name, because SNI travels before the seal. But not your password, and not the page. Those are inside the envelope.",
+                  FadeIn(ans[0], shift=UP * 0.1), Succession(Wait(4.4), FadeIn(ans[1], shift=UP * 0.1)), run_time=6.0)
         self.wait(1.5)

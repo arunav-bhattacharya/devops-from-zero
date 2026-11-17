@@ -98,7 +98,7 @@ class D10ReadSticker(VoiceScene):
                   Create(road), FadeIn(n2), Succession(Wait(1.6), FadeIn(env), env.animate(run_time=1.8).move_to(mach.get_left() + LEFT * 0.45 + UP * 0.35)), run_time=4.6)
 
         # step 3: the door and the handshake
-        n3 = T("3  door", 26, DOOR).next_to(mach, UP, buff=0.2).align_to(mach, LEFT)
+        n3 = T("3  door", 26, DOOR).next_to(mach, UP, buff=0.2).align_to(mach, RIGHT)
         self.beat("Step three, the door. One machine runs many programs, so a port picks the program, like an apartment number. Redis listens behind door 6379.",
                   FadeIn(n3), Succession(Wait(3.6), FadeIn(d2)), Succession(Wait(6.4), Indicate(d1[2], color=DOOR, scale_factor=1.3)), run_time=8.0)
         self.play(FadeOut(env), run_time=0.3)
@@ -108,7 +108,6 @@ class D10ReadSticker(VoiceScene):
         sa = Arrow([R, hs_y[1], 0], [L, hs_y[1], 0], buff=0, stroke_width=3, color=DOOR, max_tip_length_to_length_ratio=0.04)
         ack = Arrow([L, hs_y[2], 0], [R, hs_y[2], 0], buff=0, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.04)
         ls = [M(t, 22, c).next_to(a, UP, buff=0.04) for t, a, c in (("SYN", syn, GOLD_M), ("SYN-ACK", sa, DOOR), ("ACK", ack, GOLD_M))]
-        self.remove(road)
         self.beat("Before any data moves, TCP, the registered mail of the network, does a three-step handshake. SYN. I want to talk.",
                   FadeOut(road), Succession(Wait(5.0), AnimationGroup(GrowArrow(syn), FadeIn(ls[0]))), run_time=7.0)
         self.beat("SYN-ACK. Fine, I hear you.", GrowArrow(sa), FadeIn(ls[1]), run_time=1.4)
@@ -135,7 +134,7 @@ class D10ReadSticker(VoiceScene):
         self.beat("The name. getaddrinfo is the function programs call to look up a name, and it failed before a single packet left the app.",
                   Create(x1), book[0].animate.set_stroke(RED_M), run_time=1.6)
         self.beat("So restarting Redis would change nothing. Redis never even heard a knock.",
-                  Wiggle(fix), Succession(Wait(1.6), FadeOut(fix)), run_time=3.0)
+                  Succession(Wiggle(fix, run_time=1.4), Wait(0.6), FadeOut(fix, run_time=0.6)), run_time=3.0)
         st1 = sticker("no such street", "Name or service not known").scale(0.85).move_to(LEFT * 4.6 + UP * 2.05)
         self.beat("That's the no such street sticker. The house can be in perfect shape. The postman still can't find the street.",
                   FadeIn(st1, shift=DOWN * 0.15), run_time=1.6)
@@ -166,19 +165,18 @@ class D10ReadSticker(VoiceScene):
                   ReplacementTransform(e2, e3), run_time=1.6)
         self.beat("Pause and guess. Which sticker arrives faster, refused, or timed out?",
                   Indicate(st2[2], color=BLACK), Indicate(e3, color=RED_M), run_time=1.6, after=2.2)
-        tl = NumberLine(x_range=[0, 8, 1], length=7.0, include_numbers=False, color=GREY_B).move_to(DOWN * 0.35 + LEFT * 1.6)
+        tl = NumberLine(x_range=[0, 8, 1], length=6.0, include_numbers=False, color=GREY_B).move_to(DOWN * 2.2 + LEFT * 2.2)
         tlab = T("time", 24, GREY_B).next_to(tl, RIGHT, buff=0.2)
-        timeline_bg = BackgroundRectangle(VGroup(tl, tlab), color=BLACK, fill_opacity=1, buff=0.5)
         r_mark = VGroup(Dot(tl.n2p(0.08), color=DOOR), T("refused: about a millisecond", 24, DOOR)).arrange(UP, buff=0.15)
         r_mark[0].move_to(tl.n2p(0.08)); r_mark[1].next_to(r_mark[0], UP, buff=0.2).align_to(tl, LEFT)
         self.beat("Refused comes back in about a millisecond.",
-                  FadeIn(timeline_bg), Create(tl), FadeIn(tlab), FadeIn(r_mark), run_time=1.6)
+                  Create(tl), FadeIn(tlab), FadeIn(r_mark), run_time=1.6)
         tries = VGroup(*[Dot(tl.n2p(x), color=GOLD_M) for x in (0.08, 1.0, 3.0, 7.0)])
         tryl = T("SYN, SYN again, and again...", 24, GOLD_M).next_to(tl, DOWN, buff=0.3).align_to(tl, LEFT)
         self.beat("On a timeout, your machine resends the SYN a few times, waiting longer each time, before it gives up. So even the waiting is a clue.",
                   Succession(*[FadeIn(d, scale=0.5, run_time=0.9) for d in tries]), FadeIn(tryl), run_time=4.4)
-        st3 = sticker("never came back", "timed out", GREY_B, w=3.2).scale(0.85).move_to(UP * 0.55 + LEFT * 1.6)
-        self.play(FadeOut(VGroup(timeline_bg, tl, tlab, r_mark, tries, tryl)), FadeIn(st3, shift=DOWN * 0.15), run_time=0.8)
+        st3 = sticker("never came back", "timed out", GREY_B, w=3.2).scale(0.85).move_to(DOWN * 2.2 + LEFT * 1.4)
+        self.play(FadeOut(VGroup(tl, tlab, r_mark, tries, tryl)), FadeIn(st3, shift=DOWN * 0.15), run_time=0.8)
 
         # ---------- 6. reset or empty reply
         e4 = M("Connection reset by peer   /   Empty reply from server", 22, RED_M).move_to(UP * 3.15)

@@ -74,10 +74,8 @@ class D33CloakroomBook(VoiceScene):
         wp = panel(W, H, GREEN_M).move_to([4.45, Y, 0])
         cl = T("your code", 28, BLUE_M).next_to(cp, UP, buff=0.18)
         sl = T("the state: the book", 28, GOLD_M).next_to(sp, UP, buff=0.18)
-        wl = T("the real world: the coats", 28, GREEN_M).next_to(wp, UP, buff=0.18)
-        fit(wl, 4.2)
-        code = VGroup(M('resource "docker_container"', 22), M('         "web" {', 22), M('  name = "state-web"', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.14).move_to(cp)
-        fit(code, 3.6)
+        wl = T("the real world", 28, GREEN_M).next_to(wp, UP, buff=0.18)
+        code = VGroup(M('resource', 22), M('  "docker_container"', 22), M('  "web" {', 22), M('  name = "state-web"', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to(cp)
         rec = VGroup(M("docker_container.web", 22, GOLD_M), M("id d8eb279c...", 22, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.15).move_to(sp)
         c1 = cont("state-web", "d8eb279c...").move_to(wp)
         self.beat("Terraform has the same three things. Your code says what you want. The real world is the containers Docker is running: those are the coats.",
@@ -118,10 +116,9 @@ class D33CloakroomBook(VoiceScene):
         self.play(FadeOut(VGroup(cr, fail, two)), rec.animate.set_opacity(1), run_time=0.6)
 
         # 5. a harmless rename?  [PREDICT, BREAK]
-        code2 = VGroup(M('resource "docker_container"', 22), M('         "site" {', 22), M('  name = "state-web"', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
-        fit(code2, 3.6).move_to(code)
+        code2 = M('  "site" {', 22).move_to(code[2], aligned_edge=LEFT)
         self.beat("Now a smaller slip. You rename the resource label from web to site, because site reads better. In git it looks harmless. Same container, same name.",
-                  Transform(code, code2), run_time=2.8)
+                  Transform(code[2], code2), run_time=2.8)
         q3 = T("what does the plan say?", 28, YELLOW_M).move_to([0, -1.3, 0])
         self.beat("What does the plan say?", FadeIn(q3), run_time=1.0)
         self.guess([0, -2.1, 0])
@@ -152,7 +149,7 @@ class D33CloakroomBook(VoiceScene):
         self.play(FadeOut(VGroup(rule, mvp, mv, res, ask)), run_time=0.5)
 
         # 7. guardrails: the book holds everything  [GUARDRAIL]
-        sec = M("REDIS_PASSWORD=s3cret-123", 22, RED_M).next_to(rec, DOWN, buff=0.2).align_to(rec, LEFT)
+        sec = M("REDIS_PASSWORD=s3cret-123", 22, RED_M).next_to(sp, DOWN, buff=0.25)
         self.beat("One place where the cloakroom picture stops short. A cloakroom book notes a ticket and a hook. Terraform's state copies every detail of each object, secrets included.",
                   FadeIn(sec), run_time=3.0)
         g = VGroup(T("a sensitive value is hidden in plan output, but plain text in the state", 26, RED_M),
@@ -172,7 +169,7 @@ class D33CloakroomBook(VoiceScene):
         mor = T("the coats are easy to see. The book is what tells you whose they are.", 26, WHITE).move_to([0, -1.6, 0])
         fit(mor, 12.4)
         self.beat("The moral of the story. The containers are easy to see, so they feel like what matters. But the state is what tells Terraform which ones are its own. Lose the book, and it builds again. Rename without telling it, and it rebuilds.",
-                  FadeIn(mor), Indicate(sp, color=GOLD_M, scale_factor=1.02), run_time=5.0)
+                  FadeIn(mor), Indicate(sl, color=GOLD_M), run_time=5.0)
         self.play(FadeOut(mor), run_time=0.4)
         chk = VGroup(T("quick check: terraform state rm docker_container.site,", 26, YELLOW_M), T("then terraform apply. The container still runs. What happens?", 26, YELLOW_M)).arrange(DOWN, buff=0.12).move_to([0, -1.6, 0])
         fit(chk, 12.4)

@@ -130,7 +130,7 @@ class D36Results(VoiceScene):
         plist = panel(tasks, GOLD_M, buff=0.35).move_to([-3.5, 0.0, 0])
         plt = T("playbook", 26, GOLD_M).next_to(plist, UP, buff=0.2)
         self.beat("Ansible, the tool that sets up the inside of servers, works exactly like the second list. A playbook is the list. Each line is a task, and each task names a module, a small program that does one job.",
-                  Succession(Wait(2.4), AnimationGroup(FadeTransform(lst, plist), FadeTransform(lt, plt))), run_time=6.0)
+                  Succession(Wait(2.4), AnimationGroup(FadeTransform(VGroup(lst, results), plist), FadeTransform(lt, plt))), run_time=6.0)
         srv = RoundedRectangle(corner_radius=0.15, width=4.0, height=3.4, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.06), 1).move_to([3.9, 0.0, 0])
         sl = T("a fresh server", 26, TEAL_M).next_to(srv, UP, buff=0.2)
         st = VGroup(T("jq: missing", 26, GREY_B), T("/etc/motd: old text", 26, GREY_B), T("nginx: stopped", 26, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.55).move_to(srv)
@@ -140,7 +140,7 @@ class D36Results(VoiceScene):
         # ---------- 5. predict, then show: run it twice
         runl = T("run 1", 28, YELLOW_M).move_to([0.3, 2.65, 0])
         self.beat("Let's run it. The module looks at the server first, and acts only where something differs.", FadeIn(runl), run_time=1.6)
-        chs = VGroup(*[T("changed", 24, YELLOW_M).next_to(tasks[i], DOWN, buff=0.08).align_to(tasks[i], RIGHT) for i in range(3)])
+        chs = VGroup(*[T("changed", 24, YELLOW_M).move_to([0.45, tasks[i].get_y() + 0.24, 0]) for i in range(3)])
         st_new = [T("jq: installed", 26, GREEN_M), T("/etc/motd: our text", 26, GREEN_M), T("nginx: running", 26, GREEN_M)]
         plays = []
         for i in range(3):
@@ -152,7 +152,7 @@ class D36Results(VoiceScene):
         self.beat("Now the real question. We run the same playbook again, one minute later, nothing touched. How many tasks change? Pause and guess.",
                   Transform(runl, T("run 2", 28, YELLOW_M).move_to(runl)), FadeOut(chs), run_time=2.2)
         self.wait(2.0)
-        okk = VGroup(*[T("ok", 24, GREEN_M).next_to(tasks[i], DOWN, buff=0.08).align_to(tasks[i], RIGHT) for i in range(3)])
+        okk = VGroup(*[T("ok", 24, GREEN_M).move_to([0.45, tasks[i].get_y() + 0.24, 0]) for i in range(3)])
         plays2 = []
         for i in range(3):
             a = Line(np.array([plist.get_right()[0] + 0.1, tasks[i].get_y(), 0]), np.array([srv.get_left()[0] - 0.1, st[i].get_y(), 0]))

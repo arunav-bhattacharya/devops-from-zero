@@ -3,7 +3,7 @@ from fg import *
 
 SAY.extend([(r"/opt/homebrew/bin\b", "slash opt slash homebrew slash bin"), (r"/opt/homebrew\b", "slash opt slash homebrew"),
             (r"~/\.zprofile\b", "the dot Z profile file"), (r"\(\.venv\)", "dot venv in brackets"), (r"\.venv\b", "dot venv"),
-            (r"\bvenv\b", "venv"), (r"\bpython3\.14\b", "python three point fourteen"), (r"\bpython@3\.14\b", "python at three point fourteen"),
+            (r"\bvenv\b", "venv"), (r"\bpython3\.14\b", "python three point fourteen"), (r"\bpython@3\.14\b", "python at three point fourteen"), (r"\bpip3\.14\b", "pip three point fourteen"),
             (r"\bexternally-managed-environment\b", "externally managed environment"), (r"\bPATH\b", "path"),
             (r"\bzsh\b", "Z shell"), (r"\bbrew --version\b", "brew dash dash version"), (r"\bpytest\b", "pie test")])
 
@@ -64,7 +64,7 @@ class D02Shelves(VoiceScene):
         self.play(FadeOut(c), run_time=0.3)
 
     def construct(self):
-        self.title_card("Why the shell can't find what you just installed", "the shelves it checks, in order")
+        self.title_card("Installed, but not found", "the shelves your shell checks, in order")
 
         # ---------- 1. the shy question
         term = RoundedRectangle(corner_radius=0.15, width=8.6, height=1.8, stroke_color=GREY_B, stroke_width=2).set_fill(BLACK, 1).move_to(UP * 1.2)
@@ -172,11 +172,11 @@ class D02Shelves(VoiceScene):
         self.play(FadeOut(VGroup(cur, qq, hit, r1)), hb[0].animate.set_stroke(GOLD_M), run_time=0.5)
 
         # ---------- 6. first match wins: the venv
-        py = chip("python3.14", GOLD_M, 22, mono=True)
+        py = chip("pip3.14", GOLD_M, 22, mono=True)
         py[0].stretch_to_fit_height(0.46)
         py.next_to(hb[2], RIGHT, buff=0.14)
         hb[2].add(py)
-        self.beat("The order of the shelves matters too. Homebrew's default Python is newer than the one this course uses, so you install python@3.14, and type python3.14 by name.",
+        self.beat("Homebrew's shelf holds more than brew. This course installs python@3.14 there, with pip3.14, the tool that installs Python packages.",
                   Succession(Wait(3.4), FadeIn(py, shift=LEFT * 0.1)), run_time=4.4)
         jars = VGroup(chip("rye starter", GOLD_M, 26), chip("white starter", BLUE_M, 26)).arrange(DOWN, buff=0.3).move_to(RIGHT * 4.6 + UP * 0.6)
         self.beat("Now a second kitchen problem. A baker who makes rye and white bread keeps a separate starter jar for each. Share one jar, and the rye ends up in the white loaf.",
@@ -204,16 +204,16 @@ class D02Shelves(VoiceScene):
         self.play(FadeOut(cur), FadeOut(qq), vb[0].animate.set_stroke(TEAL_M), run_time=0.4)
 
         # ---------- 7. break it: forget to activate
-        nt = VGroup(M("$ pip install", 24), M("flask", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to(act, aligned_edge=UL)
-        self.steps("Now the trap. Tomorrow you open a new terminal, forget to activate, and type pip install.",
+        nt = VGroup(M("$ pip3.14", 24), M("install flask", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to(act, aligned_edge=UL)
+        self.steps("Now the trap. Tomorrow you open a new terminal, forget to activate, and install a package.",
                    (1.6, FadeOut(act), FadeOut(prm), vb.animate.move_to(PARK), *[r.animate.move_to(slot(i)) for i, r in enumerate(rows2)]),
                    (0.6, FadeIn(nt)))
         cur.move_to(at(hb))
-        qq = M("pip?", 24, YELLOW_M).next_to(cur, RIGHT, buff=0.2)
+        qq = M("pip3.14?", 24, YELLOW_M).next_to(cur, RIGHT, buff=0.2)
         err = VGroup(M("error:", 22, RED_M), M("externally-", 22, RED_M), M("managed-environment", 22, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
         err.next_to(nt, DOWN, buff=0.35).align_to(nt, LEFT)
-        self.steps("This time pip is found on Homebrew's shelf. Homebrew's own Python refuses, with externally-managed-environment.",
-                   (0.5, FadeIn(cur), FadeIn(qq)), (0.6, hb[0].animate.set_stroke(RED_M)), (2.0, Wait(2.0)), (0.6, FadeIn(err)))
+        self.steps("This time the search finds pip on Homebrew's shelf. And Homebrew's own Python refuses, with externally-managed-environment.",
+                   (0.5, FadeIn(cur), FadeIn(qq)), (0.6, hb[0].animate.set_stroke(RED_M), Indicate(hb[2][1], color=RED_M)), (2.0, Wait(2.0)), (0.6, FadeIn(err)))
         self.beat("Well. That is a very long way of saying: wrong shelf. The error means one thing. Your venv is not active.",
                   Indicate(err, color=RED_M), run_time=1.6)
         self.beat("And the tempting shortcut, sudo pip with no venv, only makes packages from different projects fight over versions. Homebrew's Python refuses that anyway.",

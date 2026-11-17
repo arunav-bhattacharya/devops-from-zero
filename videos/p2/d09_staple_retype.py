@@ -103,29 +103,31 @@ class D09StapleRetype(VoiceScene):
         self.beat("Now the real shape. Ana's commit on main and Ben's on currency-first both start from c711550. Both sides moved.",
                   GrowFromCenter(base), Succession(Wait(1.6), AnimationGroup(GrowArrow(e1), GrowFromCenter(am), FadeIn(mn))),
                   Succession(Wait(3.2), AnimationGroup(GrowArrow(e2), GrowFromCenter(bb), FadeIn(cf))), run_time=6.4)
-        self.play(VGroup(graph, mn, cf).animate.scale(0.8).move_to(UP * 2.2 + LEFT * 2.4), run_time=0.8)
+        self.play(FadeOut(VGroup(graph, mn, cf)), run_time=0.6)
 
-        cm = card("main", "TAX_RATE = 0.25", ANA).move_to(LEFT * 3.2 + DOWN * 1.6)
-        cb = card("branch", "TAX_RATE = 0.20", BEN).move_to(RIGHT * 3.2 + DOWN * 1.6)
-        self.beat("Here is a puzzle first. One line, two versions. Main says the tax rate is 0.25. The branch says 0.20. Which one should the merge keep? Pause and guess.",
-                  FadeIn(cm, shift=UP * 0.15), Succession(Wait(3.0), FadeIn(cb, shift=UP * 0.15)), run_time=6.0, after=2.2)
-        shrug = T("?", 90, YELLOW_M).move_to(DOWN * 1.6)
+        cm = card("main", "TAX_RATE = 0.25", ANA).move_to(LEFT * 3.2 + DOWN * 1.4)
+        cb = card("branch", "TAX_RATE = 0.20", BEN).move_to(RIGHT * 3.2 + DOWN * 1.4)
+        self.beat("Before we merge, a puzzle. Say one line has two versions. Main says the tax rate is 0.25. The branch says 0.20. Which one should the merge keep? Pause and guess.",
+                  FadeIn(cm, shift=UP * 0.15), Succession(Wait(3.6), FadeIn(cb, shift=UP * 0.15)), run_time=6.6, after=2.2)
+        shrug = T("?", 90, YELLOW_M).move_to(DOWN * 1.4)
         self.beat("Honestly, you can't tell. Maybe main raised it. Maybe the branch lowered it. Two versions are not enough to know who changed what.",
                   Write(shrug), run_time=1.4)
-        cbase = card("merge base", "TAX_RATE = 0.20", BASE).move_to(RIGHT * 3.0 + UP * 1.35)
+        cbase = card("merge base", "TAX_RATE = 0.20", BASE).move_to(UP * 1.5)
         self.beat("So Git brings in a third version, the newest commit that both branches contain. In our story, that's Friday's copy, the one they both took home.",
-                  FadeOut(shrug), FadeIn(cbase, shift=DOWN * 0.15), Indicate(base[1], color=BASE, scale_factor=1.3), run_time=3.0)
+                  FadeOut(shrug), FadeIn(cbase, shift=DOWN * 0.15), run_time=3.0)
         chg = T("changed", 26, ANA).next_to(cm, UP, buff=0.2)
         same = T("same as base", 26, BEN).next_to(cb, UP, buff=0.2)
-        self.beat("The base says 0.20. Now it's plain. The branch never touched that line. Only main changed it, so Git takes 0.25.",
+        self.beat("Say the base has 0.20. Now it's plain. The branch never touched that line. Only main changed it, so Git takes 0.25.",
                   Succession(Wait(1.6), FadeIn(same)), Succession(Wait(3.8), FadeIn(chg), Indicate(cm[2], color=ANA)), run_time=6.0)
-        name = T("three-way merge: the base and the two tips", 30, YELLOW_M).move_to(DOWN * 3.3)
-        mb = M("$ git merge-base main currency-first", 22).next_to(cbase, DOWN, buff=0.15)
-        self.beat("That third version is called the merge base, and git merge-base main currency-first prints it, c711550. Base plus two tips makes three, which is why it's called a three-way merge.",
-                  FadeIn(mb), Succession(Wait(6.4), FadeIn(name, shift=UP * 0.1)), run_time=9.0)
+        self.play(FadeOut(VGroup(cm, cb, cbase, chg, same)), FadeIn(VGroup(graph, mn, cf)), run_time=0.8)
+        mb = M("$ git merge-base main currency-first", 24).move_to(UP * 3.05)
+        mbo = M("c711550", 24, BASE).next_to(mb, DOWN, buff=0.18)
+        name = T("three-way merge: the base and the two tips", 30, YELLOW_M).move_to(DOWN * 3.2)
+        self.beat("That third version is called the merge base. In our repo, git merge-base main currency-first prints c711550. Base plus two tips makes three, which is why it's called a three-way merge.",
+                  FadeIn(mb), Succession(Wait(4.6), FadeIn(mbo), Indicate(base[1], color=BASE, scale_factor=1.3)), Succession(Wait(8.0), FadeIn(name, shift=UP * 0.1)), run_time=11.0)
         self.beat("A change made on only one side goes in as it is. Only a line that both sides changed, in different ways, is a conflict.",
-                  FadeOut(VGroup(cm, cb, cbase, chg, same, mb)), run_time=1.4)
-        self.play(FadeOut(name), VGroup(graph, mn, cf).animate.scale(1.25).move_to(LEFT * 1.6 + DOWN * 0.15), run_time=0.8)
+                  FadeOut(VGroup(mb, mbo)), run_time=1.4)
+        self.play(FadeOut(name), VGroup(graph, mn, cf).animate.move_to(LEFT * 1.6 + DOWN * 0.15), run_time=0.8)
 
         # ---------- 4. the real clash: markers
         cmd = M("$ git merge currency-first", 26).move_to(UP * 3.05)
@@ -193,7 +195,7 @@ class D09StapleRetype(VoiceScene):
 
         # ---------- 7. the guardrail: never retype pages someone already has
         self.play(FadeOut(VGroup(on, cmd3)), run_time=0.4)
-        mate = RoundedRectangle(corner_radius=0.15, width=3.4, height=1.9, stroke_color=GREY_B, stroke_width=2.5).move_to(RIGHT * 4.6 + DOWN * 2.1)
+        mate = RoundedRectangle(corner_radius=0.15, width=3.4, height=1.9, stroke_color=GREY_B, stroke_width=2.5).move_to(RIGHT * 4.6 + DOWN * 2.45)
         mt = T("a teammate's copy", 26, GREY_B).next_to(mate, UP, buff=0.15)
         old_pg = M("d229503", 24, BEN).move_to(mate)
         self.beat("Now the rule that matters more than the rest. Say a teammate already copied Ben's branch, with the old d229503 in it.",

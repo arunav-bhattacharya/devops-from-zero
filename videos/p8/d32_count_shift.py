@@ -46,7 +46,7 @@ class D32CountShift(VoiceScene):
         self.play(FadeOut(c), FadeOut(n), run_time=0.3)
 
     def construct(self):
-        self.title_card("One cancelled order, three sheds touched", "count, for_each, and what a copy is called")
+        self.title_card("Numbers shift, names stay", "count, for_each, and what a copy is called")
 
         # 1. three copies of a drawing  [FAMILIAR, PAIN, WISH]
         drs = VGroup(*[panel(2.6, 1.8, GREY_B, 0.05) for _ in range(3)]).arrange(RIGHT, buff=0.6).move_to([0, 0.6, 0])
@@ -146,10 +146,11 @@ class D32CountShift(VoiceScene):
         self.steps("Three of those four destroys come from count, for one removed name. Only one comes from for_each.",
                    (0.6, FadeOut(VGroup(rp0, rp1, gone, fg_, ok)), tot.animate.shift(DOWN * 0.0)), (0.8, GrowFromCenter(three), FadeIn(t3)),
                    (1.6, Wait(1.6)), (0.8, GrowFromCenter(one), FadeIn(t1)))
-        rule = T("A copy's address is its identity.", 30, YELLOW_M).move_to([0, 1.35, 0])
+        rule = T("A copy's address is its identity.", 30, YELLOW_M).move_to([0, -2.3, 0])
+        self.play(FadeOut(VGroup(three, t3, one, t1, tot)), run_time=0.4)
         self.beat("So here is the whole idea in one line. A copy's address is its identity. With count, the identity is a position, and positions shift. With for_each, it is a name, and names stay put.",
                   Write(rule), run_time=3.0)
-        self.play(FadeOut(VGroup(three, t3, one, t1, tot)), run_time=0.4)
+        self.play(FadeOut(rule), run_time=0.4)
 
         # 7. guardrails  [GUARDRAIL]
         g = VGroup(T("count: nearly identical copies, or an on-off switch", 26, WHITE),

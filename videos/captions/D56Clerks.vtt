@@ -1,0 +1,437 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:07.126
+A doctor in our hospital pulls a note from the central chart room.
+
+2
+00:00:07.126 --> 00:00:09.189
+Fever at 3 a.m., gave medicine.
+
+3
+00:00:09.333 --> 00:00:10.302
+Which patient?
+
+4
+00:00:10.302 --> 00:00:11.063
+Which ward?
+
+5
+00:00:11.063 --> 00:00:12.516
+The note doesn't say.
+
+6
+00:00:12.516 --> 00:00:16.805
+The nurse was standing right at the bed, so it seemed obvious.
+
+7
+00:00:17.000 --> 00:00:19.598
+Our log lines have the same blind spot.
+
+8
+00:00:19.598 --> 00:00:22.662
+Here is a line from our lab app, hello-devops.
+
+9
+00:00:22.662 --> 00:00:24.726
+Which copy of the app wrote it?
+
+10
+00:00:24.726 --> 00:00:25.859
+On which machine?
+
+11
+00:00:26.000 --> 00:00:27.346
+Two questions, really.
+
+12
+00:00:27.346 --> 00:00:31.263
+Who even collects the lines, when the app runs on many machines?
+
+13
+00:00:31.263 --> 00:00:33.833
+And how does each line learn who wrote it?
+
+14
+00:00:33.833 --> 00:00:35.669
+Let's take them one at a time.
+
+15
+00:00:36.467 --> 00:00:39.275
+Last time, everything lived on one laptop.
+
+16
+00:00:39.275 --> 00:00:47.232
+Docker handed every line straight to Fluent Bit, a small program that collects logs and sends them on to Elasticsearch.
+
+17
+00:00:48.867 --> 00:00:51.416
+One machine, one collector.
+
+18
+00:00:51.416 --> 00:00:51.888
+Easy.
+
+19
+00:00:52.667 --> 00:00:58.774
+Now hello-devops runs on Kubernetes, the system that spreads containers over many machines.
+
+20
+00:00:58.774 --> 00:01:01.793
+Picture the cluster as the hospital building.
+
+21
+00:01:01.793 --> 00:01:04.612
+Each machine, called a node, is one floor.
+
+22
+00:01:04.800 --> 00:01:08.810
+Each pod, a running copy of an app, is a bed on that floor.
+
+23
+00:01:08.810 --> 00:01:10.509
+Three nodes, twelve pods.
+
+24
+00:01:10.667 --> 00:01:20.209
+On every node, each container's output is written to a file, and all those files sit in one folder, slash var slash log slash containers.
+
+25
+00:01:20.400 --> 00:01:21.979
+Look at one file's name.
+
+26
+00:01:21.979 --> 00:01:26.190
+It says who wrote it: the pod, the namespace, and the container.
+
+27
+00:01:26.190 --> 00:01:29.020
+A namespace is a named area of the cluster.
+
+28
+00:01:29.020 --> 00:01:31.520
+Keep this name in mind; it comes back.
+
+29
+00:01:32.200 --> 00:01:34.017
+So who reads these folders?
+
+30
+00:01:34.017 --> 00:01:38.123
+The first idea most of us have: give every bed its own clerk.
+
+31
+00:01:38.267 --> 00:01:40.865
+A little shipper inside every pod.
+
+32
+00:01:40.865 --> 00:01:41.553
+It works.
+
+33
+00:01:41.553 --> 00:01:43.769
+Twelve pods, twelve shippers.
+
+34
+00:01:43.933 --> 00:01:51.178
+But grow to forty pods, and you have forty shippers, each with its own memory and its own settings to keep up to date.
+
+35
+00:01:51.178 --> 00:01:54.187
+The hospital now employs more clerks than nurses.
+
+36
+00:01:54.867 --> 00:01:56.348
+Fine, the opposite then.
+
+37
+00:01:56.348 --> 00:01:58.385
+One clerk for the whole building.
+
+38
+00:01:58.385 --> 00:02:01.657
+But a clerk can only see the folder on its own floor.
+
+39
+00:02:01.657 --> 00:02:06.904
+Its window, called a hostPath volume, shows that node's own folder, and nothing else.
+
+40
+00:02:07.067 --> 00:02:09.377
+Floors two and three pile up, unread.
+
+41
+00:02:09.533 --> 00:02:12.931
+What we really want is exactly one clerk on every floor.
+
+42
+00:02:12.931 --> 00:02:18.635
+And when a new floor opens, a new clerk should appear, without anyone remembering to hire one.
+
+43
+00:02:18.800 --> 00:02:21.065
+Kubernetes has exactly that rule.
+
+44
+00:02:21.065 --> 00:02:25.320
+It is called a DaemonSet: run one copy of a pod on every node.
+
+45
+00:02:25.320 --> 00:02:27.311
+The clerk here is Fluent Bit.
+
+46
+00:02:27.467 --> 00:02:29.162
+So, a quick prediction.
+
+47
+00:02:29.162 --> 00:02:31.004
+Three nodes, twelve pods.
+
+48
+00:02:31.004 --> 00:02:33.141
+How many Fluent Bit pods run?
+
+49
+00:02:33.141 --> 00:02:34.320
+Pause and guess.
+
+50
+00:02:37.533 --> 00:02:37.978
+Three.
+
+51
+00:02:37.978 --> 00:02:40.199
+One per node, not one per pod.
+
+52
+00:02:40.199 --> 00:02:43.975
+Each one reads the files of every pod on its floor.
+
+53
+00:02:44.133 --> 00:02:45.191
+One small print.
+
+54
+00:02:45.191 --> 00:02:50.611
+One of these nodes is the control-plane node, the one that runs Kubernetes itself.
+
+55
+00:02:50.611 --> 00:02:55.766
+The lab's values include a toleration, a setting that lets Fluent Bit onto it.
+
+56
+00:02:55.766 --> 00:02:57.749
+Without it, you would get two.
+
+57
+00:02:58.467 --> 00:03:02.601
+We install it with Helm, the package installer for Kubernetes.
+
+58
+00:03:02.601 --> 00:03:06.068
+The naive first try is the chart's default settings.
+
+59
+00:03:06.068 --> 00:03:06.935
+Then we wait.
+
+60
+00:03:07.133 --> 00:03:08.536
+And nothing arrives.
+
+61
+00:03:08.536 --> 00:03:16.811
+The default output sends to a host named elasticsearch-master, which only exists if you installed Elastic's old chart.
+
+62
+00:03:17.000 --> 00:03:21.027
+Point it at the right place, and there's a second problem.
+
+63
+00:03:21.027 --> 00:03:29.984
+The default doesn't set suppress_type_name, so Elasticsearch 8 and 9 answer with HTTP 400 and unknown parameter, underscore type.
+
+64
+00:03:30.133 --> 00:03:34.195
+With unlimited retries, Fluent Bit keeps trying forever, quietly.
+
+65
+00:03:34.195 --> 00:03:39.320
+A clerk posting letters to a building that was never built, and never complaining.
+
+66
+00:03:39.467 --> 00:03:45.940
+So the point really is: before you open Kibana and stare at an empty page, read one shipper's own log.
+
+67
+00:03:45.940 --> 00:03:48.035
+It tells you why nothing arrived.
+
+68
+00:03:48.200 --> 00:03:51.524
+The lab's values file sets the output itself.
+
+69
+00:03:51.524 --> 00:03:52.928
+Now the lines flow.
+
+70
+00:03:53.467 --> 00:03:54.302
+They arrive.
+
+71
+00:03:54.302 --> 00:03:58.058
+But look at one: still a note with no ward and no bed.
+
+72
+00:03:58.058 --> 00:03:59.937
+Back to our first question.
+
+73
+00:03:59.937 --> 00:04:01.259
+Which pod wrote it?
+
+74
+00:04:02.600 --> 00:04:04.062
+Remember the file name?
+
+75
+00:04:04.062 --> 00:04:10.357
+The clerk reads the line from that file, so the pod, the namespace and the container come for free.
+
+76
+00:04:10.533 --> 00:04:15.532
+The kubernetes filter, a step inside Fluent Bit, stamps them onto the record.
+
+77
+00:04:15.667 --> 00:04:17.093
+Labels are different.
+
+78
+00:04:17.093 --> 00:04:23.004
+They are short name and value tags that people attach to a pod, like app: hello-devops.
+
+79
+00:04:23.004 --> 00:04:25.042
+They are not in the file name.
+
+80
+00:04:25.042 --> 00:04:28.643
+So the clerk asks the front desk, the Kubernetes API.
+
+81
+00:04:28.800 --> 00:04:35.022
+And it keeps the answer in memory, a cache, so it doesn't run to the desk again for every single line.
+
+82
+00:04:35.022 --> 00:04:37.219
+The node it ran on gets stamped too.
+
+83
+00:04:37.400 --> 00:04:39.342
+One more setting, merge_log.
+
+84
+00:04:39.342 --> 00:04:42.949
+If the message is JSON, its keys become real fields.
+
+85
+00:04:42.949 --> 00:04:47.873
+And keep_log off drops the original string, so nothing is stored twice.
+
+86
+00:04:48.067 --> 00:04:50.306
+Now every line says who wrote it.
+
+87
+00:04:50.306 --> 00:05:01.093
+In Kibana, those stamps become filters you'll use every day: only namespace hello, only app hello-devops, or only one node, to see if one floor is the problem.
+
+88
+00:05:02.600 --> 00:05:03.938
+A few honest limits.
+
+89
+00:05:03.938 --> 00:05:06.682
+The front desk is the part that can hurt.
+
+90
+00:05:06.682 --> 00:05:11.231
+A thousand nodes asking about pods adds real load to the API server.
+
+91
+00:05:11.231 --> 00:05:15.848
+The filter's use_kubelet option asks each node's own kubelet instead.
+
+92
+00:05:15.848 --> 00:05:19.060
+Our three-node practice cluster doesn't need it.
+
+93
+00:05:19.200 --> 00:05:20.860
+A chatty pod can opt out.
+
+94
+00:05:20.860 --> 00:05:26.701
+With the exclude setting on, an annotation on the pod drops its lines right at the node.
+
+95
+00:05:26.867 --> 00:05:30.307
+And on first start, Fluent Bit reads new lines only.
+
+96
+00:05:30.307 --> 00:05:33.813
+So send fresh traffic before you go looking for logs.
+
+97
+00:05:35.000 --> 00:05:36.657
+So the moral of the story.
+
+98
+00:05:36.657 --> 00:05:43.287
+One clerk per floor, reading that floor's own folder, and stamping every note with the bed it came from.
+
+99
+00:05:43.287 --> 00:05:46.028
+One clerk per floor, a stamp on every note.
+
+100
+00:05:46.200 --> 00:05:47.142
+A quick check.
+
+101
+00:05:47.142 --> 00:05:49.294
+A fourth node joins the cluster.
+
+102
+00:05:49.294 --> 00:05:53.129
+How many Fluent Bit pods now, and who starts the new one?
+
+103
+00:05:53.129 --> 00:05:54.205
+Pause and think.
+
+104
+00:05:57.467 --> 00:05:57.828
+Four.
+
+105
+00:05:57.828 --> 00:05:59.271
+And nobody hires it.
+
+106
+00:05:59.271 --> 00:06:04.975
+The DaemonSet sees a new floor, and Kubernetes starts a clerk there, by itself.
+
+107
+00:06:05.133 --> 00:06:10.877
+The lesson's other worry, shelves that never empty, gets a rule for old logs to leave.
+
+108
+00:06:10.877 --> 00:06:14.351
+And next time, one request crosses several services.
+
+109
+00:06:14.351 --> 00:06:15.820
+Where did its time go?

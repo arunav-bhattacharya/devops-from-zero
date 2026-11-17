@@ -1,0 +1,293 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.626
+Picture renting a flat in a city you will never visit.
+
+2
+00:00:06.626 --> 00:00:12.176
+On AWS that flat is an EC2 instance, a virtual server you rent by the second.
+
+3
+00:00:12.333 --> 00:00:18.889
+You leave a note for the caretaker, and the server unpacks hello-devops, a tiny web app, all by itself.
+
+4
+00:00:19.467 --> 00:00:21.373
+The flat's door has a lock.
+
+5
+00:00:21.373 --> 00:00:26.669
+On AWS, the lock is a security group, a firewall wrapped around the server.
+
+6
+00:00:26.867 --> 00:00:30.249
+Which brings up the question everybody has on day one.
+
+7
+00:00:30.249 --> 00:00:31.251
+I can't walk in.
+
+8
+00:00:31.251 --> 00:00:33.756
+So how do I get a shell on that machine?
+
+9
+00:00:33.933 --> 00:00:36.360
+Many tutorials take the quick way.
+
+10
+00:00:36.360 --> 00:00:43.141
+They open port 22, the door for SSH, the secure remote login, to every address on the internet.
+
+11
+00:00:43.333 --> 00:00:44.529
+You can get in now.
+
+12
+00:00:44.529 --> 00:00:46.921
+So can everyone else who wants to try.
+
+13
+00:00:46.921 --> 00:00:51.076
+Every stranger on the internet can walk up and rattle that handle.
+
+14
+00:00:51.267 --> 00:00:57.314
+And the old key pair way adds a private key file you download once, and must never lose or leak.
+
+15
+00:00:57.314 --> 00:00:59.771
+That is a front door key under the mat.
+
+16
+00:01:00.533 --> 00:01:02.244
+The lab does the opposite.
+
+17
+00:01:02.244 --> 00:01:06.585
+Its security group, hello-devops-web, has no inbound rules at all.
+
+18
+00:01:06.585 --> 00:01:09.151
+Outbound allows everything, by default.
+
+19
+00:01:09.333 --> 00:01:13.229
+Nobody on the internet can start a connection to the server.
+
+20
+00:01:13.229 --> 00:01:14.073
+You included.
+
+21
+00:01:14.073 --> 00:01:19.721
+Congratulations: you have built the safest flat in the city, and even you can't get in.
+
+22
+00:01:20.267 --> 00:01:21.643
+So here is the puzzle.
+
+23
+00:01:21.643 --> 00:01:26.147
+With zero inbound rules, can any traffic ever come in through that door?
+
+24
+00:01:28.800 --> 00:01:30.945
+It is tempting to say no, never.
+
+25
+00:01:30.945 --> 00:01:32.018
+Let's test that.
+
+26
+00:01:32.018 --> 00:01:35.035
+On first boot, the server downloads packages.
+
+27
+00:01:35.035 --> 00:01:38.789
+That is the server calling out, and outbound is allowed.
+
+28
+00:01:38.933 --> 00:01:41.128
+But a download is a conversation.
+
+29
+00:01:41.128 --> 00:01:44.918
+The packages have to come back in, through the same door.
+
+30
+00:01:44.918 --> 00:01:45.716
+And they do.
+
+31
+00:01:45.867 --> 00:01:47.223
+The lock is stateful.
+
+32
+00:01:47.223 --> 00:01:53.359
+It remembers the calls the flat made, and lets the replies back in without a rule of their own.
+
+33
+00:01:53.359 --> 00:01:57.428
+Inbound rules are only about strangers starting a conversation.
+
+34
+00:01:57.600 --> 00:02:01.735
+So the wrong model was: no inbound rules means nothing comes in.
+
+35
+00:02:01.735 --> 00:02:08.131
+The right one: nobody can start a conversation from outside, but the flat can call anyone it likes.
+
+36
+00:02:08.867 --> 00:02:10.553
+Now you can guess the trick.
+
+37
+00:02:10.553 --> 00:02:12.841
+If the flat can call out, let it call.
+
+38
+00:02:12.841 --> 00:02:17.719
+Put a phone inside, and have the flat dial the front desk and keep the line open.
+
+39
+00:02:17.867 --> 00:02:24.051
+On AWS, the phone is a small program on the server called the SSM Agent.
+
+40
+00:02:24.051 --> 00:02:29.720
+It keeps an outbound HTTPS connection open to AWS Systems Manager.
+
+41
+00:02:29.867 --> 00:02:33.532
+Then you run aws ssm start-session on your Mac.
+
+42
+00:02:33.532 --> 00:02:39.928
+AWS checks your IAM permissions, the rules from last lesson about who may do what.
+
+43
+00:02:40.067 --> 00:02:46.374
+If they allow it, AWS joins your terminal to the line the agent already holds open.
+
+44
+00:02:46.374 --> 00:02:50.021
+You arrive as ssm-user, a user with sudo rights.
+
+45
+00:02:50.200 --> 00:02:51.518
+Look at the door.
+
+46
+00:02:51.518 --> 00:02:52.759
+It never opened.
+
+47
+00:02:52.759 --> 00:02:54.775
+Zero inbound rules, still.
+
+48
+00:02:54.775 --> 00:02:56.947
+No port, and no key to lose.
+
+49
+00:02:57.133 --> 00:03:01.283
+This is Session Manager, part of AWS Systems Manager.
+
+50
+00:03:01.283 --> 00:03:03.632
+It costs nothing extra on EC2.
+
+51
+00:03:04.200 --> 00:03:06.468
+The line needs four things.
+
+52
+00:03:06.468 --> 00:03:15.456
+The agent on the server, which AWS's and Canonical's Ubuntu images, and Amazon Linux 2023, already include.
+
+53
+00:03:15.600 --> 00:03:22.540
+An instance role with the AWS managed policy AmazonSSMManagedInstanceCore.
+
+54
+00:03:22.733 --> 00:03:28.472
+Outbound HTTPS from the server to three AWS endpoints in its region.
+
+55
+00:03:28.472 --> 00:03:32.944
+A public IP and the default outbound rule cover that.
+
+56
+00:03:33.133 --> 00:03:37.684
+And the Session Manager plugin, an add-on for the CLI, on your Mac.
+
+57
+00:03:38.400 --> 00:03:41.474
+The same line carries more than a shell.
+
+58
+00:03:41.474 --> 00:03:49.699
+The document AWS-StartPortForwardingSession makes localhost:8000 on your Mac reach port 8000 on the server.
+
+59
+00:03:49.867 --> 00:03:54.907
+So you can open hello-devops in your own browser, through a door that is still locked.
+
+60
+00:03:54.907 --> 00:03:57.603
+The caretaker holds the phone up to the radio.
+
+61
+00:03:58.600 --> 00:04:00.793
+AWS gives you three ways in.
+
+62
+00:04:00.793 --> 00:04:04.395
+Session Manager, with no open port and no key.
+
+63
+00:04:04.533 --> 00:04:18.449
+EC2 Instance Connect pushes a one-time SSH key for you, but port 22 must still be open, either to AWS's Instance Connect address range or through an Instance Connect Endpoint.
+
+64
+00:04:18.600 --> 00:04:24.175
+And key pairs, the old way: port 22, plus a file you must never lose or leak.
+
+65
+00:04:24.867 --> 00:04:28.481
+So the moral of the story fits in three short lines.
+
+66
+00:04:28.481 --> 00:04:29.940
+Open no inbound door.
+
+67
+00:04:29.940 --> 00:04:31.608
+Let the server dial out.
+
+68
+00:04:31.608 --> 00:04:33.832
+And let IAM decide who may join.
+
+69
+00:04:34.533 --> 00:04:35.534
+A quick check.
+
+70
+00:04:35.534 --> 00:04:41.396
+A teammate's security group allows port 22 from every address, so they can SSH in.
+
+71
+00:04:41.396 --> 00:04:45.113
+Which change gives them a shell and closes the port?
+
+72
+00:04:47.733 --> 00:04:51.155
+Use Session Manager, and delete the port 22 rule.
+
+73
+00:04:51.155 --> 00:04:55.555
+The agent connects out, and IAM decides who may open a session.

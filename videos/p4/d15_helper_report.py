@@ -132,7 +132,7 @@ class D15HelperReport(VoiceScene):
         self.steps("One. The check found a problem, and CI turns red.",
                    (0.6, travel(oa[2], YELLOW_M, 0.6)), (0.5, Transform(num, one)), (0.8, ci[0].animate.set_stroke(RED_M), travel(cia, YELLOW_M, 0.8)))
         rep = VGroup(M("238 requests", 20), M("5xx 11", 20), M("4.6%", 20)).arrange(DOWN, aligned_edge=LEFT, buff=0.08).move_to(sheet)
-        why = VGroup(M("ERROR error rate 4.6%", 22, RED_M), M("is above the limit of 1.0%", 22, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.08).next_to(lab_e, DOWN, buff=0.25).align_to(lab_e, LEFT)
+        why = VGroup(M("ERROR error rate 4.6%", 20, RED_M), M("above the limit of 1.0%", 20, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.08).next_to(lab_e, DOWN, buff=0.25).align_to(lab_e, LEFT)
         self.steps("The report went to stdout. And the one-line reason went to stderr: the error rate, 4.6 percent, is above the limit of 1.0 percent.",
                    (0.6, travel(oa[0], WHITE, 0.6)), (0.6, FadeOut(sheet[1]), FadeIn(rep)), (1.2, Wait(1.2)),
                    (0.6, travel(oa[1], RED_M, 0.6)), (0.8, FadeIn(why, shift=UP * 0.1)))
@@ -154,11 +154,11 @@ class D15HelperReport(VoiceScene):
         fit(cmdj, 12.6)
         self.beat("Why keep the report and the note apart? Because the report is often read by another program. Here, jq, a small tool that picks values out of JSON.",
                   Transform(cmd, cmdj), FadeIn(jq), GrowArrow(ja), run_time=2.0)
-        js = M('{"error_rate": 4.62, ...}', 22, GREEN_M).move_to([3.3, 1.5, 0], aligned_edge=LEFT)
+        js = M('{"error_rate": 4.62, ...}', 20, GREEN_M).move_to([3.3, 1.5, 0], aligned_edge=LEFT)
         val = M("4.62", 26, GREEN_M).next_to(jq, UP, buff=0.2)
         self.steps("JSON is a plain text format that programs use to swap data. With format json, stdout holds only JSON. So jq reads it cleanly, and finds the error rate: 4.62.",
                    (0.6, FadeOut(rep), FadeIn(js)), (2.6, Wait(2.6)), (0.8, travel(ja, GREEN_M, 0.8)), (0.6, FadeIn(val, shift=DOWN * 0.1)))
-        bad = M("starting...", 22, RED_M).move_to(js, aligned_edge=LEFT)
+        bad = M("starting...", 20, RED_M).move_to(js, aligned_edge=LEFT)
         self.steps("Now say the helper uses print for a cheerful starting message. print writes to stdout. So the first line jq sees is: starting dot dot dot.",
                    (2.4, Wait(2.4)), (0.8, FadeIn(bad, shift=DOWN * 0.1), js.animate.shift(DOWN * 0.32)), (0.8, travel(ja, RED_M, 0.8)))
         jx = tick(False, 0.3).next_to(jq, UP, buff=0.2)
@@ -232,14 +232,12 @@ class D15HelperReport(VoiceScene):
         self.play(FadeOut(g), run_time=0.5)
 
         # 10. moral and quick check
-        mor = T("report on the sheet, reasons in the note, the verdict in the thumb", 28)
-        fit(mor, 9.6).move_to([-1.5, -2.75, 0])
+        mor = VGroup(T("report on the sheet, reasons in the note,", 28), T("the verdict in the thumb", 28)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-6.2, -2.75, 0], aligned_edge=LEFT)
         self.beat("So back to the shop. The report goes on the sheet. The reasons go in the note. And the verdict is the thumb. A good helper says failed, out loud.",
                   FadeIn(mor, shift=UP * 0.1), LaggedStart(Indicate(sheet[0], color=WHITE), Indicate(sticky[0], color=RED_M), Indicate(thumb[0], color=YELLOW_M), lag_ratio=0.5), run_time=4.0)
-        quiz = T("Quick check: it prints \"all fine\" and exits with 1. Did it pass?", 28, YELLOW_M)
-        fit(quiz, 9.6).move_to([-1.5, -3.3, 0])
+        quiz = VGroup(T("Quick check: it prints \"all fine\"", 28, YELLOW_M), T("and exits with 1. Did it pass?", 28, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-6.2, -2.75, 0], aligned_edge=LEFT)
         self.beat("Quick check before you go. A script prints all fine, then exits with one. Did it pass?",
-                  FadeIn(quiz, shift=UP * 0.1), Transform(num, M("1", 34, RED_M).move_to(thumb)), run_time=1.4)
+                  FadeOut(mor), FadeIn(quiz, shift=UP * 0.1), Transform(num, M("1", 34, RED_M).move_to(thumb)), run_time=1.4)
         self.wait(2.0)
         self.beat("No. CI trusts the number, not the words.", ci[0].animate.set_stroke(RED_M), Indicate(num, color=RED_M, scale_factor=1.4), run_time=1.2)
         self.wait(1.2)

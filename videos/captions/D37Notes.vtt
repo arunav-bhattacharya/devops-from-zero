@@ -1,0 +1,357 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:03.927
+Here's the question.
+
+2
+00:00:03.927 --> 00:00:07.508
+You have one setting, the greeting our little web app shows.
+
+3
+00:00:07.508 --> 00:00:09.478
+It's set in four different files.
+
+4
+00:00:09.478 --> 00:00:11.805
+Which one does the server actually get?
+
+5
+00:00:12.000 --> 00:00:15.310
+You might guess the last one written, or the first one read.
+
+6
+00:00:15.310 --> 00:00:17.517
+Let's go back to the street to find out.
+
+7
+00:00:18.200 --> 00:00:22.623
+Our house sitter now looks after a whole street, and the owners start leaving notes.
+
+8
+00:00:22.800 --> 00:00:26.033
+The printed checklist says: heating at twenty degrees.
+
+9
+00:00:26.033 --> 00:00:28.787
+That's the author's suggestion, for any house.
+
+10
+00:00:28.933 --> 00:00:32.396
+Then a note for this side of the street: nineteen degrees.
+
+11
+00:00:32.533 --> 00:00:35.953
+And a sticky note on one front door: twenty-two, please.
+
+12
+00:00:36.133 --> 00:00:37.940
+Then the owners phone tonight.
+
+13
+00:00:37.940 --> 00:00:40.349
+Eighteen degrees everywhere, we're away.
+
+14
+00:00:40.533 --> 00:00:42.516
+Four notes, and they disagree.
+
+15
+00:00:42.516 --> 00:00:45.292
+A real sitter would ring somebody and ask.
+
+16
+00:00:45.292 --> 00:00:46.548
+Ansible never asks.
+
+17
+00:00:46.548 --> 00:00:49.456
+It picks a winner by a fixed list, silently.
+
+18
+00:00:50.267 --> 00:00:52.235
+Here's that list, as a ladder.
+
+19
+00:00:52.235 --> 00:00:55.123
+Weakest at the bottom, strongest at the top.
+
+20
+00:00:55.267 --> 00:00:59.670
+The printed checklist is the role's defaults, the author's suggestions.
+
+21
+00:00:59.670 --> 00:01:01.531
+So it sits at the very bottom.
+
+22
+00:01:01.667 --> 00:01:06.068
+The note for one side of the street is a group's file in group_vars.
+
+23
+00:01:06.068 --> 00:01:08.528
+One file for all hosts, one per group.
+
+24
+00:01:08.667 --> 00:01:12.674
+The sticky note on one door is host_vars, a file for one host.
+
+25
+00:01:12.674 --> 00:01:16.552
+One host is more specific than its group, so it sits higher.
+
+26
+00:01:16.733 --> 00:01:21.092
+Values written in the playbook itself beat everything in the inventory.
+
+27
+00:01:21.267 --> 00:01:26.529
+And the phone call tonight is minus e, extra vars typed on the command line.
+
+28
+00:01:26.529 --> 00:01:27.637
+They always win.
+
+29
+00:01:27.800 --> 00:01:29.538
+I've left one gap on purpose.
+
+30
+00:01:29.538 --> 00:01:31.995
+Hold that thought, we'll come back to it.
+
+31
+00:01:32.933 --> 00:01:34.304
+Now the real thing.
+
+32
+00:01:34.304 --> 00:01:40.221
+The lab's two web servers, web1 and web2, and one variable, hello_devops_greeting.
+
+33
+00:01:40.733 --> 00:01:43.663
+The role's default says: Hello, DevOps!
+
+34
+00:01:43.800 --> 00:01:46.815
+The web group's file says: Hello from Ansible.
+
+35
+00:01:47.000 --> 00:01:50.582
+And web2's own file says: Hello from web2, the canary.
+
+36
+00:01:50.582 --> 00:01:57.680
+A canary is the one server that gets a change first, so a problem shows up on one machine, not all of them.
+
+37
+00:01:57.867 --> 00:02:00.974
+The debug module asks each host what it sees.
+
+38
+00:02:00.974 --> 00:02:05.187
+Before we run it: what does web1 get, and what does web2 get?
+
+39
+00:02:05.187 --> 00:02:06.292
+Pause and guess.
+
+40
+00:02:08.467 --> 00:02:13.977
+web1 isn't in host_vars, so its strongest note is the group's: Hello from Ansible.
+
+41
+00:02:14.133 --> 00:02:18.987
+web2 has its own note, one rung higher, so it gets the canary text.
+
+42
+00:02:18.987 --> 00:02:20.508
+And the role default?
+
+43
+00:02:20.508 --> 00:02:21.595
+Beaten by both.
+
+44
+00:02:21.595 --> 00:02:23.696
+It's a suggestion, after all.
+
+45
+00:02:23.867 --> 00:02:25.389
+Now add a phone call.
+
+46
+00:02:25.389 --> 00:02:29.085
+Run the same command with minus e, Hi from minus e.
+
+47
+00:02:29.267 --> 00:02:31.384
+Both hosts print Hi from minus e.
+
+48
+00:02:31.384 --> 00:02:34.336
+The canary's sticky note is still on the door.
+
+49
+00:02:34.336 --> 00:02:36.647
+Tonight, the phone call simply wins.
+
+50
+00:02:37.667 --> 00:02:45.948
+This ladder has a name: variable precedence, the rule that decides which value wins when one variable is set in several places.
+
+51
+00:02:45.948 --> 00:02:48.035
+The docs list twenty-two levels.
+
+52
+00:02:48.035 --> 00:02:50.252
+In practice, you need these seven.
+
+53
+00:02:50.800 --> 00:02:55.532
+So far, a tidy story: the more specific the note, the stronger it is.
+
+54
+00:02:55.532 --> 00:02:57.384
+Now back to the gap I left.
+
+55
+00:02:58.133 --> 00:03:00.925
+Role vars, in the role's own vars folder.
+
+56
+00:03:00.925 --> 00:03:04.397
+They sit above group_vars, and above host_vars too.
+
+57
+00:03:04.533 --> 00:03:07.201
+Imagine someone puts the greeting in there.
+
+58
+00:03:07.201 --> 00:03:09.001
+What does the canary get now?
+
+59
+00:03:09.001 --> 00:03:09.993
+Pause and guess.
+
+60
+00:03:12.133 --> 00:03:14.115
+Both hosts get the role's text.
+
+61
+00:03:14.115 --> 00:03:18.589
+The canary's own file is ignored, and Ansible gives no warning at all.
+
+62
+00:03:18.733 --> 00:03:19.197
+Well...
+
+63
+00:03:19.197 --> 00:03:21.645
+the sticky note is still on the door.
+
+64
+00:03:21.645 --> 00:03:23.233
+Nobody reads it anymore.
+
+65
+00:03:23.233 --> 00:03:27.336
+A forgotten override like that can hide your change for weeks.
+
+66
+00:03:28.467 --> 00:03:30.034
+So here's the guardrail.
+
+67
+00:03:30.034 --> 00:03:34.409
+The defaults folder is for every setting a user may want to change.
+
+68
+00:03:34.409 --> 00:03:40.156
+The vars folder is only for the role's own fixed details, things nobody should override.
+
+69
+00:03:40.333 --> 00:03:43.311
+And picture the same name sitting in four files.
+
+70
+00:03:43.311 --> 00:03:49.079
+Can anyone predict the result without opening all four and climbing the ladder in their head?
+
+71
+00:03:49.079 --> 00:03:49.761
+Nobody can.
+
+72
+00:03:49.933 --> 00:03:54.281
+So the rule: set each variable in one place, plus its role default.
+
+73
+00:03:54.281 --> 00:03:57.136
+And when in doubt, ask the hosts with debug.
+
+74
+00:03:58.267 --> 00:04:00.044
+Let's climb it once more.
+
+75
+00:04:00.044 --> 00:04:02.177
+Defaults are only suggestions.
+
+76
+00:04:02.177 --> 00:04:03.812
+A host beats its group.
+
+77
+00:04:03.812 --> 00:04:06.158
+The playbook beats the inventory.
+
+78
+00:04:06.158 --> 00:04:08.576
+Role vars beat them all, silently.
+
+79
+00:04:08.576 --> 00:04:11.491
+And the phone call, minus e, always wins.
+
+80
+00:04:11.667 --> 00:04:15.939
+The moral of the story: Ansible never asks which note you meant.
+
+81
+00:04:15.939 --> 00:04:18.208
+So leave it only one note to read.
+
+82
+00:04:19.400 --> 00:04:20.493
+A quick check.
+
+83
+00:04:20.493 --> 00:04:22.680
+The role default says Hello.
+
+84
+00:04:22.680 --> 00:04:24.398
+The web group says Hi.
+
+85
+00:04:24.398 --> 00:04:26.350
+web2's own file says Hey.
+
+86
+00:04:26.350 --> 00:04:27.833
+What does web2 get?
+
+87
+00:04:27.833 --> 00:04:29.083
+Pause and think.
+
+88
+00:04:31.267 --> 00:04:31.553
+Hey.
+
+89
+00:04:31.553 --> 00:04:36.784
+One host is more specific than its group, and both beat the role default.

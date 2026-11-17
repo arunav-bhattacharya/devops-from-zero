@@ -7,6 +7,15 @@ SAY.extend([(r"\bGITHUB_TOKEN\b", "github token"), (r"\bGHCR\b", "G H C R"), (r"
             (r"\bamd64\b", "A M D sixty four"), (r"\barm64\b", "arm sixty four"), (r"\bDependabot\b", "Depend a bot")])
 
 
+def fix_indent(g, size):
+    """Text drops leading spaces when lines are left-aligned; shift each line by its indent."""
+    cw = M("x" * 20, size).width / 20
+    for m in g:
+        s = getattr(m, "original_text", "")
+        m.shift(RIGHT * (len(s) - len(s.lstrip(" "))) * cw)
+    return g
+
+
 def tint(c, k=0.14):
     return interpolate_color(ManimColor("#000000"), ManimColor(c), k)
 
@@ -144,6 +153,7 @@ class D27KeyCard(VoiceScene):
                   lab.animate.next_to(bad, UP, buff=0.4), run_time=2.0)
         self.beat("Same label. New code. Your workflow file never changed.", Indicate(use, color=RED_M), run_time=1.6)
         pin = VGroup(M("uses: docker/login-action@", 22, GREEN_M), M("  81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0", 22, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([0, -2.85, 0])
+        fix_indent(pin, 22)
         pl = T("a full commit SHA: 40 characters, cannot be moved", 26, GREEN_M).next_to(pin, UP, buff=0.2)
         self.beat("A full commit SHA, the 40 character ID of one commit, cannot be moved. So pin third party actions to one, and keep the version in a comment, the way the lab pins Docker's login action.",
                   FadeOut(jar), FadeIn(pl), FadeIn(pin), Indicate(good, color=GREEN_M), run_time=2.4)

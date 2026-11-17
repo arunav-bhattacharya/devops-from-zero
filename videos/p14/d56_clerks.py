@@ -71,10 +71,10 @@ class D56Clerks(VoiceScene):
         ln = M('{"level":"INFO","path":"/","status":200}', 26).move_to(nt)
         q2 = T("Which pod? Which machine?", 30, ASK_C).move_to(q1)
         self.beat("Our log lines have the same blind spot. Here is a line from our lab app, hello-devops. Which copy of the app wrote it? On which machine?",
-                  FadeOut(ntx), Succession(Wait(1.2), FadeIn(ln)), Transform(q1, q2), run_time=3.2)
+                  FadeOut(ntx), FadeOut(nt), Succession(Wait(1.2), FadeIn(ln)), Transform(q1, q2), run_time=3.2)
         self.beat("Two questions, really. Who even collects the lines, when the app runs on many machines? And how does each line learn who wrote it? Let's take them one at a time.",
                   run_time=None)
-        self.play(FadeOut(VGroup(nt, ln, q1)), run_time=0.6)
+        self.play(FadeOut(VGroup(ln, q1)), run_time=0.6)
 
         # ---------- 2. familiar: one laptop
         lap = box("hello-devops", POD_C, w=2.8).move_to([-4.2, 0.6, 0])
@@ -111,7 +111,7 @@ class D56Clerks(VoiceScene):
         fl = VGroup()
         for a, b, t, c in fparts:
             VGroup(*fname[a:b]).set_color(c)
-            fl.add(T(t, 22, c).next_to(VGroup(*fname[a:b]), DOWN, buff=0.15))
+            fl.add(T(t, 22, c).next_to(VGroup(*fname[a:b]), DOWN, buff=0.15 if t != "container" else 0.5))
         self.beat("Look at one file's name. It says who wrote it: the pod, the namespace, and the container. A namespace is a named area of the cluster. Keep this name in mind; it comes back.",
                   FadeIn(fname, shift=UP * 0.1), Succession(Wait(1.8), LaggedStart(*[FadeIn(x) for x in fl], lag_ratio=0.5)), run_time=4.6)
         self.play(FadeOut(VGroup(fname, fl)), run_time=0.5)
@@ -134,10 +134,10 @@ class D56Clerks(VoiceScene):
                   FadeIn(one, shift=DOWN * 0.2), Succession(Wait(3.0), Create(win)), run_time=5.0)
         reds = VGroup(*[SurroundingRectangle(F[k]["fold"], buff=0.08, color=RED_M, stroke_width=2.5) for k in (1, 2)])
         self.beat("Floors two and three pile up, unread.",
-                  Create(reds), *[F[k]["fold"].animate.set_opacity(0.45) for k in (1, 2)], run_time=1.6)
+                  Create(reds), run_time=1.6)
         wish = VGroup(T("one clerk per floor,", 28, ASK_C), T("hired by itself", 28, ASK_C)).arrange(DOWN, buff=0.12).move_to(ask)
         self.beat("What we really want is exactly one clerk on every floor. And when a new floor opens, a new clerk should appear, without anyone remembering to hire one.",
-                  FadeOut(reds), FadeOut(win), *[F[k]["fold"].animate.set_opacity(1) for k in (1, 2)], Transform(ask, wish),
+                  FadeOut(reds), FadeOut(win), Transform(ask, wish),
                   LaggedStart(*[FadeIn(F[k]["ck"], shift=DOWN * 0.2) for k in (1, 2)], lag_ratio=0.4), run_time=4.0)
         self.remove(one); self.add(F[0]["ck"])
 
@@ -185,10 +185,12 @@ class D56Clerks(VoiceScene):
         bare = M('{"level":"INFO","path":"/","status":200}', 22).move_to([-1.9, -1.7, 0])
         self.beat("They arrive. But look at one: still a note with no ward and no bed. Back to our first question. Which pod wrote it?",
                   FadeIn(bare, shift=UP * 0.1), run_time=2.0)
-        building = VGroup(*[VGroup(f["r"], f["lab"], f["pods"], f["fold"], f["ck"]) for f in F], *outs)
-        self.play(building.animate.scale(0.55).move_to([-3.8, 2.05, 0]), es.animate.scale(0.8).move_to([0.15, 2.05, 0]),
-                  bare.animate.move_to([-1.9, 0.35, 0]), run_time=1.2)
-        fname.move_to([-1.0, -0.5, 0])
+        floors = [VGroup(f["r"], f["lab"], f["pods"], f["fold"], f["ck"]) for f in F]
+        o1 = Arrow(F[0]["ck"].get_right() + UP * 0.35, [3.4, 2.65, 0], buff=0.15, stroke_width=2.5, color=CLERK_C, max_tip_length_to_length_ratio=0.08)
+        self.play(FadeOut(floors[1]), FadeOut(floors[2]), *[FadeOut(o) for o in outs], floors[0].animate.shift(UP * 0.35),
+                  es.animate.move_to([4.85, 2.55, 0]), bare.animate.move_to([-2.5, 1.65, 0]), run_time=1.2)
+        self.play(GrowArrow(o1), run_time=0.4)
+        fname.move_to([-1.0, 0.95, 0])
         for a, b, t, c in fparts:
             VGroup(*fname[a:b]).set_color(c)
         self.beat("Remember the file name? The clerk reads the line from that file, so the pod, the namespace and the container come for free.",
@@ -199,7 +201,7 @@ class D56Clerks(VoiceScene):
             M("container_name: web", 22, CLERK_C),
             M("labels: app: hello-devops", 22, API_C),
             M("host: devops-worker", 22, NODE_C),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to([-3.2, -2.1, 0])
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to([-3.2, -1.25, 0])
         rec.align_to([-6.3, 0, 0], LEFT)
         self.beat("The kubernetes filter, a step inside Fluent Bit, stamps them onto the record.",
                   *[ReplacementTransform(VGroup(*fname[a:b]).copy(), rec[k]) for k, (a, b, t, c) in enumerate(fparts)], run_time=2.6)
@@ -216,7 +218,7 @@ class D56Clerks(VoiceScene):
         lifted = M("level: INFO   path: /   status: 200", 22).move_to(bare)
         self.beat("One more setting, merge_log. If the message is JSON, its keys become real fields. And keep_log off drops the original string, so nothing is stored twice.",
                   FadeOut(fname), Succession(Wait(1.6), ReplacementTransform(bare, lifted)), run_time=3.4)
-        kq = VGroup(T("Kibana:", 26, GREY_B), M("kubernetes.namespace_name: hello", 22, ASK_C)).arrange(RIGHT, buff=0.25).move_to([2.7, 1.0, 0])
+        kq = VGroup(T("Kibana:", 26, GREY_B), M("kubernetes.namespace_name: hello", 22, ASK_C)).arrange(RIGHT, buff=0.25).move_to([1.0, 0.95, 0])
         self.beat("Now every line says who wrote it. In Kibana, those stamps become filters you'll use every day: only namespace hello, only app hello-devops, or only one node, to see if one floor is the problem.",
                   FadeIn(kq, shift=UP * 0.1), Indicate(rec[1], color=ASK_C), Succession(Wait(3.0), Indicate(rec[3], color=API_C)), Succession(Wait(5.0), Indicate(rec[4], color=NODE_C)), run_time=7.0)
 
@@ -235,7 +237,8 @@ class D56Clerks(VoiceScene):
                   FadeIn(g2, shift=UP * 0.1), run_time=2.0)
         self.beat("And on first start, Fluent Bit reads new lines only. So send fresh traffic before you go looking for logs.",
                   FadeIn(g3, shift=UP * 0.1), run_time=2.0)
-        self.play(FadeOut(VGroup(gs, api)), es.animate.scale(1 / 0.8).move_to([4.85, 0.95, 0]), building.animate.scale(1 / 0.55).move_to([-2.0, 0.95, 0]), run_time=1.0)
+        self.play(FadeOut(VGroup(gs, api, o1)), es.animate.move_to([4.85, 0.95, 0]), floors[0].animate.shift(DOWN * 0.35), run_time=1.0)
+        self.play(FadeIn(floors[1]), FadeIn(floors[2]), *[GrowArrow(o) for o in outs], run_time=0.8)
 
         # ---------- 9. moral, check
         mor = T("One clerk per floor. A stamp on every note.", 32, ASK_C).move_to([-1.9, -1.75, 0])
