@@ -1,7 +1,7 @@
 {
  "part": 14,
  "title": "Logs and traces: ELK, EFK and OpenTelemetry",
- "intro": "Parts 12 and 13 tell you when hello-devops is unhealthy, but not which request failed or where its time went. Logs and traces answer those two questions. Days 55 and 56 collect every log line into Elasticsearch with Fluent Bit, first with Docker Compose on your laptop and then as a DaemonSet on kind. Day 57 traces hello-devops with OpenTelemetry, without changing its code, and finds a slow Redis call in Jaeger.",
+ "intro": "Parts 12 and 13 told you when hello-devops, our small lab app, is unwell, but not which request failed or where its time went. Logs and traces answer those two questions. Logs are the notes a program writes as it works, and a trace follows one request through every program it touches. Days 55 and 56 gather every log line into one searchable store, Elasticsearch, first on your laptop and then on a Kubernetes cluster. Day 57 puts a tracking number on every request with OpenTelemetry, without changing the app's code, and finds a slow call to Redis, the app's small database, in Jaeger.",
  "lessons": [
   {
    "id": "d55",
@@ -1149,13 +1149,13 @@
  "recap": [
   "Centralized logging copies every line to one searchable store, so logs outlive the containers that wrote them.",
   "Write structured JSON logs with a level, and never log secrets or personal data.",
-  "Elasticsearch stores JSON documents in indices and finds them through an inverted index of whole tokens.",
-  "Mappings set field types: text is split into words, keyword is matched whole, and the first guess sticks.",
+  "Elasticsearch stores each event as a JSON document in an index and finds it through an inverted index of whole words (tokens).",
+  "The mapping sets field types: text is split into words, keyword is matched whole, and the first guess sticks.",
   "A replica never shares a node with its primary, so a one-node cluster with replicas stays yellow.",
-  "On Kubernetes, Fluent Bit runs as a DaemonSet that tails /var/log/containers and adds pod metadata.",
-  "Index templates give new indices their mapping, and ILM deletes indices when they are old enough.",
+  "On Kubernetes, Fluent Bit runs as a DaemonSet, one copy per node, reading /var/log/containers and adding each pod's details.",
+  "Index templates give new indices their mapping, and ILM deletes indices once they are old enough.",
   "A trace is a tree of timed spans that share a trace ID, carried between services in the traceparent header.",
-  "OpenTelemetry instruments apps and the Collector scrubs, samples and routes their spans to a backend such as Jaeger.",
+  "OpenTelemetry makes the spans without code changes, and the Collector scrubs, samples and routes them to a backend such as Jaeger.",
   "Head sampling decides at the start of a trace; tail sampling in a Collector can keep every error and slow trace."
  ],
  "flashcards": [
@@ -1193,7 +1193,7 @@
   },
   {
    "front": "Why run Fluent Bit as a DaemonSet?",
-   "back": "It puts one shipper on every node, and each one tails the log files of the pods on its node."
+   "back": "It puts one shipper on every node, and each one reads the log files of the pods on its node."
   },
   {
    "front": "What does the Fluent Bit `merge_log` option do?",
@@ -1255,7 +1255,7 @@
    "title": "Fluent Bit v3: unified layer for logs, metrics and traces (Eduardo Silva at KubeCon, CNCF)",
    "url": "https://www.youtube.com/watch?v=4SqDRokC7ac",
    "kind": "watch",
-   "why": "Fluent Bit's creator explains where the project is going and how it handles all three signals."
+   "why": "Fluent Bit's creator explains where the project is going and how it handles logs, metrics and traces."
   },
   {
    "title": "Fluent Bit: Kubernetes filter",

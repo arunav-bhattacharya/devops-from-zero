@@ -274,9 +274,13 @@ def lesson(L, ref, part):
         warn(w, "no video ('watch') in any section refs")
     if "docs" not in kinds:
         warn(w, "no official docs ('docs') in any section refs")
-    blob = json.dumps(L, ensure_ascii=False)
-    if blob.count("**") // 2 > 2:
-        warn(w, f"bold used {blob.count('**') // 2} times (max 2)")
+    # bold in prose only: code blocks and inline code may contain ** (globs, /** comments)
+    prose = " ".join([L.get("opening", ""), L.get("closing", "")] + [s_.get("body", "") for s_ in secs])
+    prose = re.sub(r"```.*?```", " ", prose, flags=re.S)
+    prose = re.sub(r"`[^`]*`", " ", prose)
+    nb = prose.count("**") // 2
+    if nb > 2:
+        warn(w, f"bold used {nb} times (max 2)")
     answers = [q.get("answer") for q in chk] + [L.get("guess", {}).get("answer")]
     if len(set(answers)) == 1:
         warn(w, "all answers in this lesson use the same index")

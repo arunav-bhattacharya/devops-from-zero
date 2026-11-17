@@ -1,7 +1,7 @@
 {
  "part": 15,
  "title": "Service mesh: Envoy, Istio, Linkerd and Cilium",
- "intro": "Part 10 gave you Services and a Gateway, and Parts 12 to 14 showed you metrics, logs and traces. This part is about the calls between your services: timeouts, retries, encryption with identity, traffic splits and per-call metrics. Day 58 builds the intuition with one Envoy proxy that you configure by hand and break on purpose. Day 59 runs Istio, and Day 60 compares Linkerd, Cilium and Consul and helps you decide whether you need a mesh at all.",
+ "intro": "Part 10 gave you Services and a Gateway, and Parts 12 to 14 showed you metrics, logs and traces. This part is about the calls between your services, and everything that can go wrong in them. Timeouts, retries, encryption with proof of identity, traffic splits and per-call numbers all belong there. Day 58 builds the intuition with one proxy, Envoy, that you set up by hand and break on purpose. Day 59 runs Istio, a full service mesh, and Day 60 compares Linkerd, Cilium and Consul and helps you decide whether you need a mesh at all.",
  "lessons": [
   {
    "id": "d58",
@@ -1228,14 +1228,14 @@
   }
  ],
  "recap": [
-  "A service mesh moves timeouts, retries, mTLS, traffic splits and per-call metrics out of app code and into proxies.",
+  "A service mesh moves timeouts, retries, mTLS, traffic splits and per-call metrics out of app code and into proxies next to each service.",
   "In Envoy, listeners accept connections, the HTTP connection manager runs filters, routes pick clusters and clusters pick endpoints.",
-  "Health checks probe hosts, outlier detection watches real answers, and circuit breakers fail fast.",
-  "A control plane sends Envoy its config over xDS; the admin port shows what each proxy really has.",
+  "Health checks probe hosts, outlier detection watches real answers, and circuit breakers fail fast. Keep retries few and short.",
+  "A control plane sends Envoy its config over xDS while it runs; the admin port shows what each proxy really has.",
   "Istio is istiod plus either a sidecar per Pod or ambient mode: ztunnel per node and waypoints for HTTP.",
-  "Workload identity comes from ServiceAccounts as SPIFFE IDs. Go PERMISSIVE, then STRICT, then add AuthorizationPolicies.",
-  "Linkerd has a Rust sidecar and automatic mTLS; the project ships edge releases and vendors ship stable ones.",
-  "Cilium does L3 and L4 in eBPF, runs Envoy per node for HTTP, and shows flows in Hubble.",
+  "Workload identity comes from ServiceAccounts as SPIFFE IDs. Go PERMISSIVE, check every caller, then STRICT, then add AuthorizationPolicies.",
+  "Linkerd has a small Rust sidecar and automatic mTLS; the project ships edge releases and vendors ship stable ones.",
+  "Cilium does L3 and L4 in eBPF inside the kernel, runs Envoy per node for HTTP, and shows flows in Hubble.",
   "GAMMA HTTPRoutes attach to a Service and work across meshes.",
   "Measure what a mesh costs, and skip it while a few services do fine without one."
  ],
@@ -1266,7 +1266,7 @@
   },
   {
    "front": "How does a sidecar catch the app's traffic without code changes?",
-   "back": "iptables rules in the Pod's network send connections to the proxy. Istio uses port 15001 out and 15006 in."
+   "back": "Packet rules (iptables) in the Pod's network send connections to the proxy. Istio uses port 15001 out and 15006 in."
   },
   {
    "front": "What is a Kubernetes native sidecar?",

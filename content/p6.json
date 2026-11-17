@@ -1,7 +1,7 @@
 {
  "part": 6,
  "title": "CI/CD with GitHub Actions",
- "intro": "Until now you ran every check and build for hello-devops yourself. In this part GitHub runs them for you. Every pull request gets linted, tested and built, a red one cannot merge, and a version tag publishes a multi-platform image. Part 5 left you with a tested app and a production-ready image, and a pipeline needs nothing more to start.",
+ "intro": "Until now you ran every check and build for hello-devops yourself, which works until the busy day you forget. In this part GitHub runs them for you, like a taster who tries every dish before it leaves the kitchen. Every pull request gets linted, tested and built, a red one cannot merge, and a version tag publishes the image. Part 5 left you with a tested app and a production-ready image, which is all a pipeline needs to start.",
  "lessons": [
   {
    "id": "d23",
@@ -1957,36 +1957,36 @@
   "CI tests every change. With continuous delivery a person picks the release moment; with continuous deployment nobody does.",
   "A workflow is a YAML file in .github/workflows: an event starts it, and each job runs its steps on a fresh runner.",
   "The lab's ci.yml lints, tests on Python 3.13 and 3.14, keeps a JUnit report, builds the image and smoke-tests it.",
-  "Caches make repeat runs fast but can vanish; artifacts are a run's outputs and need unique names.",
+  "Caches make repeat runs fast but can vanish; artifacts are the files a run keeps, and need unique names.",
   "A ruleset on main with every required check stops red pull requests from merging.",
-  "Expressions are filled in before the shell runs; every if gets a hidden success() unless you write a status function.",
+  "GitHub fills in expressions before the shell runs; every if gets a hidden success() unless you write a status function.",
   "Step outputs, job outputs and needs carry values between steps and jobs; composite actions and reusable workflows remove repetition.",
-  "release.yml turns a v* tag into one amd64 and arm64 image in GHCR, behind an approval, with a least-privilege token.",
-  "Pin third-party actions to commit SHAs, let Dependabot move the pins, and keep PR code away from pull_request_target."
+  "release.yml turns a v* tag into one amd64 and arm64 image in GHCR, after a person approves, with a token that can do only what it must.",
+  "Pin third-party actions to commit SHAs, let Dependabot move the pins, and keep pull request code away from pull_request_target."
  ],
  "flashcards": [
   {
-   "front": "Continuous delivery vs continuous deployment?",
-   "back": "Delivery: every change is ready to release, and a person clicks release. Deployment: every passing change goes live on its own."
+   "front": "Continuous delivery or continuous deployment: in which one does a person click release?",
+   "back": "Continuous delivery: every change is ready, and a person clicks release. With continuous deployment every passing change goes live on its own."
   },
   {
    "front": "What does 'build once, deploy many' mean?",
-   "back": "Build the image one time, then promote that same digest through every environment."
+   "back": "Build the image one time, then move that same digest through every environment."
   },
   {
    "front": "What does a CODEOWNERS file do by itself, and what makes an owner's review required?",
-   "back": "By itself it only requests reviews from the owners of the changed paths. A ruleset with Require review from Code Owners makes their approval required."
+   "back": "By itself it only asks the owners of the changed paths to review. A ruleset with Require review from Code Owners makes their approval required."
   },
   {
-   "front": "In semver 2.4.1, which number changes for a compatible bug fix?",
+   "front": "In the version 2.4.1, which number changes for a compatible bug fix?",
    "back": "PATCH, so the next version is 2.4.2."
   },
   {
    "front": "Where must workflow files live?",
-   "back": "In .github/workflows/ at the repository root, as .yml or .yaml files."
+   "back": "In .github/workflows/ at the root of the repository, as .yml or .yaml files."
   },
   {
-   "front": "Which runner label gives you arm64 Linux, like an Apple Silicon Mac?",
+   "front": "Which runner label gives you arm64 Linux, the same processor family as an Apple Silicon Mac?",
    "back": "ubuntu-24.04-arm (ubuntu-latest is x64)."
   },
   {
@@ -2007,11 +2007,11 @@
   },
   {
    "front": "What goes into the setup-python pip cache key?",
-   "back": "The OS and CPU, the Python version, and a hash of the requirements files."
+   "back": "The system and processor, the Python version, and a hash of the requirements files."
   },
   {
-   "front": "Cache vs artifact?",
-   "back": "A cache speeds up future runs and can be evicted. An artifact is an output of one run that people download."
+   "front": "Cache or artifact: which one is a run's output that people download?",
+   "back": "The artifact. A cache only speeds up future runs, and GitHub can remove it."
   },
   {
    "front": "When does GitHub work out ${{ }} expressions?",
@@ -2023,18 +2023,18 @@
   },
   {
    "front": "How does a value get from job A to job B?",
-   "back": "Step output via $GITHUB_OUTPUT, mapped in A's outputs, read in B as needs.A.outputs.name."
+   "back": "A step writes it to $GITHUB_OUTPUT, job A maps it in its outputs, and job B reads it as needs.A.outputs.name."
   },
   {
-   "front": "Composite action vs reusable workflow?",
-   "back": "A composite action is several steps used as one step. A reusable workflow is whole jobs called with on: workflow_call."
+   "front": "Composite action or reusable workflow: which one bundles whole jobs?",
+   "back": "The reusable workflow, called with on: workflow_call. A composite action is several steps used as one step."
   },
   {
    "front": "What does permissions: contents: read at the top of a workflow do?",
    "back": "It makes the GITHUB_TOKEN read-only for code in every job, and sets every permission you don't list to none."
   },
   {
-   "front": "Which permission lets a job request an OIDC token?",
+   "front": "Which permission lets a job ask for an OIDC token?",
    "back": "id-token: write. It grants no other access."
   },
   {
@@ -2087,13 +2087,13 @@
    "title": "Trunk Based Development (trunkbaseddevelopment.com)",
    "url": "https://trunkbaseddevelopment.com/",
    "kind": "read",
-   "why": "A whole site on trunk-based development: short branches, feature flags and releasing from trunk."
+   "why": "A whole site on trunk-based development: short branches, feature flags and releasing from the main branch."
   },
   {
    "title": "GitHub Actions tutorial: basic concepts and a CI/CD pipeline with Docker (TechWorld with Nana, 2020)",
    "url": "https://www.youtube.com/watch?v=R8_veQiYBjI",
    "kind": "watch",
-   "why": "A clear walk through workflows and a Docker build pipeline; the screens are from 2020, the ideas still hold."
+   "why": "A clear walk through workflows and a Docker build pipeline; the screens are from 2020, and the ideas still hold."
   },
   {
    "title": "GitHub Actions tutorial: advanced concepts, part 2 (KodeKloud)",
@@ -2111,7 +2111,7 @@
    "title": "actionlint: a linter for workflow files",
    "url": "https://github.com/rhysd/actionlint",
    "kind": "read",
-   "why": "The linter that catches typos, bad expressions and script injection before you push."
+   "why": "The checker that catches typos, bad expressions and unsafe use of untrusted text before you push."
   },
   {
    "title": "Secure use reference",
@@ -2122,7 +2122,7 @@
  ],
  "quiz": [
   {
-   "q": "A colleague's branch has lived for three weeks and touches 40 files. What problem is most likely at merge time?",
+   "q": "A colleague's branch has lived for three weeks and touches 40 files. What problem is most likely when it is merged?",
    "options": [
     "Big merge conflicts and a review nobody can check well",
     "GitHub refuses branches older than two weeks",
@@ -2155,7 +2155,7 @@
    "why": "Each matrix job uploads its own report, and two artifacts in one run cannot have the same name."
   },
   {
-   "q": "A PR run on branch `fix-typo` looks for a pip cache. Where can the cache it restores come from?",
+   "q": "A pull request run on the branch `fix-typo` looks for a pip cache. Where can the cache it restores come from?",
    "options": [
     "Any branch in the repository, newest first",
     "Its own pull request or the default branch",
@@ -2166,7 +2166,7 @@
    "why": "Runs restore caches from their own scope and from the default (or base) branch. A cache saved by one pull request is not shared with others."
   },
   {
-   "q": "In the lab's build job, the step `Show the app's logs` has `if: ${{ failure() && steps.smoke.outcome == 'failure' }}`. The image build fails. Does the logs step run?",
+   "q": "In the lab's build job, the step `Show the app's logs` has `if: ${{ failure() && steps.smoke.outcome == 'failure' }}`. The image build fails, before the smoke test. Does the logs step run?",
    "options": [
     "Yes, because failure() is true",
     "Yes, because logs steps always run",
@@ -2199,7 +2199,7 @@
    "why": "GHCR is part of GitHub Packages, so the token needs packages: write to push there."
   },
   {
-   "q": "Every production release must wait for a human. The repository is public, on the Free plan. What do you use?",
+   "q": "Every production release must wait for a person to approve it. The repository is public, on the Free plan. What do you use?",
    "options": [
     "A wait timer of 60 minutes",
     "A repository secret named APPROVAL",
@@ -2230,7 +2230,7 @@
     "The request timed out because the network was slow"
    ],
    "answer": 2,
-   "why": "Connection refused means the machine answered but no process listened on the port yet. That is why the lab's smoke test retries for a few seconds.",
+   "why": "Connection refused means the machine answered, but no program listened on the port yet. That is why the lab's smoke test retries for a few seconds.",
    "from": "Part 3"
   }
  ]

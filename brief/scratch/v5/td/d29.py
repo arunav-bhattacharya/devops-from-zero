@@ -62,7 +62,7 @@ A kitchen picture helps with the first two. If you sell a sauce, the stock insid
 
 Make `implementation` your default. It keeps a library's insides private: a consumer cannot import a class from a library you only use internally. It also saves build time. When you upgrade an `implementation` dependency, the projects that use yours do not recompile.
 
-Use `api` only when a type from that library appears in your public functions. A function is a named piece of code that other code calls, and a type is a kind of value, such as a number or an amount of money. If your function returns a `Money` from a money library, every caller needs that library to compile, so it is part of your API. **Default to implementation. Use api only for types that your public functions show.** Libraries bring their own libraries, though, and that is where versions start to clash."""
+Use `api` only when a type from that library appears in your public functions. A function is a named piece of code that other code calls, and a type is a kind of value, such as a number or an amount of money. If your function returns a `Money` from a money library, every caller needs that library to compile, so it is part of your API. Default to implementation, and use api only for types that your public functions show. Libraries bring their own libraries, though, and that is where versions start to clash."""
 
 S[2]["h"] = "Ingredients inside ingredients, and highest-wins"
 S[2]["body"] = """Libraries have dependencies of their own. Ask for `commons-text` and you also get `commons-lang3`, because the metadata file of `commons-text` lists it. Gradle then reads the metadata of `commons-lang3`, and so on down the tree. These are transitive dependencies, the butter inside the dough, and in a real service they often outnumber the ones you declared.
@@ -104,7 +104,7 @@ A constraint is a version rule that applies only when something else brings that
 You will see BOMs all over the JVM world. Spring Boot and Jackson both publish one. A normal `platform()` takes part in highest-wins like everything else. `enforcedPlatform()` forces its versions, even downward. Use it rarely, because it can silently downgrade something a library needs. With the pantry in order, we can split the kitchen."""
 
 S[5]["h"] = "Splitting the build into projects"
-S[5]["body"] = """So far hello-jvm has one project. hello-jvm is this part's lab, a tiny Kotlin web service that answers every visit with a greeting and a count of visits so far. Today you split it in two, the way a big kitchen gives pastry its own section:
+S[5]["body"] = """So far hello-jvm, this part's lab, has one project. It is a tiny Kotlin web service that answers every visit with a greeting and a count of visits so far. Today you split it in two, the way a big kitchen gives pastry its own section:
 
 - `greeting` is a library. It builds the JSON reply, escapes text properly, and knows nothing about HTTP.
 - `app` is the web service. It depends on `greeting` and adds the server.
