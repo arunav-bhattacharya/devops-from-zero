@@ -1,7 +1,7 @@
 {
  "part": 5,
  "title": "Docker",
- "intro": "Every CI pipeline and Kubernetes deploy later in the course ships one thing: the hello-devops image you build in this part. You start by running other people's images and opening one up to see its layers. Then you write a Dockerfile for hello-devops and connect it to Redis with volumes, networks and Compose. The part ends with a small, non-root, scanned image on GHCR.",
+ "intro": "This part packs an app like a lunchbox: the meal plus everything it needs, sealed so it opens the same way anywhere. Every CI pipeline and Kubernetes deploy later in the course ships one thing: the hello-devops image you build here. You start by running other people's images and opening one up, then write a Dockerfile for hello-devops and connect it to Redis with volumes, networks and Compose. The part ends with a small, non-root, scanned image on GHCR.",
  "lessons": [
   {
    "id": "d17",
@@ -1518,8 +1518,9 @@
    "title": "Docker Compose",
    "minutes": 50,
    "goal": "By the end you can describe hello-devops and Redis in one compose.yaml, run and inspect the stack with docker compose, and use .env, profiles, override files and watch for local development.",
+   "opening": "Picture opening a small restaurant kitchen every morning by phoning each cook with step-by-step orders. Light the oven. Now start the sauce. Now open the pantry. It works, until the day you are ill and nobody else knows the order. Or the cook starts the sauce before the oven is hot, because \"lit\" is not the same as \"ready\".\n\nThe fix is a plan pinned to the kitchen wall: who works which station, and what must be ready before whom. It also says what gets cleared at night (the counters) and what stays (the pantry). Last time, you set up hello-devops and Redis with a network, a volume and two long commands, typed in the right order. In this lesson, we'll write that plan down as one file and start the whole app with one command. Then we'll make the daily loop fast: a saved code change shows up in the running app without typing anything.\n\nBefore we start, make a guess, and keep it in mind.",
    "guess": {
-    "q": "You run `docker compose down` on hello-devops, which keeps Redis data in a named volume. What happens to the visit count?",
+    "q": "You run `docker compose down` (the \"close the kitchen\" command) on hello-devops, which keeps Redis data in a named volume. What happens to the visit count?",
     "options": [
      "It is lost, because down deletes everything Compose made",
      "It is saved into the web image for next time",
@@ -1527,12 +1528,12 @@
      "It survives, because down keeps named volumes unless you add -v"
     ],
     "answer": 3,
-    "why": "`docker compose down` removes the containers and the network but keeps named volumes. Only `docker compose down -v` deletes them, and the data with them."
+    "why": "`docker compose down` removes the containers and the network but keeps named volumes: it clears the counters and leaves the pantry. Only `docker compose down -v` deletes them, and the data with them."
    },
    "terms": [
     {
      "term": "Docker Compose",
-     "plain": "A tool that runs a multi-container app from one YAML file with one command."
+     "plain": "A tool that runs an app made of several containers from one YAML file with one command."
     },
     {
      "term": "Service",
@@ -1565,8 +1566,8 @@
    ],
    "sections": [
     {
-     "h": "Compose describes the app you want",
-     "body": "On Day 20 you wired up hello-devops and Redis by hand: a network, a volume and two long `docker run` commands, typed in the right order. That is imperative: you tell Docker each step. It works, and nobody wants to do it twice.\n\nDocker Compose is declarative. You describe the finished app in one file, `compose.yaml`, and `docker compose up` works out the steps. Teammates get the same setup by cloning the repo.\n\nCompose is only a client. It turns the file into the same requests to Docker Engine that your `docker run` commands made. It also labels every container with its project, its service and a hash of that service's settings. Run `up` again and Compose compares those labels with the file. A service that matches keeps running, and one whose settings changed is recreated.\n\nThe file format is the Compose Specification. Two version notes save confusion:\n\n- The current tool is Compose v5. It works like Compose v2 and adds a Go library for other tools. The version number jumped to avoid confusion with the old file format versions.\n- You will see `version: \"3.8\"` at the top of old files. Compose ignores that line, so leave it out.\n\nCompose groups everything it creates into a project, named after the folder. In your `hello-devops` folder that gives a network called `hello-devops_default`, a volume called `hello-devops_redis-data` and containers called `hello-devops-web-1` and `hello-devops-redis-1`. The `-1` is a counter, because Compose can run several copies of one service.",
+     "h": "Writing the plan down: Compose describes the app you want",
+     "body": "On Day 20 you wired up hello-devops and Redis by hand: a network, a volume and two long `docker run` commands, typed in the right order. That is imperative: you tell Docker each step, like phoning each cook. It works, and nobody wants to do it twice.\n\nDocker Compose is declarative. You describe the finished app in one file, `compose.yaml`, and `docker compose up` works out the steps. The file is YAML, a plain text format of indented `key: value` lines. Teammates get the same setup by cloning the repo.\n\nCompose is only a client. It turns the file into the same requests to Docker Engine that your `docker run` commands made. It also labels every container with its project, its service and a hash (a fingerprint) of that service's settings. Run `up` again and Compose compares those labels with the file. A service that matches keeps running, and one whose settings changed is recreated.\n\nThe file format is the Compose Specification. You will see `version: \"3.8\"` at the top of old files. Compose ignores that line, so leave it out.\n\nCompose groups everything it creates into a project, named after the folder. In your `hello-devops` folder that gives a network called `hello-devops_default`, a volume called `hello-devops_redis-data` and containers called `hello-devops-web-1` and `hello-devops-redis-1`. The `-1` is a counter, because Compose can run several copies of one service.\n\nSo what does the plan on the wall actually say? The lab's file shows it.",
      "refs": [
       {
        "title": "How Compose works",
@@ -1587,7 +1588,7 @@
     },
     {
      "h": "Reading the lab's compose.yaml",
-     "body": "The lab's file, in the Files section, has two top-level keys. `services` holds one entry per container, and `volumes` declares the named volume. You do not declare a network: Compose creates one per project and puts every service on it, so service names work as DNS names, just like on Day 20.\n\nInside a service you will meet these keys:\n\n- `build: .` builds the image from the Dockerfile in this folder. `image:` uses a ready-made image instead, such as `redis:8-alpine`.\n- `ports:` publishes ports, written `\"HOST:CONTAINER\"` in quotes so YAML does not misread them.\n- `environment:` sets env vars. `env_file:` reads them from a file instead.\n- `volumes:` mounts named volumes or folders, as `redis-data:/data`.\n- `depends_on:` controls start order, with an optional health condition.\n- `healthcheck:` tells Docker how to test the container.\n- `restart:` says what to do when the process stops.\n\nThe web service sets `REDIS_HOST: redis`. Redis has no `ports:` entry, because only web talks to it, over the project network. Only port 8000 is open to your Mac.",
+     "body": "The lab's file, in the Files section, has two top-level keys. `services` holds one entry per container, one station in the kitchen. `volumes` declares the named volume, the pantry. You do not declare a network. Compose creates one per project and puts every service on it, so service names work as DNS names (names that turn into addresses), just like on Day 20.\n\nInside a service you will meet these keys:\n\n- `build: .` builds the image from the Dockerfile in this folder. `image:` uses a ready-made image instead, such as `redis:8-alpine`.\n- `ports:` publishes ports, written `\"HOST:CONTAINER\"` in quotes so YAML does not misread them.\n- `environment:` sets environment variables. `env_file:` reads them from a file instead.\n- `volumes:` mounts named volumes or folders, as `redis-data:/data`.\n- `depends_on:` controls start order, with an optional health condition.\n- `healthcheck:` tells Docker how to test the container.\n- `restart:` says what to do when the process stops.\n\nThe web service sets `REDIS_HOST: redis`. Redis has no `ports:` entry, because only web talks to it, over the project network. Only port 8000 is open to your Mac.\n\nOne key in that list hides the trap from the opening: `depends_on`.",
      "refs": [
       {
        "title": "Compose file reference: services",
@@ -1603,7 +1604,7 @@
     },
     {
      "h": "Running is not ready: depends_on and healthchecks",
-     "body": "`depends_on` makes Compose start Redis before web. In its short form, `depends_on: [redis]`, it only waits until the Redis container is running. A database can need several more seconds before it accepts connections, so running is not the same as ready.\n\nA healthcheck closes that gap. It is a command Docker runs inside the container on a schedule, and exit code 0 means healthy (the exit codes from Day 6). The lab runs `redis-cli ping` every 5 seconds, with a 3-second timeout and 5 retries. The long form of `depends_on` then waits for it:\n\n- `condition: service_healthy` waits until the healthcheck passes.\n- `condition: service_completed_successfully` waits until a one-off job, such as a database migration, exits with 0.\n- `condition: service_started` is the short form's behaviour.\n\nIn the worked example, `docker compose up -d` showed Redis as `Healthy` after 5.8 seconds and started web only then. `docker compose ps` shows `(health: starting)`, then `(healthy)`, or `(unhealthy)` if the check keeps failing.\n\nThis only covers startup. When Redis dies later, hello-devops answers `/readyz` with a 503, and `/` returns a 500 error until Redis is back. Your app must still cope when a dependency fails, and Kubernetes uses that readiness answer on Day 43.",
+     "body": "`depends_on` makes Compose start Redis before web. In its short form, `depends_on: [redis]`, it only waits until the Redis container is running. A database can need several more seconds before it accepts connections, so web may start and find nobody answering. That is the oven that was lit but not hot.\n\nA healthcheck closes that gap. It is a command Docker runs inside the container on a schedule, and exit code 0 means healthy (the exit codes from Day 6). The lab runs `redis-cli ping` every 5 seconds, with a 3-second timeout and 5 retries. The long form of `depends_on` then waits for it:\n\n- `condition: service_healthy` waits until the healthcheck passes.\n- `condition: service_completed_successfully` waits until a one-off job, such as a database migration (a script that updates the database's layout), exits with 0.\n- `condition: service_started` is the short form's behaviour.\n\nIn the worked example, `docker compose up -d` showed Redis as `Healthy` after 5.8 seconds and started web only then. `docker compose ps` shows `(health: starting)`, then `(healthy)`, or `(unhealthy)` if the check keeps failing.\n\n**Running is not ready. Make the app wait for healthy.**\n\nThis only covers startup. When Redis dies later, hello-devops answers `/readyz` with a 503, and `/` returns a 500 error until Redis is back. Your app must still cope when a dependency fails, and Kubernetes uses that readiness answer on Day 43.\n\nWith the stack starting in the right order, here are the commands you'll type every day.",
      "refs": [
       {
        "title": "Control startup and shutdown order in Compose",
@@ -1614,7 +1615,7 @@
     },
     {
      "h": "The everyday commands, and restart policies",
-     "body": "These commands cover most days, run in the folder with `compose.yaml`:\n\n- `docker compose up -d` creates and starts everything in the background; add `--build` to rebuild images first.\n- `docker compose ps` shows each container, its health and its ports.\n- `docker compose logs -f web` follows one service's output.\n- `docker compose exec redis redis-cli GET visits` runs a command in a running service.\n- `docker compose run --rm redis redis-cli -h redis ping` starts a new one-off container for a command, then removes it.\n- `docker compose down` removes the containers and the network, and keeps named volumes.\n- `docker compose down -v` also deletes the named volumes, and with them your data.\n- `docker compose config` prints the final file after merging and filling in variables.\n\nA restart policy says what Docker does when a container's process stops:\n\n- `no`, the default: leave it stopped.\n- `on-failure`: start it again only if it exited with a non-zero code.\n- `always`: always start it again.\n- `unless-stopped`: like always, except after you stopped it yourself.\n\nDocker Engine applies the policy, not Compose. It notices when the main process ends and starts it again, with no compose command running. `docker run --restart unless-stopped` sets the same policy without Compose.\n\nThe override file in this lesson sets `unless-stopped`. We shut Redis down from inside with `redis-cli shutdown`. Docker started it again within seconds, its restart count went to 1, and the visit count carried on.",
+     "body": "These commands cover most days, run in the folder with `compose.yaml`:\n\n- `docker compose up -d` creates and starts everything in the background; add `--build` to rebuild images first.\n- `docker compose ps` shows each container, its health and its ports.\n- `docker compose logs -f web` follows one service's output.\n- `docker compose exec redis redis-cli GET visits` runs a command in a running service.\n- `docker compose run --rm redis redis-cli -h redis ping` starts a new one-off container for a command, then removes it.\n- `docker compose down` removes the containers and the network, and keeps named volumes.\n- `docker compose down -v` also deletes the named volumes, and with them your data.\n- `docker compose config` prints the final file after merging and filling in variables.\n\nTwo of those lines look almost the same and do very different things. Type `down -v` when you meant `down`, and your Redis data, or a whole development database, is gone for good.\n\n**Plain down clears the counters. Down -v empties the pantry too.**\n\nA restart policy says what Docker does when a container's process stops:\n\n- `no`, the default: leave it stopped.\n- `on-failure`: start it again only if it exited with a non-zero code.\n- `always`: always start it again.\n- `unless-stopped`: like always, except after you stopped it yourself.\n\nDocker Engine applies the policy, not Compose. It notices when the main process ends and starts it again, with no compose command running. `docker run --restart unless-stopped` sets the same policy without Compose.\n\nThe override file in this lesson sets `unless-stopped`. We shut Redis down from inside with `redis-cli shutdown`. Docker started it again within seconds, its restart count went to 1, and the visit count carried on.\n\nThe plan works. Next, a way to change its details without editing it.",
      "refs": [
       {
        "title": "docker compose up reference",
@@ -1630,7 +1631,7 @@
     },
     {
      "h": "Variables: .env, environment and env_file",
-     "body": "Compose can fill in placeholders in the file itself. Take `GREETING: \"${GREETING:-Hello from Compose}\"`. Compose looks for `GREETING` in your shell, then in a file named `.env` next to `compose.yaml`, and uses the default after `:-` if neither has it. We checked all three with `docker compose config | grep GREETING`:\n\n1. With nothing set, it printed `GREETING: Hello from Compose`.\n2. With `GREETING=Hi from .env` in `.env`, it printed `Hi from .env`.\n3. With `GREETING='Hi from my shell'` before the command, the shell won.\n\nTwo files with similar names do different jobs, and they are easy to mix up:\n\n- `.env` fills in `${...}` placeholders in the Compose file. Its values do not reach containers unless the file passes them on.\n- `env_file: web.env` under a service sends every line of that file into the container as environment variables.\n\nIf `.env` ever holds secrets, keep it out of git; the lab's `.gitignore` already lists it. When something looks wrong, run `docker compose config` first. It shows the file exactly as Compose will use it.",
+     "body": "Compose can fill in placeholders in the file itself. Take `GREETING: \"${GREETING:-Hello from Compose}\"`. Compose looks for `GREETING` in your shell, then in a file named `.env` next to `compose.yaml`, and uses the default after `:-` if neither has it. We checked all three with `docker compose config | grep GREETING`:\n\n1. With nothing set, it printed `GREETING: Hello from Compose`.\n2. With `GREETING=Hi from .env` in `.env`, it printed `Hi from .env`.\n3. With `GREETING='Hi from my shell'` before the command, the shell won.\n\nTwo files with similar names do different jobs, and they are easy to mix up:\n\n- `.env` fills in `${...}` placeholders in the Compose file. Its values do not reach containers unless the file passes them on.\n- `env_file: web.env` under a service sends every line of that file into the container as environment variables.\n\nIf `.env` ever holds secrets, keep it out of git; the lab's `.gitignore` already lists it. When something looks wrong, run `docker compose config` first. It shows the file exactly as Compose will use it.\n\nVariables change values. Sometimes you want to change whole pieces of the plan, for your laptop only.",
      "refs": [
       {
        "title": "Variable interpolation in Compose",
@@ -1645,8 +1646,8 @@
      ]
     },
     {
-     "h": "Override files and profiles",
-     "body": "Compose reads `compose.yaml` and then, if it exists, `compose.override.yaml` from the same folder, and merges the two. That lets the base file stay simple and shared, while the override adds things only your laptop needs. The merge follows a few rules:\n\n- A single value, such as `image` or `command`, is replaced by the override.\n- Maps, such as `environment`, are merged key by key.\n- Some lists, such as `ports`, are joined, so an override cannot remove a published port.\n- Paths are relative to the first file, the base one.\n\n`-f` picks files by hand. `docker compose -f compose.yaml up -d` uses only the base file, which is what CI should run. `-f compose.yaml -f compose.ci.yaml` stacks another file on top.\n\nA profile keeps a service switched off until you ask for it. The lab's override adds nginx in front of web, the reverse proxy you built on Day 11, with `profiles: [\"proxy\"]`. Plain `docker compose up -d` ignores it; `docker compose --profile proxy up -d` starts it too. Use profiles for extras such as a proxy, a database admin tool or a load generator.\n\nOne surprise from our testing: plain `docker compose down` left the proxy running, and Compose reported that the network was still in use. Stop profiled services with the same `--profile` flag you started them with.",
+     "h": "Override files and profiles: extras for your laptop",
+     "body": "Compose reads `compose.yaml` and then, if it exists, `compose.override.yaml` from the same folder, and merges the two. That lets the base file stay simple and shared, while the override adds things only your laptop needs, like a sticky note on the kitchen plan. The merge follows a few rules:\n\n- A single value, such as `image` or `command`, is replaced by the override.\n- Maps (groups of named values), such as `environment`, are merged key by key.\n- Some lists, such as `ports`, are joined, so an override cannot remove a published port.\n- Paths are relative to the first file, the base one.\n\n`-f` picks files by hand. `docker compose -f compose.yaml up -d` uses only the base file, which is what CI should run. `-f compose.yaml -f compose.ci.yaml` stacks another file on top.\n\nA profile keeps a service switched off until you ask for it. The lab's override adds nginx in front of web, the reverse proxy (a server that passes requests on to another) you built on Day 11, with `profiles: [\"proxy\"]`. Plain `docker compose up -d` ignores it; `docker compose --profile proxy up -d` starts it too. Use profiles for extras such as a proxy, a database admin tool or a load generator.\n\nOne surprise from our testing: plain `docker compose down` left the proxy running, and Compose reported that the network was still in use. Stop profiled services with the same `--profile` flag you started them with.\n\nThe last piece makes the edit, run, look cycle fast.",
      "refs": [
       {
        "title": "Merge Compose files",
@@ -1662,7 +1663,7 @@
     },
     {
      "h": "Compose Watch for a fast inner loop",
-     "body": "The inner loop is the cycle you repeat all day: edit, run, look. With plain Compose, every code change means `docker compose up -d --build`. Compose Watch shortens that. You list paths under `develop.watch` in the Compose file, run `docker compose watch`, and Compose reacts to every save:\n\n- `sync` copies the changed files into the running container. Good for apps that reload code by themselves.\n- `sync+restart` copies the files, then restarts the container. Good for gunicorn without reload.\n- `rebuild` builds a new image and replaces the container. Use it for `requirements.txt`, because new packages need a new image.\n\nThe lab's override uses `sync+restart` for `app.py` and `rebuild` for `requirements.txt`. We changed the reply of `/healthz` while watch ran. It printed `Syncing service \"web\" after 1 changes were detected`, restarted web, and the next curl showed the new reply. The copied file arrived owned by the container's user, so it works with the non-root image from Day 22 too.\n\nWhy not a bind mount of the whole folder? It works, but on a Mac every file read crosses into the VM, and a bind mount also hides what the image had at that path. Watch copies only what changed and keeps the image's files. Keep bind mounts for files you want both sides to edit.",
+     "body": "The inner loop is the cycle you repeat all day: edit, run, look. With plain Compose, every code change means `docker compose up -d --build`. Compose Watch shortens that. You list paths under `develop.watch` in the Compose file, run `docker compose watch`, and Compose reacts to every save:\n\n- `sync` copies the changed files into the running container. Good for apps that reload code by themselves.\n- `sync+restart` copies the files, then restarts the container. Good for gunicorn without reload.\n- `rebuild` builds a new image and replaces the container. Use it for `requirements.txt`, because new packages need a new image.\n\nThe lab's override uses `sync+restart` for `app.py` and `rebuild` for `requirements.txt`. We changed the reply of `/healthz` while watch ran. It printed `Syncing service \"web\" after 1 changes were detected`, restarted web, and the next curl showed the new reply. The copied file arrived owned by the container's user, so it works with the non-root image from Day 22 too.\n\nWhy not a bind mount of the whole folder? It works, but on a Mac every file read crosses into the VM, and a bind mount also hides what the image had at that path. Watch copies only what changed and keeps the image's files. Keep bind mounts for files you want both sides to edit.\n\nCompose has a clear limit: it runs everything on one machine, and it does only what the file says. If that machine dies, so does the app; Kubernetes handles many machines in Part 10. Our image has limits too. It still runs as root and carries more than it needs. Next, we make it ready for production.",
      "refs": [
       {
        "title": "Use Compose Watch",
@@ -1672,7 +1673,6 @@
      ]
     }
    ],
-   "analogy": "compose.yaml is like the stage plan a band sends to a venue. It lists each musician (service) and their instruments (images). It says who must be on stage and tuned before the show starts (depends_on with a health condition), and which microphones face the audience (ports). The crew reads the plan and sets the stage, and `down` clears it while the storage room (volumes) keeps its boxes. A real crew can improvise when something goes wrong on the night. Compose does only what the file says, and only on one machine.",
    "diagram": "<svg viewBox=\"0 0 560 256\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"compose.yaml and compose.override.yaml are merged by docker compose up into one project: a proxy in a profile, web and redis on the project network, and a redis-data volume\"><rect class=\"bx\" x=\"8\" y=\"60\" width=\"140\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"78\" y=\"85\" font-size=\"13\" text-anchor=\"middle\">compose.yaml</text><rect class=\"bx\" x=\"8\" y=\"116\" width=\"140\" height=\"40\" rx=\"10\"/><text class=\"t\" x=\"78\" y=\"141\" font-size=\"13\" text-anchor=\"middle\">override.yaml</text><line class=\"ln\" x1=\"148\" y1=\"80\" x2=\"176\" y2=\"104\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"148\" y1=\"136\" x2=\"176\" y2=\"114\" marker-end=\"url(#ar)\"/><rect class=\"bxp\" x=\"180\" y=\"86\" width=\"104\" height=\"46\" rx=\"10\"/><text class=\"tk\" x=\"232\" y=\"106\" font-size=\"13\" text-anchor=\"middle\">compose</text><text class=\"tk\" x=\"232\" y=\"122\" font-size=\"13\" text-anchor=\"middle\">up</text><line class=\"ln\" x1=\"284\" y1=\"109\" x2=\"314\" y2=\"109\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"318\" y1=\"12\" x2=\"552\" y2=\"12\"/><line class=\"lnd\" x1=\"318\" y1=\"244\" x2=\"552\" y2=\"244\"/><line class=\"lnd\" x1=\"318\" y1=\"12\" x2=\"318\" y2=\"244\"/><line class=\"lnd\" x1=\"552\" y1=\"12\" x2=\"552\" y2=\"244\"/><rect class=\"bxo\" x=\"336\" y=\"24\" width=\"132\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"402\" y=\"48\" font-size=\"13\" text-anchor=\"middle\">proxy</text><rect class=\"bxt\" x=\"336\" y=\"82\" width=\"132\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"402\" y=\"106\" font-size=\"13\" text-anchor=\"middle\">web</text><rect class=\"bxt\" x=\"336\" y=\"140\" width=\"132\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"402\" y=\"164\" font-size=\"13\" text-anchor=\"middle\">redis</text><rect class=\"bxg\" x=\"336\" y=\"196\" width=\"132\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"402\" y=\"220\" font-size=\"13\" text-anchor=\"middle\">redis-data</text><line class=\"ln\" x1=\"402\" y1=\"62\" x2=\"402\" y2=\"78\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"402\" y1=\"120\" x2=\"402\" y2=\"136\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"402\" y1=\"178\" x2=\"402\" y2=\"192\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"510\" y=\"47\" font-size=\"11\" text-anchor=\"middle\">:8080</text><text class=\"ts\" x=\"510\" y=\"61\" font-size=\"11\" text-anchor=\"middle\">profile</text><text class=\"ts\" x=\"510\" y=\"105\" font-size=\"11\" text-anchor=\"middle\">:8000</text><text class=\"ts\" x=\"510\" y=\"163\" font-size=\"11\" text-anchor=\"middle\">healthy?</text><text class=\"ts\" x=\"510\" y=\"219\" font-size=\"11\" text-anchor=\"middle\">volume</text></svg>",
    "diagram_caption": "Compose merges the base file and the override into one project: services on one network, plus a named volume.",
    "worked": {
@@ -1793,7 +1793,6 @@
      "what": "Start the app and copy code changes in, or rebuild, as you save."
     }
    ],
-   "mistake": "Typing `docker compose down -v` when you meant `docker compose down` deletes the named volumes. Your Redis data, or a whole development database, is then gone for good. Use plain `down` day to day, and keep `down -v` for when you really want a clean start.",
    "real_world": "A new engineer should be able to clone a service repo and start it, with its Postgres and Redis, in one command. A compose.yaml in every repo makes that work. A compose.override.yaml adds watch and debug tools on laptops, while CI runs `docker compose -f compose.yaml up -d --wait` to get real dependencies for integration tests. Production looks different: the same images run on Kubernetes (Day 38), and the databases are managed services.",
    "task": {
     "title": "Write the Compose files yourself and use them for development",
@@ -1824,7 +1823,7 @@
     "depends_on waits for running; add a healthcheck and service_healthy to wait for ready.",
     "`docker compose down` keeps named volumes; `down -v` deletes them.",
     ".env fills placeholders in the file; env_file sends variables into the container.",
-    "Override files, profiles and watch keep the base file simple and the dev loop fast."
+    "Override files, profiles and watch keep the base file simple and the loop fast; but Compose runs on one machine only."
    ],
    "check": [
     {
@@ -1877,7 +1876,7 @@
    ],
    "deeper": {
     "minutes": 12,
-    "body": "Compose Watch is easiest to understand by watching its output. With the lab's override in place, run `docker compose watch` in one terminal. It builds the image, starts the stack, then prints `Watch enabled` and waits. In a second terminal, change the reply of `/healthz` in app.py and save. These are the last lines watch printed in our test:\n\n- `Container hello-devops-web-1 Started`\n- `Watch enabled`\n- `Syncing service \"web\" after 1 changes were detected`\n- `Container hello-devops-web-1 Restarting`\n- `Container hello-devops-web-1 Started`\n- `service(s) [\"web\"] restarted`\n\nTwo details matter for real projects. First, list paths you never want copied under `ignore:` in each watch entry, such as test folders. Second, Docker's docs advise against syncing a dependency folder such as `node_modules`; let a `rebuild` rule install dependencies inside the image instead.\n\nCI wants a different thing from Compose. It needs the stack started, and a fast failure if something is not healthy. The command `docker compose -f compose.yaml up -d --wait` returns only when every service with a healthcheck is healthy, and fails if one becomes unhealthy. That makes it a good first step before integration tests.\n\nYou might try `docker compose up -d --scale web=3` to get three copies of web. With the lab's file it fails, because each copy would want host port 8000. The fix is to stop publishing web and let the nginx proxy be the only published service. Then nginx reaches the web copies by the name `web` over the project network. Kubernetes does this job properly on Day 41 with a Service.\n\nLarge setups split Compose files. `include:` pulls another Compose file into this one, and `extends:` reuses one service's settings in another. Docker's [guide to Compose in production](https://docs.docker.com/compose/how-tos/production/) explains how teams use an extra file for server settings when they do run Compose on a server."
+    "body": "Compose Watch is easiest to understand by watching its output. With the lab's override in place, run `docker compose watch` in one terminal. It builds the image, starts the stack, then prints `Watch enabled` and waits. In a second terminal, change the reply of `/healthz` in app.py and save. These are the last lines watch printed in our test:\n\n- `Container hello-devops-web-1 Started`\n- `Watch enabled`\n- `Syncing service \"web\" after 1 changes were detected`\n- `Container hello-devops-web-1 Restarting`\n- `Container hello-devops-web-1 Started`\n- `service(s) [\"web\"] restarted`\n\nTwo details matter for real projects. First, list paths you never want copied under `ignore:` in each watch entry, such as test folders. Second, Docker's docs advise against syncing a dependency folder such as `node_modules`; let a `rebuild` rule install dependencies inside the image instead.\n\nCI wants a different thing from Compose. It needs the stack started, and a fast failure if something is not healthy. The command `docker compose -f compose.yaml up -d --wait` returns only when every service with a healthcheck is healthy, and fails if one becomes unhealthy. That makes it a good first step before integration tests.\n\nYou might try `docker compose up -d --scale web=3` to get three copies of web. With the lab's file it fails, because each copy would want host port 8000. The fix is to stop publishing web and let the nginx proxy be the only published service. Then nginx reaches the web copies by the name `web` over the project network. Kubernetes does this job properly on Day 41 with a Service.\n\nLarge setups split Compose files. `include:` pulls another Compose file into this one, and `extends:` reuses one service's settings in another. Docker's [guide to Compose in production](https://docs.docker.com/compose/how-tos/production/) explains how teams use an extra file for server settings when they do run Compose on a server.\n\nA note on versions, since you will see different numbers online. The current tool is Compose v5. It works like Compose v2 and adds a Go library for other tools. The version number jumped to avoid confusion with the old file format versions."
    },
    "sources": [
     {
@@ -1896,15 +1895,17 @@
      "title": "Use Compose Watch",
      "url": "https://docs.docker.com/compose/how-tos/file-watch/"
     }
-   ]
+   ],
+   "closing": "We started with a kitchen run by phone calls, where the sauce began before the oven was hot. Now one file is the plan on the wall. Redis is healthy before web starts, `down` clears the counters and keeps the pantry, and a saved change reaches the running app by itself. Look at any compose.yaml you come across and check its `depends_on`. If it is the short form with no healthcheck, that app is starting its sauce on a cold oven.\n\nNext, we'll make the image itself ready for production. How do you make it smaller, run it without root, and keep secrets out of it?"
   },
   {
    "id": "d22",
    "title": "Production-ready images",
    "minutes": 50,
    "goal": "By the end you can turn the Day 19 image into a multi-stage, non-root image with a health check, scan it, keep build secrets out of it, and push it to GHCR for two CPU types.",
+   "opening": "Picture your small lunch kitchen landing its first big customer: an office that wants 200 boxes a day. On day one their buyer opens a box to check it. Next to the lunch she finds a kitchen knife and a half-empty bag of flour. Taped under the lid is the key to your back door.\n\nNobody packed those on purpose. They were on the counter while the lunch was made, so they went into the box. Images fill up the same way, and the trap is easy to miss, because the app inside works perfectly. Last time, one Compose file started hello-devops and Redis on your laptop. The image inside still runs as root, carries pip, the tool that installed its packages, and has never been checked for known bugs. In this lesson, we'll leave the tools in the kitchen and make the app run as a normal user. Then we'll add a health check, scan the result, keep secrets out, and ship it to a registry for two kinds of CPU.\n\nBefore we start, make a guess, and keep it in mind.",
    "guess": {
-    "q": "A Dockerfile has `ARG NPM_TOKEN`, and you build with `--build-arg NPM_TOKEN=abc123`. Where can someone who pulls the image find the token?",
+    "q": "A token is a secret string that works like a password. A Dockerfile has `ARG NPM_TOKEN`, and you build with `--build-arg NPM_TOKEN=abc123`. Where can someone who pulls the image find the token?",
     "options": [
      "Nowhere, because ARG values vanish after the build",
      "In `docker history`, next to the steps that used it",
@@ -1912,7 +1913,7 @@
      "Only if a later ENV line copies it into the image"
     ],
     "answer": 1,
-    "why": "Docker records the ARG values each RUN step used in the image history, so anyone with the image can read them. Build secrets need a secret mount instead."
+    "why": "Docker records the ARG values each RUN step used in the image history, so anyone with the image can read them: the key taped under the lid. Build secrets need a secret mount instead."
    },
    "terms": [
     {
@@ -1925,7 +1926,7 @@
     },
     {
      "term": "Non-root user",
-     "plain": "A normal user (not user ID 0) that the app runs as, so a break-in gets fewer rights."
+     "plain": "A normal user (not user ID 0, root) that the app runs as, so a break-in gets fewer rights."
     },
     {
      "term": "Health check",
@@ -1941,7 +1942,7 @@
     },
     {
      "term": "Distroless image",
-     "plain": "An image with only a language runtime and its libraries: no shell and no package manager."
+     "plain": "An image with only a language runtime and the code it needs: no shell and no package installer."
     },
     {
      "term": "Build secret",
@@ -1950,8 +1951,8 @@
    ],
    "sections": [
     {
-     "h": "Two stages: build with tools, ship without them",
-     "body": "The Day 19 image has one stage, so everything used to build the app ships with it. pip is there, and so is anything a compiler step would leave behind. None of it helps at run time, but all of it needs patching and shows up in scan reports. An attacker who gets into the container can use those tools as well.\n\nA multi-stage build fixes that. One Dockerfile holds several `FROM` lines, and each starts a new stage from a clean base. A later stage copies what it needs from an earlier one with `COPY --from=<stage>`. Only the last stage becomes the image. The others stay behind in the build cache.\n\nThe lab's final Dockerfile, in Files, has two stages:\n\n1. `build` starts from `python:3.14-slim`, makes a virtual environment in `/venv`, installs the requirements into it, and removes pip from it.\n2. The final stage starts from a fresh `python:3.14-slim`, removes the base image's own pip, and copies in `/venv` and `app.py`.\n\nA virtual environment, or venv, is a folder that holds a set of Python packages. That makes it easy to move: one `COPY --from=build /venv /venv` brings every installed package across. `ENV PATH=\"/venv/bin:$PATH\"` makes the venv's `gunicorn` the one that runs.\n\nFor this small Python app the size barely moves: the content size went from 51.8 MB to 49.6 MB. What you gain is an image without pip or build leftovers. For a Kotlin service the difference is large, because the build stage holds a JDK and Gradle and the final stage needs only a Java runtime and the jar. Day 30 builds that image.",
+     "h": "Two stages: cook in the kitchen, ship only the lunch",
+     "body": "The Day 19 image has one stage, so everything used to build the app ships with it. pip is there, and so is anything a compiler step would leave behind. None of it helps at run time, but all of it needs patching and shows up in scan reports. An attacker who gets into the container can use those tools as well. That is the knife in the lunchbox.\n\nA multi-stage build fixes that. One Dockerfile holds several `FROM` lines, and each starts a new stage from a clean base. A later stage copies what it needs from an earlier one with `COPY --from=<stage>`. Only the last stage becomes the image. The others stay behind in the build cache, like tools left in the kitchen.\n\nThe lab's final Dockerfile, in Files, has two stages:\n\n1. `build` starts from `python:3.14-slim`, makes a virtual environment in `/venv`, installs the requirements into it, and removes pip from it.\n2. The final stage starts from a fresh `python:3.14-slim`, removes the base image's own pip, and copies in `/venv` and `app.py`.\n\nA virtual environment, or venv, is a folder that holds a set of Python packages. That makes it easy to move: one `COPY --from=build /venv /venv` brings every installed package across. `ENV PATH=\"/venv/bin:$PATH\"` makes the venv's `gunicorn` the one that runs.\n\nHere is an honest result. For this small Python app the size barely moves: the content size went from 51.8 MB to 49.6 MB. What you gain is an image without pip or build leftovers. For a service written in Kotlin the difference is large. Its build stage holds a JDK and Gradle, big build tools, while the final stage needs only a Java runtime and the jar (the packed program). Day 30 builds that image.\n\nThe final stage still starts from somebody's base image. Which one, and which exact bytes?",
      "refs": [
       {
        "title": "Docker concepts: Multi-stage builds",
@@ -1972,7 +1973,7 @@
     },
     {
      "h": "Choosing and pinning a base image",
-     "body": "The base image decides most of what is in your image, and so most of what a scanner finds. For a Python app the usual choices are:\n\n- `python:3.14`: full Debian with compilers and many tools. Big, and easy to debug.\n- `python:3.14-slim`: Debian with only what Python needs. The lab uses this one.\n- `python:3.14-alpine`: Alpine Linux, which uses a smaller C library called musl. Some packages with C code need extra work there.\n- Distroless images: only the runtime, with no shell and no package manager.\n- Docker Hardened Images (Day 18): distroless runtime images plus `-dev` variants with a shell for build stages.\n\nSmaller bases mean fewer packages, faster pulls and shorter scan reports. You pay for that when you debug: with no shell inside, `docker exec web sh` has nothing to run, so you need other ways to look inside.\n\nThen pin what you chose. A tag moves when the publisher pushes an update, so `FROM python:3.14-slim` can mean different bytes next week. Add the digest to fix it: `FROM python:3.14-slim@sha256:cd89c30e...`, written with all 64 characters. The worked example shows how to find it. Every build then starts from the same base. Pinning has a cost too: security fixes stop arriving by themselves. Teams let a bot such as Dependabot or Renovate open a pull request when a new digest appears, and review it like any other change.",
+     "body": "The base image decides most of what is in your image, and so most of what a scanner finds. For a Python app the usual choices are:\n\n- `python:3.14`: full Debian with compilers and many tools. Big, and easy to debug.\n- `python:3.14-slim`: Debian with only what Python needs. The lab uses this one.\n- `python:3.14-alpine`: Alpine Linux, which uses a smaller C library called musl. Some packages with C code need extra work there.\n- Distroless images: only the runtime, with no shell and no package manager.\n- Docker Hardened Images (Day 18): distroless runtime images plus `-dev` variants with a shell for build stages.\n\nSmaller bases mean fewer packages, faster pulls and shorter scan reports. You pay for that when you debug: with no shell inside, `docker exec web sh` has nothing to run, so you need other ways to look inside.\n\nThen pin what you chose. A tag moves when the publisher pushes an update, so `FROM python:3.14-slim` can mean different bytes next week. Add the digest (Day 18's fingerprint) to fix it: `FROM python:3.14-slim@sha256:cd89c30e...`, written with all 64 characters. The worked example shows how to find it. Every build then starts from the same base.\n\nPinning has a cost too: security fixes stop arriving by themselves. Teams let a bot such as Dependabot or Renovate open a pull request (a proposed change for review) when a new digest appears, and review it like any other change.\n\nThe base is chosen. Next: who the app runs as inside it.",
      "refs": [
       {
        "title": "Building best practices",
@@ -1988,7 +1989,7 @@
     },
     {
      "h": "Run as a normal user",
-     "body": "A container runs as root, user ID 0, unless the image says otherwise. The Day 19 image did: `whoami` printed `root`. Namespaces fence the process in, but it is still root on a shared kernel. If an attacker breaks out through a bug in the kernel or in Docker, they arrive with root's rights.\n\nTwo lines in the final stage fix it:\n\n- `RUN useradd --uid 10001 --no-create-home appuser` creates a normal user with no home folder.\n- `USER 10001` makes every later step, and the running container, use that user.\n\nWrite the number in `USER`, not the name. A name means nothing until someone reads the image's `/etc/passwd`, while `10001` is plainly not 0. So Kubernetes can check that an image runs as non-root without looking inside it. The files you copied in still belong to root, so the app can read its own code but cannot change it, and neither can anyone who breaks into it.\n\nThe missing home folder has one side effect. Gunicorn 26 tries to open a control socket, a special file that other programs can use to send it commands, in the user's home folder. Without the flag, our test container logged `Control server error: [Errno 13] Permission denied: '/home/appuser'` at startup. The app still answered, but every start began with an error. The lab's `CMD` adds `--no-control-socket`, which turns that feature off.",
+     "body": "A container runs as root, user ID 0, unless the image says otherwise. The Day 19 image did: `whoami` printed `root`. Namespaces fence the process in, but it is still root on a shared kernel. If an attacker breaks out through a bug in the kernel or in Docker, they arrive with root's rights.\n\nTwo lines in the final stage fix it:\n\n- `RUN useradd --uid 10001 --no-create-home appuser` creates a normal user with no home folder.\n- `USER 10001` makes every later step, and the running container, use that user.\n\nRoot in a container is still root to the kernel. Run as a number, such as USER 10001.\n\nWrite the number in `USER`, not the name. A name means nothing until someone reads the image's `/etc/passwd`, while `10001` is plainly not 0. So Kubernetes can check that an image runs as non-root without looking inside it. The files you copied in still belong to root, so the app can read its own code but cannot change it, and neither can anyone who breaks into it.\n\nThe missing home folder made one thing fail in public. Gunicorn 26 tries to open a control socket, a special file that other programs can use to send it commands, in the user's home folder. Without a flag, our test container logged `Control server error: [Errno 13] Permission denied: '/home/appuser'` at startup. The app still answered, but every start began with an error. The lab's `CMD` adds `--no-control-socket`, which turns that feature off.\n\nThe app runs safely now. But \"running\" still doesn't tell you it works.",
      "refs": [
       {
        "title": "Building best practices",
@@ -2004,7 +2005,7 @@
     },
     {
      "h": "Tell Docker how to test the app",
-     "body": "`docker ps` says `Up` as long as the main process lives. A process can be alive and still broken, for example stuck or failing every request. A `HEALTHCHECK` instruction tells Docker how to test the app from inside the container.\n\nThe lab's check runs a one-line Python command every 30 seconds that requests `/healthz`, with a 3-second timeout. It uses Python because the slim image has no curl. Exit code 0 counts as a pass, and anything else as a failure. The status moves through three states:\n\n1. `starting`, until the first check has run.\n2. `healthy`, once a check passes.\n3. `unhealthy`, after 3 failures in a row, the default.\n\n`docker inspect -f '{{json .State.Health}}' web` shows the latest results with their exit codes and output.\n\nWhat happens next depends on who reads the status:\n\n- Plain Docker only reports it. It does not restart an unhealthy container.\n- Compose uses it for `depends_on` with `condition: service_healthy` (Day 21).\n- Kubernetes ignores `HEALTHCHECK`. It has its own probes, which Day 43 points at the same `/healthz` and `/readyz` endpoints.\n\nKeep the check cheap and local. It should test that this process can answer, not that every database behind it is up.",
+     "body": "`docker ps` says `Up` as long as the main process lives. A process can be alive and still broken, for example stuck or failing every request, like a cook who is at work but has burned every dish. A `HEALTHCHECK` instruction tells Docker how to test the app from inside the container.\n\nThe lab's check runs a one-line Python command every 30 seconds that requests `/healthz`, with a 3-second timeout. It uses Python because the slim image has no curl. Exit code 0 counts as a pass, and anything else as a failure. The status moves through three states:\n\n1. `starting`, until the first check has run.\n2. `healthy`, once a check passes.\n3. `unhealthy`, after 3 failures in a row, the default.\n\n`docker inspect -f '{{json .State.Health}}' web` shows the latest results with their exit codes and output.\n\nWhat happens next depends on who reads the status:\n\n- Plain Docker only reports it. It does not restart an unhealthy container.\n- Compose uses it for `depends_on` with `condition: service_healthy` (Day 21).\n- Kubernetes ignores `HEALTHCHECK`. It has its own probes, which Day 43 points at the same `/healthz` and `/readyz` endpoints.\n\nKeep the check cheap and local. It should test that this process can answer, not that every database behind it is up.\n\nThe image is smaller, safer and self-testing. How many known bugs does it still carry?",
      "refs": [
       {
        "title": "Dockerfile reference",
@@ -2020,7 +2021,7 @@
     },
     {
      "h": "Scanning: less inside means less to patch",
-     "body": "A CVE is a public ID for one known security bug, such as `CVE-2025-47273`. A vulnerability scanner lists every package in an image and checks each one against databases of CVEs. Two scanners come up in this course:\n\n- Trivy, an open source scanner. Install it with `brew install trivy`.\n- Docker Scout, which comes with Docker Desktop: `docker scout quickview` gives a summary, and `docker scout cves` the full list.\n\nRead the results with care. Each finding has a severity from LOW to CRITICAL, and a status:\n\n- `fixed` means a newer version of the package fixes the bug. You can act on it.\n- `affected` means no fix exists yet. You can only wait and rebuild.\n\nOn the day we scanned, all 44 HIGH findings in the Debian base were unfixed, and `--ignore-unfixed` dropped them to zero. Those come from the base image, so the fix is to rebuild once Debian ships patched packages. A smaller base would have fewer of them to begin with.\n\nRemoving pip took away 5 more HIGH findings. They sat in libraries that pip carries inside itself, such as urllib3 and msgpack. The app never runs pip, so the lab uninstalls it in both stages.\n\nNew CVEs are published every day, so your numbers will differ from ours, and CI scans again on every build. Day 63 sets that up.",
+     "body": "A CVE is a public ID for one known security bug, such as `CVE-2025-47273`. A vulnerability scanner lists every package in an image and checks each one against databases of CVEs, like a food inspector checking each ingredient against a recall list. Two scanners come up in this course:\n\n- Trivy, an open source scanner. Install it with `brew install trivy`.\n- Docker Scout, which comes with Docker Desktop: `docker scout quickview` gives a summary, and `docker scout cves` the full list.\n\nRead the results with care. Each finding has a severity from LOW to CRITICAL, and a status:\n\n- `fixed` means a newer version of the package fixes the bug. You can act on it.\n- `affected` means no fix exists yet. You can only wait and rebuild.\n\nOn the day we scanned, all 44 HIGH findings in the Debian base were unfixed, and `--ignore-unfixed` dropped them to zero. Those come from the base image, so the fix is to rebuild once Debian ships patched packages. A smaller base would have fewer of them to begin with.\n\nRemoving pip took away 5 more HIGH findings. They sat in libraries that pip carries inside itself, such as urllib3 and msgpack. The app never runs pip, so the lab uninstalls it in both stages.\n\nNew CVEs are published every day, so your numbers will differ from ours, and CI scans again on every build. Day 63 sets that up.\n\nThe image is ready to leave your laptop.",
      "refs": [
       {
        "title": "Trivy: first steps",
@@ -2036,7 +2037,7 @@
     },
     {
      "h": "Two CPU types, and a push to GHCR",
-     "body": "Your Mac builds arm64 images, and most servers run amd64. The command `docker buildx build --platform linux/amd64,linux/arm64` builds both and pushes one index with a manifest for each, as on Day 18. The `RUN` steps for the other CPU type run through emulation, so the amd64 half of the build is slower on your Mac.\n\nGitHub Container Registry, `ghcr.io`, keeps images next to your code. Pushing there takes three things:\n\n1. A personal access token (classic) with the `write:packages` scope. GitHub Packages accepts only classic tokens.\n2. `docker login ghcr.io -u <your-github-user> --password-stdin`, with the token piped in so it never appears in your shell history.\n3. An image name of the form `ghcr.io/<your-github-user>/hello-devops:1.0.0`.\n\nTwo details save you a search later:\n\n- A new package on GHCR is private at first. You can change its visibility in the package settings.\n- The label `org.opencontainers.image.source`, set to your repo's URL, links the package to the repo.\n\nA token on your laptop is fine for one manual push. Day 27 moves this push into GitHub Actions, which uses a short-lived token instead.",
+     "body": "Your Mac builds arm64 images, and most servers run amd64. The command `docker buildx build --platform linux/amd64,linux/arm64` builds both and pushes one index with a manifest for each, as on Day 18. The `RUN` steps for the other CPU type run through emulation, so the amd64 half of the build is slower on your Mac.\n\nGitHub Container Registry, `ghcr.io`, keeps images next to your code. Pushing there takes three things:\n\n1. A personal access token (classic) with the `write:packages` scope, the one permission it needs. GitHub Packages accepts only classic tokens.\n2. `docker login ghcr.io -u <your-github-user> --password-stdin`, with the token piped in so it never appears in your shell history.\n3. An image name of the form `ghcr.io/<your-github-user>/hello-devops:1.0.0`.\n\nTwo details save you a search later:\n\n- A new package on GHCR is private at first. You can change its visibility in the package settings.\n- The label `org.opencontainers.image.source`, set to your repo's URL, links the package to the repo.\n\nA token on your laptop is fine for one manual push. Day 27 moves this push into GitHub Actions, which uses a short-lived token instead.\n\nThat token is a secret you typed at your own terminal. Some secrets, though, have to reach the build itself.",
      "refs": [
       {
        "title": "Multi-platform builds",
@@ -2057,7 +2058,7 @@
     },
     {
      "h": "Secrets at build time",
-     "body": "Sometimes a build step needs a secret, such as a token to download a private package. The obvious ways all leak:\n\n- `ARG` with `--build-arg`: `docker history` shows the value.\n- `ENV`: the value is stored in the image config, so anyone who pulls the image can read it.\n- `COPY` a token file and `RUN rm` it later: the file stays in its layer, as Day 18 showed.\n\nIn the worked example, `docker history` printed our fake token twice for the `ARG` version.\n\nBuildKit has a safe way. `RUN --mount=type=secret,id=api_token,env=API_TOKEN` hands the secret to the temporary container of that one `RUN` step (Day 19), as an environment variable. Leave out `env=` and it appears as a file under `/run/secrets/` instead. You pass the secret to the build in one of two ways:\n\n- `--secret id=api_token,env=API_TOKEN` reads it from your shell's environment.\n- `--secret id=npmrc,src=$HOME/.npmrc` reads it from a file.\n\nThe value never lands in a layer, the cache or the history. Run-time secrets, such as a database password, are a separate problem. They come from the environment when the container starts, never from the image. Day 42 shows how Kubernetes handles them.",
+     "body": "Sometimes a build step needs a secret, such as a token to download a private package. The obvious ways all leak:\n\n- `ARG` with `--build-arg`: `docker history` shows the value.\n- `ENV`: the value is stored in the image config, so anyone who pulls the image can read it.\n- `COPY` a token file and `RUN rm` it later: the file stays in its layer, as Day 18 showed.\n\nIn the worked example, `docker history` printed our fake token twice for the `ARG` version. That is the back door key under the lid, readable by anyone who pulls the image.\n\nBuildKit has a safe way. `RUN --mount=type=secret,id=api_token,env=API_TOKEN` hands the secret to the temporary container of that one `RUN` step (Day 19), as an environment variable. Leave out `env=` and it appears as a file under `/run/secrets/` instead. You pass the secret to the build in one of two ways:\n\n- `--secret id=api_token,env=API_TOKEN` reads it from your shell's environment.\n- `--secret id=npmrc,src=$HOME/.npmrc` reads it from a file.\n\nThe value never lands in a layer, the cache or the history. If a token ever did go in as an ARG, treat it as leaked and replace it.\n\n**A secret in ARG, ENV or a deleted file ships with the image. Mount it instead.**\n\nRun-time secrets, such as a database password, are a separate problem. They come from the environment when the container starts, never from the image. Day 42 shows how Kubernetes handles them.\n\nThat is the limit of this part: every build, scan and push so far happened by hand, on one laptop. Part 6 hands the same steps to CI, so they run the same way on every change.",
      "refs": [
       {
        "title": "Build secrets",
@@ -2067,7 +2068,6 @@
      ]
     }
    ],
-   "analogy": "A multi-stage build is like making a table in a workshop and delivering only the table. The saws, the glue and the sawdust stay in the workshop, and the customer gets a clean piece of furniture with nothing sharp attached. Docker's workshop does not go away, though. The build stage stays in the build cache on the machine that built it, so a secret you copied into that stage still sits there.",
    "diagram": "<svg viewBox=\"0 0 560 236\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"A multi-stage build: the build stage installs packages into /venv; COPY --from copies only /venv into a fresh final stage, which adds app.py and runs as user 10001; the build stage is left behind\"><line class=\"lnd\" x1=\"8\" y1=\"12\" x2=\"232\" y2=\"12\"/><line class=\"lnd\" x1=\"8\" y1=\"226\" x2=\"232\" y2=\"226\"/><line class=\"lnd\" x1=\"8\" y1=\"12\" x2=\"8\" y2=\"226\"/><line class=\"lnd\" x1=\"232\" y1=\"12\" x2=\"232\" y2=\"226\"/><text class=\"ts\" x=\"120\" y=\"216\" font-size=\"11\" text-anchor=\"middle\">build stage, left behind</text><rect class=\"bx\" x=\"32\" y=\"28\" width=\"176\" height=\"38\" rx=\"10\"/><text class=\"t\" x=\"120\" y=\"52\" font-size=\"13\" text-anchor=\"middle\">python:3.14-slim</text><rect class=\"bxp\" x=\"32\" y=\"88\" width=\"176\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"120\" y=\"112\" font-size=\"13\" text-anchor=\"middle\">pip install</text><rect class=\"bxt\" x=\"32\" y=\"148\" width=\"176\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"120\" y=\"172\" font-size=\"13\" text-anchor=\"middle\">/venv</text><line class=\"ln\" x1=\"120\" y1=\"66\" x2=\"120\" y2=\"84\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"120\" y1=\"126\" x2=\"120\" y2=\"144\" marker-end=\"url(#ar)\"/><line class=\"lnd\" x1=\"328\" y1=\"12\" x2=\"552\" y2=\"12\"/><line class=\"lnd\" x1=\"328\" y1=\"226\" x2=\"552\" y2=\"226\"/><line class=\"lnd\" x1=\"328\" y1=\"12\" x2=\"328\" y2=\"226\"/><line class=\"lnd\" x1=\"552\" y1=\"12\" x2=\"552\" y2=\"226\"/><text class=\"ts\" x=\"440\" y=\"216\" font-size=\"11\" text-anchor=\"middle\">final stage, shipped</text><rect class=\"bx\" x=\"352\" y=\"28\" width=\"176\" height=\"38\" rx=\"10\"/><text class=\"t\" x=\"440\" y=\"52\" font-size=\"13\" text-anchor=\"middle\">python:3.14-slim</text><rect class=\"bxt\" x=\"352\" y=\"88\" width=\"176\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"440\" y=\"112\" font-size=\"13\" text-anchor=\"middle\">/venv, app.py</text><rect class=\"bxo\" x=\"352\" y=\"148\" width=\"176\" height=\"38\" rx=\"10\"/><text class=\"tk\" x=\"440\" y=\"172\" font-size=\"13\" text-anchor=\"middle\">USER 10001</text><line class=\"ln\" x1=\"440\" y1=\"66\" x2=\"440\" y2=\"84\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"440\" y1=\"126\" x2=\"440\" y2=\"144\" marker-end=\"url(#ar)\"/><line class=\"ln\" x1=\"208\" y1=\"167\" x2=\"348\" y2=\"109\" marker-end=\"url(#ar)\"/><text class=\"ts\" x=\"280\" y=\"182\" font-size=\"11\" text-anchor=\"middle\">COPY --from</text></svg>",
    "diagram_caption": "Only /venv crosses from the build stage; the final stage adds app.py and runs as user 10001.",
    "worked": {
@@ -2104,7 +2104,7 @@
       "lang": "console"
      },
      {
-      "say": "The secret demo runs in `~/code/docker-play`, with the two Dockerfiles from Files. The `ARG` version leaks the token into the history. The secret mount uses the token in the build, shows `****` in the log, and stores nothing.",
+      "say": "The secret demo runs in `~/code/docker-play`, with the two Dockerfiles from Files. The `ARG` version leaks the token into the history. The secret mount uses the token in the build, hides the token behind stars in the log, and stores nothing.",
       "code": "$ docker build -q --build-arg API_TOKEN=s3cr3t-demo-token -t leak leak\nsha256:952de2c12872faabc988fcdb8fe06b4e5a6615adb754cfde82e917bacc158874\n$ docker history --no-trunc --format '{{.CreatedBy}}' leak | grep -o 'API_TOKEN=[^ ]*'\nAPI_TOKEN=s3cr3t-demo-token\nAPI_TOKEN=s3cr3t-demo-token\n$ API_TOKEN=s3cr3t-demo-token docker build --progress=plain --secret id=api_token,env=API_TOKEN -t safe safe\n#7 [stage-0 2/2] RUN --mount=type=secret,id=api_token,env=API_TOKEN     test -n \"****\" && echo \"downloaded a private package\"\n#7 0.296 downloaded a private package\n$ docker history --no-trunc --format '{{.CreatedBy}}' safe | grep -c s3cr3t\n0",
       "lang": "console"
      }
@@ -2192,7 +2192,6 @@
      "what": "Create a builder that can build several platforms, if the default one cannot."
     }
    ],
-   "mistake": "Passing a token with `--build-arg` or `ENV`, just for the build, puts it in the image history or config. Every registry and laptop that pulls the image then has a copy. Use `RUN --mount=type=secret` with `docker build --secret`, and rotate any token that ever went in as an ARG.",
    "real_world": "Most services need the same hardening, so the platform team at PayFlow, a made-up payments company, keeps a template Dockerfile. It is multi-stage, with a pinned base digest, a numeric non-root user and a health check. CI builds each image once, scans it, and fails the build on any CRITICAL finding that has a fix. A bot opens pull requests when a base image digest changes, so rebuilding with patches is a routine review.",
    "task": {
     "title": "Publish hello-devops to GHCR for two CPU types",
@@ -2224,11 +2223,11 @@
     "Run as a numeric non-root user, such as USER 10001.",
     "HEALTHCHECK reports whether the app answers; Compose uses it, Kubernetes uses its own probes.",
     "Scan every build, and read severity and fix status before you panic.",
-    "Never pass secrets with ARG or ENV; use RUN --mount=type=secret."
+    "Never pass secrets with ARG or ENV; use RUN --mount=type=secret. So far all of this runs by hand; Part 6 moves it to CI."
    ],
    "check": [
     {
-     "q": "A Go team's single-stage image is 900 MB because it contains the Go compiler and module cache. Which change shrinks it the most?",
+     "q": "A team's single-stage image is 900 MB because it contains the Go compiler (Go is a programming language) and its module cache. Which change shrinks it the most?",
      "options": [
       "Add the module cache folder to .dockerignore",
       "Delete the compiler in a later RUN step",
@@ -2239,7 +2238,7 @@
      "why": "Only the last stage ships, so the compiler and cache stay in the build stage; deleting them later only hides them in an earlier layer."
     },
     {
-     "q": "A build must read `~/.npmrc`, which holds a token, to install private packages. Which approach keeps the token out of the image?",
+     "q": "A build must read `~/.npmrc`, a settings file that holds a token, to install private packages. Which approach keeps the token out of the image?",
      "options": [
       "COPY .npmrc, install, then RUN rm .npmrc",
       "Pass it with --secret and a RUN --mount=type=secret step",
@@ -2296,7 +2295,8 @@
      "title": "Trivy: first steps",
      "url": "https://trivy.dev/latest/getting-started"
     }
-   ]
+   ],
+   "closing": "We started with a lunchbox that held a knife, a bag of flour and the key to the back door. Our final image leaves pip in the build stage, runs as user 10001, tests itself every 30 seconds, and keeps the token out of its history. Pick an image you use and run `docker history --no-trunc` on it, then search the output for words such as TOKEN, PASSWORD or KEY. If anything turns up, that key is taped under the lid for everyone who pulls it.\n\nNext, we'll stop doing all of this by hand. How does a team agree on a change, and let CI build, test and ship it every time?"
   }
  ],
  "recap": [
@@ -2304,7 +2304,7 @@
   "An image is read-only layers plus a config, named by digests; a container adds one writable layer.",
   "Tags move and digests do not, and one name can hold a variant for each CPU type.",
   "Order Dockerfile steps from rarely changed to often changed, so the cache saves the slow ones.",
-  "Use exec form for CMD so the app is PID 1 and stops cleanly on SIGTERM.",
+  "Write CMD in exec form so the app is PID 1 and stops cleanly on SIGTERM.",
   "Keep data in volumes, and connect containers on a user-defined network where names work.",
   "compose.yaml describes the whole app; up, down, logs and config cover most days.",
   "Production images are multi-stage, non-root, health-checked, scanned and free of secrets."
@@ -2347,8 +2347,8 @@
    "back": "When that step or anything before it changed; then every later step rebuilds too."
   },
   {
-   "front": "CMD or ENTRYPOINT: which one do docker run arguments replace?",
-   "back": "CMD. Arguments are added after ENTRYPOINT."
+   "front": "CMD or ENTRYPOINT: which one do the words after the image name in docker run replace?",
+   "back": "CMD. They are added after ENTRYPOINT."
   },
   {
    "front": "Which one reaches the running container: ARG or ENV?",
@@ -2416,7 +2416,7 @@
    "title": "Docker concepts: What is a container?",
    "url": "https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/",
    "kind": "docs",
-   "why": "Docker's own concepts series: short pages on containers, images, layers, the cache and ports."
+   "why": "Docker's own short pages on containers, images, layers, the cache and ports, in plain words."
   },
   {
    "title": "Building best practices",
@@ -2434,7 +2434,7 @@
    "title": "The Twelve-Factor App: III. Config",
    "url": "https://12factor.net/config",
    "kind": "read",
-   "why": "The original rule for keeping config in the environment, which hello-devops follows."
+   "why": "The original rule for keeping settings in the environment, which hello-devops follows."
   }
  ],
  "quiz": [
@@ -2472,7 +2472,7 @@
    "why": "A Mac builds arm64 code by default; without an amd64 variant in the index, the server cannot run it."
   },
   {
-   "q": "A web container and a Postgres container run on a user-defined network. Which `-p` options do they need for the web app to reach the database?",
+   "q": "A web container and a Postgres database container run on a user-defined network. Which `-p` options do they need for the web app to reach the database?",
    "options": [
     "-p 5432:5432 on the database",
     "-p on both containers",
@@ -2502,7 +2502,7 @@
     "Nothing; it only reports the status"
    ],
    "answer": 3,
-   "why": "Standalone Docker records the health status but takes no action; Compose and other tools decide what to do with it."
+   "why": "Plain Docker records the health status but takes no action; Compose and other tools decide what to do with it."
   },
   {
    "q": "Which Dockerfile line keeps a deploy repeatable even if someone pushes a new base image with the same tag?",
@@ -2547,7 +2547,7 @@
     "The app only accepts connections from inside the container"
    ],
    "answer": 3,
-   "why": "127.0.0.1 is the container's own loopback; the app must bind 0.0.0.0 to accept traffic forwarded from outside.",
+   "why": "127.0.0.1 is the container's own loopback address; the app must listen on 0.0.0.0 to accept traffic forwarded from outside.",
    "from": "Part 3"
   }
  ]
