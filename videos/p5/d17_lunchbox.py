@@ -107,7 +107,7 @@ class D17Lunchbox(VoiceScene):
         self.play(FadeOut(out), FadeOut(cmd), run_time=0.5)
 
         # 4. what it really is: a process with walls and a budget
-        kern = box("Linux kernel", TEAL_M, w=11.4, h=0.75, size=28).move_to([0.4, -2.75, 0])
+        kern = box("Linux kernel", TEAL_M, w=11.0, h=0.7, size=28).move_to([0.4, -2.55, 0])
         host = VGroup(*[proc().move_to([x, y, 0]) for x, y in [(-4.0, -1.5), (-3.2, -0.7), (-4.3, 0.2), (-3.0, 0.5), (4.3, -1.4), (5.0, -0.5), (4.0, 0.3), (5.2, 0.6),
                                                                (-1.4, -1.6), (1.9, -1.6), (2.6, -0.4), (-2.0, -0.2)]])
         self.steps("Here is what really happens. Down at the bottom is the kernel of the machine. Above it run lots of ordinary programs, called processes.",
@@ -150,12 +150,12 @@ class D17Lunchbox(VoiceScene):
         self.play(FadeOut(fast), run_time=0.4)
 
         # 5. on a Mac: the small Linux VM
-        mac = RoundedRectangle(corner_radius=0.2, width=12.6, height=6.6, stroke_color=GREY_B, stroke_width=2.5).move_to([0.2, -0.05, 0])
+        mac = RoundedRectangle(corner_radius=0.2, width=12.6, height=6.8, stroke_color=GREY_B, stroke_width=2.5).move_to([0.2, 0.0, 0])
         macl = T("your Mac", 26, GREY_B).move_to([-5.0, 2.95, 0])
         self.beat("Now a puzzle for Mac users. A Mac has its own kernel, and it is not Linux. So which kernel runs these containers? Pause and guess.",
                   FadeOut(image), Create(mac), FadeIn(macl), run_time=2.0)
         self.wait(2.0)
-        vm2 = DashedVMobject(RoundedRectangle(corner_radius=0.15, width=11.8, height=5.0, stroke_color=TEAL_M, stroke_width=2.5), num_dashes=70).move_to([0.4, -0.75, 0])
+        vm2 = DashedVMobject(RoundedRectangle(corner_radius=0.15, width=11.8, height=5.0, stroke_color=TEAL_M, stroke_width=2.5), num_dashes=70).move_to([0.4, -0.7, 0])
         vml2 = T("one small Linux VM, run by Docker Desktop", 26, TEAL_M).move_to([0.9, 2.15, 0])
         self.steps("The Linux kernel of one small VM. Docker Desktop, the Mac app that installs Docker, quietly starts it in the background, and every container shares its kernel.",
                    (1.0, Create(vm2)), (0.8, FadeIn(vml2, shift=DOWN * 0.1)), (2.0, Wait(2.0)), (1.0, Indicate(kern[1], color=TEAL_M)))
