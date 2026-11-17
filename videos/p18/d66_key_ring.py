@@ -119,20 +119,20 @@ class D66KeyRing(VoiceScene):
         self.play(*[FadeOut(m) for m in self.mobjects], run_time=0.6)
 
         # ---------- 3. MCP: one plug between agents and tools
-        AG = VGroup(*[box(f"agent {i + 1}", GOLD_M, w=1.9, h=0.6, size=22).move_to([-4.6, 2.4 - 1.15 * i, 0]) for i in range(5)])
-        SY = VGroup(*[box(n, GREY_B, w=2.3, h=0.6, size=22).move_to([4.6, 1.8 - 1.2 * i, 0]) for i, n in enumerate(("Kubernetes", "GitHub", "Grafana", "AWS"))])
+        AG = VGroup(*[box(f"agent {i + 1}", GOLD_M, w=1.9, h=0.6, size=22).move_to([-4.6, 2.7 - 1.05 * i, 0]) for i in range(5)])
+        SY = VGroup(*[box(n, GREY_B, w=2.3, h=0.6, size=22).move_to([4.6, 2.2 - 1.05 * i, 0]) for i, n in enumerate(("Kubernetes", "GitHub", "Grafana", "AWS"))])
         mesh = VGroup(*[Line(a.get_right(), s.get_left(), stroke_width=1.5, color=RED_M) for a in AG for s in SY])
-        mc = T("20 pieces of glue code", 28, RED_M).move_to([0, -3.3, 0])
+        mc = T("20 pieces of glue code", 28, RED_M).move_to([0, -2.1, 0])
         self.beat("Where does the tool list come from? Five agents and four systems, wired pair by pair, need twenty pieces of glue code.",
                   FadeIn(AG), FadeIn(SY), Succession(Wait(2.6), AnimationGroup(LaggedStart(*[Create(l) for l in mesh], lag_ratio=0.05), FadeIn(mc))), run_time=5.4)
-        hub = box("MCP", BLUE_M, w=1.6, h=0.9, size=30).move_to([0, 0.1, 0])
+        hub = box("MCP", BLUE_M, w=1.6, h=0.9, size=30).move_to([0, 0.6, 0])
         spokes = VGroup(*[Line(a.get_right(), hub.get_left(), stroke_width=2, color=BLUE_M) for a in AG], *[Line(hub.get_right(), s.get_left(), stroke_width=2, color=BLUE_M) for s in SY])
         self.beat("With one shared protocol, it's nine: each agent speaks it once, each system gets one server. That's the Model Context Protocol, MCP.",
                   FadeOut(mesh), FadeIn(hub), LaggedStart(*[Create(s) for s in spokes], lag_ratio=0.1), Transform(mc, T("9 pieces", 28, BLUE_M).move_to(mc)), run_time=3.6)
-        tl = VGroup(M("tools/list", 24, BLUE_M), M("tools/call", 24, BLUE_M)).arrange(RIGHT, buff=1.4).move_to([0, -1.3, 0])
+        tl = VGroup(M("tools/list", 24, BLUE_M), M("tools/call", 24, BLUE_M)).arrange(RIGHT, buff=1.4).move_to([0, -2.75, 0])
         self.beat("The host asks each server for its tools with tools/list, and passes each call on with tools/call.",
                   FadeIn(tl[0]), Succession(Wait(3.6), FadeIn(tl[1])), run_time=5.0)
-        spec = T("the protocol cannot enforce security: the host must ask your consent", 24, GREY_B).move_to([0, -2.3, 0])
+        spec = T("the protocol cannot enforce security: the host must ask your consent", 24, GREY_B).move_to([0, -3.25, 0])
         fit(spec, 12.4)
         self.beat("And the spec says plainly: the protocol cannot enforce security. That's the host's job.",
                   FadeIn(spec), run_time=2.0)
@@ -172,29 +172,29 @@ class D66KeyRing(VoiceScene):
                   FadeIn(kr2, scale=0.6), run_time=1.6)
         self.beat("The agent signs in as its own identity, the ai-agent ServiceAccount. It may read in hello, never Secrets. And its token expires in an hour.",
                   LaggedStart(*[FadeIn(k) for k in krl], lag_ratio=0.5), run_time=3.0)
-        self.play(VGroup(kr2, krl).animate.scale(0.75).move_to([0, 0.3, 0]), run_time=0.6)
-        dcall = M("delete deployment redis", 24, RED_M).move_to([-4.6, -2.2, 0])
+        self.play(VGroup(kr2, krl).animate.move_to([0, 0.1, 0]), run_time=0.6)
+        dcall = M("delete deployment redis", 24, RED_M).move_to([-4.2, -2.2, 0])
         p1 = Arrow(model.get_bottom(), dcall.get_top(), buff=0.15, stroke_width=3, color=BLUE_M, max_tip_length_to_length_ratio=0.12)
         self.beat("Now say the injection works, and the model really asks to delete Redis. Pause and guess: where does it stop?",
                   GrowArrow(p1), FadeIn(dcall), run_time=1.8)
         self.wait(2.0)
-        path = VMobject().set_points_as_corners([dcall.get_right() + RIGHT * 0.1, [0, -2.2, 0], [4.6, -2.2, 0], kapi.get_bottom() + DOWN * 0.1])
-        path.set_stroke(GREY_B, 2)
-        forb = M("Error from server (Forbidden)", 24, RED_M).move_to([3.9, 0.9, 0])
+        forb = M("Error from server (Forbidden)", 24, RED_M).move_to([3.85, 0.55, 0])
         self.steps("A read-only server offers no such tool. And if one slipped through, the API server checks the agent's token against its rules. Forbidden.",
-                   (1.4, Create(path)), (1.6, Wait(1.6)), (1.0, MoveAlongPath(dcall, path)), (1.2, Wait(1.2)), (0.6, FadeIn(forb, scale=1.3)))
+                   (3.0, Wait(3.0)), (1.4, FadeOut(p1), dcall.animate(path_arc=-PI / 3).move_to([4.2, 1.35, 0])), (1.2, Wait(1.2)), (0.6, FadeIn(forb, scale=1.3)))
         self.beat("So, the pocket question: the credentials and their RBAC, the access rules, decide.",
                   Indicate(krl[0], color=GOLD_M), run_time=2.4)
         ks = M("kubectl -n hello delete serviceaccount ai-agent", 22, GREY_B).move_to([0, -3.2, 0])
         self.beat("And there's a kill switch. Delete the ServiceAccount, and every token made for it stops working within seconds.",
                   FadeIn(ks), kr2.animate.set_opacity(0.25), run_time=2.0)
-        self.play(FadeOut(VGroup(kr2, krl, dcall, p1, path, forb, ks, model, host, kapi)), run_time=0.6)
+        self.play(FadeOut(VGroup(kr2, krl, dcall, forb, ks, model, host, kapi)), run_time=0.6)
 
         # ---------- 6. the lethal trifecta
         A = np.array([0, 2.4, 0]); B = np.array([-3.4, -1.8, 0]); C = np.array([3.4, -1.8, 0])
         tri = Polygon(A, B, C, stroke_color=RED_M, stroke_width=3)
         legs = VGroup(chip("private data", PURPLE_M, 26).move_to(A + UP * 0.1), chip("untrusted content", YELLOW_M, 26).move_to(B + DOWN * 0.1),
                       chip("a way to send data out", GREEN_M, 26).move_to(C + DOWN * 0.1))
+        for l in legs:
+            l[0].set_fill(interpolate_color(ManimColor("#000000"), l[0].get_stroke_color(), 0.18), 1)
         tl2 = T("the lethal trifecta", 30, RED_M).move_to([0, -0.2, 0])
         self.beat("Simon Willison calls the dangerous mix the lethal trifecta: private data, untrusted content, and a way to send data out.",
                   Create(tri), LaggedStart(*[FadeIn(l) for l in legs], lag_ratio=0.6), Succession(Wait(3.4), FadeIn(tl2)), run_time=6.0)

@@ -75,5 +75,16 @@
    "poster_at": 195.0,
    "replaces": "d61-davis"
   }
+ ],
+ "d62": [
+  {
+   "slug": "d62-quiet-zero",
+   "title": "A DQL query is a pipeline, and a quiet zero is not proof",
+   "after": 4,
+   "file": "p16/d62_clerk.py",
+   "scene": "D62Clerk",
+   "poster_at": 153.0,
+   "replaces": "d62-dql-pipeline"
+  }
  ]
 }

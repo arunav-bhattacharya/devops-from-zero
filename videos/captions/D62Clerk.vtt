@@ -1,385 +1,385 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:06.332
+00:00:02.700 --> 00:00:06.299
 Picture the detective from last time, with a new assistant.
 
 2
-00:00:06.332 --> 00:00:09.992
+00:00:06.299 --> 00:00:09.958
 The archive now holds every clue the building ever produced.
 
 3
-00:00:09.992 --> 00:00:14.444
+00:00:09.958 --> 00:00:14.411
 The assistant is sharp, and fluent in the archive language of an old job.
 
 4
-00:00:14.600 --> 00:00:18.233
+00:00:14.633 --> 00:00:18.267
 They ask the clerk for all reports where level equals error.
 
 5
-00:00:18.400 --> 00:00:20.518
+00:00:18.500 --> 00:00:20.618
 The clerk comes back empty-handed.
 
 6
-00:00:20.518 --> 00:00:24.195
+00:00:20.618 --> 00:00:24.295
 The assistant writes in the case file: no errors this week.
 
 7
-00:00:24.333 --> 00:00:25.965
+00:00:24.500 --> 00:00:26.132
 In fact, there were hundreds.
 
 8
-00:00:25.965 --> 00:00:29.680
+00:00:26.132 --> 00:00:29.847
 The clerk simply didn't understand the question, and said nothing.
 
 9
-00:00:29.867 --> 00:00:32.681
+00:00:30.067 --> 00:00:32.881
 That's the trap with a new query language.
 
 10
-00:00:32.681 --> 00:00:38.980
+00:00:32.881 --> 00:00:39.180
 Old habits look right, and a wrong question often returns an empty answer instead of an error.
 
 11
-00:00:38.980 --> 00:00:42.665
+00:00:39.180 --> 00:00:42.865
 Today, the clerk is Dynatrace, and the language is DQL.
 
 12
-00:00:43.400 --> 00:00:46.710
+00:00:43.667 --> 00:00:46.976
 Start from something you already know, a shell pipeline.
 
 13
-00:00:46.710 --> 00:00:52.501
+00:00:46.976 --> 00:00:52.768
 Each bar hands the lines to the next command, and you read it left to right, in the order it runs.
 
 14
-00:00:52.667 --> 00:00:57.680
+00:00:53.000 --> 00:00:58.014
 SQL, the common language for asking databases questions, works differently.
 
 15
-00:00:57.680 --> 00:01:01.223
+00:00:58.014 --> 00:01:01.557
 SELECT comes first, and the database picks the order.
 
 16
-00:01:01.223 --> 00:01:04.900
+00:01:01.557 --> 00:01:05.233
 DQL, the Dynatrace Query Language, is a pipeline again.
 
 17
-00:01:04.900 --> 00:01:07.307
+00:01:05.233 --> 00:01:07.640
 Top to bottom, in the order it runs.
 
 18
-00:01:08.067 --> 00:01:10.552
+00:01:08.467 --> 00:01:10.952
 Let's take the smallest table possible.
 
 19
-00:01:10.552 --> 00:01:14.311
+00:01:10.952 --> 00:01:14.711
 The data command builds six records right inside the query.
 
 20
-00:01:14.311 --> 00:01:18.071
+00:01:14.711 --> 00:01:18.471
 Everyone gets the same result, and the store scans nothing.
 
 21
-00:01:18.267 --> 00:01:24.801
+00:01:18.700 --> 00:01:25.235
 Six made-up visits to a web app: a path, a status code, and how many milliseconds each one took.
 
 22
-00:01:25.000 --> 00:01:26.010
+00:01:25.467 --> 00:01:26.476
 Add one line.
 
 23
-00:01:26.010 --> 00:01:31.058
+00:01:26.476 --> 00:01:31.525
 Filter, status greater than or equal to 500, the server failures.
 
 24
-00:01:31.058 --> 00:01:33.000
+00:01:31.525 --> 00:01:33.467
 How many records survive?
 
 25
-00:01:33.000 --> 00:01:34.243
+00:01:33.467 --> 00:01:34.709
 Pause and guess.
 
 26
-00:01:37.467 --> 00:01:37.735
+00:01:37.933 --> 00:01:38.201
 Two.
 
 27
-00:01:37.735 --> 00:01:43.496
+00:01:38.201 --> 00:01:43.963
 The records flow down the pipe, and filter keeps only the ones where the test is true.
 
 28
-00:01:43.667 --> 00:01:46.422
+00:01:44.167 --> 00:01:46.922
 And notice the test: greater-or-equal.
 
 29
-00:01:46.422 --> 00:01:49.904
+00:01:46.922 --> 00:01:50.404
 Plain equality, in DQL, is a double equals sign.
 
 30
-00:01:49.904 --> 00:01:52.007
+00:01:50.404 --> 00:01:52.507
 Remember that, it comes back.
 
 31
-00:01:52.200 --> 00:01:54.493
+00:01:52.733 --> 00:01:55.026
 Now swap the filter for a summarize.
 
 32
-00:01:54.493 --> 00:01:58.187
+00:01:55.026 --> 00:01:58.720
 It groups the records by path and makes one row per group.
 
 33
-00:01:58.333 --> 00:02:01.668
+00:01:58.933 --> 00:02:02.268
 Watch the four visits to slash gather into one pile.
 
 34
-00:02:01.668 --> 00:02:05.195
+00:02:02.268 --> 00:02:05.795
 Slash healthz and slash readyz each make a pile of one.
 
 35
-00:02:05.333 --> 00:02:07.307
+00:02:06.000 --> 00:02:07.973
 Each pile becomes one row.
 
 36
-00:02:07.307 --> 00:02:12.088
+00:02:07.973 --> 00:02:12.755
 Four requests on slash, one error, 100 milliseconds on average.
 
 37
-00:02:12.267 --> 00:02:14.883
+00:02:12.967 --> 00:02:15.583
 Two details carry over to every query.
 
 38
-00:02:14.883 --> 00:02:18.464
+00:02:15.583 --> 00:02:19.164
 Each result gets its name with a single equals sign.
 
 39
-00:02:18.464 --> 00:02:21.012
+00:02:19.164 --> 00:02:21.712
 And the by list sits in curly braces.
 
 40
-00:02:21.533 --> 00:02:25.912
+00:02:22.233 --> 00:02:26.612
 Add a computed column, the error percentage, and sort by its name.
 
 41
-00:02:25.912 --> 00:02:30.357
+00:02:26.612 --> 00:02:31.057
 The worst path rises to the top: slash readyz, one hundred percent.
 
 42
-00:02:30.533 --> 00:02:36.527
+00:02:31.267 --> 00:02:37.260
 Read it out loud: take the records, group them by path, count, add a percentage, worst first.
 
 43
-00:02:36.527 --> 00:02:38.653
+00:02:37.260 --> 00:02:39.387
 Every line is one step, in order.
 
 44
-00:02:39.400 --> 00:02:42.773
+00:02:40.200 --> 00:02:43.573
 Now let's make the assistant's mistakes on purpose.
 
 45
-00:02:42.773 --> 00:02:44.956
+00:02:43.573 --> 00:02:45.756
 A single equals sign in a filter.
 
 46
-00:02:44.956 --> 00:02:46.940
+00:02:45.756 --> 00:02:47.740
 Without braces in the by list.
 
 47
-00:02:46.940 --> 00:02:49.453
+00:02:47.740 --> 00:02:50.253
 Both runs fail, with an error message.
 
 48
-00:02:49.600 --> 00:02:51.546
+00:02:50.467 --> 00:02:52.412
 That's the good kind of mistake.
 
 49
-00:02:51.546 --> 00:02:54.221
+00:02:52.412 --> 00:02:55.088
 It shouts, you read the message, you fix it.
 
 50
-00:02:54.400 --> 00:02:55.371
+00:02:55.300 --> 00:02:56.271
 Now real logs.
 
 51
-00:02:55.371 --> 00:03:00.644
+00:02:56.271 --> 00:03:01.544
 Fetch the last hour of log records, and filter where log dot level is ERROR.
 
 52
-00:03:00.644 --> 00:03:03.627
+00:03:01.544 --> 00:03:04.527
 Equality is right this time, double equals.
 
 53
-00:03:03.627 --> 00:03:04.737
+00:03:04.527 --> 00:03:05.637
 What comes back?
 
 54
-00:03:04.737 --> 00:03:05.847
+00:03:05.637 --> 00:03:06.747
 Pause and guess.
 
 55
-00:03:09.067 --> 00:03:10.065
+00:03:09.967 --> 00:03:10.965
 Zero records.
 
 56
-00:03:10.065 --> 00:03:11.831
+00:03:10.965 --> 00:03:12.731
 No error, no complaint.
 
 57
-00:03:11.831 --> 00:03:15.209
+00:03:12.731 --> 00:03:16.109
 And the case file says: no errors this hour.
 
 58
-00:03:15.400 --> 00:03:15.747
+00:03:16.333 --> 00:03:16.680
 Well.
 
 59
-00:03:15.747 --> 00:03:17.204
+00:03:16.680 --> 00:03:18.138
 The clerk didn't lie.
 
 60
-00:03:17.204 --> 00:03:20.397
+00:03:18.138 --> 00:03:21.330
 There is simply no field called log dot level.
 
 61
-00:03:20.397 --> 00:03:23.104
+00:03:21.330 --> 00:03:24.037
 The field is called loglevel, one word.
 
 62
-00:03:23.104 --> 00:03:27.337
+00:03:24.037 --> 00:03:28.271
 A filter on a field that doesn't exist quietly keeps nothing.
 
 63
-00:03:27.533 --> 00:03:32.393
+00:03:28.500 --> 00:03:33.360
 So start every new query with limit 10, and read the real field names first.
 
 64
-00:03:32.393 --> 00:03:36.677
+00:03:33.360 --> 00:03:37.644
 Then add one command at a time, and check the row count after each.
 
 65
-00:03:36.867 --> 00:03:38.357
+00:03:37.867 --> 00:03:39.357
 Zero rows is not proof.
 
 66
-00:03:38.357 --> 00:03:41.531
+00:03:39.357 --> 00:03:42.531
 Check the field names before you write no errors.
 
 67
-00:03:42.267 --> 00:03:43.332
+00:03:43.333 --> 00:03:44.398
 One more habit.
 
 68
-00:03:43.332 --> 00:03:46.810
+00:03:44.398 --> 00:03:47.877
 In SQL, the database picks the order of the work.
 
 69
-00:03:46.810 --> 00:03:47.875
+00:03:47.877 --> 00:03:48.942
 In DQL, you do.
 
 70
-00:03:47.875 --> 00:03:52.064
+00:03:48.942 --> 00:03:53.131
 So what if we summarize first, and then filter on loglevel?
 
 71
-00:03:52.200 --> 00:03:53.809
+00:03:53.333 --> 00:03:54.942
 Follow the records down.
 
 72
-00:03:53.809 --> 00:03:56.959
+00:03:54.942 --> 00:03:58.092
 Before summarize, each record has its loglevel.
 
 73
-00:03:56.959 --> 00:04:02.254
+00:03:58.092 --> 00:04:03.387
 After summarize, only the summarized fields exist: the namespace and the count.
 
 74
-00:04:02.254 --> 00:04:05.069
+00:04:03.387 --> 00:04:06.203
 The filter asks about a field that's gone.
 
 75
-00:04:05.267 --> 00:04:07.335
+00:04:06.433 --> 00:04:08.502
 So filter first, then summarize.
 
 76
-00:04:07.335 --> 00:04:10.955
+00:04:08.502 --> 00:04:12.121
 Now the query really counts error records per namespace.
 
 77
-00:04:11.667 --> 00:04:12.799
+00:04:12.833 --> 00:04:13.966
 A few guardrails.
 
 78
-00:04:12.799 --> 00:04:17.397
+00:04:13.966 --> 00:04:18.564
 The store behind all this, Grail, charges for the data a query scans.
 
 79
-00:04:17.397 --> 00:04:25.127
+00:04:18.564 --> 00:04:26.293
 A month of logs costs real money on a paid environment, so start with the shortest window that answers the question.
 
 80
-00:04:25.267 --> 00:04:29.049
+00:04:26.500 --> 00:04:30.282
 Metric values come from a different first command, timeseries.
 
 81
-00:04:29.049 --> 00:04:30.635
+00:04:30.282 --> 00:04:31.868
 There's no fetch for them.
 
 82
-00:04:30.800 --> 00:04:36.320
+00:04:32.100 --> 00:04:37.620
 And to match text without caring about capitals, use contains with case sensitive false.
 
 83
-00:04:36.320 --> 00:04:41.715
+00:04:37.620 --> 00:04:43.015
 Wrapping a field in lower stops Grail from using its index, so it scans far more data.
 
 84
-00:04:42.467 --> 00:04:44.342
+00:04:43.833 --> 00:04:45.708
 So the moral of the story.
 
 85
-00:04:44.342 --> 00:04:50.976
+00:04:45.708 --> 00:04:52.342
 A DQL query is a pipeline: records flow down, one command at a time, in the order you wrote.
 
 86
-00:04:50.976 --> 00:04:52.634
+00:04:52.342 --> 00:04:54.001
 A loud error is a gift.
 
 87
-00:04:52.634 --> 00:04:54.653
+00:04:54.001 --> 00:04:56.020
 A quiet zero needs checking.
 
 88
-00:04:54.800 --> 00:04:55.924
+00:04:56.233 --> 00:04:57.357
 A quick check.
 
 89
-00:04:55.924 --> 00:04:58.492
+00:04:57.357 --> 00:04:59.926
 This query hides two SQL habits.
 
 90
-00:04:58.492 --> 00:04:59.937
+00:04:59.926 --> 00:05:01.371
 Can you spot both?
 
 91
-00:04:59.937 --> 00:05:01.141
+00:05:01.371 --> 00:05:02.575
 Pause and look.
 
 92
-00:05:04.400 --> 00:05:08.559
+00:05:05.800 --> 00:05:09.959
 A single equals sign where DQL compares with double equals.
 
 93
-00:05:08.559 --> 00:05:11.027
+00:05:09.959 --> 00:05:12.427
 And a by list without curly braces.
 
 94
-00:05:11.200 --> 00:05:13.467
+00:05:12.633 --> 00:05:14.900
 With this part, the watching is done.
 
 95
-00:05:13.467 --> 00:05:17.816
+00:05:14.900 --> 00:05:19.249
 What none of these tools asks is who else might be inside the building.
 
 96
-00:05:17.816 --> 00:05:21.247
+00:05:19.249 --> 00:05:22.680
 Next, security, starting with the software supply chain.
