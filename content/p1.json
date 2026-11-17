@@ -1363,7 +1363,7 @@
    "task": {
     "title": "Run the worker as a systemd service in a VM",
     "steps": [
-     "Install Multipass on your Mac with the installer from [canonical.com/multipass/install](https://canonical.com/multipass/install) (it needs macOS 14 or later). Then run `multipass launch 24.04 --name devbox` and `multipass shell devbox`.",
+     "Install Multipass on your Mac with the installer from [canonical.com/multipass/install](https://canonical.com/multipass/install), or skip this if `brew install --cask multipass` from Day 2 already worked. Then run `multipass launch 24.04 --name devbox` and `multipass shell devbox`.",
      "In the VM, run `whoami`, `id` and `ps -p 1 -o pid,cmd`. Note your user, your groups, and what PID 1 is this time.",
      "From your Mac, copy this lesson's two files into the VM's home folder with `multipass transfer worker.sh hello-worker.service devbox:.`.",
      "In the VM, install the script so systemd can run it: put it in `/usr/local/bin` with mode 755, owned by root. That folder is the usual place for programs you add by hand. With root as the owner, the service's normal user can run the script but not change it. Copy the unit file into `/etc/systemd/system/` and make systemd read it.",
