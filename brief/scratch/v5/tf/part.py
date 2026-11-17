@@ -5,7 +5,7 @@ import pathlib
 PART = pathlib.Path(__file__).resolve().parents[4] / "content/p10.json"
 d = json.loads(PART.read_text())
 
-d["intro"] = "Until now hello-devops has run in Docker on one machine. If that machine dies, or visitors outgrow it, nothing moves the containers or adds copies for you. Kubernetes is the system most teams use to do that across many machines, much like a restaurant manager who keeps every table staffed whoever calls in sick. In this part you run a three-node cluster on your Mac with kind, see how its parts work together, then add one object at a time: Pods, Deployments, Services, settings, health checks, storage, packaging and debugging. All of it runs locally and costs nothing."
+d["intro"] = "Until now hello-devops has run in Docker on one machine. If that machine dies, or visitors outgrow it, nothing moves the containers or adds copies for you. Kubernetes is the system most teams use to do that across many machines, much like a restaurant manager who keeps every table staffed whoever calls in sick. In this part you run a three-node cluster on your Mac with kind and see how its parts work together. Then you add one object at a time: Pods, Deployments, Services, settings, health checks, storage, packaging and debugging. All of it runs locally and costs nothing."
 
 d["recap"] = [
     "Kubernetes stores what you asked for and runs control loops that keep the cluster matching it.",
