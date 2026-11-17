@@ -1,7 +1,7 @@
 {
  "part": 18,
  "title": "AI in DevOps",
- "intro": "Part 18 covers the AI tools you will use at work, and be asked about in interviews. Day 65 uses assistants and coding agents to write YAML, Terraform and scripts. It builds the habit that makes this safe: every answer passes a check you trust before it reaches main. Day 66 gives agents real tools, through MCP and in CI, and fences them in with the least privilege you practised in Part 17. It comes after security on purpose, because an agent is one more identity to lock down.",
+ "intro": "Part 18 covers the AI tools you will meet at work, and be asked about in interviews. Day 65 uses AI assistants and coding agents to draft YAML, Terraform and scripts. It builds the habit that makes this safe: every answer passes a check you trust before it reaches the main branch. Day 66 gives agents real tools, through MCP and in CI, and fences them in with the least privilege from Part 17. It comes after security on purpose, because an agent is one more identity to lock down.",
  "lessons": [
   {
    "id": "d65",
@@ -841,13 +841,13 @@
   "Language models predict likely text: good at common shapes, unreliable on exact flags, fields, versions and packages.",
   "The verify loop: draft, check with a tool you trust, feed the errors back, review the diff, then merge.",
   "kubeconform -strict, a server dry run, terraform validate and plan, actionlint, shellcheck and the tests do the checking.",
-  "AGENTS.md gives every agent the build and test commands and your rules; keep it short.",
-  "Never paste secrets or customer data, and verify every package an AI suggests, because of slopsquatting.",
-  "An agent is a model in a loop; the host runs its tool calls with credentials you chose.",
+  "AGENTS.md gives every agent the build and test commands and your rules. Keep it short.",
+  "Never paste secrets or customer data, and check every package an AI suggests, because of slopsquatting.",
+  "An agent is a model in a loop. The host runs its tool calls with credentials you chose.",
   "MCP connects hosts to servers that offer tools, resources and prompts, over stdio or Streamable HTTP.",
-  "Read-only flags narrow the menu; RBAC, token scopes and IAM set the real limit.",
+  "Read-only flags shorten the menu. RBAC, token scopes and IAM set the real limit.",
   "Agents that read untrusted text get no write access and no secrets, which breaks the lethal trifecta.",
-  "GPU workloads are ops work too: device plugins or DRA, tainted GPU nodes, queue-based scaling and idle cost."
+  "GPU workloads are ops work too: device plugins or DRA, tainted GPU nodes, scaling on queues, and idle cost."
  ],
  "flashcards": [
   {
@@ -892,11 +892,11 @@
   },
   {
    "front": "What are the two standard MCP transports?",
-   "back": "stdio for a local server started as a child process, and Streamable HTTP for a remote server."
+   "back": "stdio for a local server that the host starts itself, and Streamable HTTP for a server that runs elsewhere."
   },
   {
    "front": "Does `read_only = true` stop an MCP server from reading Secrets?",
-   "back": "No. Read tools can read whatever the credentials allow; only RBAC stops that."
+   "back": "No. Read tools can read whatever the credentials allow. Only RBAC stops that."
   },
   {
    "front": "How do you check whether an identity may exec into Pods?",
@@ -912,11 +912,11 @@
   },
   {
    "front": "How should an AI review workflow be split?",
-   "back": "A read-only job runs the model; a separate job with pull-requests: write posts the comment."
+   "back": "A read-only job runs the model. A separate job with pull-requests: write posts the comment."
   },
   {
    "front": "How does a container ask for a GPU?",
-   "back": "In `limits`, for example `nvidia.com/gpu: 1`, once a device plugin advertises the node's GPUs."
+   "back": "In `limits`, for example `nvidia.com/gpu: 1`, once a device plugin reports the node's GPUs."
   },
   {
    "front": "Why scale inference on queue length instead of CPU?",
@@ -934,7 +934,7 @@
    "title": "MCP docs: local server security",
    "url": "https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/local-server-security",
    "kind": "docs",
-   "why": "Practical defaults for MCP servers on your laptop: where they come from, isolation, credentials and network."
+   "why": "Safe defaults for MCP servers on your laptop: where they come from, how to shut them in, credentials and network."
   },
   {
    "title": "Kubernetes MCP Server: configuration reference",
@@ -1018,7 +1018,7 @@
     "Labels must be listed in alphabetical order"
    ],
    "answer": 2,
-   "why": "A schema checks fields and types; rules that compare two fields of an object live in the API server's validation."
+   "why": "A schema checks fields and types. Rules that compare two fields of an object live in the API server's own checks."
   },
   {
    "q": "Where should the one command that runs every check live, so coding agents use it too?",
@@ -1084,7 +1084,7 @@
     "Reject it, and ask for the real fix"
    ],
    "answer": 3,
-   "why": "Weakening a check to make it pass hides the problem; the change to the check must be argued for on its own."
+   "why": "Weakening a check to make it pass hides the problem. A change to a check must be argued for on its own."
   },
   {
    "q": "Day 64's checklist says no Role should use `*`. Why does that matter for an agent's Role?",
@@ -1095,7 +1095,7 @@
     "Wildcards only work in ClusterRoles"
    ],
    "answer": 1,
-   "why": "A `*` grants every resource type that exists now and every type a new CRD adds later, so the agent's access grows by itself.",
+   "why": "A `*` grants every resource type that exists now and every type added later, so the agent's access grows by itself.",
    "from": "Part 17"
   },
   {

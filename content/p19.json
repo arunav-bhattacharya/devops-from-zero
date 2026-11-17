@@ -1,7 +1,7 @@
 {
  "part": 19,
  "title": "Platform engineering and your capstone",
- "intro": "Part 19 is the last part. Day 67 shows what happens when many teams need what you built: platform teams turn it into golden paths, and FinOps gives every cost an owner. Day 68 is your capstone. One change travels through every part of the course with a check at each stage, and you finish with a plan for what to learn next.",
+ "intro": "Part 19 is the last part. Day 67 shows what happens when many teams need what you built: platform teams turn it into golden paths, ready-made ways to do common jobs. FinOps then gives every cost an owner. Day 68 is your capstone. One change travels through every part of the course with a check at each stage, and you finish with a plan for what to learn next.",
  "lessons": [
   {
    "id": "d67",
@@ -729,8 +729,8 @@
  ],
  "recap": [
   "Platform engineering turns repeated DevOps work into self-service golden paths, run as a product for developers.",
-  "Backstage is a framework for developer portals; the platform is the templates, pipelines and clusters behind it.",
-  "The CNCF maturity model scores five aspects on four levels; pick your next step instead of aiming for level 4 everywhere.",
+  "Backstage is a framework for developer portals. The platform is the templates, pipelines and clusters behind it.",
+  "The CNCF maturity model scores five aspects on four levels. Pick your next step instead of aiming for level 4 everywhere.",
   "FinOps loops through inform, optimize and operate, and starts with an owner label on every cost.",
   "Showback comes first: each team sees its own cost, and idle cost gets its own line.",
   "A golden path ships its guardrails: pinned actions, signed images, narrow RBAC, policies and owner labels.",
@@ -741,7 +741,7 @@
  "flashcards": [
   {
    "front": "What is an internal developer platform?",
-   "back": "The self-service capabilities a platform team offers, such as templates, pipelines, environments and dashboards."
+   "back": "The self-service tools a platform team offers, such as templates, build pipelines, environments and dashboards."
   },
   {
    "front": "What is a golden path?",
@@ -760,7 +760,7 @@
    "back": "Investment, adoption, interfaces, operations and measurement."
   },
   {
-   "front": "Adoption by mandate vs adoption by choice: which maturity levels?",
+   "front": "Adoption by order or adoption by choice: which maturity levels?",
    "back": "Pushed by mandate is level 2. Pulled by teams who want it is level 3."
   },
   {
@@ -777,7 +777,7 @@
   },
   {
    "front": "Showback or chargeback: what is the difference?",
-   "back": "Showback reports each team's cost while the money stays central; chargeback moves the cost into each team's budget."
+   "back": "Showback reports each team's cost while the money stays central. Chargeback moves the cost into each team's budget."
   },
   {
    "front": "What is idle cost in a Kubernetes cluster?",
@@ -785,7 +785,7 @@
   },
   {
    "front": "Why track cost per request instead of the total bill?",
-   "back": "Totals grow with the business; cost per request shows whether each unit of work got cheaper."
+   "back": "Totals grow with the business. Cost per request shows whether each unit of work got cheaper."
   },
   {
    "front": "What does `owner` in catalog-info.yaml say?",
@@ -797,7 +797,7 @@
   },
   {
    "front": "What makes a good acceptance check?",
-   "back": "It is observable, binary (pass or fail) and runnable with one command."
+   "back": "It looks at the running system, gives pass or fail, and runs with one command."
   },
   {
    "front": "What is a game day?",
@@ -817,7 +817,7 @@
    "title": "CNCF platforms white paper",
    "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/",
    "kind": "read",
-   "why": "The vendor-neutral definition of a platform and its capabilities, written by the CNCF's app delivery group."
+   "why": "The definition of a platform and what it offers, from the CNCF's app delivery group, with no product to sell."
   },
   {
    "title": "CNCF Platform Engineering Maturity Model (source)",
@@ -847,13 +847,13 @@
    "title": "OpenCost",
    "url": "https://github.com/opencost/opencost",
    "kind": "docs",
-   "why": "An open source CNCF tool that splits Kubernetes and cloud cost by namespace, label and workload."
+   "why": "A free CNCF tool that splits Kubernetes and cloud cost by namespace, label and workload."
   },
   {
    "title": "Backstage docs: software templates",
    "url": "https://backstage.io/docs/features/software-templates/",
    "kind": "docs",
-   "why": "How a form-driven template creates a repository and registers it in the catalog."
+   "why": "How a template with a form creates a repository and adds it to the catalog."
   },
   {
    "title": "FinOps Foundation: the FinOps lifecycle",
@@ -865,7 +865,7 @@
    "title": "CNCF curriculum for all CNCF exams",
    "url": "https://github.com/cncf/curriculum",
    "kind": "docs",
-   "why": "The official domains and weights for KCNA, CKAD, CKA, CKS and the newer exams."
+   "why": "The official topic areas and weights for KCNA, CKAD, CKA, CKS and the newer exams."
   },
   {
    "title": "CNCF Kubernetes and Cloud Native Associate course, KCNA (freeCodeCamp)",
@@ -907,7 +907,7 @@
     "A front door with little behind it"
    ],
    "answer": 3,
-   "why": "Backstage is a framework for the portal; the value is in the capabilities it exposes."
+   "why": "Backstage is a framework for the portal. The value is in what the portal lets teams do."
   },
   {
    "q": "A team's Pods request 4 CPUs in total but use 0.5 on average. Which FinOps lever fits first?",
@@ -929,7 +929,7 @@
     "The chart folder's own name"
    ],
    "answer": 3,
-   "why": "sed changes file contents, not folder names, so the chart folder still has the old name; the template's instructions must say so."
+   "why": "sed changes what is inside files, not folder names, so the chart folder still has the old name. The template's instructions must say so."
   },
   {
    "q": "Finance wants every team to see its cluster cost each month, but budgets stay central for now. Which practice is that?",
@@ -940,7 +940,7 @@
     "Spot pricing"
    ],
    "answer": 0,
-   "why": "Showback reports cost per team without moving money between budgets; chargeback would move it."
+   "why": "Showback reports cost per team without moving money between budgets. Chargeback would move it."
   },
   {
    "q": "Which of these is a binary, runnable acceptance check for the capstone?",
@@ -984,7 +984,7 @@
     "Restart the Argo CD server Pod"
    ],
    "answer": 2,
-   "why": "Git is the source of truth; a hand rollback would be undone by self-heal, while a revert commit is synced like any change.",
+   "why": "Git is the source of truth. Self-heal would undo a rollback by hand, while a revert commit is synced like any change.",
    "from": "Part 11"
   },
   {
@@ -996,7 +996,7 @@
     "Kyverno is running in Audit mode"
    ],
    "answer": 0,
-   "why": "Prometheus only scrapes what a ServiceMonitor selects, so a label mismatch means no target and no series.",
+   "why": "Prometheus only scrapes what a ServiceMonitor selects, so a label mismatch means no target and no data.",
    "from": "Part 12"
   }
  ]
