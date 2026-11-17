@@ -9,5 +9,16 @@
    "poster_at": 313.0,
    "replaces": "d01-map"
   }
+ ],
+ "d02": [
+  {
+   "slug": "d02-shelves",
+   "title": "Installed, but not found: the shelves your shell checks, in order",
+   "after": 1,
+   "file": "p0/d02_shelves.py",
+   "scene": "D02Shelves",
+   "poster_at": 224.0,
+   "replaces": "d02-path"
+  }
  ]
 }
