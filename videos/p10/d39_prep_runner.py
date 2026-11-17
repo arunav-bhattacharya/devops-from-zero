@@ -83,9 +83,9 @@ class D39PrepRunner(Base):
         q = T("more than one container: who goes first?", 32, YELLOW_M).move_to([0, 2.6, 0])
         self.beat("A Pod can hold more than one container. So when it starts, who goes first? And what happens if one of them never finishes?",
                   FadeIn(q, shift=DOWN * 0.1), run_time=1.6)
-        tray = RoundedRectangle(corner_radius=0.5, width=5.2, height=2.4, stroke_color=BLUE_M, stroke_width=4).set_fill(tint(BLUE_M, 0.08), 1).move_to([0, -0.2, 0])
-        main = Circle(radius=0.75, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.3), 1).move_to([-0.9, -0.2, 0])
-        side = Circle(radius=0.45, stroke_color=GOLD_M, stroke_width=3).set_fill(tint(GOLD_M, 0.3), 1).move_to([1.3, -0.2, 0])
+        tray = RoundedRectangle(corner_radius=0.5, width=5.2, height=2.9, stroke_color=BLUE_M, stroke_width=4).set_fill(tint(BLUE_M, 0.08), 1).move_to([0, -0.2, 0])
+        main = Circle(radius=0.7, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.3), 1).move_to([-0.9, 0.1, 0])
+        side = Circle(radius=0.45, stroke_color=GOLD_M, stroke_width=3).set_fill(tint(GOLD_M, 0.3), 1).move_to([1.3, 0.1, 0])
         ml = T("main dish", 26, TEAL_M).next_to(main, DOWN, buff=0.15)
         sl = T("side", 26, GOLD_M).next_to(side, DOWN, buff=0.15)
         self.beat("Before we answer, picture a waiter with a tray. The tray may hold a main dish and a side, but they always travel together, and land on the same table.",
@@ -174,7 +174,7 @@ class D39PrepRunner(Base):
         self.pause_guess([2.8, -3.0, 0])
         self.beat("If the rule were the whole story, yes. Our dish would never leave the kitchen. But log-tailer has one extra line.",
                   Indicate(man[2], color=GOLD_M), run_time=1.4)
-        rp = M("restartPolicy: Always", 24, GOLD_M).move_to(tail[2])
+        rp = T("sidecar", 26, GOLD_M).move_to(tail[2])
         rp2 = M("restartPolicy: Always", 22, GOLD_M).next_to(man[2], DOWN, buff=0.08).align_to(man[2], LEFT).shift(RIGHT * 0.35)
         self.play(FadeOut(VGroup(never, q2)), man[3:].animate.shift(DOWN * 0.31), run_time=0.5)
         self.beat("restartPolicy: Always. For an init container, that one line makes it a sidecar.",
@@ -263,5 +263,5 @@ class D39PrepRunner(Base):
         self.pause_guess([0, -3.05, 0])
         ans = T("The sidecar. write-page has finished, nginx is still being created.", 26, WHITE).move_to([0, -2.4, 0])
         self.beat("The sidecar. write-page has already finished, and nginx is still being created.",
-                  FadeOut(ck), FadeIn(ans, shift=UP * 0.1), run_time=1.4)
+                  Succession(FadeOut(ck, run_time=0.4), FadeIn(ans, shift=UP * 0.1, run_time=0.8)), run_time=1.4)
         self.wait(1.2)
