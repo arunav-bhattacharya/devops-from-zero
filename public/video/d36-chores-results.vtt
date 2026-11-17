@@ -1,0 +1,445 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.094
+Here's a question most people are too polite to ask.
+
+2
+00:00:06.094 --> 00:00:08.771
+You run the same setup on a server twice.
+
+3
+00:00:08.771 --> 00:00:09.619
+Is that safe?
+
+4
+00:00:09.619 --> 00:00:11.708
+And why on earth wouldn't it be?
+
+5
+00:00:11.933 --> 00:00:14.628
+Before computers, let's look after a house.
+
+6
+00:00:14.833 --> 00:00:19.106
+Your neighbour goes away for a week and leaves you a list of chores.
+
+7
+00:00:19.106 --> 00:00:20.175
+Water the plants.
+
+8
+00:00:20.175 --> 00:00:21.431
+Turn the heating on.
+
+9
+00:00:21.431 --> 00:00:22.625
+Lock the back door.
+
+10
+00:00:22.833 --> 00:00:26.209
+On Monday you do every chore, top to bottom.
+
+11
+00:00:26.209 --> 00:00:26.900
+Good job.
+
+12
+00:00:29.800 --> 00:00:34.073
+And every day after, you water the plants again, because the list says so.
+
+13
+00:00:34.300 --> 00:00:36.435
+By Friday, the pots are swimming.
+
+14
+00:00:36.435 --> 00:00:38.634
+Those plants didn't need a sitter.
+
+15
+00:00:38.634 --> 00:00:40.187
+They needed a lifeguard.
+
+16
+00:00:40.400 --> 00:00:42.308
+And notice, the trouble wasn't you.
+
+17
+00:00:42.308 --> 00:00:44.053
+You followed the list perfectly.
+
+18
+00:00:44.053 --> 00:00:48.143
+The list said what to do, when it should have said how the house should be.
+
+19
+00:00:49.167 --> 00:00:51.961
+So let's rewrite the list as results.
+
+20
+00:00:51.961 --> 00:00:52.716
+Soil damp.
+
+21
+00:00:52.716 --> 00:00:54.453
+Room at twenty degrees.
+
+22
+00:00:54.453 --> 00:00:55.359
+Door locked.
+
+23
+00:00:55.567 --> 00:00:58.438
+Now each line starts with a look.
+
+24
+00:00:58.438 --> 00:00:59.917
+Is the soil damp?
+
+25
+00:00:59.917 --> 00:01:01.918
+Yes, so you do nothing.
+
+26
+00:01:01.918 --> 00:01:03.397
+Is the room warm?
+
+27
+00:01:03.397 --> 00:01:03.745
+Yes.
+
+28
+00:01:03.745 --> 00:01:05.399
+Is the door locked?
+
+29
+00:01:05.399 --> 00:01:05.747
+Yes.
+
+30
+00:01:05.967 --> 00:01:10.116
+Run this list a hundred times and the house stays exactly right.
+
+31
+00:01:10.116 --> 00:01:11.932
+Checking twice does no harm.
+
+32
+00:01:12.533 --> 00:01:15.847
+Now say the wind blows the back door open on Wednesday.
+
+33
+00:01:16.067 --> 00:01:17.622
+The same list notices.
+
+34
+00:01:17.622 --> 00:01:21.016
+Soil fine, room fine, door open, so you lock it.
+
+35
+00:01:21.016 --> 00:01:25.047
+One line reports changed, and only that one did any work.
+
+36
+00:01:26.267 --> 00:01:32.174
+Ansible, the tool that sets up the inside of servers, works exactly like the second list.
+
+37
+00:01:32.174 --> 00:01:33.701
+A playbook is the list.
+
+38
+00:01:33.701 --> 00:01:39.343
+Each line is a task, and each task names a module, a small program that does one job.
+
+39
+00:01:39.567 --> 00:01:42.156
+And each task is written as a result.
+
+40
+00:01:42.156 --> 00:01:45.725
+name jq, state present, means jq must be installed.
+
+41
+00:01:45.725 --> 00:01:47.545
+It doesn't say install it.
+
+42
+00:01:47.545 --> 00:01:49.855
+It says how the server should be.
+
+43
+00:01:50.067 --> 00:01:50.848
+Let's run it.
+
+44
+00:01:50.848 --> 00:01:55.413
+The module looks at the server first, and acts only where something differs.
+
+45
+00:01:55.633 --> 00:01:57.547
+First run, fresh server.
+
+46
+00:01:57.547 --> 00:01:59.141
+Missing, so install.
+
+47
+00:01:59.141 --> 00:02:00.655
+Old text, so write.
+
+48
+00:02:00.655 --> 00:02:02.090
+Stopped, so start.
+
+49
+00:02:02.090 --> 00:02:04.243
+Three tasks, three changed.
+
+50
+00:02:04.467 --> 00:02:05.943
+Now the real question.
+
+51
+00:02:05.943 --> 00:02:10.371
+We run the same playbook again, one minute later, nothing touched.
+
+52
+00:02:10.371 --> 00:02:11.847
+How many tasks change?
+
+53
+00:02:11.847 --> 00:02:12.920
+Pause and guess.
+
+54
+00:02:15.133 --> 00:02:15.522
+Zero.
+
+55
+00:02:15.522 --> 00:02:20.651
+Each module looks, finds the server already right, and reports ok.
+
+56
+00:02:21.467 --> 00:02:25.362
+Here's the lab's real first playbook on its three practice servers.
+
+57
+00:02:25.362 --> 00:02:27.688
+The first run changes things everywhere.
+
+58
+00:02:27.900 --> 00:02:31.695
+The second run reports changed equals zero on every server.
+
+59
+00:02:31.695 --> 00:02:34.719
+It took about ten seconds, and touched nothing.
+
+60
+00:02:34.933 --> 00:02:37.441
+This property has a name: idempotence.
+
+61
+00:02:37.441 --> 00:02:39.882
+An idempotent task is safe to repeat.
+
+62
+00:02:39.882 --> 00:02:44.105
+Running it again, when nothing needs to change, changes nothing.
+
+63
+00:02:45.333 --> 00:02:47.952
+Remember the door the wind blew open?
+
+64
+00:02:47.952 --> 00:02:49.792
+On servers, it's a person.
+
+65
+00:02:49.792 --> 00:02:54.676
+Someone logs in to web2 and adds a line to its login message by hand.
+
+66
+00:02:55.800 --> 00:02:58.278
+Now the server and the code disagree.
+
+67
+00:02:58.278 --> 00:02:59.952
+That gap is called drift.
+
+68
+00:03:00.167 --> 00:03:04.487
+The next run looks, finds the extra line, and puts the file back.
+
+69
+00:03:04.487 --> 00:03:08.009
+One task reports changed, exactly like the back door.
+
+70
+00:03:09.233 --> 00:03:10.267
+So far so good.
+
+71
+00:03:10.267 --> 00:03:11.026
+Now a trap.
+
+72
+00:03:11.026 --> 00:03:16.058
+Ansible also has a shell module, which runs any command line you give it.
+
+73
+00:03:16.058 --> 00:03:19.436
+Here's a task someone adds to a nightly playbook.
+
+74
+00:03:19.667 --> 00:03:22.198
+It appends one line to a settings file.
+
+75
+00:03:22.198 --> 00:03:24.664
+Ansible is idempotent, we just saw it.
+
+76
+00:03:24.664 --> 00:03:29.727
+So after a week of nightly runs, how many copies of that line are in the file?
+
+77
+00:03:29.727 --> 00:03:30.765
+Pause and guess.
+
+78
+00:03:32.967 --> 00:03:33.690
+Well...
+
+79
+00:03:33.690 --> 00:03:34.311
+seven.
+
+80
+00:03:34.311 --> 00:03:36.379
+One for every night.
+
+81
+00:03:36.600 --> 00:03:38.832
+The shell module can't look first.
+
+82
+00:03:38.832 --> 00:03:45.593
+It has no idea what your command means, so it just runs it, every time, and reports changed every time.
+
+83
+00:03:45.593 --> 00:03:48.481
+That's a chore, hiding in a list of results.
+
+84
+00:03:48.700 --> 00:03:52.374
+Ansible's tasks are idempotent only when the module is.
+
+85
+00:03:52.374 --> 00:03:55.113
+The tool can't make a chore safe for you.
+
+86
+00:03:55.333 --> 00:04:00.245
+The fix is a module that knows the result: lineinfile, with the line you want.
+
+87
+00:04:00.245 --> 00:04:03.645
+It checks whether the line is there, and adds it once.
+
+88
+00:04:04.867 --> 00:04:06.042
+A few guardrails.
+
+89
+00:04:06.042 --> 00:04:08.600
+Command and shell always say changed.
+
+90
+00:04:08.600 --> 00:04:10.813
+So look for a real module first.
+
+91
+00:04:10.813 --> 00:04:16.413
+ansible-doc minus l lists every module you have, and grep finds the one you need.
+
+92
+00:04:16.633 --> 00:04:19.943
+And here's where our house sitter story stops working.
+
+93
+00:04:19.943 --> 00:04:24.662
+A good sitter would notice a broken window that no line on the list mentions.
+
+94
+00:04:24.662 --> 00:04:25.827
+Ansible never does.
+
+95
+00:04:26.033 --> 00:04:29.407
+It keeps no state file and no memory of past runs.
+
+96
+00:04:29.407 --> 00:04:33.523
+Delete the jq task from the playbook, and jq stays installed.
+
+97
+00:04:33.523 --> 00:04:38.448
+To remove something, you write a task that says so, such as state absent.
+
+98
+00:04:39.667 --> 00:04:41.413
+So the moral of the story.
+
+99
+00:04:41.413 --> 00:04:45.779
+A chore repeated does harm, and a result checked twice does none.
+
+100
+00:04:45.779 --> 00:04:47.324
+Write tasks as results.
+
+101
+00:04:47.533 --> 00:04:50.569
+Every good module does the same three things.
+
+102
+00:04:50.569 --> 00:04:51.581
+It looks first.
+
+103
+00:04:51.581 --> 00:04:54.145
+It acts only where the server differs.
+
+104
+00:04:54.145 --> 00:04:56.776
+And it tells you which: ok, or changed.
+
+105
+00:04:58.000 --> 00:04:59.076
+A quick check.
+
+106
+00:04:59.076 --> 00:05:03.686
+This task runs on a server where nginx is already installed.
+
+107
+00:05:03.686 --> 00:05:05.992
+Does it report ok, or changed?
+
+108
+00:05:05.992 --> 00:05:07.221
+Pause and think.
+
+109
+00:05:09.433 --> 00:05:09.993
+Changed.
+
+110
+00:05:09.993 --> 00:05:11.183
+Every single run.
+
+111
+00:05:11.183 --> 00:05:16.643
+The shell module can't look first, so it never knows the job was already done.

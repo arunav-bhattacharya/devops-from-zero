@@ -1,0 +1,409 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.689
+Saturday, noon, a full restaurant.
+
+2
+00:00:04.689 --> 00:00:09.018
+A new menu is ready, and the waiters trained for it wait at the back door.
+
+3
+00:00:09.018 --> 00:00:12.469
+How do you swap the whole shift while guests keep arriving?
+
+4
+00:00:12.700 --> 00:00:13.184
+Plan A.
+
+5
+00:00:13.184 --> 00:00:14.430
+Close for an hour.
+
+6
+00:00:14.430 --> 00:00:17.822
+Send the old shift home, then let the new one in.
+
+7
+00:00:17.822 --> 00:00:18.306
+Simple.
+
+8
+00:00:18.306 --> 00:00:21.075
+And the street would remember that hour.
+
+9
+00:00:21.900 --> 00:00:22.432
+Plan B.
+
+10
+00:00:22.432 --> 00:00:25.016
+Swap everyone at once, no closing.
+
+11
+00:00:25.016 --> 00:00:25.396
+Bold.
+
+12
+00:00:25.396 --> 00:00:31.551
+But if the new waiters cannot find the plates, every table notices, all together.
+
+13
+00:00:31.551 --> 00:00:33.603
+Bold is not a release plan.
+
+14
+00:00:33.833 --> 00:00:36.107
+So the point is: we need a third way.
+
+15
+00:00:36.107 --> 00:00:40.225
+Change the shift a little at a time, and never leave a table alone.
+
+16
+00:00:40.933 --> 00:00:45.122
+Kubernetes has a shift manager for this, the Deployment.
+
+17
+00:00:45.122 --> 00:00:49.011
+Ours runs hello-devops, three copies, version 1.0.0.
+
+18
+00:00:49.233 --> 00:00:51.026
+It does not make Pods itself.
+
+19
+00:00:51.026 --> 00:00:58.505
+It keeps a shift list for each version, called a ReplicaSet, and the ReplicaSet keeps three Pods of that version running.
+
+20
+00:00:58.733 --> 00:01:03.028
+In front of them, a Service sends visitors to every Pod that is ready.
+
+21
+00:01:04.333 --> 00:01:06.683
+Now you change the image to 1.1.0.
+
+22
+00:01:06.683 --> 00:01:14.907
+That line is part of the Pod template, the recipe for each Pod, and only a change to the template starts a new version.
+
+23
+00:01:15.133 --> 00:01:22.756
+So the Deployment opens a second shift list, a new ReplicaSet for 1.1.0, starting at zero Pods.
+
+24
+00:01:22.967 --> 00:01:25.745
+A careful manager changes shifts like this.
+
+25
+00:01:25.745 --> 00:01:27.295
+One new waiter comes in.
+
+26
+00:01:27.295 --> 00:01:30.267
+When they are ready, one old waiter goes home.
+
+27
+00:01:30.267 --> 00:01:32.593
+Repeat until the whole floor is new.
+
+28
+00:01:32.800 --> 00:01:34.395
+Two dials set the pace.
+
+29
+00:01:34.395 --> 00:01:38.835
+maxSurge: how many extra Pods may exist above the wanted number.
+
+30
+00:01:38.835 --> 00:01:42.234
+maxUnavailable: how many may be missing below it.
+
+31
+00:01:42.234 --> 00:01:44.176
+The lab picks one, and zero.
+
+32
+00:01:44.400 --> 00:01:47.591
+Three replicas, one extra allowed, none missing.
+
+33
+00:01:47.591 --> 00:01:50.516
+So during the update: at most how many Pods?
+
+34
+00:01:50.516 --> 00:01:52.377
+And at least how many ready?
+
+35
+00:01:55.100 --> 00:01:56.138
+At most four.
+
+36
+00:01:56.138 --> 00:01:57.816
+At least three ready.
+
+37
+00:01:57.816 --> 00:01:59.493
+Let us watch it hold.
+
+38
+00:01:59.700 --> 00:02:00.401
+Step one.
+
+39
+00:02:00.401 --> 00:02:02.972
+The new ReplicaSet scales to one.
+
+40
+00:02:02.972 --> 00:02:05.309
+Four Pods: three old, one new.
+
+41
+00:02:05.533 --> 00:02:09.843
+It is starting, but not ready yet, so the Service sends it nothing.
+
+42
+00:02:09.843 --> 00:02:11.451
+And no old Pod may leave.
+
+43
+00:02:11.451 --> 00:02:13.703
+Everyone waits for one word: ready.
+
+44
+00:02:13.933 --> 00:02:16.563
+The new Pod passes its readiness check.
+
+45
+00:02:16.563 --> 00:02:17.979
+Now it gets visitors.
+
+46
+00:02:19.300 --> 00:02:20.071
+Step two.
+
+47
+00:02:20.071 --> 00:02:22.468
+Only now may one old Pod go.
+
+48
+00:02:22.468 --> 00:02:25.293
+The old ReplicaSet scales to two.
+
+49
+00:02:25.500 --> 00:02:26.949
+Then the same again.
+
+50
+00:02:26.949 --> 00:02:31.008
+A second new Pod, wait for ready, one more old Pod home.
+
+51
+00:02:31.008 --> 00:02:31.877
+And a third.
+
+52
+00:02:33.200 --> 00:02:35.366
+Never fewer than three ready Pods.
+
+53
+00:02:35.366 --> 00:02:39.827
+The price is speed, and room on some node for one extra Pod at a time.
+
+54
+00:02:40.033 --> 00:02:44.288
+And notice: in the middle, both versions served visitors at once.
+
+55
+00:02:44.288 --> 00:02:47.364
+So version two must work alongside version one.
+
+56
+00:02:47.567 --> 00:02:49.868
+The old ReplicaSet is not deleted.
+
+57
+00:02:49.868 --> 00:02:55.623
+It stays at zero, like last month's menu in a drawer, and that makes going back fast.
+
+58
+00:02:58.133 --> 00:02:59.381
+Now the scary one.
+
+59
+00:02:59.381 --> 00:03:02.708
+Someone ships a typo: a tag that does not exist.
+
+60
+00:03:02.708 --> 00:03:03.816
+Pause and guess.
+
+61
+00:03:03.816 --> 00:03:05.757
+What do the visitors notice?
+
+62
+00:03:05.757 --> 00:03:08.599
+And does Kubernetes roll back on its own?
+
+63
+00:03:11.300 --> 00:03:13.623
+A third ReplicaSet scales to one.
+
+64
+00:03:13.623 --> 00:03:17.073
+Its Pod cannot pull, that is download, its image.
+
+65
+00:03:17.300 --> 00:03:18.419
+ErrImagePull.
+
+66
+00:03:18.419 --> 00:03:20.312
+Then ImagePullBackOff.
+
+67
+00:03:20.312 --> 00:03:22.291
+It never becomes ready.
+
+68
+00:03:22.500 --> 00:03:26.125
+And with maxUnavailable at zero, no old Pod may leave.
+
+69
+00:03:26.125 --> 00:03:29.482
+So the three good Pods keep serving every visitor.
+
+70
+00:03:29.482 --> 00:03:31.160
+The broken one gets none.
+
+71
+00:03:31.367 --> 00:03:33.445
+Visitors notice very little.
+
+72
+00:03:33.445 --> 00:03:35.374
+The rollout simply stalls.
+
+73
+00:03:35.374 --> 00:03:38.640
+But Kubernetes does not roll back by itself.
+
+74
+00:03:38.640 --> 00:03:39.308
+It waits.
+
+75
+00:03:39.533 --> 00:03:45.172
+After six hundred seconds by default, the Deployment reports ProgressDeadlineExceeded.
+
+76
+00:03:45.400 --> 00:03:51.238
+kubectl rollout status, with a timeout, then fails, so an automatic check can notice.
+
+77
+00:03:51.238 --> 00:03:54.053
+And you, or that check, run rollout undo.
+
+78
+00:03:54.267 --> 00:03:56.955
+The broken shift list goes back to zero.
+
+79
+00:03:56.955 --> 00:03:58.568
+The floor never noticed.
+
+80
+00:03:59.500 --> 00:04:02.679
+What we just watched has a name: a rolling update.
+
+81
+00:04:02.679 --> 00:04:07.702
+It replaces old Pods with new ones a few at a time, so the app keeps answering.
+
+82
+00:04:07.702 --> 00:04:09.419
+It is the default strategy.
+
+83
+00:04:09.633 --> 00:04:12.451
+But every step waited for one word: ready.
+
+84
+00:04:12.451 --> 00:04:13.792
+So who decides that?
+
+85
+00:04:13.792 --> 00:04:19.360
+A readiness check, which the kubelet asks every few seconds: can you take visitors?
+
+86
+00:04:19.567 --> 00:04:23.741
+Without one, a Pod counts as ready as soon as its container starts.
+
+87
+00:04:23.741 --> 00:04:27.729
+A new waiter who is ready the moment they walk in, apron or not.
+
+88
+00:04:27.933 --> 00:04:33.305
+And a version that starts but answers every request with an error is worse than our typo.
+
+89
+00:04:33.305 --> 00:04:35.840
+It looks ready, and the rollout completes.
+
+90
+00:04:36.067 --> 00:04:37.350
+So here is the rule.
+
+91
+00:04:37.350 --> 00:04:40.880
+A Deployment is only as careful as its readiness check.
+
+92
+00:04:40.880 --> 00:04:43.511
+Add one before you trust rolling updates.
+
+93
+00:04:44.533 --> 00:04:46.027
+The moral of the story.
+
+94
+00:04:46.027 --> 00:04:48.105
+One in, wait for ready, one out.
+
+95
+00:04:48.105 --> 00:04:50.247
+The old menu stays in the drawer.
+
+96
+00:04:50.247 --> 00:04:53.819
+And a broken version stalls, so you roll back yourself.
+
+97
+00:04:54.033 --> 00:04:55.079
+One quick check.
+
+98
+00:04:55.079 --> 00:04:59.586
+Four replicas, with both dials at their default, twenty five percent.
+
+99
+00:04:59.586 --> 00:05:03.440
+How many extra Pods may exist, and how many may be missing?
+
+100
+00:05:06.167 --> 00:05:08.433
+One extra, because surge rounds up.
+
+101
+00:05:08.433 --> 00:05:11.347
+One missing, because unavailable rounds down.
+
+102
+00:05:11.347 --> 00:05:15.232
+So at least three available Pods, and at most five in total.

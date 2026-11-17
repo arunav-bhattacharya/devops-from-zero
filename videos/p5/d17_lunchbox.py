@@ -90,7 +90,7 @@ class D17Lunchbox(VoiceScene):
                    (0.6, Create(vm), FadeIn(vmn)), (2.0, Wait(2.0)), (2.0, LaggedStart(*[FadeIn(b, shift=UP * 0.1) for b in vml], lag_ratio=0.4)))
         self.beat("It boots a full operating system with its own kernel. The kernel is the core of an operating system: it starts programs, hands out memory, and talks to the hardware.",
                   Indicate(vml[1][1], color=BLUE_M), run_time=1.6)
-        slowc = T("booting: many seconds", 26, BLUE_M).next_to(vmn, DOWN, buff=0.25).align_to(vmn, LEFT)
+        slowc = T("booting: many seconds", 26, BLUE_M).next_to(vm, DOWN, buff=0.2)
         self.beat("Booting all of that takes many seconds. If a container were that, it would be a busy little place.",
                   FadeIn(slowc), run_time=1.4)
 

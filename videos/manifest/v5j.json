@@ -1,0 +1,13 @@
+{
+ "d47": [
+  {
+   "slug": "d47-board-room",
+   "title": "GitOps in a restaurant: the board, the room, and a manager who keeps them in step",
+   "after": 5,
+   "file": "p11/d47_board_room.py",
+   "scene": "D47BoardRoom",
+   "poster_at": 288.0,
+   "replaces": "d47-gitops"
+  }
+ ]
+}

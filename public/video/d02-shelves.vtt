@@ -1,0 +1,365 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.615
+You have just installed a tool.
+
+2
+00:00:04.615 --> 00:00:07.828
+Homebrew, an app that installs other tools on a Mac.
+
+3
+00:00:07.828 --> 00:00:11.659
+The installer prints a long wall of text that ends in success.
+
+4
+00:00:11.867 --> 00:00:14.582
+Feeling good, you type brew --version.
+
+5
+00:00:14.582 --> 00:00:17.512
+And the terminal says: command not found.
+
+6
+00:00:17.733 --> 00:00:19.493
+So, did the install fail?
+
+7
+00:00:19.493 --> 00:00:21.534
+Should you download it again?
+
+8
+00:00:21.534 --> 00:00:22.660
+Restart the Mac?
+
+9
+00:00:22.867 --> 00:00:23.779
+None of those.
+
+10
+00:00:23.779 --> 00:00:26.058
+The tool is on your Mac, right now.
+
+11
+00:00:26.058 --> 00:00:30.161
+To see why the terminal can't find it, let's go to the kitchen.
+
+12
+00:00:30.967 --> 00:00:35.200
+Last night the flour arrived, and you put it in a cupboard by the back door.
+
+13
+00:00:35.200 --> 00:00:37.316
+In the morning, you go looking for it.
+
+14
+00:00:37.533 --> 00:00:40.847
+You check your usual shelves, one by one, from the top.
+
+15
+00:00:41.067 --> 00:00:42.576
+Not on the top shelf.
+
+16
+00:00:42.576 --> 00:00:44.156
+Not on the middle one.
+
+17
+00:00:44.156 --> 00:00:45.737
+Not on the bottom one.
+
+18
+00:00:45.967 --> 00:00:48.361
+So you announce: we have no flour.
+
+19
+00:00:48.361 --> 00:00:49.135
+But you do.
+
+20
+00:00:49.135 --> 00:00:50.614
+It is in the kitchen.
+
+21
+00:00:50.614 --> 00:00:53.289
+It is just not on any shelf you check.
+
+22
+00:00:54.000 --> 00:00:55.794
+Your Mac does exactly this.
+
+23
+00:00:55.794 --> 00:01:01.307
+The program inside the terminal window that runs what you type is called the shell.
+
+24
+00:01:01.307 --> 00:01:02.569
+On a Mac it is zsh.
+
+25
+00:01:02.569 --> 00:01:05.227
+The shell is you, looking for the flour.
+
+26
+00:01:05.433 --> 00:01:07.813
+The shelves are folders on your disk.
+
+27
+00:01:07.813 --> 00:01:12.764
+A command, like ls or git, is a program file sitting in one of those folders.
+
+28
+00:01:12.967 --> 00:01:16.598
+When you type a name, the shell does not search your whole Mac.
+
+29
+00:01:16.598 --> 00:01:21.151
+It checks a short list of folders, in order, and runs the first match it finds.
+
+30
+00:01:21.367 --> 00:01:24.075
+And the cupboard by the back door?
+
+31
+00:01:24.075 --> 00:01:31.961
+On Apple Silicon Macs, Homebrew lives in /opt/homebrew, and puts its commands in /opt/homebrew/bin.
+
+32
+00:01:32.167 --> 00:01:34.008
+Watch the shell look for brew.
+
+33
+00:01:34.400 --> 00:01:36.410
+The list ends, so it gives up.
+
+34
+00:01:36.410 --> 00:01:37.616
+Command not found.
+
+35
+00:01:37.616 --> 00:01:41.972
+The list macOS starts you with does not include Homebrew's shelf.
+
+36
+00:01:42.600 --> 00:01:44.619
+That list of shelves has a name.
+
+37
+00:01:44.619 --> 00:01:46.069
+It is called your PATH.
+
+38
+00:01:46.300 --> 00:01:50.189
+So command not found is a report about the list, not about your disk.
+
+39
+00:01:50.189 --> 00:01:52.500
+The shell is telling you where it looked.
+
+40
+00:01:52.733 --> 00:01:54.682
+Here is the step everyone skips.
+
+41
+00:01:54.682 --> 00:02:00.405
+When the Homebrew installer finishes, it prints Next steps, with two or three commands to run.
+
+42
+00:02:00.633 --> 00:02:06.527
+It is easy to miss, because they come right after a wall of text that looks like the job is done.
+
+43
+00:02:06.527 --> 00:02:08.775
+An installer that ends with homework.
+
+44
+00:02:09.000 --> 00:02:12.498
+So the point is: read the last lines of any installer.
+
+45
+00:02:12.498 --> 00:02:14.636
+Run exactly what this one prints.
+
+46
+00:02:14.636 --> 00:02:17.681
+Those lines add Homebrew's folder to your PATH.
+
+47
+00:02:17.900 --> 00:02:24.354
+They also save the change in ~/.zprofile, a file each new shell reads when it starts.
+
+48
+00:02:24.354 --> 00:02:26.404
+So open a new terminal tab.
+
+49
+00:02:26.633 --> 00:02:27.710
+Type brew again.
+
+50
+00:02:27.710 --> 00:02:31.681
+The search reaches Homebrew's shelf, finds brew, and stops.
+
+51
+00:02:31.900 --> 00:02:35.448
+When a tool is installed but not found, check PATH first.
+
+52
+00:02:36.167 --> 00:02:39.178
+Homebrew's shelf holds more than brew.
+
+53
+00:02:39.178 --> 00:02:46.548
+This course installs python@3.14 there, with pip3.14, the tool that installs Python packages.
+
+54
+00:02:46.767 --> 00:02:48.658
+Now a second kitchen problem.
+
+55
+00:02:48.658 --> 00:02:53.613
+A baker who makes rye and white bread keeps a separate starter jar for each.
+
+56
+00:02:53.613 --> 00:02:57.069
+Share one jar, and the rye ends up in the white loaf.
+
+57
+00:02:57.300 --> 00:03:05.541
+Python projects have the same risk, because two projects may want different versions of the same package, the add-on code they use.
+
+58
+00:03:05.767 --> 00:03:12.422
+So each project gets a virtual environment, or venv: a private folder of packages for one project.
+
+59
+00:03:12.422 --> 00:03:18.601
+It has its own bin shelf, with its own python, and its own pip, Python's package installer.
+
+60
+00:03:18.833 --> 00:03:23.000
+You switch it on with source .venv/bin/activate.
+
+61
+00:03:23.233 --> 00:03:24.558
+So here is a question.
+
+62
+00:03:24.558 --> 00:03:27.869
+Where on the list does activating put the venv's shelf?
+
+63
+00:03:27.869 --> 00:03:30.699
+And then, when you type python, which one runs?
+
+64
+00:03:33.900 --> 00:03:40.093
+Activating puts the venv's shelf first on your PATH, and your prompt starts with (.venv).
+
+65
+00:03:40.300 --> 00:03:43.751
+So python and pip now mean the copies inside the venv.
+
+66
+00:03:43.751 --> 00:03:46.372
+The search stops at the very first shelf.
+
+67
+00:03:46.600 --> 00:03:50.455
+This project's packages can't clash with another project's.
+
+68
+00:03:50.455 --> 00:03:53.525
+First match wins, and the first shelf is yours.
+
+69
+00:03:54.133 --> 00:03:55.030
+Now the trap.
+
+70
+00:03:55.030 --> 00:04:00.269
+Tomorrow you open a new terminal, forget to activate, and install a package.
+
+71
+00:04:00.500 --> 00:04:03.707
+This time the search finds pip on Homebrew's shelf.
+
+72
+00:04:03.707 --> 00:04:08.172
+And Homebrew's own Python refuses, with externally-managed-environment.
+
+73
+00:04:08.400 --> 00:04:08.772
+Well.
+
+74
+00:04:08.772 --> 00:04:12.264
+That is a very long way of saying: wrong shelf.
+
+75
+00:04:12.264 --> 00:04:14.195
+The error means one thing.
+
+76
+00:04:14.195 --> 00:04:15.979
+Your venv is not active.
+
+77
+00:04:16.200 --> 00:04:23.842
+And the tempting shortcut, sudo pip with no venv, only makes packages from different projects fight over versions.
+
+78
+00:04:23.842 --> 00:04:26.389
+Homebrew's Python refuses that anyway.
+
+79
+00:04:26.600 --> 00:04:31.627
+So before any pip install, check that your prompt starts with (.venv).
+
+80
+00:04:31.627 --> 00:04:33.781
+If it doesn't, activate first.
+
+81
+00:04:34.500 --> 00:04:36.148
+So, the moral of the story.
+
+82
+00:04:36.148 --> 00:04:38.589
+The shell never searches your whole Mac.
+
+83
+00:04:38.589 --> 00:04:42.861
+It checks a short list of shelves, in order, and runs the first match.
+
+84
+00:04:43.067 --> 00:04:46.013
+Homebrew's Next steps put its shelf on the list.
+
+85
+00:04:46.013 --> 00:04:49.267
+And a venv puts its own shelf first, for one project.
+
+86
+00:04:50.200 --> 00:04:51.196
+A quick check.
+
+87
+00:04:51.196 --> 00:04:57.386
+You open a new terminal in your hello-devops folder, and pytest says command not found.
+
+88
+00:04:57.386 --> 00:04:58.809
+It worked yesterday.
+
+89
+00:04:58.809 --> 00:04:59.805
+What is wrong?
+
+90
+00:05:03.033 --> 00:05:08.563
+pytest lives on the venv's shelf, and every new terminal starts without the venv active.
+
+91
+00:05:08.563 --> 00:05:11.516
+Activate it, and the shelf is back on the list.

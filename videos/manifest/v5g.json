@@ -1,0 +1,3 @@
+{
+ "d23": [{"slug": "d23-two-green", "title": "Two green pull requests, one broken main: what the checks really test", "after": 0, "file": "p6/d23_two_green.py", "scene": "D23TwoGreen", "poster_at": 250.0, "replaces": "d23-pull-request"}]
+}

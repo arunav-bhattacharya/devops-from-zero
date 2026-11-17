@@ -20,5 +20,16 @@
    "poster_at": 290.0,
    "replaces": "d56-efk-node"
   }
+ ],
+ "d57": [
+  {
+   "slug": "d57-tracking-number",
+   "title": "A tracking number for every request: spans, the traceparent header and the waterfall",
+   "after": 2,
+   "file": "p14/d57_tracking.py",
+   "scene": "D57Tracking",
+   "poster_at": 166.0,
+   "replaces": "d57-tracing"
+  }
  ]
 }

@@ -1,3 +1,24 @@
 {
- "d35": [{"slug": "d35-key-card", "title": "A key under the doormat or a hotel card: how the pipeline gets into AWS with OIDC", "after": 3, "file": "p8/d35_keycard.py", "scene": "D35KeyCard", "poster_at": 313.0, "replaces": "d35-ci-oidc"}]
+ "d35": [
+  {
+   "slug": "d35-key-card",
+   "title": "A key under the doormat or a hotel card: how the pipeline gets into AWS with OIDC",
+   "after": 3,
+   "file": "p8/d35_keycard.py",
+   "scene": "D35KeyCard",
+   "poster_at": 313.0,
+   "replaces": "d35-ci-oidc"
+  }
+ ],
+ "d36": [
+  {
+   "slug": "d36-chores-results",
+   "title": "Chores or results: why an Ansible playbook is safe to run twice",
+   "after": 5,
+   "file": "p9/d36_results.py",
+   "scene": "D36Results",
+   "poster_at": 284.0,
+   "replaces": "d36-idempotence"
+  }
+ ]
 }

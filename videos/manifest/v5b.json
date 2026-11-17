@@ -1,0 +1,13 @@
+{
+ "d07": [
+  {
+   "slug": "d07-ssh-proof",
+   "title": "How SSH keys log you in: the secret stays home, only proof travels",
+   "after": 3,
+   "file": "p1/d07_ssh_proof.py",
+   "scene": "D07SshProof",
+   "poster_at": 280.2,
+   "replaces": "d07-ssh-keys"
+  }
+ ]
+}

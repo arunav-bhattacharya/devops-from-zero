@@ -92,7 +92,7 @@ class D20BackShelf(VoiceScene):
                    (1.4, FadeIn(vol), FadeIn(vl)), (1.2, Wait(1.2)), (0.8, Create(mnt), FadeIn(cmd)), (0.6, Transform(c1[1], M("web", 24, GOLD_M).move_to(c1[1]))))
         page = M("<h1>Served from a volume</h1>", 22, GREEN_M).move_to([0, -1.6, 0])
         self.steps("A throwaway container writes our own page into the volume, and nginx serves it: served from a volume.",
-                   (2.4, Wait(2.4)), (0.8, travel(mnt, GREEN_M, 0.8)), (0.6, FadeIn(page, shift=UP * 0.1)))
+                   (2.4, Wait(2.4)), (0.8, travel(Line(c1.get_right(), vol.get_left()), GREEN_M, 0.8)), (0.6, FadeIn(page, shift=UP * 0.1)))
         rmf = M("$ docker rm -f web", 26, RED_M).move_to(cmd)
         self.steps("Now the cleaners come. We throw the container away, and start a brand new one with the same volume. Is the page still there? Pause and guess.",
                    (0.6, Transform(cmd, rmf)), (0.8, FadeOut(c1), FadeOut(mnt), FadeOut(page), FadeOut(lay)), (1.0, Wait(1.0)),
@@ -100,7 +100,7 @@ class D20BackShelf(VoiceScene):
         self.wait(2.0)
         nid = T("new container, new ID", 26, GOLD_M).next_to(c1n, DOWN, buff=0.25)
         self.steps("Yes. A new container, with a new ID, and the same page, because the page lives on the shelf, not in the till.",
-                   (0.6, FadeIn(nid)), (0.8, travel(mnt, GREEN_M, 0.8)), (0.6, FadeIn(page, shift=UP * 0.1)))
+                   (0.6, FadeIn(nid)), (0.8, travel(Line(c1.get_right(), vol.get_left()), GREEN_M, 0.8)), (0.6, FadeIn(page, shift=UP * 0.1)))
         c1 = c1n
         three = VGroup(VGroup(T("volume", 26, GREEN_M), T("Docker owns it: a database's files", 26)).arrange(RIGHT, buff=0.3),
                        VGroup(T("bind mount", 26, TEAL_M), T("you own it: code you edit on your Mac", 26)).arrange(RIGHT, buff=0.3),

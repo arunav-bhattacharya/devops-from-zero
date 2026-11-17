@@ -1,0 +1,13 @@
+{
+ "d43": [
+  {
+   "slug": "d43-probes",
+   "title": "Running is not the same as working: three probes, three actions",
+   "after": 1,
+   "file": "p10/d43_probes.py",
+   "scene": "D43Probes",
+   "poster_at": 314.0,
+   "replaces": "d43-health"
+  }
+ ]
+}

@@ -1,0 +1,401 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.583
+Picture checking into a hotel for a long stay.
+
+2
+00:00:05.583 --> 00:00:11.161
+The desk hands you a master key that opens every door, and a bill that grows every night.
+
+3
+00:00:12.567 --> 00:00:17.640
+On AWS, the master key is the root user, the email you signed up with.
+
+4
+00:00:17.640 --> 00:00:22.713
+It goes in the safe, behind MFA, a second proof like your fingerprint.
+
+5
+00:00:23.733 --> 00:00:27.452
+For daily work you carry an ordinary key card instead.
+
+6
+00:00:27.667 --> 00:00:31.113
+Now the question almost nobody asks out loud.
+
+7
+00:00:31.113 --> 00:00:36.474
+My card is real, so why does AWS still say AccessDenied at some doors?
+
+8
+00:00:36.474 --> 00:00:37.393
+Who decides?
+
+9
+00:00:38.600 --> 00:00:44.816
+Every command you type in the AWS CLI, AWS's command line tool, becomes a request.
+
+10
+00:00:44.816 --> 00:00:48.683
+Picture it walking up to a door with a card reader.
+
+11
+00:00:48.900 --> 00:00:50.826
+The reader asks two questions.
+
+12
+00:00:50.826 --> 00:00:53.393
+Is this card genuine, so who is calling?
+
+13
+00:00:53.393 --> 00:00:55.704
+And is this door on the card's list?
+
+14
+00:00:55.933 --> 00:01:04.025
+Inside the card are credentials: an access key ID, a secret, and for temporary credentials, a session token.
+
+15
+00:01:04.233 --> 00:01:07.340
+Notice: the card never hands its secret over.
+
+16
+00:01:07.340 --> 00:01:12.033
+The CLI uses it to sign the request, and only the signature travels.
+
+17
+00:01:12.267 --> 00:01:16.348
+AWS checks that signature with its own copy of the secret.
+
+18
+00:01:16.348 --> 00:01:19.021
+They match: the first lamp goes green.
+
+19
+00:01:19.833 --> 00:01:22.037
+So where does your card come from?
+
+20
+00:01:22.037 --> 00:01:25.149
+Many tutorials begin with: create an access key.
+
+21
+00:01:25.149 --> 00:01:26.445
+Quick, and it works.
+
+22
+00:01:26.667 --> 00:01:29.020
+So, when does that key stop working?
+
+23
+00:01:33.067 --> 00:01:36.169
+Only when someone deactivates or deletes it.
+
+24
+00:01:36.169 --> 00:01:37.368
+Never on its own.
+
+25
+00:01:37.600 --> 00:01:42.981
+And it works for whoever holds it, copied from a laptop, a log file, or an old commit.
+
+26
+00:01:42.981 --> 00:01:50.051
+That is a hotel card that still opens your room three years after checkout, for whoever found it in the car park.
+
+27
+00:01:50.267 --> 00:01:51.709
+So the point is this.
+
+28
+00:01:51.709 --> 00:01:57.064
+A key that never expires is only as safe as every place it was ever copied to.
+
+29
+00:01:57.767 --> 00:02:02.369
+Wouldn't it be nice if the card simply expired by itself?
+
+30
+00:02:02.369 --> 00:02:10.687
+That is aws login, in CLI 2.32.0 or later: a day pass printed from your key card, through your browser.
+
+31
+00:02:10.900 --> 00:02:17.669
+It stores temporary credentials and refreshes them every 15 minutes, and no key ever lands on your disk.
+
+32
+00:02:18.500 --> 00:02:19.982
+Now the second lamp.
+
+33
+00:02:19.982 --> 00:02:23.835
+The list of doors is an IAM policy, a JSON document.
+
+34
+00:02:23.835 --> 00:02:27.096
+Here is the lab's reports reader, shortened.
+
+35
+00:02:27.300 --> 00:02:30.149
+Each rule has an Effect, Allow or Deny.
+
+36
+00:02:30.149 --> 00:02:33.290
+An Action, the API call, like s3:GetObject.
+
+37
+00:02:33.290 --> 00:02:38.988
+A Resource, what the call acts on, named by its ARN, its Amazon Resource Name.
+
+38
+00:02:38.988 --> 00:02:42.495
+And an optional Condition that narrows the rule.
+
+39
+00:02:42.700 --> 00:02:45.910
+AWS decides every request the same way.
+
+40
+00:02:45.910 --> 00:02:47.556
+It starts from deny.
+
+41
+00:02:47.767 --> 00:02:50.261
+First request: read one report.
+
+42
+00:02:50.261 --> 00:02:51.628
+A matching Allow?
+
+43
+00:02:51.628 --> 00:02:53.318
+Yes, the second rule.
+
+44
+00:02:53.318 --> 00:02:55.409
+Green, and the door opens.
+
+45
+00:02:55.633 --> 00:02:58.313
+Second request: delete that report.
+
+46
+00:02:58.313 --> 00:03:01.604
+Nothing on the list allows s3:DeleteObject.
+
+47
+00:03:01.604 --> 00:03:03.824
+No Allow, so it stays denied.
+
+48
+00:03:04.033 --> 00:03:07.186
+Third request: list everything in the bucket.
+
+49
+00:03:07.186 --> 00:03:08.798
+Look at the first rule.
+
+50
+00:03:08.798 --> 00:03:11.951
+It allows s3:ListBucket, on this very bucket.
+
+51
+00:03:11.951 --> 00:03:13.212
+Allowed or denied?
+
+52
+00:03:15.867 --> 00:03:17.811
+It is tempting to say allowed.
+
+53
+00:03:17.811 --> 00:03:20.339
+The action matches, the bucket matches.
+
+54
+00:03:20.567 --> 00:03:24.180
+But the Condition says the prefix must start with reports.
+
+55
+00:03:24.180 --> 00:03:27.108
+Listing the whole bucket sends an empty prefix.
+
+56
+00:03:27.108 --> 00:03:28.416
+Empty does not match.
+
+57
+00:03:28.633 --> 00:03:32.379
+So no Allow matches, and we fall back to the default.
+
+58
+00:03:32.379 --> 00:03:32.874
+Denied.
+
+59
+00:03:32.874 --> 00:03:33.369
+Well...
+
+60
+00:03:33.369 --> 00:03:37.044
+that is a locked door we were sure we had a key for.
+
+61
+00:03:37.267 --> 00:03:41.228
+Ask for the reports folder instead, and the prefix matches.
+
+62
+00:03:41.228 --> 00:03:42.571
+The lamp goes green.
+
+63
+00:03:43.400 --> 00:03:44.142
+Last rule.
+
+64
+00:03:44.142 --> 00:03:49.557
+Say another policy on the same caller holds one Deny for reading reports.
+
+65
+00:03:49.767 --> 00:03:52.490
+Now the read meets an Allow and a Deny.
+
+66
+00:03:52.490 --> 00:03:55.562
+An explicit Deny anywhere beats every Allow.
+
+67
+00:03:55.562 --> 00:03:56.051
+Denied.
+
+68
+00:03:56.051 --> 00:04:00.311
+The manager's veto: it doesn't matter how many cards say yes.
+
+69
+00:04:01.133 --> 00:04:02.723
+So, the whole rule.
+
+70
+00:04:02.723 --> 00:04:03.894
+Start at deny.
+
+71
+00:04:03.894 --> 00:04:05.149
+An Allow opens.
+
+72
+00:04:05.149 --> 00:04:07.240
+A Deny beats every Allow.
+
+73
+00:04:08.067 --> 00:04:11.878
+Programs, like a server, should not carry a stored key at all.
+
+74
+00:04:11.878 --> 00:04:13.047
+They assume a role.
+
+75
+00:04:13.047 --> 00:04:16.428
+Picture a contractor's badge waiting at the front desk.
+
+76
+00:04:16.633 --> 00:04:18.439
+A role carries two policies.
+
+77
+00:04:18.439 --> 00:04:23.921
+The permissions policy, like the list we just read, says which doors the badge opens.
+
+78
+00:04:24.133 --> 00:04:27.681
+The trust policy says who may collect the badge at the desk.
+
+79
+00:04:27.900 --> 00:04:31.536
+In the lab's trust policy the Principal ends in root.
+
+80
+00:04:31.536 --> 00:04:37.572
+That means the whole account: any identity in it whose own policy allows sts:AssumeRole.
+
+81
+00:04:37.572 --> 00:04:40.933
+It does not mean the root user, despite the name.
+
+82
+00:04:41.133 --> 00:04:49.929
+aws sts assume-role checks both sides: your own policy must allow it, and the trust policy must let you collect it.
+
+83
+00:04:50.133 --> 00:04:54.975
+Then it hands back temporary credentials that last an hour by default.
+
+84
+00:04:54.975 --> 00:04:57.050
+Their key ID starts with ASIA.
+
+85
+00:04:57.050 --> 00:05:01.823
+Long-lived keys start with AKIA, so you can tell them apart in a log.
+
+86
+00:05:02.633 --> 00:05:03.677
+Two guardrails.
+
+87
+00:05:03.677 --> 00:05:05.835
+Check a policy before it bites.
+
+88
+00:05:05.835 --> 00:05:12.446
+IAM Access Analyzer validates it, and the policy simulator answers: would this call be allowed?
+
+89
+00:05:12.446 --> 00:05:14.116
+without making the call.
+
+90
+00:05:14.333 --> 00:05:17.560
+And the practice emulator, moto, allows every call.
+
+91
+00:05:17.560 --> 00:05:24.331
+A hotel with cardboard doors: good for learning the corridors, useless for learning which doors are locked.
+
+92
+00:05:25.133 --> 00:05:26.789
+So the moral of the story.
+
+93
+00:05:26.789 --> 00:05:30.611
+The card proves who you are without ever sending its secret.
+
+94
+00:05:30.611 --> 00:05:34.879
+Every door starts locked, an Allow opens it, and any Deny shuts it.
+
+95
+00:05:34.879 --> 00:05:37.427
+And the best cards expire by themselves.
+
+96
+00:05:38.133 --> 00:05:40.062
+A quick check before you go.
+
+97
+00:05:40.062 --> 00:05:46.606
+The trust policy lets you collect the badge, but your own policy does not allow sts:AssumeRole.
+
+98
+00:05:46.606 --> 00:05:48.052
+Do you get the badge?
+
+99
+00:05:50.700 --> 00:05:50.934
+No.
+
+100
+00:05:50.934 --> 00:05:55.065
+assume-role checks both sides, and your side said no.

@@ -26,7 +26,7 @@ def person(color, s=1.0):
 
 
 def panel(color, w, h, pos, k=0.1):
-    return RoundedRectangle(corner_radius=0.12, width=w, height=h, stroke_color=color, stroke_width=3).set_fill(tint(color, k), 1).move_to(pos)
+    return RoundedRectangle(corner_radius=0.12, width=w, height=h, stroke_color=color, stroke_width=3).set_fill(tint(color, k), 1).move_to(np.array([pos[0], pos[1], 0]))
 
 
 class Base(VoiceScene):

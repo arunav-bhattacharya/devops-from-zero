@@ -1,0 +1,485 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:07.364
+One visit to our lab app, hello-devops, took 835 milliseconds.
+
+2
+00:00:07.364 --> 00:00:10.223
+Its log line says status 200, success.
+
+3
+00:00:10.223 --> 00:00:13.984
+The dashboard says the error rate is zero percent.
+
+4
+00:00:14.200 --> 00:00:15.802
+Everything says fine.
+
+5
+00:00:15.802 --> 00:00:18.776
+So where did those 835 milliseconds go?
+
+6
+00:00:18.776 --> 00:00:20.225
+Hold that question.
+
+7
+00:00:20.225 --> 00:00:22.589
+We'll answer it with a picture.
+
+8
+00:00:23.400 --> 00:00:25.484
+Let's leave software for a minute.
+
+9
+00:00:25.484 --> 00:00:28.058
+You order a birthday present for a friend.
+
+10
+00:00:28.058 --> 00:00:29.713
+The shop promises two days.
+
+11
+00:00:29.933 --> 00:00:31.305
+It takes five.
+
+12
+00:00:31.567 --> 00:00:32.611
+You call around.
+
+13
+00:00:32.611 --> 00:00:35.483
+Every depot on the way kept its own logbook.
+
+14
+00:00:35.483 --> 00:00:40.248
+And every logbook says the same thing: a parcel passed through, all fine.
+
+15
+00:00:40.467 --> 00:00:45.359
+Three honest logbooks, and nobody can say where your parcel sat for three days.
+
+16
+00:00:45.567 --> 00:00:48.599
+Then you notice the tracking number on the label.
+
+17
+00:00:48.599 --> 00:00:52.684
+Each depot scanned it as the parcel came in, and again as it left.
+
+18
+00:00:52.900 --> 00:00:55.531
+Put the scans in order, on one timeline.
+
+19
+00:00:55.733 --> 00:00:58.199
+In at depot A, out of depot A.
+
+20
+00:00:58.199 --> 00:00:59.350
+In at depot B.
+
+21
+00:00:59.350 --> 00:01:01.076
+And out of depot B...
+
+22
+00:01:01.076 --> 00:01:02.309
+two days later.
+
+23
+00:01:03.333 --> 00:01:04.135
+There it is.
+
+24
+00:01:04.135 --> 00:01:06.672
+Your parcel sat on a shelf in depot B.
+
+25
+00:01:06.672 --> 00:01:12.015
+One number, copied along the whole road, turned a pile of logbooks into a story.
+
+26
+00:01:12.933 --> 00:01:14.935
+Software has the same trouble.
+
+27
+00:01:14.935 --> 00:01:17.537
+Picture a checkout on a shop's website.
+
+28
+00:01:17.537 --> 00:01:23.343
+The request enters an API service, a program that answers requests from other programs.
+
+29
+00:01:23.567 --> 00:01:27.367
+The API calls a fraud check, which calls a card partner.
+
+30
+00:01:27.367 --> 00:01:29.674
+The API also writes to a database.
+
+31
+00:01:29.674 --> 00:01:32.931
+Each one is a separate service with its own job.
+
+32
+00:01:33.133 --> 00:01:35.425
+The customer waited three seconds.
+
+33
+00:01:35.425 --> 00:01:36.773
+Which hop took them?
+
+34
+00:01:37.000 --> 00:01:42.213
+Metrics give us numbers per service: the fraud check's 95th percentile went up.
+
+35
+00:01:42.213 --> 00:01:50.197
+Logs give us lines per service, each with its own timestamp, and we have to guess which lines belong to this one request.
+
+36
+00:01:50.400 --> 00:01:52.205
+They are the depots' logbooks.
+
+37
+00:01:52.205 --> 00:01:53.408
+Honest, and no help.
+
+38
+00:01:53.408 --> 00:01:57.439
+Wouldn't it be nice to put a tracking number on the request itself?
+
+39
+00:01:58.167 --> 00:01:59.741
+That's what a trace is.
+
+40
+00:01:59.741 --> 00:02:06.241
+Every service records each step of the request as a span: a name, a start time and an end time.
+
+41
+00:02:06.241 --> 00:02:08.363
+Like a scan in, and a scan out.
+
+42
+00:02:08.567 --> 00:02:10.419
+The database write is short.
+
+43
+00:02:10.419 --> 00:02:12.007
+The fraud check is long.
+
+44
+00:02:12.007 --> 00:02:14.389
+And the card partner sits inside it.
+
+45
+00:02:15.000 --> 00:02:19.824
+Drawn like this, one row per span, the picture is called a waterfall.
+
+46
+00:02:19.824 --> 00:02:21.432
+So, which step is slow?
+
+47
+00:02:21.432 --> 00:02:22.551
+Pause and guess.
+
+48
+00:02:25.767 --> 00:02:28.819
+The obvious answer is the longest bar, the API.
+
+49
+00:02:28.819 --> 00:02:32.325
+Let's be fair to it: it really did take three seconds.
+
+50
+00:02:32.325 --> 00:02:33.819
+But look underneath it.
+
+51
+00:02:33.819 --> 00:02:37.975
+Almost all that time, the API was just waiting for its children.
+
+52
+00:02:38.200 --> 00:02:39.775
+The fraud check, then?
+
+53
+00:02:39.775 --> 00:02:40.563
+Same story.
+
+54
+00:02:40.563 --> 00:02:44.215
+It is long, but it is waiting for the card partner.
+
+55
+00:02:44.433 --> 00:02:48.695
+The slow step is the longest bar with nothing underneath it.
+
+56
+00:02:48.695 --> 00:02:51.892
+Here, the card partner: 2.6 of the 3 seconds.
+
+57
+00:02:52.100 --> 00:02:53.558
+Waiting isn't working.
+
+58
+00:02:53.558 --> 00:02:57.468
+A long bar can simply mean: I was waiting for someone else.
+
+59
+00:02:58.100 --> 00:02:59.061
+Now the names.
+
+60
+00:02:59.061 --> 00:03:02.561
+Every span in this trace carries the same trace ID.
+
+61
+00:03:02.561 --> 00:03:04.413
+That's our tracking number.
+
+62
+00:03:04.633 --> 00:03:08.979
+Each span also has its own span ID, and the ID of its parent.
+
+63
+00:03:08.979 --> 00:03:10.831
+The parents make the tree.
+
+64
+00:03:10.831 --> 00:03:13.752
+The first span, the API's, has no parent.
+
+65
+00:03:13.752 --> 00:03:15.177
+It is the root span.
+
+66
+00:03:16.300 --> 00:03:19.217
+But these spans are made in different services.
+
+67
+00:03:19.217 --> 00:03:22.445
+How does the card partner know which trace it is in?
+
+68
+00:03:22.445 --> 00:03:29.397
+Each caller copies the number onto its outgoing request, in a header, an extra line sent with every web request.
+
+69
+00:03:29.600 --> 00:03:32.178
+The standard one is called traceparent.
+
+70
+00:03:32.178 --> 00:03:33.368
+It has four parts.
+
+71
+00:03:33.600 --> 00:03:34.326
+A version.
+
+72
+00:03:34.326 --> 00:03:37.593
+The trace ID, the same for the whole request.
+
+73
+00:03:37.593 --> 00:03:40.932
+The parent span ID, the caller's current span.
+
+74
+00:03:40.932 --> 00:03:44.997
+And a flag: 01 means the caller is recording this trace.
+
+75
+00:03:45.200 --> 00:03:47.202
+The caller injects the header.
+
+76
+00:03:47.202 --> 00:03:51.273
+The receiver extracts it, and starts its own span as a child.
+
+77
+00:03:51.273 --> 00:03:55.877
+Hop by hop, the trace ID stays the same, and only the parent changes.
+
+78
+00:03:55.877 --> 00:03:58.880
+That hand-over is called context propagation.
+
+79
+00:03:59.500 --> 00:04:00.674
+Now let's break it.
+
+80
+00:04:00.674 --> 00:04:06.357
+Put a proxy, a program that forwards requests, between the fraud check and the card partner.
+
+81
+00:04:06.357 --> 00:04:09.013
+Some proxies strip headers they don't know.
+
+82
+00:04:09.233 --> 00:04:10.608
+The header goes in.
+
+83
+00:04:10.608 --> 00:04:12.127
+It does not come out.
+
+84
+00:04:12.333 --> 00:04:16.797
+So the card partner sees no tracking number, and starts a brand new one.
+
+85
+00:04:16.797 --> 00:04:18.533
+A parcel with a fresh label.
+
+86
+00:04:18.767 --> 00:04:21.551
+Now you have two traces that look unrelated.
+
+87
+00:04:21.551 --> 00:04:26.360
+And in the first one, the fraud check is a long bar with nothing underneath.
+
+88
+00:04:26.360 --> 00:04:28.259
+It looks guilty, and it isn't.
+
+89
+00:04:28.467 --> 00:04:32.790
+So the point really is: a trace is only as long as its chain of headers.
+
+90
+00:04:32.790 --> 00:04:36.032
+When it stops early, look for the hop that dropped it.
+
+91
+00:04:36.833 --> 00:04:38.285
+Back to our question.
+
+92
+00:04:38.285 --> 00:04:42.984
+hello-devops keeps its visit count in Redis, a small, fast database.
+
+93
+00:04:42.984 --> 00:04:48.651
+In the lab, Redis writes were paused for 800 milliseconds, and one visit was sent.
+
+94
+00:04:48.867 --> 00:04:50.021
+No code changed.
+
+95
+00:04:50.021 --> 00:04:56.656
+Starting the app under a wrapper command, opentelemetry-instrument, was enough to get spans.
+
+96
+00:04:56.656 --> 00:05:00.407
+The trace showed GET slash, taking 835 milliseconds.
+
+97
+00:05:00.633 --> 00:05:08.241
+And under it, its child span INCRBY, the Redis command that adds to the count: 832 of those milliseconds.
+
+98
+00:05:08.241 --> 00:05:11.356
+The longest bar with nothing underneath it.
+
+99
+00:05:11.567 --> 00:05:15.326
+Status 200, zero errors, and still a slow Redis call.
+
+100
+00:05:15.326 --> 00:05:17.596
+Now you know where to look next.
+
+101
+00:05:18.400 --> 00:05:20.663
+A trace doesn't replace the others.
+
+102
+00:05:20.663 --> 00:05:23.184
+A metric alert says something is wrong.
+
+103
+00:05:23.184 --> 00:05:24.477
+A trace shows where.
+
+104
+00:05:24.477 --> 00:05:27.387
+And the logs of that one request explain why.
+
+105
+00:05:27.600 --> 00:05:31.713
+And recording every request costs CPU, network and storage.
+
+106
+00:05:31.713 --> 00:05:35.059
+So at high traffic, teams keep only some traces.
+
+107
+00:05:35.059 --> 00:05:36.175
+That's sampling.
+
+108
+00:05:36.400 --> 00:05:42.060
+Head sampling decides at the start, and the 01 flag carries that choice to every service.
+
+109
+00:05:42.060 --> 00:05:46.830
+It's cheap, but blind: it can't know yet which requests will fail or crawl.
+
+110
+00:05:46.830 --> 00:05:53.380
+Tail sampling waits for the whole trace, keeps the errors and the slow ones, and pays for it in memory.
+
+111
+00:05:54.200 --> 00:05:56.244
+So, the whole story in two lines.
+
+112
+00:05:56.244 --> 00:06:00.581
+One tracking number, copied from hop to hop in the traceparent header.
+
+113
+00:06:00.581 --> 00:06:04.545
+And the slow step is the longest bar with nothing underneath it.
+
+114
+00:06:04.767 --> 00:06:05.758
+A quick check.
+
+115
+00:06:05.758 --> 00:06:10.855
+A request crosses four services, but its trace shows only the first two.
+
+116
+00:06:10.855 --> 00:06:12.130
+Where do you look?
+
+117
+00:06:12.130 --> 00:06:13.263
+Pause and think.
+
+118
+00:06:16.467 --> 00:06:19.038
+At the hop between the second and the third.
+
+119
+00:06:19.038 --> 00:06:23.712
+Something there, a proxy, a queue, a homemade client, didn't pass the header on.
+
+120
+00:06:23.933 --> 00:06:27.964
+Next, a new part about the calls between services themselves.
+
+121
+00:06:27.964 --> 00:06:32.523
+When a call is slow or fails, who decides to wait, retry, or give up?

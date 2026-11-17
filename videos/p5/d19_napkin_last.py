@@ -168,7 +168,7 @@ class D19NapkinLast(VoiceScene):
                    (0.3, FadeIn(env2)), (1.0, env2.animate.move_to(gu2)), (0.3, FadeOut(env2, scale=0.5)), (0.6, tt.animate.set_value(0.6)), (0.6, FadeOut(gu2), FadeOut(g1)), (0.6, FadeIn(ec2)))
 
         # guardrail: exec form is half the fix
-        half = VGroup(T("exec form is only half the fix:", 26, GOLD_M), T("the app must handle SIGTERM itself", 26, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([-6.3, -0.7, 0], aligned_edge=LEFT)
+        half = VGroup(T("exec form is only half the fix:", 26, GOLD_M), T("the app must handle SIGTERM itself", 26, GOLD_M)).arrange(DOWN, buff=0.1).move_to([0, 2.95, 0])
         self.steps("One honest catch. Exec form is only half the fix. The app must also handle SIGTERM itself. gunicorn does. A bare Python script does not, and as PID 1 it waited out the full ten seconds in our test, just like sleep.",
                    (0.8, FadeIn(half, shift=UP * 0.1)))
         timer.clear_updaters()
