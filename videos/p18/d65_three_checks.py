@@ -174,9 +174,9 @@ class D65ThreeChecks(VoiceScene):
                   FadeIn(rule, shift=UP * 0.1), run_time=2.0)
 
         # ---------- 7. guardrail: what each check can and can't see
-        cs = VGroup(T("needs no cluster, knows only the schema", 22, GREY_B).next_to(f1[1], DOWN, buff=0.2, aligned_edge=LEFT),
-                    T("needs kind, knows your cluster's rules", 22, GREY_B).next_to(f2[1], DOWN, buff=0.2, aligned_edge=LEFT),
-                    T("the only one that knows what you meant", 22, GREY_B).next_to(f3[1], DOWN, buff=0.2, aligned_edge=LEFT))
+        cs = VGroup(T("no cluster; knows only the schema", 22, GREY_B).next_to(f1[1], DOWN, buff=0.2, aligned_edge=LEFT),
+                    T("needs kind; knows the cluster's rules", 22, GREY_B).next_to(f2[1], DOWN, buff=0.2, aligned_edge=LEFT),
+                    T("only you know what you meant", 22, GREY_B).next_to(f3[1], DOWN, buff=0.2, aligned_edge=LEFT))
         self.beat("Each check has a limit. kubeconform needs no cluster, but knows only the schema. The dry run needs kind, but knows your cluster's rules. Checks prove shape, not intent. Only your review knows what you meant.",
                   LaggedStart(*[FadeIn(c, shift=RIGHT * 0.1) for c in cs], lag_ratio=0.9), run_time=6.0)
         self.beat("Which gives a plain rule. Use AI for work you could check yourself, and never for a file you couldn't review.",

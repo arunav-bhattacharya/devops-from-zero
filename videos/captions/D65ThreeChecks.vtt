@@ -1,0 +1,345 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:11.017
+You ask an AI assistant which flag makes kubeconform, a tool that checks Kubernetes files, reject unknown fields.
+
+2
+00:00:11.200 --> 00:00:14.775
+It answers in two seconds, with no sign of doubt.
+
+3
+00:00:14.775 --> 00:00:15.651
+Strict mode.
+
+4
+00:00:15.800 --> 00:00:19.062
+So here's the question we're shy to ask out loud.
+
+5
+00:00:19.062 --> 00:00:20.327
+It sounded so sure.
+
+6
+00:00:20.327 --> 00:00:22.524
+Doesn't that count for something?
+
+7
+00:00:22.524 --> 00:00:23.656
+Hold your answer.
+
+8
+00:00:24.600 --> 00:00:25.978
+Back to the jam shop.
+
+9
+00:00:25.978 --> 00:00:34.768
+A summer intern has read every cookbook in the library, and writes you a strawberry jam card in thirty seconds, in lovely handwriting.
+
+10
+00:00:34.933 --> 00:00:36.003
+It looks perfect.
+
+11
+00:00:36.003 --> 00:00:40.280
+It also says to boil the fruit at a setting your stove doesn't have.
+
+12
+00:00:40.467 --> 00:00:43.545
+And it names a brand of pectin that doesn't exist.
+
+13
+00:00:43.733 --> 00:00:45.280
+The intern wasn't lying.
+
+14
+00:00:45.280 --> 00:00:48.308
+They wrote what recipe cards usually look like.
+
+15
+00:00:48.308 --> 00:00:52.175
+Neat handwriting and a confident tone feel like being right.
+
+16
+00:00:52.175 --> 00:00:53.915
+They aren't the same thing.
+
+17
+00:00:55.400 --> 00:00:57.707
+An AI assistant works the same way.
+
+18
+00:00:57.707 --> 00:01:04.431
+Inside it sits a language model, a program trained on a huge amount of text to predict the next words.
+
+19
+00:01:04.431 --> 00:01:06.343
+It isn't looking anything up.
+
+20
+00:01:06.533 --> 00:01:11.512
+So common shapes come out well, because it has seen them thousands of times.
+
+21
+00:01:11.512 --> 00:01:19.112
+Rare or recent details, a renamed flag, an exact field, a version, come out as guesses that look exactly like facts.
+
+22
+00:01:19.267 --> 00:01:21.785
+And it sounds just as sure when it is wrong.
+
+23
+00:01:21.785 --> 00:01:23.845
+So its confidence tells you nothing.
+
+24
+00:01:24.000 --> 00:01:25.425
+Remember strict mode?
+
+25
+00:01:25.425 --> 00:01:26.307
+It was wrong.
+
+26
+00:01:26.307 --> 00:01:31.871
+The real flag is minus strict, and the tool's own help text settles it in seconds.
+
+27
+00:01:32.867 --> 00:01:34.906
+Now a real case from the lab.
+
+28
+00:01:34.906 --> 00:01:45.100
+You ask an assistant for a Kubernetes Deployment for hello-devops, our tiny web app, with three copies, a health check and Redis as the database.
+
+29
+00:01:45.100 --> 00:01:46.647
+No files, no versions.
+
+30
+00:01:46.800 --> 00:01:51.686
+A Deployment is the settings file that tells Kubernetes how to run your app.
+
+31
+00:01:51.686 --> 00:01:54.836
+The answer came back in seconds, neatly indented.
+
+32
+00:01:54.836 --> 00:01:56.635
+How many mistakes are in it?
+
+33
+00:01:56.635 --> 00:01:57.664
+Pause and guess.
+
+34
+00:01:59.800 --> 00:02:00.458
+Check one.
+
+35
+00:02:00.458 --> 00:02:07.233
+kubeconform checks each object against the official schema, the list of allowed fields and their types.
+
+36
+00:02:07.233 --> 00:02:11.575
+With minus strict, it also rejects fields the schema doesn't know.
+
+37
+00:02:11.733 --> 00:02:12.635
+It finds two.
+
+38
+00:02:12.635 --> 00:02:15.547
+The port is written as text, not a number.
+
+39
+00:02:15.547 --> 00:02:18.251
+And timeout isn't a probe field at all.
+
+40
+00:02:18.251 --> 00:02:20.400
+The real one is timeoutSeconds.
+
+41
+00:02:20.600 --> 00:02:24.281
+Without minus strict, the invented field slips straight through.
+
+42
+00:02:24.281 --> 00:02:28.997
+A made-up field looks exactly like a real one, sitting where a real one would sit.
+
+43
+00:02:29.133 --> 00:02:31.767
+Fix those two, and kubeconform is happy.
+
+44
+00:02:31.767 --> 00:02:32.557
+Are we done?
+
+45
+00:02:32.557 --> 00:02:35.980
+I know what you're thinking: the checker said valid.
+
+46
+00:02:35.980 --> 00:02:37.757
+Let's be suspicious anyway.
+
+47
+00:02:37.933 --> 00:02:38.620
+Check two.
+
+48
+00:02:38.620 --> 00:02:43.836
+A server dry run sends the file to the cluster's front desk, the API server.
+
+49
+00:02:43.836 --> 00:02:48.297
+It runs every check of a real apply, then throws the object away.
+
+50
+00:02:48.297 --> 00:02:53.171
+Here we run it against kind, the small practice cluster on your laptop.
+
+51
+00:02:53.333 --> 00:02:54.463
+It finds one more.
+
+52
+00:02:54.463 --> 00:02:59.297
+The selector looks for app hello-devops, but the Pods are labelled app hello.
+
+53
+00:02:59.297 --> 00:03:02.121
+The Deployment could never find its own Pods.
+
+54
+00:03:02.267 --> 00:03:05.952
+Some rules live only in the server, and a schema can't see them.
+
+55
+00:03:05.952 --> 00:03:09.235
+That's why the loop doesn't stop at the first green tick.
+
+56
+00:03:09.400 --> 00:03:10.596
+Check three is you.
+
+57
+00:03:10.596 --> 00:03:13.554
+No tool knows what hello-devops actually needs.
+
+58
+00:03:13.554 --> 00:03:18.337
+So you read it, the way you'd read the intern's card next to your own stove.
+
+59
+00:03:18.533 --> 00:03:22.969
+The probe asks for slash health, but the app serves slash health Z.
+
+60
+00:03:22.969 --> 00:03:24.293
+The image is latest.
+
+61
+00:03:24.293 --> 00:03:28.198
+REDIS_HOST is localhost instead of the Service name, redis.
+
+62
+00:03:28.198 --> 00:03:30.251
+And there's no readiness probe.
+
+63
+00:03:30.400 --> 00:03:35.252
+The draft also sets a CPU limit, which the lab leaves out on purpose.
+
+64
+00:03:35.252 --> 00:03:40.525
+Neat, confident, and wrong in many small places, exactly like the jam card.
+
+65
+00:03:42.267 --> 00:03:47.459
+Paste the exact errors back, ask for a fixed version, and run the same checks again.
+
+66
+00:03:47.459 --> 00:03:49.869
+This habit has a name: the verify loop.
+
+67
+00:03:49.869 --> 00:03:53.145
+Draft, check with a tool you trust, fix, check again.
+
+68
+00:03:53.333 --> 00:03:59.185
+Nothing that has failed or skipped a check reaches main, the shared branch that releases come from.
+
+69
+00:03:59.333 --> 00:04:00.819
+Each check has a limit.
+
+70
+00:04:00.819 --> 00:04:04.436
+kubeconform needs no cluster, but knows only the schema.
+
+71
+00:04:04.436 --> 00:04:07.988
+The dry run needs kind, but knows your cluster's rules.
+
+72
+00:04:07.988 --> 00:04:09.990
+Checks prove shape, not intent.
+
+73
+00:04:09.990 --> 00:04:12.444
+Only your review knows what you meant.
+
+74
+00:04:12.600 --> 00:04:14.085
+Which gives a plain rule.
+
+75
+00:04:14.085 --> 00:04:19.013
+Use AI for work you could check yourself, and never for a file you couldn't review.
+
+76
+00:04:20.133 --> 00:04:21.901
+So the moral of the story.
+
+77
+00:04:21.901 --> 00:04:23.057
+The model drafts.
+
+78
+00:04:23.057 --> 00:04:24.757
+A tool you trust decides.
+
+79
+00:04:24.757 --> 00:04:27.477
+And you decide what the tools can't see.
+
+80
+00:04:28.600 --> 00:04:29.497
+A quick check.
+
+81
+00:04:29.497 --> 00:04:33.659
+An assistant tells you, with no doubt at all, to use strict mode.
+
+82
+00:04:33.659 --> 00:04:35.773
+What do you do before you use it?
+
+83
+00:04:35.773 --> 00:04:36.797
+Pause and think.
+
+84
+00:04:38.933 --> 00:04:40.694
+Check the tool's own help.
+
+85
+00:04:40.694 --> 00:04:44.757
+Here, kubeconform minus h shows the real flag, minus strict.
+
+86
+00:04:44.757 --> 00:04:48.617
+A few seconds of checking beats any amount of confidence.

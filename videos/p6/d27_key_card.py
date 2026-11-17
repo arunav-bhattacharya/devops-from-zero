@@ -127,7 +127,7 @@ class D27KeyCard(VoiceScene):
         rv = VGroup(T("required reviewer", 26, GOLD_M), T("one approval lets the job go on", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([0, -1.5, 0])
         self.beat("Before the job starts, GitHub checks the environment's protection rules. A required reviewer: one approval lets the job go on.",
                   FadeIn(rv), run_time=2.0)
-        ok = tick(True, 0.24).next_to(gate, UP, buff=0.1).shift(RIGHT * 0.7)
+        ok = tick(True, 0.24).next_to(gate[1], RIGHT, buff=0.3)
         self.beat("You click approve. Only then does the job start, and only then does it get the environment's secrets.",
                   Create(ok), tg2.animate.move_to(jb.get_left() + LEFT * 0.8), run_time=1.8)
         trap = T("trap: an environment that doesn't exist is created with no rules", 26, RED_M).move_to([0, -2.9, 0])

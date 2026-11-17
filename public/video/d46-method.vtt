@@ -1,0 +1,477 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.589
+Picture a Saturday night, and a guest who says the food never came.
+
+2
+00:00:06.800 --> 00:00:14.252
+The new manager runs into the kitchen, restarts the oven, resets the card reader, and moves two cooks to other stations.
+
+3
+00:00:14.467 --> 00:00:16.822
+Ten minutes later, the soup arrives.
+
+4
+00:00:16.822 --> 00:00:19.178
+Which of the three changes fixed it?
+
+5
+00:00:19.178 --> 00:00:20.028
+Nobody knows.
+
+6
+00:00:20.028 --> 00:00:21.533
+Maybe none of them did.
+
+7
+00:00:21.767 --> 00:00:24.163
+And next Saturday, it happens again.
+
+8
+00:00:24.367 --> 00:00:27.525
+Three changes and a happy ending isn't a diagnosis.
+
+9
+00:00:27.525 --> 00:00:30.188
+It's a lottery ticket that happened to win.
+
+10
+00:00:30.188 --> 00:00:33.347
+So when a Pod won't start, where do you look first?
+
+11
+00:00:34.167 --> 00:00:36.438
+Kubernetes makes guessing worse.
+
+12
+00:00:36.438 --> 00:00:38.567
+A broken Pod is full of clues.
+
+13
+00:00:38.567 --> 00:00:40.626
+The crashed container's logs.
+
+14
+00:00:40.626 --> 00:00:41.690
+Its last state.
+
+15
+00:00:41.690 --> 00:00:42.968
+The newest events.
+
+16
+00:00:43.200 --> 00:00:46.129
+Now restart or delete it, to see if it helps.
+
+17
+00:00:46.129 --> 00:00:48.602
+Kubernetes happily starts a fresh one.
+
+18
+00:00:48.602 --> 00:00:50.815
+And the clues go with the old one.
+
+19
+00:00:51.033 --> 00:00:52.295
+So here's the rule.
+
+20
+00:00:52.295 --> 00:00:55.284
+Read the evidence before you change anything.
+
+21
+00:00:55.284 --> 00:00:56.877
+A restart deletes clues.
+
+22
+00:00:57.700 --> 00:00:59.154
+A method beats guessing.
+
+23
+00:00:59.154 --> 00:01:03.516
+Work from the bottom up, because each layer depends on the one below it.
+
+24
+00:01:03.733 --> 00:01:04.693
+One, the Pod.
+
+25
+00:01:04.693 --> 00:01:07.939
+Is it scheduled, running, ready, restarting?
+
+26
+00:01:07.939 --> 00:01:09.193
+That's the table.
+
+27
+00:01:09.400 --> 00:01:10.506
+Two, the Service.
+
+28
+00:01:10.506 --> 00:01:14.864
+Does it select those Pods, and send to the port the app listens on?
+
+29
+00:01:14.864 --> 00:01:15.905
+The host's list.
+
+30
+00:01:16.133 --> 00:01:17.263
+Three, the route.
+
+31
+00:01:17.263 --> 00:01:20.319
+Does the Gateway send traffic to that Service?
+
+32
+00:01:20.319 --> 00:01:21.316
+The front door.
+
+33
+00:01:21.533 --> 00:01:23.952
+And four, the node, the whole kitchen.
+
+34
+00:01:23.952 --> 00:01:26.688
+It sits under every Pod, yet it comes last.
+
+35
+00:01:26.900 --> 00:01:27.548
+Why last?
+
+36
+00:01:27.548 --> 00:01:31.505
+A sick kitchen shows up as many tables failing at once.
+
+37
+00:01:31.505 --> 00:01:34.024
+One broken Pod rarely points there.
+
+38
+00:01:35.433 --> 00:01:39.585
+At every layer, the commands are nearly always the same five.
+
+39
+00:01:39.585 --> 00:01:40.946
+Get, for the status.
+
+40
+00:01:40.946 --> 00:01:44.280
+Describe, reading the Events at the bottom first.
+
+41
+00:01:44.280 --> 00:01:44.621
+Logs.
+
+42
+00:01:44.621 --> 00:01:46.730
+Events for the whole namespace.
+
+43
+00:01:46.730 --> 00:01:48.636
+And then, tests from inside.
+
+44
+00:01:49.467 --> 00:01:52.647
+Down at the Pod, the trouble comes in two families.
+
+45
+00:01:52.647 --> 00:01:55.453
+In the first, the container never ran at all.
+
+46
+00:01:55.667 --> 00:01:58.051
+So kubectl logs has nothing to show.
+
+47
+00:01:58.051 --> 00:02:01.891
+The cook never lit the stove, so there's no smoke to read.
+
+48
+00:02:01.891 --> 00:02:04.540
+The answer is in describe, under Events.
+
+49
+00:02:04.767 --> 00:02:08.164
+In the second family, the container ran at least once.
+
+50
+00:02:08.164 --> 00:02:11.436
+So it left clues in its logs, and in its last state.
+
+51
+00:02:11.667 --> 00:02:12.932
+Here's a classic.
+
+52
+00:02:12.932 --> 00:02:15.090
+A Pod is in CrashLoopBackOff.
+
+53
+00:02:15.090 --> 00:02:17.620
+kubectl logs shows nothing useful.
+
+54
+00:02:17.620 --> 00:02:19.555
+Where's the error message?
+
+55
+00:02:19.555 --> 00:02:20.745
+Pause and guess.
+
+56
+00:02:22.967 --> 00:02:24.883
+In the previous container's log.
+
+57
+00:02:24.883 --> 00:02:29.254
+Plain logs shows the fresh container, which may have printed nothing yet.
+
+58
+00:02:29.254 --> 00:02:34.763
+Dash dash previous shows the one that crashed: the note left by the cook who just went home.
+
+59
+00:02:34.967 --> 00:02:39.136
+And BackOff only means the kubelet waits longer between tries.
+
+60
+00:02:39.136 --> 00:02:40.548
+It's never the cause.
+
+61
+00:02:41.367 --> 00:02:43.836
+Let's run the method on a real mistake.
+
+62
+00:02:43.836 --> 00:02:47.509
+Someone changed one setting for the app, and restarted it.
+
+63
+00:02:47.509 --> 00:02:49.472
+Now the rollout never finishes.
+
+64
+00:02:49.700 --> 00:02:50.675
+Step one, get.
+
+65
+00:02:50.675 --> 00:02:53.880
+One new Pod is Running, but zero of one ready.
+
+66
+00:02:53.880 --> 00:02:58.339
+The three old Pods keep serving, so users see nothing wrong yet.
+
+67
+00:02:58.567 --> 00:03:00.955
+The app counts visits in Redis.
+
+68
+00:03:00.955 --> 00:03:03.420
+So the tempting move is obvious.
+
+69
+00:03:03.420 --> 00:03:04.499
+Restart Redis!
+
+70
+00:03:04.499 --> 00:03:05.269
+Let's not.
+
+71
+00:03:05.269 --> 00:03:06.579
+Let's read first.
+
+72
+00:03:06.800 --> 00:03:08.442
+Step two, the events.
+
+73
+00:03:08.442 --> 00:03:14.387
+Readiness fails with 503, and the app returns 503 when it can't reach Redis.
+
+74
+00:03:14.387 --> 00:03:17.359
+But Redis itself is Running and ready.
+
+75
+00:03:17.567 --> 00:03:21.671
+So restarting Redis would have changed nothing, and taught us nothing.
+
+76
+00:03:21.671 --> 00:03:23.489
+The problem is between the two.
+
+77
+00:03:24.200 --> 00:03:26.332
+Check what the new Pod was given.
+
+78
+00:03:26.332 --> 00:03:29.305
+printenv says rediss, with two S's at the end.
+
+79
+00:03:29.305 --> 00:03:30.727
+It looks almost right.
+
+80
+00:03:30.933 --> 00:03:34.922
+We want to test that name from inside the Pod's network.
+
+81
+00:03:34.922 --> 00:03:37.557
+But the app's image has no DNS tools.
+
+82
+00:03:37.557 --> 00:03:38.911
+No nslookup at all.
+
+83
+00:03:39.133 --> 00:03:41.576
+So we send a helper with a toolbox.
+
+84
+00:03:41.576 --> 00:03:48.555
+kubectl debug adds a temporary container to the running Pod, with an image you choose, like busybox.
+
+85
+00:03:48.767 --> 00:03:52.896
+It shares the Pod's network, so its answers are the app's answers.
+
+86
+00:03:52.896 --> 00:03:55.649
+Pause and guess: does the name rediss exist?
+
+87
+00:03:57.867 --> 00:03:58.550
+NXDOMAIN.
+
+88
+00:03:58.550 --> 00:03:59.537
+No such name.
+
+89
+00:03:59.537 --> 00:04:05.609
+And the correct name, redis with one S, resolves to the Redis Service's address.
+
+90
+00:04:05.833 --> 00:04:07.032
+That's the proof.
+
+91
+00:04:07.032 --> 00:04:10.206
+A typo in the ConfigMap, one letter too many.
+
+92
+00:04:10.206 --> 00:04:12.393
+Redis and the network are fine.
+
+93
+00:04:12.393 --> 00:04:15.567
+One change fixes it, and we know exactly why.
+
+94
+00:04:15.767 --> 00:04:21.789
+That helper is called an ephemeral container: short-lived, never restarted, gone with the Pod.
+
+95
+00:04:22.600 --> 00:04:23.717
+A few guardrails.
+
+96
+00:04:23.717 --> 00:04:27.530
+First, change one thing at a time, and watch what happens.
+
+97
+00:04:27.530 --> 00:04:29.831
+That's the opposite of our manager.
+
+98
+00:04:30.033 --> 00:04:32.175
+Second, Forbidden is not a bug.
+
+99
+00:04:32.175 --> 00:04:34.732
+Your key just doesn't open that door.
+
+100
+00:04:34.732 --> 00:04:36.667
+Ask with kubectl auth can-i.
+
+101
+00:04:36.900 --> 00:04:41.906
+Third, the honest limit: this finds causes only in what Kubernetes can see.
+
+102
+00:04:41.906 --> 00:04:46.044
+Bugs in your own code need the app's logs, metrics and traces.
+
+103
+00:04:46.867 --> 00:04:50.109
+The moral of the story: read before you touch.
+
+104
+00:04:50.109 --> 00:04:55.608
+Climb from the Pod, to the Service, to the route, and the node when many fail.
+
+105
+00:04:55.608 --> 00:04:58.851
+Get, describe, logs, events, then test inside.
+
+106
+00:04:58.851 --> 00:04:59.838
+Never started?
+
+107
+00:04:59.838 --> 00:05:00.965
+Read the Events.
+
+108
+00:05:00.965 --> 00:05:01.600
+No tools?
+
+109
+00:05:01.600 --> 00:05:02.657
+Bring your own.
+
+110
+00:05:03.467 --> 00:05:04.570
+One quick check.
+
+111
+00:05:04.570 --> 00:05:06.224
+A new Pod stays Pending.
+
+112
+00:05:06.224 --> 00:05:09.602
+Its event says zero of three nodes are available.
+
+113
+00:05:09.602 --> 00:05:12.980
+One had a taint, and two had insufficient memory.
+
+114
+00:05:12.980 --> 00:05:14.841
+What's the most likely fix?
+
+115
+00:05:14.841 --> 00:05:15.944
+Pause and think.
+
+116
+00:05:18.167 --> 00:05:20.928
+Lower the memory request, or free up room.
+
+117
+00:05:20.928 --> 00:05:25.530
+The scheduler counts requests, and the event accounted for every node.
+
+118
+00:05:25.530 --> 00:05:27.502
+Read slowly, and it tells you.
+
+119
+00:05:27.502 --> 00:05:28.817
+Thanks for watching.

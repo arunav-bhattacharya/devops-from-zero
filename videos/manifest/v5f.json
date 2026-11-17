@@ -31,5 +31,16 @@
    "poster_at": 292.0,
    "replaces": "d45-packaging"
   }
+ ],
+ "d46": [
+  {
+   "slug": "d46-method",
+   "title": "Read before you touch: a fixed order of checks for a broken Pod",
+   "after": 4,
+   "file": "p10/d46_method.py",
+   "scene": "D46Method",
+   "poster_at": 256.0,
+   "replaces": "d46-troubleshoot"
+  }
  ]
 }
