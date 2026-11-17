@@ -37,7 +37,7 @@ class D53ReadableBoard(VoiceScene):
 
         # ---------------- 1. forty numbers in small handwriting
         random.seed(7)
-        board = frame(9.6, 4.6, GREY_B, [0, 0.0, 0], fill=0.04)
+        board = frame(10.6, 4.6, GREY_B, [0, 0.0, 0], fill=0.04)
         nums = VGroup()
         for i in range(40):
             if i % 3 == 0:
@@ -51,7 +51,7 @@ class D53ReadableBoard(VoiceScene):
         self.beat("Picture a doctor called to the ward at 3 a.m. On the wall hangs a board with forty numbers, in small handwriting.",
                   Create(board), LaggedStart(*[FadeIn(n) for n in nums], lag_ratio=0.02), run_time=3.0)
         cf = VGroup(*[SurroundingRectangle(nums[i], color=GOLD_M, buff=0.05, stroke_width=2) for i in (0, 1, 9, 10)])
-        self.beat("Some temperatures are in Celsius, some in Fahrenheit. Nothing is circled. She has one minute to decide which patient to see first.",
+        self.beat("Some temperatures in Celsius, some in Fahrenheit, nothing circled. She has one minute to pick a patient.",
                   LaggedStart(*[Create(c) for c in cf], lag_ratio=0.3), run_time=3.0)
         self.beat("Every team builds that board by accident. Each number was added for a good reason. Nobody planned the whole.", FadeOut(cf), run_time=1.6)
         self.play(FadeOut(VGroup(board, nums)), run_time=0.5)
@@ -59,7 +59,7 @@ class D53ReadableBoard(VoiceScene):
         # ---------------- 2. predict: where do the numbers live?
         q = T("A Grafana dashboard shows 7 days of request rates.", 30).move_to(UP * 2.3)
         q2 = T("Where do those numbers live?", 32, YELLOW_M).next_to(q, DOWN, buff=0.25)
-        self.beat("Our software version of that board is a dashboard, a web page of graphs, drawn by a tool called Grafana. Say it shows seven days of request rates. Where do those numbers live?",
+        self.beat("Our version of that board is a dashboard, a web page of graphs drawn by a tool called Grafana. It shows seven days of request rates. Where do those numbers live?",
                   FadeIn(q), Write(q2), run_time=3.0)
         opts = VGroup(T("A. in Grafana's own database, copied every 15 seconds", 26), T("B. in Prometheus; each panel asks when the page loads", 26),
                       T("C. in the dashboard's file, saved with every panel", 26), T("D. in your browser's cache", 26)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(DOWN * 0.5)
@@ -83,7 +83,7 @@ class D53ReadableBoard(VoiceScene):
         a1 = Arrow(gr.get_left() + UP * 0.25, br.get_right() + UP * 0.25, buff=0.1, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.12)
         js = lchip("dashboard JSON", GOLD_M, 22).next_to(a1, UP, buff=0.12)
         panels = VGroup(*[Rectangle(width=1.0, height=0.7, stroke_color=BLUE_M, stroke_width=2) for _ in range(4)]).arrange_in_grid(2, 2, buff=0.15).move_to(BR + DOWN * 0.1)
-        self.beat("First, the browser loads the dashboard itself from Grafana: a file that lists the panels, the boxes on the page, and the query each one runs. No numbers in it.",
+        self.beat("First, the browser loads the dashboard from Grafana: a file listing the panels, the boxes on the page, and each one's query. No numbers.",
                   GrowArrow(a1), FadeIn(js), travel(a1, GOLD_M, 0.8), LaggedStart(*[Create(p) for p in panels], lag_ratio=0.2), run_time=3.2)
         a2 = Arrow(br.get_right() + DOWN * 0.3, gr.get_left() + DOWN * 0.3, buff=0.1, stroke_width=3, color=BLUE_M, max_tip_length_to_length_ratio=0.12)
         a3 = Arrow(gr.get_right(), pr.get_left(), buff=0.1, stroke_width=3, color=BLUE_M, max_tip_length_to_length_ratio=0.12)
@@ -99,10 +99,8 @@ class D53ReadableBoard(VoiceScene):
         cons = VGroup(T("never scraped: Grafana cannot show it", 24, GREY_B), T("Prometheus deletes old samples: that part of every graph goes empty", 24, GREY_B),
                       T("every refresh runs every query again", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.15).move_to([0, -2.6, 0])
         fit(cons, 12.4)
-        self.beat("Three things follow. Grafana cannot show what Prometheus never scraped. When Prometheus deletes old samples, after seven days in the lab, that part of every graph goes empty.",
-                  FadeIn(cons[0]), FadeIn(cons[1]), run_time=2.6)
-        self.beat("And every refresh runs every query again. A wall screen with thirty heavy panels, refreshing every ten seconds, is real work for Prometheus.",
-                  FadeIn(cons[2]), Succession(travel(a3, BLUE_M, 0.4), travel(a3, BLUE_M, 0.4), travel(a3, BLUE_M, 0.4)), run_time=2.6)
+        self.beat("So Grafana cannot show what Prometheus never scraped, or what it already deleted, after seven days in the lab. And every refresh runs every query again.",
+                  FadeIn(cons[0]), FadeIn(cons[1]), Succession(Wait(3.0), FadeIn(cons[2]), travel(a3, BLUE_M, 0.4), travel(a3, BLUE_M, 0.4)), run_time=5.6)
         self.play(FadeOut(VGroup(br, br_t, gr, gr_t, gr_n, pr, pr_t, pr_n, a1, js, panels, a2, a3, ql, a4, lines, cons)), run_time=0.6)
 
         # ---------------- 4. one panel, from raw counter to a readable number
@@ -114,7 +112,7 @@ class D53ReadableBoard(VoiceScene):
         fit(qq, 6.6)
         self.beat("Now let's build one panel the doctor could read. Start from the raw counter of hello-devops, our tiny lab app. Five hundred and sixty three.",
                   Create(pan), FadeIn(pan_t), Write(qq), FadeIn(big), run_time=2.6)
-        self.beat("That is the total since the app started. On a graph it only climbs, so a spike hides inside it.", Indicate(big, color=WHITE), run_time=1.8)
+        self.beat("That is the total since the app started. It only climbs.", Indicate(big, color=WHITE), run_time=1.8)
         qq2 = M('sum by (status) (rate(hello_responses_total[1m]))', 24, YELLOW_M).move_to(qq)
         fit(qq2, 6.6)
         big2 = T("4.42", 72).move_to(big)
@@ -122,11 +120,11 @@ class D53ReadableBoard(VoiceScene):
         qq, big = qq2, big2
         self.beat("Four point four two what? The panel does not know. Nobody reading it at 3 a.m. should have to guess.", Wiggle(big), run_time=1.8)
         unit = lchip("unit: requests/sec", GOLD_M, 24).move_to([-2.6, 0.6, 0])
-        big3 = T("4.42 req/s", 64).move_to(big)
+        big3 = T("4.42 req/s", 54).move_to(big)
         self.beat("So set the panel's unit. The data does not change. Only how it is shown.", FadeIn(unit, shift=RIGHT * 0.2), ReplacementTransform(big, big3), run_time=2.0)
         big = big3
         exs = VGroup(T("0.0347  ->  3.47%", 26), T("0.231  ->  231 ms", 26), T("1610612736  ->  1.50 GiB", 26)).arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to([-2.6, -1.4, 0])
-        self.beat("Prometheus stores base units: seconds, bytes, and ratios between zero and one. Right for storage, and hard on a tired human. The unit fixes the display.",
+        self.beat("Prometheus stores base units: seconds, bytes, ratios between zero and one. The unit makes them human.",
                   LaggedStart(*[FadeIn(e, shift=RIGHT * 0.1) for e in exs], lag_ratio=0.5), run_time=3.4)
         rule0 = T("Keep the ratio in PromQL; set the unit in the panel.", 26, YELLOW_M).to_edge(DOWN, buff=0.55)
         self.beat("So never multiply by a hundred in your query to get a percentage. Keep the ratio, and set the unit.", FadeIn(rule0), run_time=1.8)
@@ -146,7 +144,7 @@ class D53ReadableBoard(VoiceScene):
         self.beat("Add or vector zero to the error part, and the panel gets a real zero.", FadeIn(fix), ReplacementTransform(nd, z), run_time=1.8)
         big = z
         th = VGroup(lchip("below 1%: green", GREEN_M, 22), lchip("from 1%: orange", GOLD_M, 22), lchip("from 5%: red", RED_M, 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to([-2.6, -1.2, 0])
-        self.beat("Now the red zone. A car's rev counter has one, so you never need to remember the number where the engine suffers. In Grafana that is a threshold.",
+        self.beat("Now the red zone, like the one on a car's rev counter. In Grafana it is called a threshold.",
                   run_time=None)
         self.beat("The lab's error ratio is green below one percent, orange from one percent, and red from five.",
                   LaggedStart(*[FadeIn(t, shift=RIGHT * 0.1) for t in th], lag_ratio=0.5), run_time=2.4)
@@ -154,7 +152,7 @@ class D53ReadableBoard(VoiceScene):
         self.beat("So a ratio of point zero three four seven shows as three point four seven percent, in orange. Nobody has to remember anything.",
                   ReplacementTransform(big, b2), pan.animate.set_stroke(GOLD_M), run_time=2.0)
         big = b2
-        self.beat("Use color only for what someone should act on. If every panel is red or green all day, people stop seeing the colors, the way nobody looks up at a car alarm in the street.",
+        self.beat("Use color only for what someone should act on. If every panel is red or green all day, people stop seeing colors.",
                   run_time=None)
         self.play(FadeOut(VGroup(pan, pan_t, big, eq, fix, th)), run_time=0.5)
 
@@ -176,7 +174,7 @@ class D53ReadableBoard(VoiceScene):
         self.wait(2.0)
         miss = T("each window sees 1 minute out of every 10: the spike falls in a gap", 24, RED_M).move_to([0, -1.5, 0])
         fit(miss, 12.4)
-        self.beat("It falls in a gap. Each window looks at one minute out of every ten, and the graph says all is well. It is like checking the speedometer for one second, every ten minutes of a drive.",
+        self.beat("It falls in a gap. Each window sees one minute out of every ten, and the graph says all is well.",
                   FadeIn(miss), Indicate(spike, color=RED_M), run_time=3.0)
         q2 = M("rate(...[$__rate_interval])", 26, GREEN_M).move_to(q1)
         wide = VGroup(*[Rectangle(width=tl.n2p(10)[0] - tl.n2p(0)[0] + (tl.n2p(0.25)[0] - tl.n2p(0)[0]), height=1.6, stroke_color=GREEN_M, stroke_width=2).set_fill(GREEN_M, 0.18).next_to(p, UP, buff=0).align_to(p, RIGHT) for p in steps[1:]])
@@ -186,7 +184,7 @@ class D53ReadableBoard(VoiceScene):
         self.beat("And the window that covers the spike sees it.", FadeIn(caught), Indicate(wide[3], color=GREEN_M), run_time=1.6)
         rule = T("A fixed range that looks fine zoomed in goes blind zoomed out.", 28, YELLOW_M).move_to([0, -2.6, 0])
         fit(rule, 12.4)
-        self.beat("A fixed range that looks fine zoomed in goes blind zoomed out. Use rate interval in every rate. And tell Grafana the scrape interval, fifteen seconds in the lab, so its sums come out right.",
+        self.beat("A fixed range that looks fine zoomed in goes blind zoomed out. Use rate interval in every rate.",
                   Write(rule), run_time=3.0)
         self.play(FadeOut(VGroup(tl, tl_l, spike, sp_l, pts, wide, q2, caught, rule)), run_time=0.6)
 
@@ -198,7 +196,7 @@ class D53ReadableBoard(VoiceScene):
         fit(g, 12.4)
         gt = T("Guardrails", 32, GOLD_M).next_to(g, UP, buff=0.45).align_to(g, LEFT)
         self.beat("A few guardrails. Pick the chart from the question. A line for how it changes, one big number for right now.", Write(gt), FadeIn(g[0], shift=RIGHT * 0.1), run_time=2.0)
-        self.beat("A stat squeezes a whole series into one number, and you choose how. For right now, use Last star, the last value that is not empty. A mean of seven days hides a ten minute outage.",
+        self.beat("For a stat, use Last star, the last value that is not empty. A mean of seven days hides a ten minute outage.",
                   FadeIn(g[1], shift=RIGHT * 0.1), run_time=2.4)
         self.beat("Lay the page out for the tired reader: is it broken, since when, and where. Four numbers on top, the same signals over time below.", FadeIn(g[2], shift=RIGHT * 0.1), run_time=2.2)
         self.beat("And every dashboard is a JSON file underneath. Keep it in git, so nobody's late night edit quietly changes it.", FadeIn(g[3], shift=RIGHT * 0.1), run_time=2.0)

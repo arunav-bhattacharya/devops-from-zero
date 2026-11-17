@@ -1,0 +1,429 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.378
+Picture leaving a helper in charge of your shop for the morning.
+
+2
+00:00:06.378 --> 00:00:08.315
+You hand over a written checklist.
+
+3
+00:00:08.467 --> 00:00:09.734
+Open the stock room.
+
+4
+00:00:09.734 --> 00:00:12.524
+Count yesterday's visitors in the door book.
+
+5
+00:00:12.524 --> 00:00:15.249
+Then leave a note that says done or failed.
+
+6
+00:00:15.400 --> 00:00:17.327
+At lunch, the note says done.
+
+7
+00:00:17.467 --> 00:00:20.421
+Later you learn the stock room key never turned.
+
+8
+00:00:20.421 --> 00:00:21.960
+The helper just moved on.
+
+9
+00:00:22.133 --> 00:00:22.882
+Nobody lied.
+
+10
+00:00:22.882 --> 00:00:26.249
+The checklist never said what to do when a step fails.
+
+11
+00:00:26.249 --> 00:00:28.369
+So here is the question for today.
+
+12
+00:00:28.369 --> 00:00:32.485
+When a script ends, how does anyone know whether it really worked?
+
+13
+00:00:33.467 --> 00:00:35.094
+A script is that helper.
+
+14
+00:00:35.094 --> 00:00:39.095
+It is a file of instructions the computer follows in order.
+
+15
+00:00:39.095 --> 00:00:42.553
+Ours is logsum, a small Python script from the lab.
+
+16
+00:00:42.733 --> 00:00:45.665
+Its door book is a web server's access log.
+
+17
+00:00:45.665 --> 00:00:48.187
+One line for every visit, or request.
+
+18
+00:00:48.333 --> 00:00:51.967
+When it finishes, it reports back on three separate channels.
+
+19
+00:00:52.133 --> 00:00:55.356
+The report sheet is standard output, or stdout.
+
+20
+00:00:55.356 --> 00:00:57.139
+The real results go there.
+
+21
+00:00:57.333 --> 00:01:00.846
+The note for the manager is standard error, or stderr.
+
+22
+00:01:00.846 --> 00:01:06.115
+That is for messages meant for people: warnings, and the reason something failed.
+
+23
+00:01:06.267 --> 00:01:09.977
+And the thumbs up or down at the end is the exit code.
+
+24
+00:01:09.977 --> 00:01:10.733
+One number.
+
+25
+00:01:10.733 --> 00:01:12.038
+Zero means success.
+
+26
+00:01:12.038 --> 00:01:15.061
+Any other number means some kind of failure.
+
+27
+00:01:15.200 --> 00:01:17.877
+Now meet the most important reader of all.
+
+28
+00:01:17.877 --> 00:01:22.467
+CI, the robot that runs your script every time someone changes the code.
+
+29
+00:01:22.667 --> 00:01:24.405
+It does not read the report.
+
+30
+00:01:24.405 --> 00:01:26.019
+It does not read the note.
+
+31
+00:01:26.019 --> 00:01:28.255
+It looks at one number, and decides.
+
+32
+00:01:28.400 --> 00:01:29.702
+A very busy manager.
+
+33
+00:01:29.702 --> 00:01:31.786
+It only ever looks at the thumb.
+
+34
+00:01:31.786 --> 00:01:35.759
+So if that number is wrong, nothing else you printed matters.
+
+35
+00:01:36.467 --> 00:01:38.479
+Let's run it on the lab's log.
+
+36
+00:01:38.479 --> 00:01:41.429
+uv is the tool that runs our Python scripts.
+
+37
+00:01:41.600 --> 00:01:44.343
+The helper reads 238 requests.
+
+38
+00:01:44.343 --> 00:01:47.087
+11 of them were server errors.
+
+39
+00:01:47.087 --> 00:01:48.916
+That is 4.6 percent.
+
+40
+00:01:49.067 --> 00:01:52.309
+The limit is 1 percent unless you say otherwise.
+
+41
+00:01:52.309 --> 00:01:54.875
+So what exit code should it hand back?
+
+42
+00:01:54.875 --> 00:01:55.956
+Pause and guess.
+
+43
+00:01:58.133 --> 00:01:58.465
+One.
+
+44
+00:01:58.465 --> 00:02:02.115
+The check found a problem, and CI turns red.
+
+45
+00:02:02.267 --> 00:02:04.372
+The report went to stdout.
+
+46
+00:02:04.372 --> 00:02:12.712
+And the one-line reason went to stderr: the error rate, 4.6 percent, is above the limit of 1.0 percent.
+
+47
+00:02:12.867 --> 00:02:17.994
+Raise the limit to 5 percent with a flag, and the same log passes.
+
+48
+00:02:17.994 --> 00:02:19.159
+Exit code zero.
+
+49
+00:02:19.159 --> 00:02:20.247
+CI goes green.
+
+50
+00:02:21.467 --> 00:02:24.165
+Why keep the report and the note apart?
+
+51
+00:02:24.165 --> 00:02:27.762
+Because the report is often read by another program.
+
+52
+00:02:27.762 --> 00:02:31.428
+Here, jq, a small tool that picks values out of JSON.
+
+53
+00:02:31.600 --> 00:02:36.553
+JSON is a plain text format that programs use to swap data.
+
+54
+00:02:36.553 --> 00:02:39.995
+With format json, stdout holds only JSON.
+
+55
+00:02:39.995 --> 00:02:44.612
+So jq reads it cleanly, and finds the error rate: 4.62.
+
+56
+00:02:44.800 --> 00:02:49.098
+Now say the helper uses print for a cheerful starting message.
+
+57
+00:02:49.098 --> 00:02:50.692
+print writes to stdout.
+
+58
+00:02:50.692 --> 00:02:54.228
+So the first line jq sees is: starting dot dot dot.
+
+59
+00:02:54.400 --> 00:02:55.437
+And jq fails.
+
+60
+00:02:55.437 --> 00:02:58.787
+One friendly hello broke the whole report.
+
+61
+00:02:58.933 --> 00:03:00.624
+So the rule is simple.
+
+62
+00:03:00.624 --> 00:03:03.159
+Messages for people go to stderr.
+
+63
+00:03:03.159 --> 00:03:05.695
+The report stays alone on stdout.
+
+64
+00:03:06.467 --> 00:03:07.526
+Now the big trap.
+
+65
+00:03:07.526 --> 00:03:11.266
+You might think the safest script is one that never crashes.
+
+66
+00:03:11.266 --> 00:03:15.318
+So let's wrap the whole thing in try, and except Exception, pass.
+
+67
+00:03:15.318 --> 00:03:17.437
+Catch every error, and do nothing.
+
+68
+00:03:17.600 --> 00:03:20.260
+Give it a log file that is not there.
+
+69
+00:03:20.260 --> 00:03:21.411
+Pause and guess.
+
+70
+00:03:21.411 --> 00:03:22.633
+What does CI see?
+
+71
+00:03:24.800 --> 00:03:25.328
+A zero.
+
+72
+00:03:25.328 --> 00:03:25.781
+Green.
+
+73
+00:03:25.781 --> 00:03:30.985
+The file was never read, nothing was checked, and the note says done.
+
+74
+00:03:31.133 --> 00:03:34.511
+That is the stuck key from the opening, written in Python.
+
+75
+00:03:34.667 --> 00:03:39.495
+Honestly, except Exception pass should have been named: close your eyes and smile.
+
+76
+00:03:39.667 --> 00:03:41.788
+Jokes aside, here is the point.
+
+77
+00:03:41.788 --> 00:03:44.800
+A hidden failure looks exactly like success.
+
+78
+00:03:46.000 --> 00:03:50.288
+The same trap waits when a script asks another program for help.
+
+79
+00:03:50.288 --> 00:03:55.848
+subprocess.run starts git, the tool that saves versions of files, and waits for it.
+
+80
+00:03:56.000 --> 00:03:58.323
+Git fails, say with a merge conflict.
+
+81
+00:03:58.323 --> 00:04:00.645
+run only writes git's exit code down.
+
+82
+00:04:00.645 --> 00:04:04.788
+And your script carries on to the next line, as if git had worked.
+
+83
+00:04:04.933 --> 00:04:07.976
+Add check=True, and the failure becomes loud.
+
+84
+00:04:07.976 --> 00:04:13.181
+Python raises CalledProcessError, and the script stops instead of pretending.
+
+85
+00:04:13.933 --> 00:04:18.050
+So the lab gives every script the same contract for that number.
+
+86
+00:04:18.050 --> 00:04:19.015
+Zero, all good.
+
+87
+00:04:19.015 --> 00:04:21.009
+One, the check found a problem.
+
+88
+00:04:21.009 --> 00:04:23.389
+Two, the script could not do its job.
+
+89
+00:04:23.533 --> 00:04:27.392
+The real logsum catches FileNotFoundError by name.
+
+90
+00:04:27.392 --> 00:04:31.946
+It writes one clear line on stderr, no such file, nope.log.
+
+91
+00:04:31.946 --> 00:04:33.644
+And it hands back two.
+
+92
+00:04:33.800 --> 00:04:38.484
+Now a caller can tell the error rate is too high apart from the log is missing.
+
+93
+00:04:38.484 --> 00:04:40.619
+Different trouble, different number.
+
+94
+00:04:41.333 --> 00:04:43.459
+Three habits keep the helper honest.
+
+95
+00:04:43.459 --> 00:04:47.828
+Catch the errors you expect, by name, and turn each one into a clear line.
+
+96
+00:04:47.828 --> 00:04:53.260
+Let everything else crash, with its traceback, the trail of lines that shows where it broke.
+
+97
+00:04:53.260 --> 00:04:58.043
+And when you call another program, pass a list, check equals true, and a timeout.
+
+98
+00:04:58.733 --> 00:05:00.085
+So back to the shop.
+
+99
+00:05:00.085 --> 00:05:02.044
+The report goes on the sheet.
+
+100
+00:05:02.044 --> 00:05:03.868
+The reasons go in the note.
+
+101
+00:05:03.868 --> 00:05:05.828
+And the verdict is the thumb.
+
+102
+00:05:05.828 --> 00:05:08.260
+A good helper says failed, out loud.
+
+103
+00:05:08.400 --> 00:05:10.262
+Quick check before you go.
+
+104
+00:05:10.262 --> 00:05:13.555
+A script prints all fine, then exits with one.
+
+105
+00:05:13.555 --> 00:05:14.415
+Did it pass?
+
+106
+00:05:16.600 --> 00:05:16.864
+No.
+
+107
+00:05:16.864 --> 00:05:20.027
+CI trusts the number, not the words.

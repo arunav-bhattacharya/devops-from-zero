@@ -57,6 +57,7 @@ class D35KeyCard(VoiceScene):
         self.add_sound(path)
         t0 = self.renderer.time
         for rt, *anims in plays:
+            anims = [x() if callable(x) and getattr(x, "__name__", "") == "<lambda>" else x for x in anims]
             self.play(*anims, run_time=rt)
         left = dur - (self.renderer.time - t0)
         if left > 0.02:
@@ -145,7 +146,7 @@ class D35KeyCard(VoiceScene):
         kc = card_shape(GREEN_M, 0.9).next_to(desk, RIGHT, buff=0.3)
         self.steps("Both yes? It hands you a key card. The card opens room twelve, nothing else. And at checkout, it simply stops working.",
                    (0.6, Create(ck2)), (0.8, FadeIn(kc, scale=0.6)), (1.4, kc.animate.next_to(room, LEFT, buff=0.25)),
-                   (0.8, Indicate(room[1], color=GREEN_M)), (1.0, kc.animate.set_opacity(0.25)))
+                   (0.8, Indicate(room[1], color=GREEN_M)), (1.0, lambda: kc.animate.set_opacity(0.25)))
         self.beat("Nobody had to remember to cancel it. The card cancels itself.", Wait(0.1), run_time=0.4)
 
         # ---------- 5. map every part out loud
@@ -172,7 +173,10 @@ class D35KeyCard(VoiceScene):
 
         # ---------- 6. shrink and show: one real pass
         claims = VGroup(M("aud: sts.amazonaws.com", 22), M("sub: repo:you/hello-devops:pull_request", 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.16)
-        cp = panel(claims, PURPLE_M).move_to([1.9, 2.75, 0])
+        cp = panel(claims, PURPLE_M)
+        cp[0].stretch_to_fit_width(M("sub: repo:stranger/other-repo:pull_request", 22).width + 0.52)
+        claims.align_to(cp[0], LEFT).shift(RIGHT * 0.26)
+        cp.move_to([1.6, 2.75, 0])
         self.steps("Let's look at one real pass. It holds claims, named fields that GitHub vouches for. Two matter here.",
                    (0.5, FadeOut(name)), (0.9, FadeIn(cp, shift=DOWN * 0.15)))
         a1 = Arrow(job.get_bottom(), gh.get_top(), buff=0.12, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.18)
@@ -212,7 +216,7 @@ class D35KeyCard(VoiceScene):
 
         # exact, character for character
         main = VGroup(job2, gh, a1, aws, trust, perm, tok2, okC, xB, err, cp)
-        self.play(main.animate.set_opacity(0.12), run_time=0.6)
+        self.play(FadeOut(main), run_time=0.6)
         old = VGroup(T("repos created before July 15, 2026", 24, GREY_B), M("repo:you/hello-devops:pull_request", 24, TEAL_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         new = VGroup(T("repos created after July 15, 2026", 24, GREY_B), M("repo:you@123456/hello-devops@456789:pull_request", 24, TEAL_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
         forms = VGroup(old, new).arrange(DOWN, aligned_edge=LEFT, buff=0.55).move_to([0, 0.3, 0])
@@ -224,7 +228,7 @@ class D35KeyCard(VoiceScene):
         self.beat("So when you see that error, don't blame the pipeline. Check the sub first.",
                   FadeIn(rule, shift=UP * 0.15), run_time=1.8)
         self.wait(0.4)
-        self.play(FadeOut(VGroup(main, forms, rule)), run_time=0.7)
+        self.play(FadeOut(VGroup(forms, rule)), run_time=0.7)
 
         # ---------- 8. guardrail: keep the room small
         perm2 = box("the pipeline's role", GREEN_M, w=4.2, size=28).move_to([0, 2.4, 0])

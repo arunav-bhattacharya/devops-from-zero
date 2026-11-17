@@ -69,7 +69,7 @@ class D13KeyCard(VoiceScene):
         safe = panel(1.9, 1.7, BLUE_M, 0.12, 3).move_to([-3.6, 0.6, 0])
         dial = Circle(radius=0.3, stroke_color=BLUE_M, stroke_width=3).move_to(safe)
         sl = T("safe, with MFA", 28, BLUE_M).next_to(safe, DOWN, buff=0.35)
-        self.beat("On AWS, the master key is the root user, the email you signed up with. A sensible guest locks it in the safe: MFA, a second proof like your fingerprint, and then it stays there.",
+        self.beat("On AWS, the master key is the root user, the email you signed up with. It goes in the safe, behind MFA, a second proof like your fingerprint.",
                   mk.animate.scale(0.5).move_to(safe), FadeOut(mkl), run_time=2.2)
         self.play(FadeIn(safe), Create(dial), FadeIn(sl), run_time=0.8)
         card = panel(2.2, 1.3, TEAL_M, 0.18, 3).move_to([0, 0.6, 0])
@@ -77,7 +77,7 @@ class D13KeyCard(VoiceScene):
         cl = T("your key card", 28, TEAL_M).next_to(card, DOWN, buff=0.35)
         self.beat("For daily work you carry an ordinary key card instead.", FadeIn(VGroup(card, stripe)), FadeIn(cl), run_time=1.4)
         q = T("my card works... so why AccessDenied?", 32, YELLOW_M).move_to([0, 2.9, 0])
-        self.beat("And here is the question almost nobody asks out loud. My card is real. I am signed in. So why does AWS still say AccessDenied at some doors? Who decides, and how?",
+        self.beat("Now the question almost nobody asks out loud. My card is real, so why does AWS still say AccessDenied at some doors? Who decides?",
                   Write(q), run_time=2.6)
         self.play(FadeOut(VGroup(safe, dial, sl, mk, bill, lines, bl, cl, q)), VGroup(card, stripe).animate.scale(0.75).move_to([-5.05, 2.2, 0]), run_time=1.0)
 
@@ -107,27 +107,27 @@ class D13KeyCard(VoiceScene):
         req = VGroup(M("request", 24), M("+ signature", 24, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         reqp = panel(req.width + 0.5, req.height + 0.4, WHITE, 0.0, 2).move_to([-0.3, -0.6, 0])
         req.move_to(reqp)
-        self.steps("Now notice something clever. The card never hands its secret over. The CLI uses the secret to sign the request, and only the signature travels.",
+        self.steps("Notice: the card never hands its secret over. The CLI uses it to sign the request, and only the signature travels.",
                    (1.6, Wait(1.6)), (0.8, Indicate(cred[1], color=RED_M)), (1.0, FadeIn(reqp), FadeIn(req[0])),
                    (0.8, TransformFromCopy(cred[1], req[1])))
         mine = chip("its own copy of the secret", PURPLE_M, 24).move_to([3.6, -0.6, 0])
-        self.steps("AWS checks that signature with its own copy of the secret. They match, so the first lamp goes green. AWS knows who is calling.",
+        self.steps("AWS checks that signature with its own copy of the secret. They match: the first lamp goes green.",
                    (1.0, travel(a0, YELLOW_M, 1.0)), (0.8, FadeIn(mine, shift=UP * 0.1)), (1.4, Wait(1.4)), (0.5, l1.animate.set_fill(GREEN_M)))
 
         # 3. the card with no checkout date  [PAIN, PREDICT, WISH]
         self.play(FadeOut(VGroup(reqp, req, mine)), l1.animate.set_fill(GREY_D), run_time=0.6)
         akia = chip("access key, made once", RED_M, 26).move_to([1.4, -0.3, 0])
-        self.beat("So where does your card come from? Many tutorials begin with: create an access key. It is the quickest way to make the first command work.",
+        self.beat("So where does your card come from? Many tutorials begin with: create an access key. Quick, and it works.",
                   FadeIn(akia, shift=UP * 0.1), run_time=2.0)
         qq = T("when does it stop working?", 28, YELLOW_M).next_to(akia, DOWN, buff=0.4)
-        self.beat("Here is the question. When does that key stop working?", FadeIn(qq), run_time=1.2)
+        self.beat("So, when does that key stop working?", FadeIn(qq), run_time=1.2)
         self.guess([1.4, -2.6, 0])
         days = T("day 1", 28, GREY_B).next_to(qq, DOWN, buff=0.4)
         self.play(FadeIn(days), run_time=0.3)
         for d in ("day 90", "day 400", "day 1100"):
             self.play(Transform(days, T(d, 28, GREY_B).move_to(days)), run_time=0.35)
         ans = T("only when someone deletes it", 28, RED_M).move_to(qq)
-        self.beat("Only when someone deactivates or deletes it. Not after a day, not after ninety days. Never on its own.",
+        self.beat("Only when someone deactivates or deletes it. Never on its own.",
                   Transform(qq, ans), Indicate(akia[1], color=RED_M), run_time=2.0)
         spots = VGroup(*[chip(t, RED_M, 24) for t in ("a laptop", "a log", "an old commit")]).arrange(RIGHT, buff=0.35).move_to([1.4, -3.0, 0])
         self.beat("And it works for whoever holds it, copied from a laptop, a log file, or an old commit. That is a hotel card that still opens your room three years after checkout, for whoever found it in the car park.",
@@ -138,7 +138,7 @@ class D13KeyCard(VoiceScene):
         ref = T("temporary, refreshed every 15 minutes", 26, TEAL_M).next_to(pas, DOWN, buff=0.35)
         arc = Arc(radius=0.25, start_angle=PI / 2, angle=-TAU * 0.85, stroke_width=3, color=TEAL_M).add_tip(tip_length=0.12).next_to(ref, DOWN, buff=0.3)
         disk = T("no key on your disk", 26, TEAL_M).next_to(arc, DOWN, buff=0.3)
-        self.beat("Wouldn't it be nice if the card simply expired by itself? That is aws login, in CLI 2.32.0 or later. It signs the CLI in through your browser, a day pass printed from your key card.",
+        self.beat("Wouldn't it be nice if the card simply expired by itself? That is aws login, in CLI 2.32.0 or later: a day pass printed from your key card, through your browser.",
                   FadeIn(pas, shift=UP * 0.1), run_time=2.4)
         self.steps("It stores temporary credentials and refreshes them every 15 minutes, and no key ever lands on your disk.",
                    (0.8, FadeIn(ref)), (0.6, Create(arc)), (1.4, Rotate(arc, -TAU, about_point=arc.get_center())), (0.6, FadeIn(disk)))
@@ -157,7 +157,7 @@ class D13KeyCard(VoiceScene):
                    (1.0, Indicate(s1[0][:5], color=WHITE)), (1.6, Indicate(s2[0][5:], color=WHITE)), (2.2, FadeIn(s1[1]), FadeIn(s2[1])), (1.4, Wait(1.4)), (1.0, FadeIn(s1[2])))
 
         # 5. predict, then show: three requests  [PREDICT, SHOW, BREAK]
-        RX = 4.15
+        RX = 4.0
 
         def ask(text, y=-0.2):
             r = M(text, 24)
@@ -172,7 +172,7 @@ class D13KeyCard(VoiceScene):
                   l1.animate.set_fill(GREEN_M), l2.animate.set_fill(RED_M), FadeIn(start), run_time=1.6)
         r1 = ask("GetObject reports/...csv")
         v1 = verdict(True)
-        self.steps("First request: read one report. Is there a matching Allow? The second rule. So the lamp goes green and the door opens.",
+        self.steps("First request: read one report. A matching Allow? Yes, the second rule. Green, and the door opens.",
                    (0.8, FadeIn(r1, shift=LEFT * 0.2)), (1.4, Wait(1.4)), (0.9, Indicate(s2[0], color=GREEN_M)),
                    (0.6, l2.animate.set_fill(GREEN_M), FadeIn(v1)), (0.8, travel(a1, GREEN_M, 0.8), door.animate.set_stroke(width=6)))
         r2 = ask("DeleteObject reports/...csv")
@@ -180,8 +180,7 @@ class D13KeyCard(VoiceScene):
         self.steps("Second request: delete that report. Nothing on the list allows s3:DeleteObject. No Allow, so it stays denied.",
                    (0.6, FadeOut(r1), FadeOut(v1), l2.animate.set_fill(RED_M), door.animate.set_stroke(width=3)),
                    (0.8, FadeIn(r2, shift=LEFT * 0.2)), (1.8, Wait(1.8)), (0.6, FadeIn(v2)), (0.5, Wiggle(v2)))
-        r3 = ask("aws s3 ls s3://hello-devops-lab-.../")
-        fit(r3, 4.6).move_to([RX, -0.2, 0])
+        r3 = ask("aws s3 ls s3://BUCKET")
         self.steps("Third request: list everything in the bucket. Look at the first rule. It allows s3:ListBucket, on this very bucket. Allowed or denied?",
                    (0.6, FadeOut(r2), FadeOut(v2)), (0.9, FadeIn(r3, shift=LEFT * 0.2)), (1.8, Wait(1.8)), (1.0, Indicate(s1[0], color=WHITE)))
         self.guess([RX, -1.25, 0])
@@ -198,26 +197,25 @@ class D13KeyCard(VoiceScene):
                    (0.6, FadeOut(v3), Transform(r3, r4)), (1.0, Indicate(s1[2], color=GOLD_M)), (0.6, l2.animate.set_fill(GREEN_M), FadeIn(v4)))
 
         # 6. name the rule; an explicit Deny wins  [NAME]
-        dn = M("Deny   s3:GetObject  .../reports/*", 24, RED_M)
-        dnp = panel(dn.width + 0.5, 0.7, RED_M, 0.12).next_to(polp, RIGHT, buff=0.3).align_to(polp, DOWN).shift(UP * 0.0)
+        dn = VGroup(M("Deny   s3:GetObject", 24, RED_M), M("  on   .../reports/*", 24, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        dnp = panel(dn.width + 0.5, dn.height + 0.4, RED_M, 0.12)
         self.play(FadeOut(VGroup(r3, v4, start)), l2.animate.set_fill(GREY_D), run_time=0.6)
         dn.move_to(dnp)
-        dng = VGroup(dnp, dn).move_to([RX, -0.6, 0])
-        fit(dng, 4.6)
+        dng = VGroup(dnp, dn).move_to([RX, -0.5, 0])
         dnl = T("one Deny, in any policy", 26, RED_M).next_to(dng, UP, buff=0.2)
-        self.beat("One more rule completes the picture. Say some other policy on the same caller holds one Deny for reading reports.",
+        self.beat("Last rule. Say another policy on the same caller holds one Deny for reading reports.",
                   FadeIn(dnl), FadeIn(dng, shift=LEFT * 0.2), run_time=2.0)
         v5 = verdict(False).move_to([RX, -1.8, 0])
-        self.steps("Now the read meets an Allow and a Deny. An explicit Deny anywhere beats every Allow. Denied. Think of it as the manager's veto: it does not matter how many cards say yes.",
+        self.steps("Now the read meets an Allow and a Deny. An explicit Deny anywhere beats every Allow. Denied. The manager's veto: it doesn't matter how many cards say yes.",
                    (1.2, Indicate(s2[0], color=GREEN_M)), (1.0, Indicate(dn, color=RED_M)), (1.0, l2.animate.set_fill(RED_M), FadeIn(v5)))
         rule = VGroup(T("start at deny", 28, RED_M), T("an Allow opens", 28, GREEN_M), T("a Deny beats every Allow", 28, RED_M)).arrange(RIGHT, buff=0.55).move_to([0, -3.1, 0])
         self.play(FadeOut(VGroup(dnl, dng, v5)), polp.animate.shift(UP * 0.3), pol.animate.shift(UP * 0.3), poll.animate.shift(UP * 0.3), l2.animate.set_fill(GREY_D), run_time=0.6)
-        self.beat("So here is the whole rule, in three short pieces. Start at deny. An Allow opens. A Deny beats every Allow.",
+        self.beat("So, the whole rule. Start at deny. An Allow opens. A Deny beats every Allow.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rule], lag_ratio=0.6), run_time=3.4)
         self.play(FadeOut(VGroup(polp, pol, poll, rule)), run_time=0.6)
 
         # 7. roles: the contractor's badge  [ANALOGY, MAP, JOKE]
-        role = panel(9.6, 3.6, GOLD_M, 0.07, 3).move_to([1.4, -1.2, 0])
+        role = panel(9.6, 3.4, GOLD_M, 0.07, 3).move_to([1.4, -1.45, 0])
         rl = T("role: a badge waiting at the desk", 26, GOLD_M).move_to(role.get_top() + DOWN * 0.38)
         tp = VGroup(T("trust policy", 26, BLUE_M), T("who may collect it", 24, GREY_B), M("Principal ...:ACCOUNT_ID:root", 22))
         tp.arrange(DOWN, aligned_edge=LEFT, buff=0.16)
@@ -225,22 +223,21 @@ class D13KeyCard(VoiceScene):
         pp = VGroup(T("permissions policy", 26, PURPLE_M), T("which doors it opens", 24, GREY_B), M("Allow s3:GetObject ...", 22))
         pp.arrange(DOWN, aligned_edge=LEFT, buff=0.16)
         ppp = panel(pp.width + 0.5, pp.height + 0.5, PURPLE_M)
-        VGroup(tpp, ppp).arrange(RIGHT, buff=0.4).move_to(role.get_center() + DOWN * 0.3)
+        VGroup(tpp, ppp).arrange(RIGHT, buff=0.4).move_to(role.get_center() + UP * 0.05)
         tp.move_to(tpp); pp.move_to(ppp)
         self.beat("Programs, like a server, should not carry a stored key at all. They assume a role. Picture a contractor's badge waiting at the front desk.",
                   Create(role), FadeIn(rl), run_time=2.6)
         self.beat("A role carries two policies. The permissions policy, like the list we just read, says which doors the badge opens.",
                   FadeIn(ppp), FadeIn(pp, shift=UP * 0.1), run_time=2.0)
         self.beat("The trust policy says who may collect the badge at the desk.", FadeIn(tpp), FadeIn(tp[:2], shift=UP * 0.1), run_time=1.6)
-        acc = T("= the whole account, not the root user", 24, BLUE_M).next_to(role, DOWN, buff=0.2).align_to(role, LEFT).shift(RIGHT * 0.3)
+        acc = T("= the whole account, not the root user", 24, BLUE_M).move_to(role.get_bottom() + UP * 0.38).align_to(tpp, LEFT).shift(RIGHT * 0.25)
         self.steps("In the lab's trust policy the Principal ends in root. That means the whole account: any identity in it whose own policy allows sts:AssumeRole. It does not mean the root user, despite the name.",
                    (0.9, FadeIn(tp[2])), (1.2, Indicate(tp[2], color=BLUE_M)), (3.0, Wait(3.0)), (0.8, FadeIn(acc, shift=UP * 0.1)))
-        self.beat("A word that means everyone allowed to ask, spelled root. Somebody enjoyed naming that one.", run_time=None)
         c1 = tick(True, 0.22).next_to(tp[0], RIGHT, buff=0.3)
         c2 = tick(True, 0.22).next_to(cardl, RIGHT, buff=0.2)
         self.steps("aws sts assume-role checks both sides: your own policy must allow it, and the trust policy must let you collect it.",
                    (1.2, Wait(1.2)), (0.6, Indicate(cardl, color=TEAL_M), Create(c2)), (1.2, Wait(1.2)), (0.6, Create(c1)))
-        asia = chip("ASIA...  temporary, 1 hour", GREEN_M, 24, mono=True).move_to([-3.4, 0.75, 0])
+        asia = chip("ASIA...  temporary, 1 hour", GREEN_M, 24, mono=True).move_to([-3.0, 0.85, 0])
         akia2 = chip("AKIA...  long-lived", RED_M, 24, mono=True).next_to(asia, RIGHT, buff=0.5)
         self.steps("Then it hands back temporary credentials that last an hour by default. Their key ID starts with ASIA. Long-lived keys start with AKIA, so you can tell them apart in a log.",
                    (1.2, TransformFromCopy(rl, asia)), (2.6, Wait(2.6)), (0.8, FadeIn(akia2, shift=UP * 0.1)))
@@ -248,16 +245,13 @@ class D13KeyCard(VoiceScene):
 
         # 8. guardrails  [GUARDRAIL]
         g = VGroup(
-            T("people sign in, programs assume roles", 28, TEAL_M),
             T("check a policy before it bites: Access Analyzer, policy simulator", 26, PURPLE_M),
             T("the moto emulator allows every call: cardboard doors", 26, GOLD_M),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.45).move_to([0, -1.2, 0])
-        self.beat("Three guardrails. First, people sign in, and programs assume roles. Neither should need a stored key.",
-                  FadeIn(g[0], shift=UP * 0.1), run_time=2.0)
-        self.beat("Second, check a policy before it bites. IAM Access Analyzer validates its grammar, and the policy simulator answers: would this call be allowed? without making the call.",
+        self.beat("Two guardrails. Check a policy before it bites. IAM Access Analyzer validates it, and the policy simulator answers: would this call be allowed? without making the call.",
+                  FadeIn(g[0], shift=UP * 0.1), run_time=2.4)
+        self.beat("And the practice emulator, moto, allows every call. A hotel with cardboard doors: good for learning the corridors, useless for learning which doors are locked.",
                   FadeIn(g[1], shift=UP * 0.1), run_time=2.4)
-        self.beat("Third, the practice emulator, moto, allows every call. It is a hotel with cardboard doors: good for learning the corridors, useless for learning which doors are locked.",
-                  FadeIn(g[2], shift=UP * 0.1), run_time=2.4)
         self.play(FadeOut(g), run_time=0.6)
 
         # 9. moral and a check question  [MORAL, RECAP]
@@ -266,11 +260,12 @@ class D13KeyCard(VoiceScene):
         self.beat("So the moral of the story. The card proves who you are without ever sending its secret. Every door starts locked, an Allow opens it, and any Deny shuts it. And the best cards expire by themselves.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rec], lag_ratio=0.7), run_time=5.0)
         self.play(FadeOut(rec), run_time=0.5)
-        chk = T("quick check: a policy allows s3:GetObject, another denies it. Read or not?", 26, YELLOW_M).move_to([0, -0.8, 0])
+        chk = VGroup(T("quick check: the trust policy lets you collect the badge,", 26, YELLOW_M),
+                     T("but your own policy does not allow sts:AssumeRole. Badge or not?", 26, YELLOW_M)).arrange(DOWN, buff=0.12).move_to([0, -0.9, 0])
         fit(chk, 12.4)
-        self.beat("A quick check before you go. One policy allows reading the reports. Another policy on the same caller denies it. Does the read go through?",
-                  FadeIn(chk), run_time=2.0)
-        self.guess([0, -1.9, 0])
-        a = T("no: a Deny beats every Allow", 28, RED_M).move_to([0, -1.9, 0])
-        self.beat("No. A Deny beats every Allow, every time.", FadeIn(a), l2.animate.set_fill(RED_M), run_time=1.4)
+        self.beat("A quick check before you go. The trust policy lets you collect the badge, but your own policy does not allow sts:AssumeRole. Do you get the badge?",
+                  FadeIn(chk), run_time=2.4)
+        self.guess([0, -2.1, 0])
+        a = T("no badge: assume-role checks both sides", 28, RED_M).move_to([0, -2.1, 0])
+        self.beat("No. assume-role checks both sides, and your side said no.", FadeIn(a), run_time=1.6)
         self.wait(1.0)

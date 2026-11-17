@@ -56,7 +56,7 @@ class D48SignedCard(VoiceScene):
         self.beat("On Friday, the main kitchen cooks it from memory. A little more salt. A different stock.",
                   FadeIn(s2, shift=UP * 0.2), FadeIn(s2_l), FadeIn(salt), run_time=1.8)
         qm = T("?", 60, YELLOW_M).next_to(mr, RIGHT, buff=0.1).shift(LEFT * 0.9 + UP * 0.6)
-        self.beat("The regulars ask why it tastes wrong. And it is an easy trap, because it really feels like the same soup. Same name, same pot, same cooks.",
+        self.beat("The regulars ask why it tastes wrong. An easy trap: it feels like the same soup. Same name, same pot, same cooks.",
                   FadeIn(qm, scale=1.4), Indicate(s2, color=RED_M), run_time=2.0)
         q = T("How does a dish move from one room to the other without changing on the way?", 30, YELLOW_M)
         fit(q, 12.6).to_edge(UP, buff=0.6)
@@ -66,10 +66,10 @@ class D48SignedCard(VoiceScene):
         self.play(FadeOut(VGroup(tk, tk_t, mr, mr_t, s1, s1_l, s2, s2_l, salt, qm, q)), run_time=0.7)
 
         # ---------------- 2. two environments from shared files
-        CC = np.array([3.5, 0.0, 0])
-        clu = frame(5.2, 5.6, PURPLE_M, CC, fill=0.04)
+        CC = np.array([3.5, 0.3, 0])
+        clu = frame(5.2, 5.0, PURPLE_M, CC, fill=0.04)
         clu_t = T("cluster", 26, PURPLE_M).move_to(clu.get_top() + DOWN * 0.38)
-        dev = frame(4.4, 2.0, BLUE_M, CC + UP * 1.15, fill=0.10, sw=2.5)
+        dev = frame(4.4, 2.0, BLUE_M, CC + UP * 0.95, fill=0.10, sw=2.5)
         dev_t = M("hello-dev", 22, BLUE_M).move_to(dev.get_corner(UL) + RIGHT * 0.85 + DOWN * 0.3)
         prod = frame(4.4, 2.0, GOLD_M, CC + DOWN * 1.35, fill=0.10, sw=2.5)
         prod_t = M("hello-prod", 22, GOLD_M).move_to(prod.get_corner(UL) + RIGHT * 0.95 + DOWN * 0.3)
@@ -83,8 +83,8 @@ class D48SignedCard(VoiceScene):
                   Create(dev), Write(dev_t), GrowFromCenter(dpods[0]), FadeIn(dsay), run_time=2.0)
         self.beat("Prod is the main room, the copy your users see. It runs four copies, with more memory.",
                   Create(prod), Write(prod_t), LaggedStart(*[GrowFromCenter(p) for p in ppods], lag_ratio=0.15), FadeIn(pmem), run_time=2.0)
-        GC = np.array([-3.7, 0.0, 0])
-        git = frame(5.0, 5.6, TEAL_M, GC, fill=0.05)
+        GC = np.array([-3.7, 0.3, 0])
+        git = frame(5.0, 5.0, TEAL_M, GC, fill=0.05)
         git_t = T("git repo (the board)", 26, TEAL_M).move_to(git.get_top() + DOWN * 0.38)
         base = mbox("k8s/  shared files", TEAL_M, size=22, w=3.6, h=0.7).move_to(GC + UP * 1.35)
         od = mbox("overlays/dev", BLUE_M, size=22, w=3.6, h=0.7).move_to(GC + DOWN * 0.05)
@@ -95,13 +95,13 @@ class D48SignedCard(VoiceScene):
         dtag = M('newTag: "1.2.0"', 22, BLUE_M).next_to(od, DOWN, buff=0.12)
         ptag = M("newTag: old tag", 22, GOLD_M).next_to(op, DOWN, buff=0.12)
         self.play(FadeIn(dtag), FadeIn(ptag), run_time=0.5)
-        self.beat("Each overlay also names the version of the image to run. An image is your app, packed with everything it needs. Its tag is the version label.",
+        self.beat("Each overlay also names the version to run. An image is your app, packed with everything it needs. Its tag is the version label.",
                   Indicate(dtag, color=BLUE_M), Indicate(ptag, color=GOLD_M), run_time=2.0)
-        argo = frame(1.9, 0.8, GREY_B, [0, 0.0, 0], fill=0.10)
+        argo = frame(1.6, 0.8, GREY_B, [0, 0.0, 0], fill=0.10)
         argo_t = T("Argo CD", 24).move_to(argo).set_z_index(2)
         ad = Arrow(od.get_right(), dev.get_left(), buff=0.1, stroke_width=3, color=BLUE_M, max_tip_length_to_length_ratio=0.1)
         ap = Arrow(op.get_right(), prod.get_left(), buff=0.1, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.1)
-        argo.move_to([0.05, 2.75, 0]); argo_t.move_to(argo)
+        argo.move_to([-0.15, 2.75, 0]); argo_t.move_to(argo)
         self.beat("Argo CD, the manager from last time, deploys each overlay to its own namespace.",
                   FadeIn(argo), FadeIn(argo_t), GrowArrow(ad), GrowArrow(ap), Succession(Wait(0.5), AnimationGroup(travel(ad, BLUE_M, 0.8), travel(ap, GOLD_M, 0.8))), run_time=2.4)
         main = VGroup(clu, clu_t, dev, dev_t, prod, prod_t, dpods, dsay, ppods, pmem, git, git_t, base, od, op, dtag, ptag, argo, argo_t, ad, ap)
@@ -116,7 +116,7 @@ class D48SignedCard(VoiceScene):
         lb = frame(lst.width + 0.7, lst.height + 0.6, GREY_B, [0, 0, 0], fill=0.10)
         lg = VGroup(lb, lst.move_to(lb)).move_to([3.6, 1.1, 0])
         lg_t = T("list", 26, GREY_B).next_to(lg, UP, buff=0.2)
-        self.beat("Argo CD needs one Application per environment. You could copy the file twice and change three lines in each. That works, until someone forgets a line.",
+        self.beat("Argo CD needs one Application per environment. You could copy the file and change three lines. That works, until someone forgets one.",
                   run_time=None)
         self.beat("An ApplicationSet writes those copies for you. It has a template: an ordinary Application with gaps in it.",
                   Create(tb), Write(tmpl), FadeIn(tg_t), run_time=2.4)
@@ -126,8 +126,8 @@ class D48SignedCard(VoiceScene):
         a2 = lchip("hello-devops-prod", GOLD_M, 24, mono=True).move_to([2.4, -1.5, 0])
         self.beat("Apply it, and two Applications appear: hello-devops-dev, and hello-devops-prod.",
                   TransformFromCopy(VGroup(tg, lst[0]), a1), TransformFromCopy(VGroup(tg, lst[1]), a2), run_time=2.2)
-        more = T("add a third entry, and a third app appears", 24, GREY_B).next_to(VGroup(a1, a2), DOWN, buff=0.45)
-        self.beat("Add a third entry, and a third app appears. Delete the ApplicationSet, and its apps go too, with everything they deployed.",
+        more = T("delete the ApplicationSet: its apps go too", 24, GREY_B).next_to(VGroup(a1, a2), DOWN, buff=0.45)
+        self.beat("Delete the ApplicationSet, and its apps go too, with everything they deployed.",
                   FadeIn(more, shift=UP * 0.1), run_time=1.6)
         self.play(FadeOut(VGroup(tg, tg_t, lg, lg_t, a1, a2, more)), main.animate.set_opacity(1), run_time=0.7)
         # restore fills that set_opacity(1) made solid
@@ -157,14 +157,13 @@ class D48SignedCard(VoiceScene):
             f.set_fill(dark(c, a), opacity=1)
 
         # ---------------- 5. the promotion, step by step
-        reg = lchip("hello-devops:1.2.0", GREEN_M, 24, mono=True).move_to([-3.7, -3.25, 0])
-        self.play(VGroup(git, git_t, base, od, op, dtag, ptag).animate.shift(UP * 0.25), run_time=0.4)
+        reg = lchip("hello-devops:1.2.0", GREEN_M, 24, mono=True).move_to([-3.7, -2.85, 0])
         once = T("built once", 22, GREEN_M).next_to(reg, RIGHT, buff=0.25)
         dold = M("newTag: old tag", 22, BLUE_M).move_to(dtag)
         self.beat("Let's replay the whole journey, from the start.", ReplacementTransform(dtag, dold), dpods[0].animate.set_fill(dark(GREY_B, 0.3)), run_time=1.2)
         dtag = dold
         self.beat("Step one. CI builds the image once, when you push the tag v1.2.0.", FadeIn(reg, shift=UP * 0.2), FadeIn(once), run_time=1.6)
-        pr1 = lchip("pull request: dev to 1.2.0", BLUE_M, 22).move_to([0.0, -3.25, 0]).shift(RIGHT * 1.6)
+        pr1 = lchip("pull request: dev to 1.2.0", BLUE_M, 22).move_to([2.3, -2.85, 0])
         dnew = M('newTag: "1.2.0"', 22, BLUE_M).move_to(dtag)
         self.beat("Step two. A pull request sets the dev overlay to 1.2.0. You merge it, and Argo CD deploys dev.",
                   FadeIn(pr1, shift=UP * 0.1), ReplacementTransform(dtag, dnew), Succession(Wait(0.6), travel(ad, BLUE_M, 0.8)),
@@ -172,32 +171,33 @@ class D48SignedCard(VoiceScene):
         dtag = dnew
         self.beat("Step three. You test dev, the way the regulars taste the soup.", Circumscribe(dev, color=BLUE_M), run_time=1.4)
         pr2 = lchip("pull request: prod to 1.2.0", GOLD_M, 22).move_to(pr1)
-        sign = T("reviewed and merged", 22, GREEN_M).next_to(pr2, UP, buff=0.15)
+        sign = lchip("reviewed, merged: prod to 1.2.0", GREEN_M, 22).move_to(pr2)
         ptag2 = M('newTag: "1.2.0"', 22, GOLD_M).move_to(ptag)
         self.beat("Step four. A second pull request sets the prod overlay to the same 1.2.0. Someone reviews it and merges it. That is the head chef's signature on the card.",
-                  FadeOut(pr1), FadeIn(pr2), Succession(Wait(1.0), AnimationGroup(ReplacementTransform(ptag, ptag2), FadeIn(sign))), run_time=3.4)
+                  FadeOut(pr1), FadeIn(pr2), Succession(Wait(1.0), AnimationGroup(ReplacementTransform(ptag, ptag2), ReplacementTransform(pr2, sign))), run_time=3.4)
         ptag = ptag2
         self.beat("Argo CD sees the change, and deploys prod.",
                   travel(ap, GOLD_M, 0.9), LaggedStart(*[p.animate.set_fill(dark(GREEN_M, 0.4)) for p in ppods], lag_ratio=0.2), run_time=1.8)
-        same = T("same image, same bytes", 24, GREEN_M).move_to([0.05, 0.0, 0])
+        same = T("built once: dev and prod run the same bytes", 22, GREEN_M).next_to(reg, RIGHT, buff=0.25)
         self.beat("Notice what never happened. The image was never rebuilt. Prod runs the exact bytes that dev ran. Build once, deploy many.",
-                  Succession(Indicate(reg, color=GREEN_M), FadeIn(same, shift=UP * 0.1)), run_time=2.6)
-        undo = T("Revert on the merged pull request puts the old tag back", 22, GREY_B).next_to(pr2, DOWN, buff=0.12)
+                  FadeOut(sign), Succession(Indicate(reg, color=GREEN_M), ReplacementTransform(once, same)), run_time=2.6)
+        undo = T("Revert on the merged pull request puts the old tag back", 22, GREY_B).move_to(same, aligned_edge=LEFT)
         self.beat("And you get a clean undo for free. Press Revert on the merged pull request, and a new one puts the old tag back.",
-                  FadeOut(sign), FadeIn(undo), run_time=1.6)
-        rule = T("Build once, and move that same image.", 30, YELLOW_M).to_edge(UP, buff=0.15)
+                  ReplacementTransform(same, undo), run_time=1.6)
+        same = undo
+        rule = T("Build once, and move that same image.", 30, YELLOW_M).to_edge(UP, buff=0.5)
         self.play(FadeOut(VGroup(argo, argo_t)), run_time=0.3)
         self.beat("So the rule. A rebuilt image is a new soup with an old name. Build once, and move that same image.", Write(rule), run_time=1.8)
         self.wait(0.4)
-        self.play(FadeOut(VGroup(rule, same, undo, pr2, once)), run_time=0.5)
+        self.play(FadeOut(VGroup(rule, same)), run_time=0.5)
 
         # ---------------- 6. break it: latest
         lt = M('newTag: "latest"', 22, RED_M).move_to(ptag)
         self.beat("This only works if a tag always means the same image. So let's break it. Set prod to the tag latest.",
                   ReplacementTransform(ptag, lt), run_time=1.6)
         ptag = lt
-        imgA = lchip("image A", GREEN_M, 24).move_to([-0.2, -3.25, 0])
-        imgB = lchip("image B", RED_M, 24).move_to([2.2, -3.25, 0])
+        imgA = lchip("image A", GREEN_M, 24).move_to([-0.2, -2.85, 0])
+        imgB = lchip("image B", RED_M, 24).move_to([2.2, -2.85, 0])
         ptr = Arrow(reg.get_right() + RIGHT * 0.1, imgA.get_left(), buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.2)
         reg2 = lchip("hello-devops:latest", RED_M, 24, mono=True).move_to(reg)
         self.beat("On Monday, latest points at one image.", ReplacementTransform(reg, reg2), FadeIn(imgA), GrowArrow(ptr), run_time=1.4)
@@ -210,37 +210,15 @@ class D48SignedCard(VoiceScene):
         self.beat("So the point is: with latest, git no longer tells you what runs, and a revert cannot bring the old version back.",
                   Indicate(ptag, color=RED_M), run_time=1.8)
         dig = M("@sha256:...", 22, GREEN_M).move_to(ptag)
-        good = T("a version like 1.2.0 is good; a digest is stronger", 22, GREEN_M).move_to([0.6, -3.25, 0])
+        good = T("a version like 1.2.0 is good; a digest is stronger", 22, GREEN_M).move_to([0.6, -2.85, 0])
         self.beat("A version like 1.2.0 is good. A digest is stronger: a fingerprint worked out from the image's contents, so nobody can move it to a different image.",
                   FadeOut(VGroup(imgA, imgB, ptr2, reg)), ReplacementTransform(ptag, dig), FadeIn(good), run_time=2.4)
         ptag = dig
         self.wait(0.3)
         self.play(FadeOut(VGroup(clu, clu_t, dev, dev_t, prod, prod_t, dpods, dsay, ppods, pmem, ad, ap, good)), run_time=0.6)
 
-        # ---------------- 7. who writes the new tag: a one-line change
         gitg = VGroup(git, git_t, base, od, op, dtag, ptag)
         self.play(gitg.animate.scale(0.8).move_to([-4.3, 0.4, 0]), run_time=0.6)
-        hd = T("Something has to write each new tag into the file.", 28).move_to([2.2, 2.6, 0])
-        self.beat("One more practical problem. Argo CD deploys only what git says, so something has to write each new tag into the file.",
-                  Write(hd), run_time=2.0)
-        bar_k = Rectangle(width=4.8, height=0.5, stroke_width=0).set_fill(RED_M, 0.8).move_to([2.3, 1.2, 0])
-        bar_y = Rectangle(width=0.12, height=0.5, stroke_width=0).set_fill(GREEN_M, 0.9).move_to([2.3, -0.4, 0]).align_to(bar_k, LEFT)
-        lk = M("kustomize edit set image", 22, RED_M).next_to(bar_k, UP, buff=0.15).align_to(bar_k, LEFT)
-        nk = T("80 lines changed", 24, RED_M).next_to(bar_k, DOWN, buff=0.15).align_to(bar_k, LEFT)
-        ly = M("yq", 22, GREEN_M).next_to(bar_y, UP, buff=0.15).align_to(bar_k, LEFT)
-        ny = T("1 line changed", 24, GREEN_M).next_to(bar_y, RIGHT, buff=0.3)
-        self.beat("The classic tool is kustomize edit set image. Before we look, guess the size of the change, for one tag.", FadeIn(lk), run_time=1.6)
-        self.guess([2.3, 0.4, 0])
-        self.beat("On the lab's prod overlay, it changed eighty lines. It drops comments at line ends, and re-indents lists.",
-                  GrowFromEdge(bar_k, LEFT), FadeIn(nk), run_time=2.0)
-        self.beat("Picture a reviewer hunting for one changed word on a page that someone retyped from scratch.", Wiggle(bar_k, scale_value=1.05), run_time=1.6)
-        self.beat("So the lab uses yq, a tool that changes only the fields you name. One line changed, comments kept.",
-                  FadeIn(ly), GrowFromEdge(bar_y, LEFT), FadeIn(ny), run_time=2.0)
-        steps = VGroup(T("1. check the version looks like 1.2.0", 24), T("2. set the tag in that overlay", 24), T("3. push a branch, open a pull request", 24))
-        steps.arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to([2.3, -2.2, 0])
-        self.beat("The lab's bump-image workflow does three things. It checks that the version looks like 1.2.0, sets the tag in that overlay, and opens a pull request.",
-                  LaggedStart(*[FadeIn(s, shift=RIGHT * 0.1) for s in steps], lag_ratio=0.5), run_time=4.0)
-        self.play(FadeOut(VGroup(hd, bar_k, bar_y, lk, nk, ly, ny, steps)), run_time=0.5)
 
         # ---------------- 8. guardrails
         g = VGroup(T("prod moves only by a reviewed pull request", 28),
@@ -251,7 +229,7 @@ class D48SignedCard(VoiceScene):
         gt = T("Guardrails", 30, GOLD_M).next_to(g, UP, buff=0.4).align_to(g, LEFT)
         self.beat("A few guardrails. Prod moves only by a reviewed pull request.", Write(gt), FadeIn(g[0], shift=RIGHT * 0.1), run_time=1.6)
         self.beat("Never latest. Use a version, or better, a digest.", FadeIn(g[1], shift=RIGHT * 0.1), run_time=1.2)
-        self.beat("A separate add-on, Argo CD Image Updater, can write new tags for you. But it commits straight to the branch, with no pull request and no signature. My advice: let it handle dev, if those pull requests become busywork, and keep prod on pull requests.",
+        self.beat("An add-on, Argo CD Image Updater, can write new tags for you, but it commits straight to the branch, with no signature. My advice: let it handle dev at most, and keep prod on pull requests.",
                   FadeIn(g[2], shift=RIGHT * 0.1), run_time=1.6)
         self.beat("And nobody writes the safe's code on the board. A password in git is no longer a secret, so commit only locked secrets, or pointers to them.",
                   FadeIn(g[3], shift=RIGHT * 0.1), run_time=1.6)
@@ -265,16 +243,16 @@ class D48SignedCard(VoiceScene):
                      T("one blank board, filled in per room: the ApplicationSet", 28, TEAL_M),
                      T("promotion: a pull request copies the tested tag", 28, GREEN_M),
                      T("a rebuild or latest is a new soup with an old name", 28, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(DOWN * 0.1)
-        self.beat("Dev is the test kitchen, and prod is the main room. One blank board is filled in for each room. A dish moves as a signed card: a pull request that copies the tag dev already ran. And a rebuild, or latest, is a new soup with an old name.",
+        self.beat("Dev is the test kitchen, prod the main room. One blank board, filled in per room. A dish moves as a signed card that copies the tag dev already ran. And a rebuild, or latest, is a new soup with an old name.",
                   LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in rec], lag_ratio=0.7), run_time=8.0)
         self.play(FadeOut(rec), run_time=0.5)
-        c1 = T("Quick check: prod's overlay says latest, and a release goes bad.", 30).move_to(UP * 0.4)
-        c2 = T("Why can't a git revert bring the old version back?", 30).next_to(c1, DOWN, buff=0.3)
+        c1 = T("Quick check: you add  env: staging  to the ApplicationSet's list.", 30).move_to(UP * 0.4)
+        c2 = T("What do you get?", 30).next_to(c1, DOWN, buff=0.3)
         fit(c1, 12.6)
-        self.beat("A quick check. Prod's overlay says latest, and a release goes bad. Why can't a git revert bring the old version back?",
+        self.beat("A quick check. You add a third entry, env staging, to the ApplicationSet's list. What do you get?",
                   FadeIn(c1), FadeIn(c2), run_time=1.8)
         self.guess([0, -1.2, 0])
-        ans = T("The file never changed. latest moved to a new image.", 30, GREEN_M).next_to(c2, DOWN, buff=0.6)
-        self.beat("Because the file never changed. Git said latest before and after. It was latest that moved to a different image.",
+        ans = T("A third Application, from the same template. Nothing copied.", 30, GREEN_M).next_to(c2, DOWN, buff=0.6)
+        self.beat("A third Application, written from the same template. Nobody copied a file, so nobody forgot a line.",
                   FadeIn(ans, shift=UP * 0.1), run_time=1.4)
         self.wait(1.2)

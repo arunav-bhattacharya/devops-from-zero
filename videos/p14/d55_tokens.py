@@ -1,5 +1,14 @@
 import sys, pathlib; sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from fg import *
+import fg as _fg
+
+
+def box(*a, **k):  # keep the label drawn above its own filled outline, even when the outline is animated
+    b = _fg.box(*a, **k); b[1].set_z_index(1); return b
+
+
+def chip(*a, **k):
+    c = _fg.chip(*a, **k); c[1].set_z_index(1); return c
 
 SAY.extend([
     (r"\bredis\.exceptions\.connectionerror\b", "redis dot exceptions dot connection error"),
@@ -26,13 +35,14 @@ def word_parts(tm, s):
     return out
 
 
-def note(n, lines, w=6.6):
+def note(n, lines, w=6.7):
     head = T(f"note {n}", 22, GREY_B)
-    body = [T(l, 24) for l in lines]
+    body = [T(l, 23) for l in lines]
     inner = VGroup(head, *body).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
     r = RoundedRectangle(corner_radius=0.1, width=w, height=inner.height + 0.36, stroke_color=NOTE_C, stroke_width=2.5)
     r.set_fill(tint(NOTE_C, 0.07), 1)
     inner.move_to(r).align_to(r, LEFT).shift(RIGHT * 0.22)
+    inner.set_z_index(1)
     return VGroup(r, inner)
 
 
@@ -78,9 +88,9 @@ class D55Tokens(VoiceScene):
         self.play(FadeOut(VGroup(err1, sb, q0, z0, qn)), run_time=0.6)
 
         # ---------- 2. the chart room, and reading everything
-        n1 = note(1, ["Payment FAILED for order 42: card declined"]).move_to([-3.15, 1.6, 0])
-        n2 = note(2, ["Payment accepted for order 43"]).move_to([-3.15, 0.3, 0])
-        lab_n = T("the chart room", 28, NOTE_C).move_to([-3.15, 3.0, 0])
+        n1 = note(1, ["Payment FAILED for order 42: card declined"]).move_to([-3.1, 1.6, 0])
+        n2 = note(2, ["Payment accepted for order 43"]).move_to([-3.1, 0.3, 0])
+        lab_n = T("the chart room", 28, NOTE_C).move_to([-3.1, 3.0, 0])
         self.beat("Let's go back to the hospital. Every note from every bed is copied to one chart room. Here are two notes from the payment desk.",
                   FadeIn(lab_n), LaggedStart(FadeIn(n1, shift=RIGHT * 0.2), FadeIn(n2, shift=RIGHT * 0.2), lag_ratio=0.4), run_time=3.2)
         ask1 = T("Which notes say declined?", 28, ASK_C).move_to([3.6, 1.6, 0])
@@ -140,11 +150,11 @@ class D55Tokens(VoiceScene):
         self.play(FadeOut(VGroup(page, ih, ent, hl, look, once)), run_time=0.6)
 
         # ---------- 4. the clerk builds the cards
-        n1.move_to([-3.15, 1.9, 0]); n2.move_to([-3.15, 0.6, 0])
+        n1.move_to([-3.1, 1.9, 0]); n2.move_to([-3.1, 0.6, 0])
         for n in (n1, n2):
             n[0].set_stroke(NOTE_C, width=2.5)
         lab_c = T("the clerk's cards", 28, CARD_C).move_to([3.65, 3.0, 0])
-        lab_n.move_to([-3.15, 3.0, 0])
+        lab_n.move_to([-3.1, 3.0, 0])
         ck = clerk().move_to([0.5, 1.9, 0])
         self.beat("So the chart room hires a clerk. Each time a note arrives, the clerk reads it once, and files every word on its own index card.",
                   FadeIn(lab_n), FadeIn(n1, shift=RIGHT * 0.2), FadeIn(ck, shift=DOWN * 0.2), FadeIn(lab_c), run_time=2.6)
@@ -214,7 +224,7 @@ class D55Tokens(VoiceScene):
         self.beat("Now, our mystery. Most of us picture search like grep, only faster: it finds any piece of text. Let's be fair to that picture. Grep really would find ConnectionError inside the error line.",
                   run_time=None)
         cards = VGroup(*rows.values())
-        n3 = note(3, ["redis.exceptions.ConnectionError: ...", "... service not known"]).move_to([-3.15, -0.85, 0])
+        n3 = note(3, ["redis.exceptions.ConnectionError: ...", "... service not known"]).move_to([-3.1, -0.85, 0])
         self.beat("But Elasticsearch never looks at the notes when you search. It looks at the cards. So let's watch the clerk file the error.",
                   FadeOut(cards), FadeIn(n3, shift=RIGHT * 0.2), ck.animate.move_to([0.5, -0.85, 0]), run_time=2.6)
         s3a = "redis.exceptions.ConnectionError: ..."

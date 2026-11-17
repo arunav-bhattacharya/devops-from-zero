@@ -84,6 +84,7 @@ class D23TwoGreen(VoiceScene):
         bpl = T("blue pot", 26, BLUE_M).next_to(bp, DOWN, buff=0.3)
         gpl = T("green pot", 26, GREEN_M).next_to(gp, DOWN, buff=0.3)
         stock = Rectangle(width=1.2, height=0.5, stroke_width=0).set_fill(STOCK, 0.75).move_to(bp[0].get_bottom() + UP * 0.33)
+        stock.set_z_index(3)
         self.add(stock)
         stock.set_opacity(0)
         self.beat("The first cook moves the spare stock out of the blue pot, into a new green pot.",

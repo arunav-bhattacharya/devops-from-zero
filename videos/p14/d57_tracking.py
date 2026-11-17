@@ -1,5 +1,14 @@
 import sys, pathlib; sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from fg import *
+import fg as _fg
+
+
+def box(*a, **k):  # keep the label drawn above its own filled outline, even when the outline is animated
+    b = _fg.box(*a, **k); b[1].set_z_index(1); return b
+
+
+def chip(*a, **k):
+    c = _fg.chip(*a, **k); c[1].set_z_index(1); return c
 
 SAY.extend([(r"\btraceparent\b", "trace parent"), (r"\bINCRBY\b", "increment by"), (r"\bGET /", "get slash"),
             (r"\bJaeger\b", "yay-ger"), (r"\bW3C\b", "W three C"), (r"\bp95\b", "p 95")])
@@ -144,10 +153,8 @@ class D57Tracking(VoiceScene):
 
         # ---------- 5. name the parts
         self.play(FadeOut(VGroup(pq, under, illu)), run_time=0.4)
-        tid = VGroup(*[M("4bf92f...", 22, ID_C).next_to(s, RIGHT, buff=0.15) if i else M("4bf92f...", 22, ID_C).move_to(s) for i, s in enumerate(spans)])
-        for i in range(1, 4):
-            tid[i].next_to(spans[i], RIGHT, buff=0.15)
-        tid[0].move_to(spans[0]).set_color(BLACK)
+        tid = VGroup(*[M("4bf92f...", 22, BLACK).move_to(sp) for sp in spans])
+        tid[1].set_color(ID_C).next_to(spans[1], RIGHT, buff=0.15)
         self.beat("Now the names. Every span in this trace carries the same trace ID. That's our tracking number.",
                   LaggedStart(*[FadeIn(t) for t in tid[1:]], lag_ratio=0.2), FadeIn(tid[0]), run_time=2.6)
         pa = VGroup(
@@ -160,7 +167,7 @@ class D57Tracking(VoiceScene):
 
         # ---------- 6. how the number travels
         hdr = VGroup(M("traceparent:", 24, GREY_B), M("00", 24), M("4bf92f3577b34da6a3ce929d0e0e4736", 24, ID_C), M("00f067aa0ba902b7", 24, PAR_C), M("01", 24, GREEN_M)).arrange(RIGHT, buff=0.18)
-        fit(hdr, 12.6).move_to([0, 1.45, 0])
+        fit(hdr, 12.6).move_to([0, 0.35, 0])
         self.play(FadeOut(VGroup(*spans, rlab, axis, secs)), run_time=0.5)
         self.beat("But these spans are made in different services. How does the card partner know which trace it is in? Each caller copies the number onto its outgoing request, in a header, an extra line sent with every web request.",
                   travel(c1, ID_C, 1.0), Succession(Wait(1.2), travel(c2, ID_C, 1.0)), run_time=4.0)
@@ -172,25 +179,25 @@ class D57Tracking(VoiceScene):
         hl[3].shift(RIGHT * 0.25)
         self.beat("A version. The trace ID, the same for the whole request. The parent span ID, the caller's current span. And a flag: 01 means the caller is recording this trace.",
                   FadeIn(hl[0]), Succession(Wait(0.8), FadeIn(hl[1])), Succession(Wait(3.0), FadeIn(hl[2])), Succession(Wait(5.0), FadeIn(hl[3])), run_time=7.0)
-        hop = VGroup(T("each hop:", 26, GREY_B), T("same trace ID,", 26, ID_C), T("new parent", 26, PAR_C)).arrange(RIGHT, buff=0.25).move_to([0, -0.4, 0])
+        hop = VGroup(T("each hop:", 26, GREY_B), T("same trace ID,", 26, ID_C), T("new parent", 26, PAR_C)).arrange(RIGHT, buff=0.25).move_to([0, -1.0, 0])
         self.beat("The caller injects the header. The receiver extracts it, and starts its own span as a child. Hop by hop, the trace ID stays the same, and only the parent changes. That hand-over is called context propagation.",
                   FadeIn(hop, shift=UP * 0.1), travel(c1, ID_C, 1.0), Succession(Wait(1.2), travel(c2, ID_C, 1.0)), run_time=4.0)
         self.play(FadeOut(VGroup(hdr, *hl)), run_time=0.4)
 
         # ---------- 7. break: a hop that drops the header
-        prox = box("proxy", GREY_B, w=1.5, h=0.7, size=24).move_to([1.55, 1.3, 0])
+        prox = box("proxy", GREY_B, w=1.4, h=0.7, size=24).move_to([1.48, 2.5, 0])
         self.beat("Now let's break it. Put a proxy, a program that forwards requests, between the fraud check and the card partner. Some proxies strip headers they don't know.",
                   FadeIn(prox, shift=DOWN * 0.1), run_time=2.0)
         drop = M("traceparent", 22, ID_C).move_to(c2.get_center() + UP * 0.35)
         self.beat("The header goes in. It does not come out.",
                   FadeIn(drop), Succession(Wait(0.8), drop.animate.move_to(prox.get_bottom() + DOWN * 0.3).set_opacity(0)), run_time=2.0)
-        new = VGroup(T("card partner starts a new trace:", 26, SLOW_C), M("7d01c2...", 24, SLOW_C)).arrange(RIGHT, buff=0.25).move_to([0, -1.3, 0])
+        new = VGroup(T("card partner starts a new trace:", 26, SLOW_C), M("7d01c2...", 24, SLOW_C)).arrange(RIGHT, buff=0.25).move_to([0, -1.75, 0])
         self.beat("So the card partner sees no tracking number, and starts a brand new one. A parcel with a fresh label.",
                   FadeIn(new, shift=UP * 0.1), Indicate(card[1], color=SLOW_C), run_time=2.4)
-        lie = T("trace 1: fraud check looks slow, with nothing under it", 26, ASK_C).move_to([0, -2.2, 0])
+        lie = T("trace 1: fraud check looks slow, with nothing under it", 26, ASK_C).move_to([0, -2.45, 0])
         self.beat("Now you have two traces that look unrelated. And in the first one, the fraud check is a long bar with nothing underneath. It looks guilty, and it isn't.",
                   FadeIn(lie, shift=UP * 0.1), run_time=3.0)
-        rule = T("A trace is only as long as its chain of headers.", 30, ID_C).move_to([0, -3.0, 0])
+        rule = T("A trace is only as long as its chain of headers.", 30, ID_C).move_to([0, -3.1, 0])
         self.beat("So the point really is: a trace is only as long as its chain of headers. When it stops early, look for the hop that dropped it.",
                   FadeIn(rule), run_time=2.4)
         self.play(FadeOut(VGroup(prox, new, lie, rule, hop, svcs, c1, c2, c3)), run_time=0.6)

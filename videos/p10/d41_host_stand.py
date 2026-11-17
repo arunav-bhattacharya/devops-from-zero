@@ -123,7 +123,7 @@ class D41HostStand(Base):
                   FadeOut(sel), Create(rrect), FadeIn(rtxt), run_time=2.6)
 
         # ---------- 3. PREDICT + BREAK: where is the host?
-        q = T("you ping 10.96.171.215. what answers?", 28, YELLOW_M).move_to([0, -3.35, 0])
+        q = T("you ping 10.96.171.215. what answers?", 28, YELLOW_M).move_to([0, -3.2, 0])
         self.beat("So where does the host stand, exactly? Here is a test. You ping the ClusterIP, the command that checks whether an address answers. What answers you?",
                   FadeIn(q, shift=UP * 0.1), run_time=1.6)
         self.pause_guess([-4.6, 2.75, 0])
@@ -166,7 +166,7 @@ class D41HostStand(Base):
                   *[FadeOut(e) for e in ents], FadeIn(empty), run_time=2.0)
         self.steps("A call arrives, and there is nobody to send it to. Well. That is a very polite host stand, with nobody behind it.",
                    (0.9, travel(Line(cli.get_right(), svc_r.get_left()), TEAL_M, 0.9)), (0.6, Indicate(empty, color=RED_M)))
-        rule = T("When a Service fails, read its EndpointSlice before you blame the network.", 26, YELLOW_M).move_to([0, -3.35, 0])
+        rule = T("When a Service fails, read its EndpointSlice before you blame the network.", 26, YELLOW_M).move_to([0, -3.2, 0])
         self.beat("So here is the rule. When a Service fails, read its EndpointSlice before you blame the network.",
                   FadeIn(rule, shift=UP * 0.1), run_time=1.6)
         two = VGroup(T("no addresses: a selector or readiness problem", 24, GREY_B), T("addresses that refuse: a port problem", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)

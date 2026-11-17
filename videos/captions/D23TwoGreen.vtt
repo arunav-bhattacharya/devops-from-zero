@@ -1,0 +1,409 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.317
+Here is a puzzle that catches almost every team once.
+
+2
+00:00:06.317 --> 00:00:07.534
+Two pull requests.
+
+3
+00:00:07.534 --> 00:00:09.089
+Both have a green tick.
+
+4
+00:00:09.267 --> 00:00:12.281
+Both merge, and Git reports no conflict.
+
+5
+00:00:12.467 --> 00:00:14.094
+And then main is broken.
+
+6
+00:00:14.094 --> 00:00:16.128
+How can two greens make a red?
+
+7
+00:00:16.267 --> 00:00:20.391
+Let's leave code alone for a minute, and walk into a restaurant kitchen.
+
+8
+00:00:20.533 --> 00:00:23.633
+Every cook here works from one house recipe book.
+
+9
+00:00:23.800 --> 00:00:27.220
+One Friday morning, two cooks each set out to improve it.
+
+10
+00:00:27.400 --> 00:00:32.164
+The first cook moves the spare stock out of the blue pot, into a new green pot.
+
+11
+00:00:34.733 --> 00:00:38.640
+Then they fix every recipe card that named the blue pot.
+
+12
+00:00:38.640 --> 00:00:39.547
+Careful work.
+
+13
+00:00:39.733 --> 00:00:43.914
+The second cook, working from the breakfast cards, writes a new soup.
+
+14
+00:00:43.914 --> 00:00:46.701
+Its card says: take a ladle from the blue pot.
+
+15
+00:00:46.867 --> 00:00:48.935
+Each cook checks their own work.
+
+16
+00:00:48.935 --> 00:00:50.421
+Both changes look fine.
+
+17
+00:00:50.600 --> 00:00:52.868
+At noon, both changes are in the book.
+
+18
+00:00:52.868 --> 00:00:55.136
+The new soup reaches for the blue pot.
+
+19
+00:00:56.133 --> 00:00:57.761
+And the pot is empty.
+
+20
+00:00:57.933 --> 00:00:59.212
+Nobody was careless.
+
+21
+00:00:59.212 --> 00:01:03.749
+Each check was honest, and the two changes never touched the same card.
+
+22
+00:01:03.933 --> 00:01:08.698
+The trouble lives in the combination, and nobody tasted the combination.
+
+23
+00:01:08.698 --> 00:01:10.088
+The soup was perfect.
+
+24
+00:01:10.088 --> 00:01:11.676
+For yesterday's kitchen.
+
+25
+00:01:12.600 --> 00:01:18.409
+Now let's map the kitchen onto GitHub, the website that keeps a team's shared copy of the code.
+
+26
+00:01:18.600 --> 00:01:22.489
+The recipe book is main, the branch of code everyone uses.
+
+27
+00:01:22.667 --> 00:01:28.412
+A cook's copy is a branch, a separate line of changes where you can work without touching main.
+
+28
+00:01:28.600 --> 00:01:31.671
+The page on the head chef's desk is a pull request.
+
+29
+00:01:31.671 --> 00:01:36.187
+It asks to add your branch to main, so people and tests can check it first.
+
+30
+00:01:36.333 --> 00:01:41.716
+And the taster is the checks: automatic tests that show a green tick or a red cross.
+
+31
+00:01:42.600 --> 00:01:49.988
+Here is the same story in our lab app, hello-devops, a tiny web app that greets every visitor and counts the visits.
+
+32
+00:01:50.133 --> 00:01:55.773
+Teammate A renames a function, count_visit, to record_visit, and fixes its one caller.
+
+33
+00:01:55.773 --> 00:01:57.805
+That's the stock changing pots.
+
+34
+00:01:58.000 --> 00:02:02.194
+Teammate B adds a new web address, /hello/<name>, with a test.
+
+35
+00:02:02.194 --> 00:02:05.779
+It calls count_visit, which was correct that morning.
+
+36
+00:02:05.933 --> 00:02:08.712
+Pull request 12: three tests pass.
+
+37
+00:02:08.712 --> 00:02:11.408
+Pull request 13: four tests pass.
+
+38
+00:02:11.408 --> 00:02:12.716
+Two green ticks.
+
+39
+00:02:12.867 --> 00:02:13.641
+Both merge.
+
+40
+00:02:13.641 --> 00:02:17.723
+No conflict, because the branches changed different lines.
+
+41
+00:02:17.867 --> 00:02:19.926
+Now the tests run on main.
+
+42
+00:02:19.926 --> 00:02:21.194
+Pause and guess.
+
+43
+00:02:21.194 --> 00:02:22.303
+Green, or red?
+
+44
+00:02:24.467 --> 00:02:24.797
+Red.
+
+45
+00:02:24.797 --> 00:02:28.351
+NameError: name count_visit is not defined.
+
+46
+00:02:28.351 --> 00:02:30.417
+One failed, three passed.
+
+47
+00:02:30.600 --> 00:02:30.941
+Well.
+
+48
+00:02:30.941 --> 00:02:33.122
+That's not the lunch we planned.
+
+49
+00:02:33.122 --> 00:02:36.871
+The new address calls a function that no longer exists.
+
+50
+00:02:37.067 --> 00:02:41.081
+Now that you've seen it, it gets a name: a semantic conflict.
+
+51
+00:02:41.081 --> 00:02:42.661
+The text merged cleanly.
+
+52
+00:02:42.661 --> 00:02:43.977
+The meaning did not.
+
+53
+00:02:44.933 --> 00:02:47.532
+Let's rewind to just before 13 merged.
+
+54
+00:02:47.532 --> 00:02:50.199
+What did its green tick really promise?
+
+55
+00:02:50.199 --> 00:02:53.551
+Most of us read it as: my branch works with main.
+
+56
+00:02:53.733 --> 00:02:56.556
+That's almost right, and the almost is the bug.
+
+57
+00:02:56.733 --> 00:02:57.321
+Fact one.
+
+58
+00:02:57.321 --> 00:03:05.088
+GitHub builds a temporary merge commit, your branch joined with the current main, and the checks test that combination.
+
+59
+00:03:05.267 --> 00:03:09.235
+When pull request 13 was opened, main was at m1.
+
+60
+00:03:09.235 --> 00:03:10.805
+So: green, with m1.
+
+61
+00:03:11.000 --> 00:03:11.587
+Fact two.
+
+62
+00:03:11.587 --> 00:03:16.286
+The checks start only when something happens to the pull request itself.
+
+63
+00:03:16.286 --> 00:03:19.745
+It is opened, it gets new commits, or it is reopened.
+
+64
+00:03:19.933 --> 00:03:23.862
+Now pull request 12 merges, and main moves on to m2.
+
+65
+00:03:23.862 --> 00:03:26.581
+Is that an event on pull request 13?
+
+66
+00:03:26.733 --> 00:03:27.030
+No.
+
+67
+00:03:27.030 --> 00:03:28.512
+Nothing reruns.
+
+68
+00:03:28.512 --> 00:03:30.785
+The tick still says m1.
+
+69
+00:03:30.933 --> 00:03:35.804
+Honestly, that tick should come with a label: green, as of yesterday's main.
+
+70
+00:03:36.000 --> 00:03:38.275
+A tick is a photo of one moment.
+
+71
+00:03:38.275 --> 00:03:39.981
+It is not a live camera.
+
+72
+00:03:40.733 --> 00:03:44.153
+So the wish is simple: taste the soup in today's kitchen.
+
+73
+00:03:44.333 --> 00:03:49.425
+A ruleset, a set of rules for a branch, has an option for exactly that.
+
+74
+00:03:49.425 --> 00:03:52.940
+Require branches to be up to date before merging.
+
+75
+00:03:52.940 --> 00:03:54.231
+Day 25 builds one.
+
+76
+00:03:54.400 --> 00:03:58.162
+Pull request 13 is now behind main, so it cannot merge yet.
+
+77
+00:03:58.162 --> 00:04:02.051
+The Update branch button brings the new main into the branch.
+
+78
+00:04:02.200 --> 00:04:07.988
+That is a new commit on the pull request, so the checks run again, on B's branch plus m2.
+
+79
+00:04:08.133 --> 00:04:10.978
+Red, on the pull request instead of on main.
+
+80
+00:04:10.978 --> 00:04:13.757
+The merge is blocked, and main stays green.
+
+81
+00:04:13.933 --> 00:04:17.805
+And if a break does slip through, undo it with a new commit.
+
+82
+00:04:17.805 --> 00:04:23.483
+A merge commit has two parents, so -m 1 tells revert to keep the first one, main's side.
+
+83
+00:04:24.400 --> 00:04:27.535
+Should every repository turn this rule on?
+
+84
+00:04:27.535 --> 00:04:28.431
+Mostly, yes.
+
+85
+00:04:28.431 --> 00:04:29.775
+But it has a cost.
+
+86
+00:04:29.933 --> 00:04:35.209
+On a busy repository, people keep updating their branches and rerunning the checks.
+
+87
+00:04:35.400 --> 00:04:39.512
+When many pull requests land every hour, teams use a merge queue.
+
+88
+00:04:39.512 --> 00:04:45.205
+GitHub tests main plus the pull requests ahead of yours, and merges only when that passes.
+
+89
+00:04:45.400 --> 00:04:50.421
+And the cheapest guard costs nothing: small branches, merged within a day or two.
+
+90
+00:04:50.421 --> 00:04:54.203
+Less time waiting means less time for main to move under you.
+
+91
+00:04:55.133 --> 00:04:56.429
+So here's the moral.
+
+92
+00:04:56.429 --> 00:05:03.552
+A pull request's checks test your branch merged into main, as main was the last time the pull request changed.
+
+93
+00:05:03.733 --> 00:05:06.825
+Two honest checks can still miss the combination.
+
+94
+00:05:06.825 --> 00:05:08.781
+So taste it in today's kitchen.
+
+95
+00:05:08.933 --> 00:05:09.764
+Quick check.
+
+96
+00:05:09.764 --> 00:05:12.462
+Your pull request went green yesterday.
+
+97
+00:05:12.462 --> 00:05:15.367
+This morning, a teammate merged into main.
+
+98
+00:05:15.367 --> 00:05:17.097
+Has your check run again?
+
+99
+00:05:17.097 --> 00:05:18.204
+Pause and think.
+
+100
+00:05:20.400 --> 00:05:20.608
+No.
+
+101
+00:05:20.608 --> 00:05:24.484
+Nothing happened to your pull request, so nothing reran.
+
+102
+00:05:24.484 --> 00:05:27.737
+Press Update branch, or let the ruleset insist.

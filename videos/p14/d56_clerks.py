@@ -1,5 +1,14 @@
 import sys, pathlib; sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from fg import *
+import fg as _fg
+
+
+def box(*a, **k):  # keep the label drawn above its own filled outline, even when the outline is animated
+    b = _fg.box(*a, **k); b[1].set_z_index(1); return b
+
+
+def chip(*a, **k):
+    c = _fg.chip(*a, **k); c[1].set_z_index(1); return c
 
 SAY.extend([(r"\bDaemonSet\b", "daemon set"), (r"\bhostPath\b", "host path"), (r"\bmerge_log\b", "merge log"),
             (r"\bkeep_log\b", "keep log"), (r"\buse_kubelet\b", "use kubelet"), (r"/var/log/containers\b", "slash var slash log slash containers"),
@@ -108,7 +117,7 @@ class D56Clerks(VoiceScene):
         self.play(FadeOut(VGroup(fname, fl)), run_time=0.5)
 
         # ---------- 4. steelman the wrong collectors
-        ask = T("Who reads these folders?", 28, ASK_C).move_to([4.85, 2.6, 0])
+        ask = VGroup(T("Who reads", 28, ASK_C), T("these folders?", 28, ASK_C)).arrange(DOWN, buff=0.12).move_to([4.85, 2.6, 0])
         self.beat("So who reads these folders? The first idea most of us have: give every bed its own clerk.",
                   FadeIn(ask), run_time=1.6)
         side = VGroup(*[Square(0.2, stroke_width=0).set_fill(CLERK_C, 0.95).move_to(p.get_center() + UR * 0.24) for f in F for p in f["pods"]])
@@ -126,8 +135,7 @@ class D56Clerks(VoiceScene):
         reds = VGroup(*[SurroundingRectangle(F[k]["fold"], buff=0.08, color=RED_M, stroke_width=2.5) for k in (1, 2)])
         self.beat("Floors two and three pile up, unread.",
                   Create(reds), *[F[k]["fold"].animate.set_opacity(0.45) for k in (1, 2)], run_time=1.6)
-        wish = T("one clerk per floor, hired by itself", 28, ASK_C).move_to(ask)
-        fit(wish, 3.6)
+        wish = VGroup(T("one clerk per floor,", 28, ASK_C), T("hired by itself", 28, ASK_C)).arrange(DOWN, buff=0.12).move_to(ask)
         self.beat("What we really want is exactly one clerk on every floor. And when a new floor opens, a new clerk should appear, without anyone remembering to hire one.",
                   FadeOut(reds), FadeOut(win), *[F[k]["fold"].animate.set_opacity(1) for k in (1, 2)], Transform(ask, wish),
                   LaggedStart(*[FadeIn(F[k]["ck"], shift=DOWN * 0.2) for k in (1, 2)], lag_ratio=0.4), run_time=4.0)
@@ -137,14 +145,14 @@ class D56Clerks(VoiceScene):
         ds = T("DaemonSet: one copy of a pod on every node", 28, CLERK_C).move_to([-1.9, -1.65, 0])
         self.beat("Kubernetes has exactly that rule. It is called a DaemonSet: run one copy of a pod on every node. The clerk here is Fluent Bit.",
                   FadeIn(ds, shift=UP * 0.1), Indicate(VGroup(*[f["ck"] for f in F]), color=CLERK_C), run_time=3.0)
-        pq = VGroup(T("3 nodes, 12 pods.", 28), T("How many Fluent Bit pods?", 28, ASK_C)).arrange(DOWN, buff=0.2).move_to([4.85, -1.6, 0])
+        pq = VGroup(T("3 nodes, 12 pods.", 28), T("How many", 28, ASK_C), T("Fluent Bit pods?", 28, ASK_C)).arrange(DOWN, buff=0.14).move_to([4.85, -1.55, 0])
         self.beat("So, a quick prediction. Three nodes, twelve pods. How many Fluent Bit pods run? Pause and guess.",
                   FadeOut(ask), FadeIn(pq), run_time=2.0)
         self.pause([4.85, -2.75, 0])
         three = T("3", 44, CLERK_C).move_to([4.85, -2.7, 0])
         self.beat("Three. One per node, not one per pod. Each one reads the files of every pod on its floor.",
                   FadeIn(three, scale=1.4), LaggedStart(*[Indicate(f["ck"], color=CLERK_C, scale_factor=1.4) for f in F], lag_ratio=0.3), run_time=3.0)
-        tol = T("lab values: a toleration lets it onto the control-plane node", 24, GREY_B).move_to([-1.9, -2.4, 0])
+        tol = T("a toleration lets it onto the control-plane node", 24, GREY_B).move_to([-1.9, -2.4, 0])
         self.beat("One small print. One of these nodes is the control-plane node, the one that runs Kubernetes itself. The lab's values include a toleration, a setting that lets Fluent Bit onto it. Without it, you would get two.",
                   FadeIn(tol), Indicate(F[0]["lab"], color=NODE_C), run_time=3.0)
         self.play(FadeOut(VGroup(pq, three, tol, ds)), run_time=0.5)
@@ -178,7 +186,7 @@ class D56Clerks(VoiceScene):
         self.beat("They arrive. But look at one: still a note with no ward and no bed. Back to our first question. Which pod wrote it?",
                   FadeIn(bare, shift=UP * 0.1), run_time=2.0)
         building = VGroup(*[VGroup(f["r"], f["lab"], f["pods"], f["fold"], f["ck"]) for f in F], *outs)
-        self.play(building.animate.scale(0.55).move_to([-3.8, 2.05, 0]), es.animate.scale(0.8).move_to([0.6, 2.05, 0]),
+        self.play(building.animate.scale(0.55).move_to([-3.8, 2.05, 0]), es.animate.scale(0.8).move_to([0.15, 2.05, 0]),
                   bare.animate.move_to([-1.9, 0.35, 0]), run_time=1.2)
         fname.move_to([-1.0, -0.5, 0])
         for a, b, t, c in fparts:
@@ -197,18 +205,18 @@ class D56Clerks(VoiceScene):
                   *[ReplacementTransform(VGroup(*fname[a:b]).copy(), rec[k]) for k, (a, b, t, c) in enumerate(fparts)], run_time=2.6)
         api = VGroup(RoundedRectangle(corner_radius=0.15, width=3.4, height=1.3, stroke_color=API_C, stroke_width=3).set_fill(tint(API_C), 1))
         api.add(VGroup(T("Kubernetes API", 26, API_C), T("the front desk", 22, GREY_B)).arrange(DOWN, buff=0.12).move_to(api[0]))
-        api.move_to([4.6, 2.05, 0])
+        api.move_to([4.3, -1.75, 0])
         self.beat("Labels are different. They are short name and value tags that people attach to a pod, like app: hello-devops. They are not in the file name. So the clerk asks the front desk, the Kubernetes API.",
                   FadeIn(api), run_time=2.4)
-        qa = Arrow(api[0].get_left() + DOWN * 0.2, rec[3].get_right() + RIGHT * 0.2, buff=0.1, stroke_width=3, color=API_C, max_tip_length_to_length_ratio=0.06)
-        memo = T("answer kept in a cache", 24, API_C).move_to([4.6, 0.9, 0])
+        qa = Arrow(api[0].get_left(), rec[3].get_right() + RIGHT * 0.2, buff=0.1, stroke_width=3, color=API_C, max_tip_length_to_length_ratio=0.06)
+        memo = T("answer kept in a cache", 24, API_C).move_to([4.3, -2.8, 0])
         self.beat("And it keeps the answer in memory, a cache, so it doesn't run to the desk again for every single line. The node it ran on gets stamped too.",
                   GrowArrow(qa), Succession(Wait(0.8), AnimationGroup(FadeIn(rec[3], shift=LEFT * 0.2), FadeIn(memo))),
                   Succession(Wait(3.4), FadeIn(rec[4])), run_time=4.6)
         lifted = M("level: INFO   path: /   status: 200", 22).move_to(bare)
         self.beat("One more setting, merge_log. If the message is JSON, its keys become real fields. And keep_log off drops the original string, so nothing is stored twice.",
                   FadeOut(fname), Succession(Wait(1.6), ReplacementTransform(bare, lifted)), run_time=3.4)
-        kq = VGroup(T("Kibana:", 26, GREY_B), M("kubernetes.namespace_name: hello", 22, ASK_C)).arrange(RIGHT, buff=0.25).move_to([3.3, -0.6, 0])
+        kq = VGroup(T("Kibana:", 26, GREY_B), M("kubernetes.namespace_name: hello", 22, ASK_C)).arrange(RIGHT, buff=0.25).move_to([2.7, 1.0, 0])
         self.beat("Now every line says who wrote it. In Kibana, those stamps become filters you'll use every day: only namespace hello, only app hello-devops, or only one node, to see if one floor is the problem.",
                   FadeIn(kq, shift=UP * 0.1), Indicate(rec[1], color=ASK_C), Succession(Wait(3.0), Indicate(rec[3], color=API_C)), Succession(Wait(5.0), Indicate(rec[4], color=NODE_C)), run_time=7.0)
 

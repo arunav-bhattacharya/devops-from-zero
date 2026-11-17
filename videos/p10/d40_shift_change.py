@@ -131,7 +131,7 @@ class D40ShiftChange(Base):
                   Indicate(new[0], color=NEW), Indicate(old[0], color=OLD), run_time=2.0)
         rules = VGroup(M("maxSurge: 1", 24, YELLOW_M), T("extra Pods allowed", 24, GREY_B),
                        M("maxUnavailable: 0", 24, YELLOW_M), T("missing Pods allowed", 24, GREY_B))
-        for m, y in zip(rules, (3.25, 2.85, 2.3, 1.9)):
+        for m, y in zip(rules, (3.15, 2.75, 2.2, 1.8)):
             m.move_to([3.05, y, 0], aligned_edge=LEFT)
         self.steps("Two dials set the pace. maxSurge: how many extra Pods may exist above the wanted number. maxUnavailable: how many may be missing below it. The lab picks one, and zero.",
                    (0.8, FadeIn(rules[0], shift=LEFT * 0.2), FadeIn(rules[1], shift=LEFT * 0.2)), (1.8, Wait(1.8)),
@@ -196,8 +196,7 @@ class D40ShiftChange(Base):
                   FadeOut(both), Transform(old, drawer), run_time=1.8)
 
         # ---------- 5. BREAK: a version that can never start
-        self.play(old.animate.move_to([-4.5, 2.55, 0]).scale(0.8),
-                  FadeOut(cnt), run_time=0.8)
+        self.play(FadeOut(old), FadeOut(cnt), run_time=0.8)
         self.play(new.animate.move_to([-3.9, 0.45, 0]), *[p.animate.move_to([x, PY, 0]) for p, x in zip(npods, LX)],
                   FadeOut(allnew), run_time=1.0)
         sw = wires(npods)
@@ -205,8 +204,8 @@ class D40ShiftChange(Base):
         bad_img = M("image: hello-devops:1.10", 24, BAD).move_to(cl[2], aligned_edge=LEFT)
         self.beat("Now the scary one. Someone ships a typo: a tag that does not exist. Pause and guess. What do the visitors notice? And does Kubernetes roll back on its own?",
                   Transform(cl[2], bad_img), run_time=1.6)
-        self.pause_guess([0, -3.2, 0])
-        brs = rsbox("1.10 (no such image)", BAD, 1, 3.9)
+        self.pause_guess([0, -3.05, 0])
+        brs = rsbox("1.10", BAD, 1, 3.9)
         bp = pod(BAD, RX[0], ready=False)
         cnt = counts(4, 3)
         self.beat("A third ReplicaSet scales to one. Its Pod cannot pull, that is download, its image.",
@@ -221,8 +220,8 @@ class D40ShiftChange(Base):
         stall = T("the rollout stalls, and waits", 30, YELLOW_M).move_to([0, -3.2, 0])
         self.beat("Visitors notice very little. The rollout simply stalls. But Kubernetes does not roll back by itself. It waits.",
                   FadeIn(stall, shift=UP * 0.1), run_time=1.6)
-        dl = VGroup(M("progressDeadlineSeconds: 600", 22, GREY_B), M("ProgressDeadlineExceeded", 22, BAD)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        dl.move_to([2.3, 2.9, 0], aligned_edge=LEFT)
+        dl = VGroup(T("after 600 seconds, by default:", 24, GREY_B), M("ProgressDeadlineExceeded", 22, BAD)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        dl.move_to([2.6, 2.75, 0], aligned_edge=LEFT)
         self.beat("After six hundred seconds by default, the Deployment reports ProgressDeadlineExceeded.",
                   FadeOut(rules), FadeIn(dl), run_time=1.6)
         undo = M("$ kubectl rollout undo deployment/hello-devops", 24, WHITE).move_to([0, -3.2, 0])
@@ -234,7 +233,7 @@ class D40ShiftChange(Base):
                   Transform(cnt, counts(3, 3)), run_time=1.8)
 
         # ---------- 6. NAME + GUARDRAIL: ready is the whole safety
-        self.play(FadeOut(VGroup(undo, dl, brs, old)), run_time=0.7)
+        self.play(FadeOut(VGroup(undo, dl, brs)), run_time=0.7)
         name = T("rolling update", 36, YELLOW_M).move_to([3.9, 0.9, 0])
         gl = T("replace a few Pods at a time, so the app keeps answering", 24, GREY_B).move_to([3.0, 0.2, 0])
         gl.align_to(np.array([0.3, 0, 0]), LEFT)

@@ -136,10 +136,10 @@ class D46Method(VoiceScene):
                   Indicate(sB[0], color=RED_M), FadeIn(q), run_time=2.0)
         self.wait(2.0)
         aB = chip("kubectl logs --previous", RED_M, 22, mono=True).move_to(q)
-        self.beat("In the previous container's log. After a restart, plain logs shows the new container, which may not have printed anything yet. Dash dash previous shows the one that crashed. The note left by the cook who just went home.",
+        self.beat("In the previous container's log. Plain logs shows the fresh container, which may have printed nothing yet. Dash dash previous shows the one that crashed: the note left by the cook who just went home.",
                   Transform(q, aB), run_time=1.6)
         bo = T("\"BackOff\" = waits longer between tries. Never the cause.", 24, GREY_B).move_to([2.6, -3.2, 0])
-        self.beat("And notice the word BackOff in two of these names. It only means the kubelet now waits longer between tries. It's never the cause. Look for the first error.",
+        self.beat("And BackOff only means the kubelet waits longer between tries. It's never the cause.",
                   FadeIn(bo, shift=UP * 0.1), run_time=2.0)
         self.play(FadeOut(VGroup(hA, hB, sA, sB, evA, q, bo)), run_time=0.6)
 
@@ -177,7 +177,7 @@ class D46Method(VoiceScene):
         self.beat("We want to test that name from inside the Pod's network. But the app's image has no DNS tools. No nslookup at all.",
                   FadeIn(t3[1][2]), Succession(Wait(1.6), FadeIn(t3[1][3])), run_time=3.0)
         helper = person(GREEN_M, 0.7).move_to([5.6, -1.4, 0])
-        self.beat("So we send a helper with a toolbox to stand next to the cook. kubectl debug adds a temporary extra container to the running Pod, with an image you choose, such as busybox.",
+        self.beat("So we send a helper with a toolbox. kubectl debug adds a temporary container to the running Pod, with an image you choose, like busybox.",
                   FadeIn(helper, shift=LEFT * 0.3), run_time=1.8)
         t4 = term([("$ kubectl debug -it hello-devops-5d8f7c6b9-4kq2w -n hello --image=busybox:1.37 --target=web", GREY_B),
                    ("/ # nslookup rediss.hello.svc.cluster.local", GREY_B),
@@ -192,7 +192,7 @@ class D46Method(VoiceScene):
         found = chip("cause: a typo in the ConfigMap", YELLOW_M, 26).move_to([1.3, 3.3, 0])
         self.beat("That's the proof. A typo in the ConfigMap, one letter too many. Redis and the network are fine. One change fixes it, and we know exactly why.",
                   Transform(case, found), run_time=1.8)
-        self.beat("By the way, that helper has a name: an ephemeral container. Ephemeral means short-lived. It's never restarted, and it goes away when the Pod is deleted.",
+        self.beat("That helper is called an ephemeral container: short-lived, never restarted, gone with the Pod.",
                   Indicate(helper, color=GREEN_M), run_time=2.0)
         self.play(FadeOut(VGroup(t3, t4, helper, case)), run_time=0.6)
 
@@ -203,9 +203,9 @@ class D46Method(VoiceScene):
         g3 = VGroup(T("bugs in your own code", 28, PURPLE_M), T("need the app's logs, metrics, traces", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.8, -2.0, 0])
         self.beat("A few guardrails. First, change one thing at a time, and watch what happens. That's the opposite of our manager.",
                   FadeIn(g1), run_time=1.8)
-        self.beat("Second, an error that says Forbidden is not a bug. Your YAML is fine. Your key just doesn't open that door. Ask the cluster with kubectl auth can-i.",
+        self.beat("Second, Forbidden is not a bug. Your key just doesn't open that door. Ask with kubectl auth can-i.",
                   FadeIn(g2), run_time=2.0)
-        self.beat("Third, the honest limit. The method finds causes only in what Kubernetes can see. A bug inside your app's own code still needs the app's logs, and later, metrics and traces.",
+        self.beat("Third, the honest limit: this finds causes only in what Kubernetes can see. Bugs in your own code need the app's logs, metrics and traces.",
                   FadeIn(g3), run_time=2.0)
         self.play(FadeOut(VGroup(ladder, g1, g2, g3)), run_time=0.6)
 
@@ -215,8 +215,8 @@ class D46Method(VoiceScene):
                      T("get, describe, logs --previous, events, then test inside", 28, TEAL_M),
                      T("never started: read the Events", 28, GOLD_M),
                      T("no tools in the image: kubectl debug", 28, GREEN_M)).arrange(DOWN, buff=0.35)
-        self.beat("So, the moral of the story. Read before you touch, because a restart deletes clues. Climb from the bottom: the Pod, the Service, the route, and the node when many fail together. At each step: get, describe, logs with previous, events, then test from inside. If it never started, read the Events. And if the image has no tools, bring your own with kubectl debug.",
-                  LaggedStart(*[FadeIn(m, shift=UP * 0.1) for m in mor], lag_ratio=0.8), run_time=11.0)
+        self.beat("The moral of the story: read before you touch. Climb from the Pod, to the Service, to the route, and the node when many fail. Get, describe, logs, events, then test inside. Never started? Read the Events. No tools? Bring your own.",
+                  LaggedStart(*[FadeIn(m, shift=UP * 0.1) for m in mor], lag_ratio=0.8), run_time=8.0)
         self.play(FadeOut(mor), run_time=0.6)
         qq = VGroup(T("A new Pod stays Pending. Its event says:", 30),
                     M("0/3 nodes are available: 1 node(s) had untolerated taint(s),", 22, GREY_B),

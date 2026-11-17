@@ -1,5 +1,14 @@
 import sys, pathlib; sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from fg import *
+import fg as _fg
+
+
+def box(*a, **k):  # keep the label drawn above its own filled outline, even when the outline is animated
+    b = _fg.box(*a, **k); b[1].set_z_index(1); return b
+
+
+def chip(*a, **k):
+    c = _fg.chip(*a, **k); c[1].set_z_index(1); return c
 
 SAY.extend([(r"\bv1a\b", "v one A"), (r"\bv1b\b", "v one B"), (r"\bv2\b", "v two"), (r"\bredis-b\b", "redis B"),
             (r"\b/healthz\b", "health Z"), (r"\b5xx\b", "five hundreds"), (r"\b10000\b", "ten thousand")])
@@ -38,7 +47,7 @@ class D58Receptionist(VoiceScene):
         names = ["sales", "orders", "payroll", "support", "legal", "stock", "design", "travel"]
         for i, n in enumerate(names):
             r = RoundedRectangle(corner_radius=0.1, width=2.4, height=1.2, stroke_color=OFF_C, stroke_width=2).set_fill(tint(OFF_C, 0.06), 1)
-            offs.add(VGroup(r, T(n, 26, OFF_C).move_to(r)))
+            offs.add(VGroup(r, T(n, 26, OFF_C).move_to(r).set_z_index(1)))
         offs.arrange_in_grid(rows=2, cols=4, buff=(0.9, 1.5)).move_to(UP * 0.2)
         self.beat("Picture an office building. Small offices, one team in each. All day, people walk the corridors with requests for each other.",
                   LaggedStart(*[FadeIn(o) for o in offs], lag_ratio=0.1), run_time=3.0)
@@ -117,7 +126,7 @@ class D58Receptionist(VoiceScene):
         pq = T("200 requests: how many reach v2?", 28, ASK_C).move_to([-2.6, -2.6, 0])
         self.beat("We send 200 requests. How many land on the canary? Pause and guess.",
                   FadeIn(pq), run_time=1.8)
-        self.pause([-2.6, -3.25, 0])
+        self.pause([-2.6, -3.1, 0])
         dots = []
         for k in range(10):
             tgt = h["v2"] if k == 6 else (h["v1a"] if k % 2 else h["v1b"])
@@ -129,13 +138,13 @@ class D58Receptionist(VoiceScene):
         self.play(FadeOut(pq), run_time=0.4)
 
         # ---------- 5. break: v1b loses its Redis
-        rb = box("redis-b", BAD_C, w=1.9, h=0.7, size=24).move_to([5.6, 0.3, 0])
+        rb = box("redis-b", BAD_C, w=1.7, h=0.7, size=24).move_to([5.45, 0.3, 0])
         rbl = Line(h["v1b"].get_right(), rb.get_left(), stroke_width=2, color=GREY_B)
         self.beat("Now let's break one copy on purpose. v1b keeps its visit count in its own Redis, a small database. We stop it.",
                   gl1.animate.next_to(g1, UP, buff=0.12), FadeIn(rb), Create(rbl), run_time=2.4)
         x = tick(False, 0.3).move_to(rb)
-        hz = VGroup(M("/healthz", 22), T("200", 24, OK_C)).arrange(RIGHT, buff=0.15).next_to(h["v1b"], DOWN, buff=0.12)
-        rt = VGroup(M("/", 22), T("500", 24, BAD_C)).arrange(RIGHT, buff=0.15).next_to(hz, DOWN, buff=0.06)
+        hz = VGroup(M("/healthz", 22), T("200", 24, OK_C)).arrange(RIGHT, buff=0.15).move_to([5.0, -0.55, 0])
+        rt = VGroup(M("/", 22), T("500", 24, BAD_C)).arrange(RIGHT, buff=0.15).next_to(hz, DOWN, buff=0.12).align_to(hz, LEFT)
         self.beat("Now real visits to v1b fail with error 500. But its health page, slash healthz, still answers 200, all fine.",
                   Create(x), rb[0].animate.set_opacity(0.4), h["v1b"][0].animate.set_stroke(BAD_C), Succession(Wait(1.6), FadeIn(rt)), Succession(Wait(3.2), FadeIn(hz)), run_time=5.0)
         hc = T("health check every 5 s", 24, PRX_C).move_to([-2.0, 1.5, 0])
@@ -148,7 +157,7 @@ class D58Receptionist(VoiceScene):
         pq2 = T("20 requests: what does curl see?", 28, ASK_C).move_to([-2.6, -2.6, 0])
         self.beat("So we send twenty requests. What does curl see? Pause and guess.",
                   FadeIn(pq2), run_time=1.6)
-        self.pause([-2.6, -3.25, 0])
+        self.pause([-2.6, -3.1, 0])
         anims = []
         for k in range(3):
             l1 = Line(rec.get_right(), h["v1b"].get_left())
@@ -157,7 +166,7 @@ class D58Receptionist(VoiceScene):
         res2 = VGroup(M("20", 26), T("times 200", 26, OK_C)).arrange(RIGHT, buff=0.2).move_to(pq2)
         self.beat("Twenty times 200. Three requests did fail on v1b. But the route has a retry policy, and each retry goes to a different host than the one that just failed. So v1a answered instead.",
                   LaggedStart(*anims, lag_ratio=0.5), Succession(Wait(1.6), Transform(pq2, res2)), run_time=7.0)
-        cnt = VGroup(M("upstream_rq_retry: 3", 22), M("upstream_rq_retry_success: 3", 22), M("ejections_active: 1", 22, BAD_C)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-4.2, 2.3, 0])
+        cnt = VGroup(M("upstream_rq_retry: 3", 22), M("upstream_rq_retry_success: 3", 22), M("ejections_active: 1", 22, BAD_C)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-3.9, 2.4, 0])
         ej = DashedVMobject(SurroundingRectangle(h["v1b"], buff=0.08, color=BAD_C), num_dashes=24)
         self.play(FadeOut(hc), run_time=0.3)
         self.beat("And after the third error in a row, Envoy took v1b out of the pool. Its admin page says so: three retries, three successes, one host ejected.",

@@ -59,10 +59,11 @@ class D50NurseChart(VoiceScene):
         chart = frame(4.0, 2.2, GOLD_M, [3.6, -1.4, 0], fill=0.08)
         ch_t = T("chart", 26, GOLD_M).next_to(chart, UP, buff=0.15)
         rows = VGroup(*[M(f"{h}   bed 4   temp {v}", 22) for h, v in (("01:00", "37.1"), ("01:15", "37.6"), ("01:30", "38.4"))]).arrange(DOWN, aligned_edge=LEFT, buff=0.18).move_to(chart)
+        fit(rows, 3.6)
         self.beat("So a nurse walks the ward every fifteen minutes, and writes every number on a chart, with the time and the bed.",
                   FadeIn(nurse, shift=RIGHT * 0.2), Create(chart), FadeIn(ch_t),
                   LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in rows], lag_ratio=0.6), run_time=3.6)
-        self.beat("Now the doctor has an answer. The fever started between one fifteen and one thirty.", Indicate(rows[2], color=GOLD_M), run_time=1.8)
+        self.beat("Now the doctor has an answer: between one fifteen and one thirty.", Indicate(rows[2], color=GOLD_M), run_time=1.8)
         ward = VGroup(bed, bed_t, scr, hr, tp, doc, dq, now, nurse, chart, ch_t, rows)
         self.play(FadeOut(ward), run_time=0.6)
 
@@ -75,7 +76,7 @@ class D50NurseChart(VoiceScene):
         val = M("99.0", 26, GREEN_M).next_to(cnt, DOWN, buff=0.2)
         self.beat("Our app has the same blind spot. hello-devops, the tiny lab app that greets every visitor, keeps a count of visits in memory.",
                   Create(app), Write(app_t), run_time=1.8)
-        self.beat("It shows its counts on a plain web page, at slash metrics. Here, the answers to slash that went well. That page is the screen beside the bed.",
+        self.beat("It shows its counts on a plain web page, at slash metrics. That page is the screen beside the bed.",
                   FadeIn(page_t), FadeIn(cnt), FadeIn(val), run_time=1.8)
         self.beat("It always shows the value right now. Nothing remembers what it was ten minutes ago.", Indicate(val, color=GREEN_M), run_time=1.4)
 
@@ -84,10 +85,10 @@ class D50NurseChart(VoiceScene):
         prom = frame(2.6, 1.0, GOLD_M, PC, fill=0.16)
         prom_t = T("Prometheus", 28).move_to(prom).set_z_index(2)
         nurse = person(GOLD_M, 0.9).next_to(prom, UP, buff=0.15)
-        self.beat("Prometheus is the nurse with the chart. It is a program that runs all the time, and collects numbers from your programs every few seconds.",
+        self.beat("Prometheus is the nurse with the chart: a program that collects numbers from your programs every few seconds.",
                   FadeIn(nurse, shift=DOWN * 0.2), GrowFromCenter(prom), Write(prom_t), run_time=2.2)
         get = Arrow(prom.get_left(), app.get_right(), buff=0.1, stroke_width=4, color=GOLD_M, max_tip_length_to_length_ratio=0.15)
-        get_l = T("fetch, every 15 s", 22, GOLD_M).next_to(get, UP, buff=0.1)
+        get_l = T("fetch, every 15 s", 22, GOLD_M).next_to(prom, DOWN, buff=0.2)
         self.beat("It collects by pulling. It walks to the app and fetches the page, on a timer. In the lab, every fifteen seconds.",
                   GrowArrow(get), FadeIn(get_l), Succession(Wait(0.5), travel(get, GOLD_M, 0.8)), run_time=2.6)
         tg = T("one fetch: a scrape.  the app it visits: a target", 24, GREY_B).move_to([-2.0, -1.4, 0])
@@ -98,7 +99,7 @@ class D50NurseChart(VoiceScene):
         chart_t = T("the chart", 26, GOLD_M).move_to(chart.get_top() + DOWN * 0.35)
         put = Arrow(prom.get_right(), chart.get_left(), buff=0.1, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.15)
         samples = VGroup()
-        self.beat("After each scrape, it writes the value down with a timestamp. That history is what you graph, and what you alert on.",
+        self.beat("After each scrape it writes the value down with a timestamp. That history is what you graph and alert on.",
                   Create(chart), FadeIn(chart_t), GrowArrow(put), run_time=1.8)
         tsv = [("14:00:00", "99"), ("14:00:15", "167"), ("14:00:30", "235"), ("14:00:45", "303")]
         for i, (t, v) in enumerate(tsv):
@@ -121,16 +122,14 @@ class D50NurseChart(VoiceScene):
         upz = M("up = 0", 26, RED_M).move_to(CHC + UP * 0.45 - UP * 0.42 * 4 + DOWN * 0.08)
         self.beat("Its next scrape fails. And after every scrape, Prometheus records a value called up. One if the fetch worked. Zero if it failed.",
                   opts[1].animate.set_color(GREEN_M), travel(get, GOLD_M, 0.7), Create(fail), FadeIn(upz), run_time=3.0)
-        self.beat("A nurse who finds an empty bed writes no reading on the chart. A patient who has left cannot phone in to say so.",
+        self.beat("A nurse who finds an empty bed writes no reading. A patient who has left cannot phone in to say so. Because Prometheus knows which targets should exist, silence itself becomes a signal.",
                   Indicate(upz, color=RED_M), run_time=2.0)
-        self.beat("That is the big gift of pulling. Prometheus knows which targets should exist, so silence itself becomes a signal.",
-                  run_time=None)
         self.play(FadeOut(VGroup(opts, fail, upz)), app.animate.set_stroke(TEAL_M), app_t.animate.set_color(TEAL_M), run_time=0.5)
         pull = VGroup(T("you can read the same page yourself, with curl", 24), T("a slow Prometheus never blocks your app", 24),
                       T("a 20-second batch job may finish before any scrape: the Pushgateway", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.2).move_to([0, -2.1, 0])
-        self.beat("Two more gifts. You can read the same page yourself with curl, the tool that fetches a web address. And a slow monitoring server never blocks your app.",
+        self.beat("Two more gifts. You can read the same page yourself, with curl. And a slow monitoring server never blocks your app.",
                   FadeIn(pull[0]), FadeIn(pull[1]), run_time=2.4)
-        self.beat("Pushing still has a place. A batch job that runs for twenty seconds may finish before any scrape. For that, the docs describe the Pushgateway, where such jobs leave their result.",
+        self.beat("Pushing still has a place. A batch job may finish in twenty seconds, before any scrape. Such jobs can leave their result at the Pushgateway.",
                   FadeIn(pull[2]), run_time=2.4)
         self.play(FadeOut(VGroup(pull, samples, chart, chart_t, put)), run_time=0.5)
 
@@ -145,7 +144,7 @@ class D50NurseChart(VoiceScene):
         self.beat("A real page has more lines. Here is one metric, hello responses total, shown three times.",
                   LaggedStart(*[FadeIn(l, shift=RIGHT * 0.1) for l in lines], lag_ratio=0.4), run_time=2.4)
         lab = Underline(lines[0][21:], color=YELLOW_M)
-        self.beat("The part in braces are labels: a name and a value, like path is slash, or status is 500. A label says which part of the app the number is about, like the bed number on a chart.",
+        self.beat("The part in braces is labels, a name and a value, like status is 500. A label says which part of the app a number is about, like a bed number.",
                   Create(lab), run_time=2.6)
         self.play(FadeOut(lab), run_time=0.3)
         self.beat("Same name, three label sets. How many rows does the chart need? Pause and guess.", run_time=None)
@@ -167,16 +166,16 @@ class D50NurseChart(VoiceScene):
         self.play(FadeOut(VGroup(jl, prom, prom_t)), run_time=0.4)
 
         # ---------------- 6. break it: one careless label
-        self.beat("So far so good. Now let's break it, with one word. A label looks free. It is one extra word in your code.",
+        self.beat("So far so good. Now let's break it with one word. A label looks free.",
                   run_time=None)
-        self.play(FadeOut(VGroup(lines, rl, three)), grid.animate.scale(0.6).move_to([-4.6, 1.6, 0]), run_time=0.6)
+        self.play(FadeOut(VGroup(lines, rl, three, grid)), run_time=0.6)
         cost = VGroup(T("one route of the app costs about 20 series", 28),
                       T("15 timing buckets, plus a sum, a count, and a counter or two", 24, GREY_B)).arrange(DOWN, buff=0.18).move_to([1.4, 2.2, 0])
         self.beat("Count what one route already costs. Its timing histogram has fifteen buckets, plus a sum and a count, and the counters add a few more.",
                   FadeIn(cost[0]), FadeIn(cost[1]), run_time=2.6)
         lab44 = T("in the lab: one request to /readyz took the hello series from 44 to 64", 26, GOLD_M).move_to([0.6, 1.0, 0])
         fit(lab44, 12.4)
-        self.beat("In the lab, one single request to a route nobody had called before, slash ready Z, took the hello series from forty four to sixty four. Twenty new rows.",
+        self.beat("In the lab, one request to a route nobody had called, slash ready Z, took the series from forty four to sixty four.",
                   FadeIn(lab44, shift=UP * 0.1), run_time=2.6)
         uid = M('user_id="..."', 26, RED_M).move_to([0.6, 0.1, 0])
         self.beat("Now someone adds a user ID label, to see requests per user. There are ten thousand users. How many series for one route?",
@@ -188,11 +187,11 @@ class D50NurseChart(VoiceScene):
         self.beat("Twenty times ten thousand. Two hundred thousand series, for one route, from one copy of the app.",
                   Write(n), LaggedStart(*[FadeIn(d) for d in dots], lag_ratio=0.003), run_time=3.2)
         whole = T("the whole lab today: about 2,200 series", 26, GREEN_M).next_to(dots, DOWN, buff=0.25)
-        self.beat("The whole lab, all four jobs, holds about two thousand two hundred. One careless label makes this app about ninety times bigger than everything Prometheus stores today.",
+        self.beat("The whole lab holds about two thousand two hundred. One careless label makes this app about ninety times bigger than all of it.",
                   FadeIn(whole), run_time=2.6)
-        self.beat("It is the hospital adding a chart row for every visitor. Nobody notices on day one. By the end of the month, the chart room is full and the nurse cannot finish a round.",
+        self.beat("It is the hospital adding a chart row for every visitor. Nobody notices on day one. By the end of the month, the chart room is full.",
                   Wiggle(dots, scale_value=1.03), run_time=2.4)
-        self.play(FadeOut(VGroup(cost, lab44, uid, dots, n, whole, grid)), run_time=0.6)
+        self.play(FadeOut(VGroup(cost, lab44, uid, dots, n, whole)), run_time=0.6)
 
         # ---------------- 7. name it, and the guardrails
         nm = T("cardinality: how many series a metric creates", 32, YELLOW_M).to_edge(UP, buff=0.6)
@@ -208,7 +207,7 @@ class D50NurseChart(VoiceScene):
         self.beat("The lab records the route pattern, not the address typed. So slash nope and slash admin dot P H P both become one value: unmatched.",
                   FadeIn(pat), run_time=2.2)
         logs = T("details about single requests belong in logs and traces", 24, GREY_B).next_to(pat, DOWN, buff=0.25)
-        self.beat("Details about one single request belong in logs and traces, later in the course. The guide's rule of thumb: keep most metrics under ten series, and look hard at anything that could pass a hundred.",
+        self.beat("Details about one request belong in logs and traces. The guide's rule of thumb: keep most metrics under ten series.",
                   FadeIn(logs), run_time=2.4)
         self.play(FadeOut(VGroup(nm, ok, no, pat, logs)), run_time=0.5)
         lim = VGroup(T("One honest limit", 30, GOLD_M), T("one copy, on one machine's disk", 28), T("kept 15 days by default; the lab keeps 7", 28)).arrange(DOWN, buff=0.3)
@@ -224,7 +223,7 @@ class D50NurseChart(VoiceScene):
                      T("an empty bed is up = 0", 28, RED_M),
                      T("one row per name plus labels: a time series", 28, GOLD_M),
                      T("every new label value adds rows", 28, BLUE_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(DOWN * 0.1)
-        self.beat("The page shows only now, and the nurse's rounds write the history. An empty bed is up equals zero. Every name plus labels is one row. And every new label value adds rows.",
+        self.beat("The page shows now, and the rounds write history. An empty bed is up equals zero. And every new label value adds rows.",
                   LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in rec], lag_ratio=0.7), run_time=7.0)
         self.play(FadeOut(VGroup(moral, rec)), run_time=0.5)
         c1 = T("Quick check: a counter has the label method (GET or POST)", 30).move_to(UP * 0.7)

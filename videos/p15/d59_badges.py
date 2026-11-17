@@ -1,5 +1,14 @@
 import sys, pathlib; sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from fg import *
+import fg as _fg
+
+
+def box(*a, **k):  # keep the label drawn above its own filled outline, even when the outline is animated
+    b = _fg.box(*a, **k); b[1].set_z_index(1); return b
+
+
+def chip(*a, **k):
+    c = _fg.chip(*a, **k); c[1].set_z_index(1); return c
 
 SAY.extend([(r"\bistiod\b", "istio D"), (r"\bSPIFFE\b", "spiffy"), (r"\bServiceAccount\b", "service account"),
             (r"\bPeerAuthentication\b", "peer authentication"), (r"\bAuthorizationPolicy\b", "authorization policy"),
@@ -20,8 +29,9 @@ def tint(c, a=0.14):
 
 
 def badge(name, c=BADGE_C):
-    r = RoundedRectangle(corner_radius=0.06, width=1.5, height=0.5, stroke_color=c, stroke_width=2.5).set_fill(tint(c, 0.3), 1)
-    return VGroup(r, T(name, 22).move_to(r))
+    t = T(name, 22)
+    r = RoundedRectangle(corner_radius=0.06, width=max(1.5, t.width + 0.3), height=0.5, stroke_color=c, stroke_width=2.5).set_fill(tint(c, 0.3), 1)
+    return VGroup(r, t.move_to(r).set_z_index(1))
 
 
 def podbox(name, ns, x, y, sidecar=True, c=APP_C, h=1.8):
@@ -34,7 +44,7 @@ def podbox(name, ns, x, y, sidecar=True, c=APP_C, h=1.8):
     if sidecar:
         px = Square(0.62, stroke_color=PRX_C, stroke_width=3).set_fill(tint(PRX_C, 0.25), 1).move_to([x + 0.7, yy, 0])
         g["px"] = px
-        g["pxl"] = T("Envoy", 20, PRX_C).move_to(px)
+        g["pxl"] = T("Envoy", 20, PRX_C).move_to(px).set_z_index(1)
     return g
 
 
@@ -142,9 +152,8 @@ class D59Badges(VoiceScene):
         self.play(FadeOut(VGroup(hsl, who)), run_time=0.4)
 
         # ---------- 6. PERMISSIVE, STRICT, and the Monday mistake
-        O = podbox("outside", "outside", -4.3, -2.5, sidecar=False, c=OUT_C, h=1.4)
-        O["lab"].next_to(O["r"], LEFT, buff=0.2)
-        O["ns"].next_to(O["r"], RIGHT, buff=0.15)
+        O = podbox("outside", "outside", -4.0, -2.55, sidecar=False, c=OUT_C, h=1.4)
+        VGroup(O["lab"], O["ns"]).arrange(DOWN, aligned_edge=LEFT, buff=0.1).next_to(O["r"], RIGHT, buff=0.2)
         self.beat("But not every caller lives in the mesh. Here's a Pod in another namespace, called outside. It has no sidecar, so no badge.",
                   FadeIn(grp(O)), run_time=2.2)
         mode = VGroup(T("PeerAuthentication:", 26, GREY_B), T("PERMISSIVE", 26, ASK_C)).arrange(RIGHT, buff=0.25).move_to([3.6, -2.3, 0])
@@ -155,20 +164,19 @@ class D59Badges(VoiceScene):
                   Transform(mode[1], T("STRICT", 26, BAD_C).move_to(mode[1], aligned_edge=LEFT)), run_time=3.0)
         self.pause([3.6, -3.05, 0])
         cut = tick(False, 0.25).move_to(plain.point_from_proportion(0.6))
-        e56 = VGroup(T("curl exit code", 24, BAD_C), M("56", 26, BAD_C)).arrange(RIGHT, buff=0.15).move_to([0.2, -1.45, 0])
+        e56 = VGroup(T("curl exit code", 24, BAD_C), M("56", 26, BAD_C)).arrange(RIGHT, buff=0.15).move_to([0.6, -0.9, 0])
         self.beat("Refused. curl exits with code 56. The connection was cut before any HTTP answer arrived.",
                   travel(plain, OUT_C, 0.8), Succession(Wait(0.8), AnimationGroup(Create(cut), FadeIn(e56))), run_time=3.0)
         self.beat("Well. That looks exactly like a network fault, which is why it's so confusing at work. The cleaner is on the pavement, and the door reader has no idea a cleaner was ever expected.",
                   Indicate(O["app"], color=OUT_C), run_time=2.4)
-        rule = T("Start PERMISSIVE. Check every caller. Then go STRICT.", 28, ASK_C).move_to([0, 1.0, 0])
+        rule = T("Start PERMISSIVE. Check every caller. Then go STRICT.", 28, ASK_C).move_to([0, 1.5, 0])
         self.beat("So the rule: start PERMISSIVE, check every caller of the namespace, and only then switch to STRICT. Go strict after every caller has a badge.",
                   FadeIn(rule, shift=UP * 0.1), run_time=3.0)
         self.play(FadeOut(VGroup(rule, e56, cut, plain, mode, grp(O))), run_time=0.6)
 
         # ---------- 7. AuthorizationPolicy: the friendly ALLOW
-        mon = podbox("prometheus", "monitoring", -4.3, -2.45, sidecar=True, c=PURPLE_M, h=1.6)
-        mon["lab"].next_to(mon["r"], LEFT, buff=0.2)
-        mon["ns"].next_to(mon["r"], RIGHT, buff=0.15)
+        mon = podbox("prometheus", "monitoring", -4.0, -2.45, sidecar=True, c=PURPLE_M, h=1.6)
+        VGroup(mon["lab"], mon["ns"]).arrange(DOWN, aligned_edge=LEFT, buff=0.1).next_to(mon["r"], RIGHT, buff=0.2)
         mb = badge_at(badge("prometheus", PURPLE_M), mon)
         self.beat("Badges are verified now, so we can decide who may open which door. That's an AuthorizationPolicy. A workload with no policy lets everyone in. Say a second caller, a monitoring Pod, also visits hello-devops.",
                   FadeIn(grp(mon)), FadeIn(mb), run_time=4.0)
@@ -177,16 +185,16 @@ class D59Badges(VoiceScene):
         self.play(FadeOut(hs1), FadeOut(hs2), run_time=0.3)
         self.beat("Both calls work.",
                   GrowArrow(ma), GrowArrow(ca), travel(ma, PURPLE_M, 0.9), travel(ca, BADGE_C, 0.9), run_time=1.6)
-        pol = VGroup(T("ALLOW", 26, BADGE_C), T("from: client, GET only", 24)).arrange(RIGHT, buff=0.25).move_to([3.6, 1.35, 0])
-        fit(pol, 5.4)
+        pol = VGroup(T("ALLOW", 26, BADGE_C), T("from: client, GET only", 24)).arrange(RIGHT, buff=0.25).move_to([3.9, 1.6, 0])
+        fit(pol, 5.0)
         self.beat("Now a team adds one friendly rule for hello-devops: ALLOW the client, for GET requests. They only meant to let the client in. What happens to the monitoring Pod? Pause and guess.",
                   FadeIn(pol, shift=DOWN * 0.1), run_time=3.0)
-        self.pause([3.6, 0.75, 0])
+        self.pause([0.2, 1.45, 0])
         x2 = tick(False, 0.22).move_to(ma.point_from_proportion(0.7))
-        r403 = M("403 RBAC: access denied", 24, BAD_C).move_to([1.0, -1.45, 0])
+        r403 = M("403 RBAC: access denied", 24, BAD_C).move_to([1.0, -2.6, 0])
         self.beat("Locked out. Once any ALLOW policy selects a workload, every request no ALLOW rule matches gets 403, access denied.",
                   travel(ma, PURPLE_M, 0.8), Succession(Wait(0.8), AnimationGroup(Create(x2), FadeIn(r403))), travel(ca, BADGE_C, 0.8), run_time=3.4)
-        rule2 = T("An ALLOW policy is also a deny for everyone it does not name.", 28, ASK_C).move_to([0, 1.0, 0])
+        rule2 = T("An ALLOW policy is also a deny for everyone it does not name.", 28, ASK_C).move_to([0, 1.5, 0])
         fit(rule2, 12.6)
         self.beat("That one friendly rule became a guest list, and the monitoring Pod isn't on it. An ALLOW policy is also a deny for everyone it doesn't name.",
                   FadeIn(rule2, shift=UP * 0.1), run_time=3.0)

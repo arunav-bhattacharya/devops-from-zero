@@ -77,7 +77,7 @@ class D15HelperReport(VoiceScene):
                   FadeIn(book, shift=RIGHT * 0.2), FadeIn(bl), GrowArrow(ba), run_time=1.8)
 
         X = 2.0
-        sheet = paper(WHITE, 1.4, 1.0, 3).move_to([X, 2.0, 0])
+        sheet = paper(WHITE, 2.0, 1.1, 3).move_to([X, 2.1, 0])
         sticky = paper(RED_M, 1.1, 0.75, 2).move_to([X, 0.3, 0])
         thumb = VGroup(Circle(radius=0.42, stroke_color=YELLOW_M, stroke_width=3).set_fill(tint(YELLOW_M, 0.12), opacity=1)).move_to([X, -1.45, 0])
         lab_s = VGroup(T("report sheet", 26), M("stdout", 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.08).next_to(sheet, RIGHT, buff=0.35)
@@ -131,7 +131,7 @@ class D15HelperReport(VoiceScene):
         one = M("1", 34, RED_M).move_to(thumb)
         self.steps("One. The check found a problem, and CI turns red.",
                    (0.6, travel(oa[2], YELLOW_M, 0.6)), (0.5, Transform(num, one)), (0.8, ci[0].animate.set_stroke(RED_M), travel(cia, YELLOW_M, 0.8)))
-        rep = VGroup(M("238 requests", 22), M("5xx 11", 22), M("4.6%", 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to(sheet)
+        rep = VGroup(M("238 requests", 20), M("5xx 11", 20), M("4.6%", 20)).arrange(DOWN, aligned_edge=LEFT, buff=0.08).move_to(sheet)
         why = VGroup(M("ERROR error rate 4.6%", 22, RED_M), M("is above the limit of 1.0%", 22, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.08).next_to(lab_e, DOWN, buff=0.25).align_to(lab_e, LEFT)
         self.steps("The report went to stdout. And the one-line reason went to stderr: the error rate, 4.6 percent, is above the limit of 1.0 percent.",
                    (0.6, travel(oa[0], WHITE, 0.6)), (0.6, FadeOut(sheet[1]), FadeIn(rep)), (1.2, Wait(1.2)),
@@ -154,24 +154,24 @@ class D15HelperReport(VoiceScene):
         fit(cmdj, 12.6)
         self.beat("Why keep the report and the note apart? Because the report is often read by another program. Here, jq, a small tool that picks values out of JSON.",
                   Transform(cmd, cmdj), FadeIn(jq), GrowArrow(ja), run_time=2.0)
-        js = M('{"error_rate": 4.62, ...}', 22, GREEN_M).move_to(sheet)
-        val = M("4.62", 26, GREEN_M).next_to(jq, DOWN, buff=0.3)
+        js = M('{"error_rate": 4.62, ...}', 22, GREEN_M).move_to([3.3, 1.5, 0], aligned_edge=LEFT)
+        val = M("4.62", 26, GREEN_M).next_to(jq, UP, buff=0.2)
         self.steps("JSON is a plain text format that programs use to swap data. With format json, stdout holds only JSON. So jq reads it cleanly, and finds the error rate: 4.62.",
                    (0.6, FadeOut(rep), FadeIn(js)), (2.6, Wait(2.6)), (0.8, travel(ja, GREEN_M, 0.8)), (0.6, FadeIn(val, shift=DOWN * 0.1)))
-        bad = M("starting...", 22, RED_M).next_to(js, UP, buff=0.12)
+        bad = M("starting...", 22, RED_M).move_to(js, aligned_edge=LEFT)
         self.steps("Now say the helper uses print for a cheerful starting message. print writes to stdout. So the first line jq sees is: starting dot dot dot.",
-                   (2.4, Wait(2.4)), (0.8, FadeIn(bad, shift=DOWN * 0.1)), (0.8, travel(ja, RED_M, 0.8)))
-        jx = tick(False, 0.3).next_to(jq, DOWN, buff=0.3)
+                   (2.4, Wait(2.4)), (0.8, FadeIn(bad, shift=DOWN * 0.1), js.animate.shift(DOWN * 0.32)), (0.8, travel(ja, RED_M, 0.8)))
+        jx = tick(False, 0.3).next_to(jq, UP, buff=0.2)
         self.beat("And jq fails. One friendly hello broke the whole report.",
                   FadeOut(val), Create(jx), jq[0].animate.set_stroke(RED_M), run_time=1.2)
         self.steps("So the rule is simple. Messages for people go to stderr. The report stays alone on stdout.",
-                   (0.8, bad.animate.move_to(why.get_left() + RIGHT * bad.width / 2)), (0.6, FadeOut(jx), jq[0].animate.set_stroke(GREEN_M)), (0.8, travel(ja, GREEN_M, 0.8), FadeIn(val)))
+                   (0.8, bad.animate.move_to(why.get_left() + RIGHT * bad.width / 2)), (0.6, FadeOut(jx), jq[0].animate.set_stroke(GREEN_M), js.animate.shift(UP * 0.32)), (0.8, travel(ja, GREEN_M, 0.8), FadeIn(val)))
         self.play(FadeOut(VGroup(jq, ja, val, bad, js)), FadeIn(sheet[1]), FadeIn(lab_s2), FadeOut(lab_s), run_time=0.6)
         lab_s = lab_s2
 
         # 6. break it: the helper that never crashes
         cmdn = M("$ uv run scripts/logsum.py access nope.log", 24, GREY_B).move_to(cmd)
-        wrap = SurroundingRectangle(helper, color=PURPLE_M, buff=0.25, corner_radius=0.15)
+        wrap = SurroundingRectangle(VGroup(helper, hl2), color=PURPLE_M, buff=0.2, corner_radius=0.15)
         wl = VGroup(M("try: ...", 22, PURPLE_M), M("except Exception: pass", 22, PURPLE_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.08).next_to(wrap, UP, buff=0.2)
         self.beat("Now the big trap. You might think the safest script is one that never crashes. So let's wrap the whole thing in try, and except Exception, pass. Catch every error, and do nothing.",
                   Create(wrap), FadeIn(wl, shift=DOWN * 0.1), Transform(num, M("?", 34, YELLOW_M).move_to(thumb)), ci[0].animate.set_stroke(GREY_B), run_time=2.4)
@@ -191,8 +191,8 @@ class D15HelperReport(VoiceScene):
         self.play(FadeOut(VGroup(key, rule, wrap, wl)), run_time=0.6)
 
         # 7. the same trap when calling another program
-        git = mbox("git", TEAL_M, size=26, w=1.3, h=0.7).move_to([-5.3, 2.75, 0])
-        call = M('subprocess.run(["git", "pull"])', 22, TEAL_M).move_to([-2.5, 2.2, 0])
+        git = mbox("git", TEAL_M, size=26, w=1.3, h=0.7).move_to([-5.4, 2.6, 0])
+        call = M('subprocess.run(["git", "pull"])', 22, TEAL_M).move_to([-2.0, 3.2, 0])
         ga = Arrow(helper.get_top(), git.get_right(), buff=0.2, stroke_width=3, color=TEAL_M, max_tip_length_to_length_ratio=0.12)
         self.play(FadeOut(cmd), run_time=0.4)
         self.beat("The same trap waits when a script asks another program for help. subprocess.run starts git, the tool that saves versions of files, and waits for it.",
@@ -232,12 +232,12 @@ class D15HelperReport(VoiceScene):
         self.play(FadeOut(g), run_time=0.5)
 
         # 10. moral and quick check
-        mor = T("report on the sheet, reasons in the note, the verdict in the thumb", 28).move_to([0, -2.75, 0])
-        fit(mor, 12.4)
+        mor = T("report on the sheet, reasons in the note, the verdict in the thumb", 28)
+        fit(mor, 9.6).move_to([-1.5, -2.75, 0])
         self.beat("So back to the shop. The report goes on the sheet. The reasons go in the note. And the verdict is the thumb. A good helper says failed, out loud.",
                   FadeIn(mor, shift=UP * 0.1), LaggedStart(Indicate(sheet[0], color=WHITE), Indicate(sticky[0], color=RED_M), Indicate(thumb[0], color=YELLOW_M), lag_ratio=0.5), run_time=4.0)
-        quiz = T("Quick check: it prints \"all fine\" and exits with 1. Did it pass?", 28, YELLOW_M).move_to([0, -3.35, 0])
-        fit(quiz, 12.4)
+        quiz = T("Quick check: it prints \"all fine\" and exits with 1. Did it pass?", 28, YELLOW_M)
+        fit(quiz, 9.6).move_to([-1.5, -3.3, 0])
         self.beat("Quick check before you go. A script prints all fine, then exits with one. Did it pass?",
                   FadeIn(quiz, shift=UP * 0.1), Transform(num, M("1", 34, RED_M).move_to(thumb)), run_time=1.4)
         self.wait(2.0)

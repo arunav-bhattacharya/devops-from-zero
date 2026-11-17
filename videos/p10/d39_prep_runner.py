@@ -104,14 +104,14 @@ class D39PrepRunner(Base):
         self.play(FadeOut(VGroup(tray, main, side, ml, sl, tl, shares)), run_time=0.7)
 
         # ---------- 2. SHRINK: the lab's example Pod
-        pod = RoundedRectangle(corner_radius=0.25, width=12.8, height=4.6, stroke_color=BLUE_M, stroke_width=3).move_to([0, 1.1, 0])
-        plab = T("Pod: web", 28, BLUE_M).move_to([-5.0, 2.95, 0])
+        pod = RoundedRectangle(corner_radius=0.25, width=12.8, height=4.4, stroke_color=BLUE_M, stroke_width=3).move_to([0, 1.05, 0])
+        plab = T("Pod: web", 28, BLUE_M).move_to([-5.0, 2.85, 0])
         ngx = cbox("nginx", "the app", TEAL_M, PX[2])
         self.beat("Here is the example Pod from the lab. Its app is nginx, a web server. It serves one web page, and writes every visit into a log file.",
                   Create(pod), FadeIn(plab), FadeIn(ngx, shift=UP * 0.15), run_time=2.0)
         wp = cbox("write-page", "writes the page", PURPLE_M, PX[0])
         tail = cbox("log-tailer", "reads the log", GOLD_M, PX[1])
-        work = vol("volume: work", [-0.2, 2.95, 0])
+        work = vol("volume: work", [-0.2, 2.85, 0])
         logs = vol("volume: logs", [2.05, -0.55, 0])
         w1, w2 = link(work, wp, GREEN_M, sw=2.5), link(work, ngx, GREEN_M, sw=2.5)
         l1, l2 = link(ngx, logs, GREEN_M, sw=2.5), link(tail, logs, GREEN_M, sw=2.5)
@@ -159,22 +159,24 @@ class D39PrepRunner(Base):
                       T("each must exit with code 0 before the next starts", 26, GREY_B)).arrange(DOWN, buff=0.15).move_to([0, -2.5, 0])
         self.beat("First the rule for init containers. They run first, one at a time, in order. Each must exit with code 0, which means all went well, before the next one starts. Only then do the app containers start.",
                   FadeIn(rule, shift=UP * 0.1), run_time=2.0)
-        man = VGroup(M("initContainers:", 24, GREY_B), M("  - write-page", 24, PURPLE_M), M("  - log-tailer", 24, GOLD_M),
-                     M("containers:", 24, GREY_B), M("  - nginx", 24, TEAL_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        man.move_to([-3.4, -2.55, 0])
+        man = VGroup(M("initContainers:", 22, GREY_B), M("- write-page", 22, PURPLE_M), M("- log-tailer", 22, GOLD_M),
+                     M("containers:", 22, GREY_B), M("- nginx", 22, TEAL_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.08)
+        for i in (1, 2, 4):
+            man[i].shift(RIGHT * 0.35)
+        man.move_to([-3.4, -1.38, 0], aligned_edge=UP)
         self.play(FadeOut(rule), run_time=0.5)
         self.beat("Now look at the manifest. Under initContainers: write-page, then log-tailer. Under containers: nginx.",
                   LaggedStart(*[FadeIn(l, shift=RIGHT * 0.1) for l in man], lag_ratio=0.2), run_time=2.2)
-        never = T("log-tailer never exits", 28, RED_M).move_to([2.8, -2.2, 0])
-        q2 = T("so does nginx wait forever?", 28, YELLOW_M).move_to([2.8, -2.8, 0])
+        never = T("log-tailer never exits", 28, RED_M).move_to([2.8, -1.7, 0])
+        q2 = T("so does nginx wait forever?", 28, YELLOW_M).move_to([2.8, -2.3, 0])
         self.beat("But a log reader follows the log forever. It never exits. By the rule we just learned, nginx waits for it to exit. So does nginx wait forever?",
                   FadeIn(never), Succession(Wait(2.2), FadeIn(q2, shift=UP * 0.1)), run_time=3.4)
-        self.pause_guess([2.8, -3.35, 0])
+        self.pause_guess([2.8, -3.0, 0])
         self.beat("If the rule were the whole story, yes. Our dish would never leave the kitchen. But log-tailer has one extra line.",
                   Indicate(man[2], color=GOLD_M), run_time=1.4)
         rp = M("restartPolicy: Always", 24, GOLD_M).move_to(tail[2])
-        rp2 = M("    restartPolicy: Always", 24, GOLD_M).next_to(man[2], DOWN, buff=0.1).align_to(man[2], LEFT)
-        self.play(FadeOut(VGroup(never, q2)), man[3:].animate.shift(DOWN * 0.42), run_time=0.5)
+        rp2 = M("restartPolicy: Always", 22, GOLD_M).next_to(man[2], DOWN, buff=0.08).align_to(man[2], LEFT).shift(RIGHT * 0.35)
+        self.play(FadeOut(VGroup(never, q2)), man[3:].animate.shift(DOWN * 0.31), run_time=0.5)
         self.beat("restartPolicy: Always. For an init container, that one line makes it a sidecar.",
                   FadeIn(rp2, shift=DOWN * 0.1), Transform(tail[2], rp), run_time=1.6)
         four = VGroup(T("1. starts in init order, before the app", 24), T("2. Kubernetes moves on once it is running", 24),
@@ -239,10 +241,10 @@ class D39PrepRunner(Base):
         # ---------- 8. GUARDRAIL
         g1 = T("Share a Pod only when you must share", 30, WHITE)
         g2 = T("a node, an address, or files.", 30, WHITE)
-        gr = VGroup(g1, g2).arrange(DOWN, buff=0.15).move_to([0, -2.3, 0])
+        gr = VGroup(g1, g2).arrange(DOWN, buff=0.15).move_to([0, -2.2, 0])
         self.beat("So should everything go on one tray? No. Share a Pod only when you must share a node, an address, or files.",
                   FadeIn(gr, shift=UP * 0.1), run_time=1.8)
-        db = T("app and database: separate Pods", 28, GREY_B).move_to([0, -3.25, 0])
+        db = T("app and database: separate Pods", 28, GREY_B).move_to([0, -3.1, 0])
         self.beat("An app and its database belong in separate Pods, so you can scale and replace each one on its own. A tray, not a moving truck.",
                   FadeIn(db, shift=UP * 0.1), run_time=1.6)
 
@@ -252,14 +254,14 @@ class D39PrepRunner(Base):
         for i, (c, x) in enumerate(zip((PURPLE_M, GOLD_M, TEAL_M), PX)):
             n = Circle(radius=0.26, stroke_color=c, stroke_width=3).set_fill(BLACK, 1)
             nums.add(VGroup(n, T(str(i + 1), 26, c).move_to(n)).move_to([x - CW / 2 + 0.05, CY + CH / 2 - 0.05, 0]))
-        cap = T("prep cooks first, the runner next, then the dish", 30, WHITE).move_to([0, -2.1, 0])
+        cap = T("prep cooks first, the runner next, then the dish", 30, WHITE).move_to([0, -1.75, 0])
         self.beat("The moral of the story. Prep cooks first, one at a time, and each must finish. The runner next, and it stays to the end. Then the dish. And all of them share the Pod's address and folders.",
                   LaggedStart(*[GrowFromCenter(n) for n in nums], lag_ratio=0.5), Succession(Wait(1.5), FadeIn(cap)), run_time=4.0)
-        ck = T("Quick check: READY 1/2, STATUS PodInitializing. Who is running?", 28, YELLOW_M).move_to([0, -2.9, 0])
+        ck = T("Quick check: READY 1/2, STATUS PodInitializing. Who is running?", 28, YELLOW_M).move_to([0, -2.4, 0])
         self.beat("One quick check. A Pod like ours shows READY one of two, and STATUS PodInitializing. Who is running right now?",
                   FadeIn(ck, shift=UP * 0.1), run_time=1.4)
-        self.pause_guess([4.6, -3.45, 0])
-        ans = T("The sidecar. write-page has finished, nginx is still being created.", 26, WHITE).move_to([0, -2.9, 0])
+        self.pause_guess([0, -3.05, 0])
+        ans = T("The sidecar. write-page has finished, nginx is still being created.", 26, WHITE).move_to([0, -2.4, 0])
         self.beat("The sidecar. write-page has already finished, and nginx is still being created.",
                   FadeOut(ck), FadeIn(ans, shift=UP * 0.1), run_time=1.4)
         self.wait(1.2)

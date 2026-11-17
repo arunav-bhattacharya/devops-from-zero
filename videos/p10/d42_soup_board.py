@@ -170,9 +170,9 @@ class D42SoupBoard(Base):
                   FadeIn(lsh), LaggedStart(*[FadeIn(l, shift=UP * 0.1) for l in ls], lag_ratio=0.3), run_time=2.6)
         self.beat("On a change, the kubelet writes a new folder, and moves the link in one step. So the app never reads half a file.",
                   Indicate(ls[1], color=TEAL_M), run_time=1.6)
-        sp = VGroup(T("a file mounted with subPath: never updated", 24, RED_M), T("an updated file helps only if the app reads it again", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        sp = VGroup(T("mounted with subPath: never updated", 24, RED_M), T("and it helps only if the app reads it again", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         sp.move_to([4.0, -2.3, 0])
-        sp.align_to(np.array([1.3, 0, 0]), LEFT)
+        sp.align_to(np.array([1.0, 0, 0]), LEFT)
         self.steps("That link trick is also why a file mounted with subPath, one file placed into an existing folder, is never updated. And even an updated file only helps if your app reads it again. Most apps read config once, at start.",
                    (0.8, FadeIn(sp[0])), (2.4, Wait(2.4)), (0.8, FadeIn(sp[1])))
         self.play(FadeOut(VGroup(ls, lsh, sp)), run_time=0.6)

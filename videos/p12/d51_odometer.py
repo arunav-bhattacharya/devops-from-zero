@@ -41,7 +41,7 @@ class D51Odometer(VoiceScene):
         self.play(FadeOut(q), run_time=0.3)
 
     def construct(self):
-        self.title_card("From odometer to speedometer", "PromQL, rate() and the queries that go quiet")
+        self.title_card("From odometer to speedometer", "PromQL, rate(), and queries that go quiet")
 
         # ---------------- 1. the broken speedometer
         sp = Arc(radius=1.4, start_angle=PI * 0.9, angle=-PI * 0.8, stroke_color=GREY_B, stroke_width=5).move_to([-3.2, 1.0, 0])
@@ -188,38 +188,6 @@ class D51Odometer(VoiceScene):
         self.wait(0.3)
         self.play(FadeOut(VGroup(taxis, wrong, right, ax3, sp1, sl, ax4, fl, ok, r2)), run_time=0.5)
 
-        # ---------------- 7. how slow: buckets and an estimate
-        self.beat("The third question is how slow. And here Prometheus never stores each request's time. It stores boxes.", run_time=None)
-        bx = VGroup()
-        specs = [("up to 0.01 s", 80), ("up to 0.025 s", 97)]
-        for i, (lab, n) in enumerate(specs):
-            b = frame(3.4, 1.2, GOLD_M, [-2.3 + 4.6 * i, 1.4, 0], fill=0.10)
-            t1 = T(lab, 26, GOLD_M).move_to(b.get_center() + UP * 0.22)
-            t2 = T(f"{n} requests", 26).move_to(b.get_center() + DOWN * 0.25)
-            bx.add(VGroup(b, t1, t2))
-        self.beat("Picture a post office that sorts parcels by weight into boxes. Up to one kilo, up to two. It never writes down each parcel's weight, only how many landed in each box.",
-                  LaggedStart(*[FadeIn(b[0]) for b in bx], lag_ratio=0.3), run_time=2.6)
-        self.beat("A histogram does that with request times. Say a hundred requests a second arrive. Eighty finish within ten milliseconds. Ninety seven within twenty five. Each box counts all the smaller ones too.",
-                  LaggedStart(*[AnimationGroup(FadeIn(b[1]), FadeIn(b[2])) for b in bx], lag_ratio=0.5), run_time=4.0)
-        p95q = T("Where is the 95th request?", 30, YELLOW_M).move_to([0, -0.2, 0])
-        self.beat("Where is the ninety fifth request? Pause and guess its time.", FadeIn(p95q), run_time=1.4)
-        self.wait(2.0)
-        line = NumberLine(x_range=[0.01, 0.025, 0.005], length=8.0, include_numbers=False, stroke_color=GREY_B).move_to([0, -1.6, 0])
-        nl = VGroup(T("0.01 s", 22, GREY_B).next_to(line.n2p(0.01), DOWN, buff=0.2), T("0.025 s", 22, GREY_B).next_to(line.n2p(0.025), DOWN, buff=0.2))
-        ticks17 = VGroup(*[Line(UP * 0.18, DOWN * 0.18, stroke_color=TEAL_M, stroke_width=3).move_to(line.n2p(0.01 + 0.015 * (k + 0.5) / 17)) for k in range(17)])
-        mid = T("17 requests between the two limits", 24, TEAL_M).next_to(line, UP, buff=0.35)
-        self.beat("It is somewhere in the box between ten and twenty five milliseconds, which holds seventeen requests. Prometheus assumes they are spread evenly.",
-                  Create(line), FadeIn(nl), LaggedStart(*[Create(t) for t in ticks17], lag_ratio=0.05), FadeIn(mid), FadeOut(p95q), run_time=3.0)
-        mark = Triangle(color=YELLOW_M).set_fill(YELLOW_M, 1).scale(0.14).rotate(PI).next_to(line.n2p(0.01 + 0.015 * 15 / 17), UP, buff=0.05)
-        est = T("0.01 + 15/17 of 0.015  =  about 0.023 s", 28, YELLOW_M).next_to(nl, DOWN, buff=0.35)
-        self.beat("So the ninety fifth sits fifteen seventeenths of the way across. About twenty three milliseconds.",
-                  ticks17[14].animate.set_color(YELLOW_M).scale(1.5), FadeIn(mark), Write(est), run_time=2.6)
-        hq = T("histogram_quantile() makes this estimate: a p95", 26, GREY_B).next_to(est, DOWN, buff=0.2)
-        self.beat("The function histogram quantile does exactly this, and that number is a p95: ninety five percent of requests took that long or less.", FadeIn(hq), run_time=2.4)
-        self.beat("It is an estimate, and only as sharp as the boxes. Prometheus's own first box runs up to a tenth of a second, so its p95 came out at exactly point zero nine five.",
-                  run_time=None)
-        self.play(FadeOut(VGroup(bx, line, nl, ticks17, mid, mark, est, hq)), run_time=0.5)
-
         # ---------------- 8. moral, recap, check
         moral = T("A counter on its own says almost nothing. Ask for its rate.", 32, YELLOW_M).move_to(UP * 2.4)
         fit(moral, 12.6)
@@ -227,8 +195,8 @@ class D51Odometer(VoiceScene):
         rec = VGroup(T("odometer to speed: last minus first, over the time", 28, TEAL_M),
                      T("a window too short answers with silence", 28, BLUE_M),
                      T("empty is not zero: or vector(0)", 28, GREY_B),
-                     T("rate first, then add; buckets give an estimated p95", 28, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(DOWN * 0.1)
-        self.beat("Odometer to speed: last minus first, over the time. A window that is too short answers with silence. Empty is not zero. Rate first, then add. And the boxes give an estimated p95.",
+                     T("rate first, then add", 28, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(DOWN * 0.1)
+        self.beat("Odometer to speed: last minus first, over the time. A window that is too short answers with silence. Empty is not zero. And rate first, then add.",
                   LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in rec], lag_ratio=0.7), run_time=7.0)
         self.play(FadeOut(VGroup(moral, rec)), run_time=0.5)
         c1 = T("Quick check: Prometheus scrapes every 15 seconds.", 30).move_to(UP * 0.7)

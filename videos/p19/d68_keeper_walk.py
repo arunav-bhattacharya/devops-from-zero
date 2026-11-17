@@ -82,7 +82,7 @@ class D68KeeperWalk(VoiceScene):
                   FadeIn(opt), Indicate(labs[11], color=GOLD_M), run_time=2.0)
         rules = VGroup(T("go in order", 26), T("done = its check passes, not \"looks fine\"", 26, YELLOW_M), T("commit after each stage", 26)).arrange(RIGHT, buff=0.6).move_to([0, -3.2, 0])
         fit(rules, 12.6)
-        self.beat("Three rules keep it manageable. Go in order. A stage is done when its check passes, not when it looks fine. And commit after each stage, so you can always go back to the last green point.",
+        self.beat("Three rules. Go in order. A stage is done when its check passes, not when it looks fine. And commit after each stage.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rules], lag_ratio=0.9), run_time=6.0)
         walk = VGroup(line, stops, nums, labs, opt, keeper)
         self.play(FadeOut(rules), walk.animate.scale(0.8).move_to([0, 2.4, 0]), run_time=0.8)
@@ -102,7 +102,7 @@ class D68KeeperWalk(VoiceScene):
                   FadeIn(rule, shift=UP * 0.1), run_time=1.6)
         props = VGroup(chip("observable: looks at the running system", TEAL_M, 24), chip("binary: PASS or FAIL, no judgment", TEAL_M, 24),
                        chip("runnable: one command, repeat any time", TEAL_M, 24)).arrange(DOWN, buff=0.3, aligned_edge=LEFT).move_to([0, -0.6, 0])
-        self.beat("A good check has three properties. It's observable: it looks at the running system, not at your memory of setting it up. It's binary: anyone who runs it gets pass or fail. And it's runnable: one command, so you can repeat it after every change.",
+        self.beat("A good check is observable: it looks at the running system. Binary: pass or fail. And runnable: one command you can repeat.",
                   FadeOut(VGroup(weak, strong, rule)), LaggedStart(*[FadeIn(p, shift=UP * 0.1) for p in props], lag_ratio=0.9), run_time=9.0)
         self.play(FadeOut(props), run_time=0.5)
 
@@ -125,7 +125,7 @@ class D68KeeperWalk(VoiceScene):
                    ("1 passed, 8 failed, 2 skipped", WHITE)], w=12.6).move_to([0, -0.5, 0])
         self.beat("The script turns eleven of the fourteen stages into checks. Run it this early, and almost everything fails. One passed, eight failed, two skipped. That's normal. Read it as your to-do list, in order.",
                   FadeIn(t2[0]), LaggedStart(*[FadeIn(l) for l in t2[1]], lag_ratio=0.3), run_time=4.4)
-        self.beat("Skip means a tool or an address is missing, such as the signing tool not installed. And the script exits with one if anything failed, so it could run in CI later.",
+        self.beat("Skip means a tool or address is missing. And the script exits with one on any failure, so CI could run it.",
                   Indicate(t2[1][4], color=GOLD_M), run_time=2.0)
         q2 = T("Argo CD fails, Prometheus fails. Which do you fix first? Pause and guess.", 26, YELLOW_M).move_to([0, -3.2, 0])
         fit(q2, 12.6)
@@ -149,7 +149,7 @@ class D68KeeperWalk(VoiceScene):
         x6 = tick(False, 0.18).move_to(stops[5])
         self.steps("No. The old stage six check, the app on localhost 8081, now fails. The shortcut would never have told you.",
                    (0.6, Wait(0.6)), (0.8, stops[5].animate.set_stroke(RED_M).set_fill(tint(RED_M, 0.4), 1), Create(x6)), (1.0, Indicate(labs[5], color=RED_M)))
-        self.beat("Adding a later stage often breaks an earlier one. A new policy rejects Redis. A port gets taken. So run the whole script after every stage, and read every line. The keeper switches on every lamp, not just the one fitted today.",
+        self.beat("Later stages often break earlier ones: a new policy rejects Redis, a port gets taken. So rerun the whole script after every stage. The keeper tries every lamp, not just today's.",
                   run_time=None)
         self.play(FadeOut(x6), stops[5].animate.set_stroke(GREEN_M).set_fill(tint(GREEN_M, 0.4), 1), run_time=0.6)
 
@@ -161,7 +161,7 @@ class D68KeeperWalk(VoiceScene):
         cmd = M("kubectl scale deployment redis -n hello --replicas=0", 22, WHITE).move_to([0, -0.3, 0])
         exp = VGroup(T("write down first what you expect:", 24, GREY_B), T("/readyz returns 503, Pods go unready, an alert fires,", 24),
                      T("error logs in Kibana, a failed span in Jaeger", 24)).arrange(DOWN, buff=0.14).move_to([0, -1.6, 0])
-        self.beat("If you only have time for one drill, scale Redis to zero. But before you do, write down what you expect to see. The readiness check returns 503, the Pods go unready, an alert fires, error logs appear in Kibana, and a failed span in Jaeger.",
+        self.beat("If you do one drill, scale Redis to zero. But first, write down what you expect: 503 from the readiness check, unready Pods, an alert, error logs in Kibana, a failed span in Jaeger.",
                   FadeIn(cmd), Succession(Wait(3.6), LaggedStart(*[FadeIn(e) for e in exp], lag_ratio=0.6)), run_time=9.0)
         diff = T("expected vs. what happened: where they differ, your picture was wrong", 24, YELLOW_M).move_to([0, -3.0, 0])
         fit(diff, 12.4)
@@ -181,7 +181,7 @@ class D68KeeperWalk(VoiceScene):
                      T("a good check is observable, binary, runnable", 28, TEAL_M),
                      T("rerun every check after every stage", 28, GREEN_M),
                      T("break it on purpose, and write down what you expect", 28, BLUE_M)).arrange(DOWN, buff=0.35)
-        self.beat("So, the moral of the story. Walk the whole path before opening night. A stage is done when its check passes. A good check is observable, binary and runnable. Rerun every check after every stage. And break it on purpose, with your expectations written down first.",
+        self.beat("The moral of the story: walk the whole path before opening night. Done means the check passes. Checks are observable, binary, runnable. Rerun them all after every stage. And break it on purpose, expectations first.",
                   LaggedStart(*[FadeIn(m, shift=UP * 0.1) for m in mor], lag_ratio=0.8), run_time=9.0)
         self.play(FadeOut(mor), run_time=0.6)
         q = VGroup(T("You want to show an interviewer you can do DevOps work.", 30), T("Which gives the strongest evidence?", 30, YELLOW_M)).arrange(DOWN, buff=0.3).move_to([0, 1.8, 0])
@@ -190,6 +190,6 @@ class D68KeeperWalk(VoiceScene):
         self.beat("One last check. You want to show an interviewer that you can do DevOps work. Which gives the strongest evidence? Pause and think.",
                   FadeIn(q), LaggedStart(*[FadeIn(o, shift=UP * 0.1) for o in opts], lag_ratio=0.3), run_time=4.0)
         self.wait(2.0)
-        self.beat("A repository where a commit becomes a checked deploy. It shows you can connect the pieces, and prove it. Run the capstone check now, even if most lines say FAIL. That list is your route. Thanks for walking the path with me.",
+        self.beat("A repository where a commit becomes a checked deploy. Run the capstone check now, even if most lines say FAIL. That list is your route. Thanks for walking the path with me.",
                   opts[2][0].animate.set_stroke(GREEN_M).set_fill(GREEN_M, 0.3), *[o.animate.set_opacity(0.35) for i, o in enumerate(opts) if i != 2], run_time=1.6)
         self.wait(1.0)

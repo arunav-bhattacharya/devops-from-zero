@@ -59,7 +59,7 @@ class D67PavedPath(VoiceScene):
                   FadeOut(sign), LaggedStart(*[Create(p) for p in paved], lag_ratio=0.4), Succession(Wait(2.4), LaggedStart(*[GrowFromCenter(l) for l in lamps], lag_ratio=0.2)), run_time=4.4)
         self.beat("Within a month, the mud is gone. And nobody needed a sign.",
                   mud.animate.set_stroke(opacity=0.0), run_time=2.0)
-        self.beat("Rules feel like the quick fix for a messy shared space. A path people want to walk takes longer to build. And it works. So what does that have to do with shipping software?",
+        self.beat("Rules feel like the quick fix. A path people want to walk takes longer to build, and it works. So what has this to do with software?",
                   run_time=None)
         self.play(FadeOut(VGroup(lawn, houses, hl, stn, mud, paved, lamps)), run_time=0.6)
 
@@ -68,7 +68,7 @@ class D67PavedPath(VoiceScene):
                                                        "ServiceMonitor", "dashboard", "log shipping", "tracing", "policies", "secrets")])
         need.arrange_in_grid(rows=5, cols=2, buff=(0.4, 0.25)).move_to([-3.4, 0.0, 0])
         nl = T("hello-devops needs:", 28, TEAL_M).next_to(need, UP, buff=0.3)
-        self.beat("List what our little app, hello-devops, needs by now. A Dockerfile, and two workflows with pinned actions. Kubernetes YAML, and an Argo CD Application. Metrics, a dashboard, logs, tracing. Policies, and a way to get secrets.",
+        self.beat("List what hello-devops needs by now. A Dockerfile and workflows, Kubernetes YAML and Argo CD, metrics, dashboards, logs, tracing, policies and secrets.",
                   FadeIn(nl), LaggedStart(*[FadeIn(n, shift=UP * 0.1) for n in need], lag_ratio=0.35), run_time=9.0)
         teams = VGroup(*[Square(0.32, stroke_color=GOLD_M, stroke_width=2).set_fill(tint(GOLD_M, 0.3), 1) for _ in range(40)]).arrange_in_grid(rows=5, cols=8, buff=0.14)
         teams.move_to([3.6, 0.0, 0])
@@ -76,16 +76,16 @@ class D67PavedPath(VoiceScene):
         self.beat("You learned all of it in this course. Now picture forty product teams, each building that alone.",
                   FadeIn(tl), LaggedStart(*[GrowFromCenter(t) for t in teams], lag_ratio=0.03), run_time=3.0)
         wob = [t.animate.rotate(0.35 * ((i * 7) % 5 - 2)).set_fill(tint([GOLD_M, RED_M, PURPLE_M, BLUE_M, GREEN_M][i % 5], 0.35), 1) for i, t in enumerate(teams)]
-        self.beat("They solve the same problems forty times, in forty slightly different ways. And whoever is on call has to learn every one. Those are the muddy tracks.",
+        self.beat("They solve the same problems forty ways, and whoever is on call learns every one. Muddy tracks.",
                   *wob, run_time=3.0)
 
         # the tempting fix, and why it stalls
         mand = VGroup(Rectangle(width=4.6, height=0.8, stroke_color=RED_M, stroke_width=3).set_fill(BLACK, 1), T("Standard pipeline: mandatory", 26, RED_M)).move_to([3.6, -2.6, 0])
         mand[1].move_to(mand[0])
-        self.beat("The tempting fix is the sign. Write a standard, and make it mandatory. That helps a little. Teams use it because a manager said so, and they look for ways around it.",
+        self.beat("The tempting fix is the sign: a mandatory standard. Teams use it because a manager said so, and look for ways around it.",
                   FadeIn(mand, shift=UP * 0.1), run_time=2.0)
         portal = box("a shiny portal", BLUE_M, w=3.4, size=26).move_to([-3.4, -2.6, 0])
-        self.beat("Or buy a developer portal, a website that lists every service and tool. Picture a company that installs one. Six months later, few teams use it. Pause and guess: why?",
+        self.beat("Or buy a developer portal, a website listing every service. Picture one that, six months later, few teams use. Pause and guess: why?",
                   FadeIn(portal), run_time=2.4)
         self.wait(2.0)
         empty = T("little real self-service behind it", 24, BLUE_M).next_to(portal, UP, buff=0.2)
@@ -104,7 +104,7 @@ class D67PavedPath(VoiceScene):
                   FadeIn(tick_), Succession(Wait(1.6), AnimationGroup(FadeIn(ss), tick_.animate.set_opacity(0.3))), run_time=3.0)
         gp = box("golden path: \"create a new service\"", YELLOW_M, w=7.2, size=28).move_to([0, -1.3, 0])
         gpp = VGroup(chip("compliant: security built in", YELLOW_M, 22), chip("tested: kept working", YELLOW_M, 22)).arrange(RIGHT, buff=0.5).next_to(gp, DOWN, buff=0.35)
-        self.beat("Its main product is the golden path, a supported, ready-made way to do a common job. Create a new service is the classic one. And it makes two promises. Compliant: security comes built in. Tested: the platform team keeps it working.",
+        self.beat("Its main product is the golden path, a ready-made way to do a common job, like create a new service. Two promises: compliant, with security built in, and tested, kept working.",
                   FadeIn(gp), Succession(Wait(5.0), LaggedStart(*[FadeIn(g) for g in gpp], lag_ratio=0.6)), run_time=8.0)
         self.beat("And the portal? That's the map at the park gate. Useful, but the platform is the paths themselves.",
                   run_time=None)
@@ -127,7 +127,7 @@ class D67PavedPath(VoiceScene):
         self.beat("One fails, and it's a real template bug. The rename changed the chart inside its files, but not its folder.",
                   FadeIn(t3[0]), LaggedStart(*[FadeIn(l) for l in t3[1]], lag_ratio=0.4), run_time=3.0)
         fix = term([("$ git mv chart/hello-devops chart/payments-api", GREY_B), ("$ ai/check.sh | tail -1", GREY_B), ("8 passed, 0 failed, 0 skipped", GREEN_M)], w=12.6).move_to(t3)
-        self.beat("Fix it, and then fix the template's instructions too, so the next team never meets it. Eight passed. That failure was a fresh muddy track beside the paving, telling the keeper where a path was missing.",
+        self.beat("Fix it, and fix the template too. Eight passed. That failure was a fresh muddy track, showing where a path was missing.",
                   Transform(t3, fix), run_time=2.0)
         self.play(FadeOut(VGroup(t1, t2, t3)), run_time=0.6)
 
@@ -135,10 +135,10 @@ class D67PavedPath(VoiceScene):
         bill = VGroup(Rectangle(width=3.2, height=1.6, stroke_color=GREY_B, stroke_width=3).set_fill(tint(GREY_B, 0.1), 1), T("one cloud bill", 26), T("no names on it", 22, RED_M))
         bill[1].move_to(bill[0].get_center() + UP * 0.3); bill[2].move_to(bill[0].get_center() + DOWN * 0.35)
         bill.move_to([-4.2, 1.6, 0])
-        self.beat("Paths have one more thing to carry: the bill. The park pays one water bill, and nobody knows which flower bed drinks the most. The cloud is the same. Any engineer can spend money with one command, and the bill comes a month later, with no names on it.",
+        self.beat("Paths carry one more thing: the bill. The park pays one water bill, and nobody knows which bed drinks most. A cloud bill arrives with no names on it.",
                   FadeIn(bill), run_time=2.4)
         fo = VGroup(T("FinOps", 32, GREEN_M), T("make cost visible, and give it owners", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([2.4, 1.6, 0])
-        self.beat("FinOps is the practice of making that cost visible, and shared between engineering, finance and the business. And it starts with one thing: every cost gets an owner. In Kubernetes, that's a team label on every workload.",
+        self.beat("FinOps makes that cost visible, and it starts with an owner for every cost. In Kubernetes, a team label on every workload.",
                   FadeIn(fo), run_time=2.4)
         NX, NW, NH = -4.4, 8.8, 1.0
         nodeb = Rectangle(width=NW, height=NH, stroke_color=WHITE, stroke_width=3).move_to([NX + NW / 2, -0.9, 0])
@@ -151,22 +151,22 @@ class D67PavedPath(VoiceScene):
             x += NW * f
         idle = Rectangle(width=NW * 0.25 - 0.04, height=NH - 0.1, stroke_color=GREY_B, stroke_width=1.5).set_fill(BLACK, 1).move_to([x + NW * 0.125, -0.9, 0])
         idlel = T("idle", 22, GREY_B).move_to(idle)
-        self.beat("A cost tool splits each node's price between the Pods on it. Each Pod's share is based on the CPU and memory it requests, or uses, if that's more. Then the shares add up by label.",
+        self.beat("A cost tool splits each node's price between its Pods, by what they request, or use if that's more, then adds up by label.",
                   Create(nodeb), FadeIn(nl2), LaggedStart(*[FadeIn(s, shift=UP * 0.1) for s in segs], lag_ratio=0.5), run_time=4.4)
         self.beat("Why requests? Because the scheduler reserves them. You pay for what you set aside, even when the CPUs sit idle.",
                   Indicate(segs[0][1], color=WHITE), run_time=1.6)
-        self.beat("And here's the line people forget. Capacity that nobody requested still costs money. That's idle cost, sprinklers watering an empty field all night. Give that line an owner too, usually the platform team.",
+        self.beat("And the line people forget: capacity nobody requested still costs money. That's idle cost, sprinklers watering an empty field. Give it an owner too.",
                   FadeIn(idle), FadeIn(idlel), Succession(Wait(3.0), Indicate(idlel, color=WHITE)), run_time=4.4)
         sb = T("showback: each team sees its own share; the money stays central", 24, GREEN_M).move_to([0, -2.4, 0])
         fit(sb, 12.4)
-        self.beat("Then show each team its share, while the money stays in a central budget. That's showback, and it comes first. Teams change what they run once they see the numbers next to their own name.",
+        self.beat("Show each team its share while the money stays central. That's showback, and it comes first.",
                   FadeIn(sb, shift=UP * 0.1), run_time=2.4)
         self.play(FadeOut(VGroup(bill, fo, nodeb, nl2, segs, idle, idlel, sb)), run_time=0.6)
 
         # predict: unit cost
         tr = VGroup(T("traffic", 28), M("x 2", 34, TEAL_M)).arrange(RIGHT, buff=0.4).move_to([-3.2, 1.6, 0])
         bl2 = VGroup(T("bill", 28), M("+ 40%", 34, RED_M)).arrange(RIGHT, buff=0.4).move_to([3.2, 1.6, 0])
-        self.beat("Totals grow when the business grows, so they make poor targets. Try this one. Traffic to a service doubles this quarter, and its bill grows by forty percent. Did each request get cheaper, or dearer? Pause and guess.",
+        self.beat("Totals grow with the business, so try this. Traffic doubles, and the bill grows forty percent. Did each request get cheaper, or dearer? Pause and guess.",
                   FadeIn(tr), Succession(Wait(5.0), FadeIn(bl2)), run_time=6.0)
         self.wait(2.0)
         calc = M("1.4 / 2 = 0.7", 40, YELLOW_M).move_to([0, 0.0, 0])
@@ -182,7 +182,7 @@ class D67PavedPath(VoiceScene):
                    T("a portal pays off with many teams", 26),
                    T("a cost tool is useless until workloads carry owner labels", 26),
                    T("many teams leave the path? the path is wrong", 26, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.35).move_to([0, 0.3, 0])
-        self.beat("Now the honest limits. Each of these tools solves a pain you only feel at a certain size. With one repository and one team, a template repository does the job. A portal pays off with many teams. And a cost tool is useless until workloads carry owner labels.",
+        self.beat("The honest limits: each tool solves a pain you feel only at some size. One team? A template repository is enough. A portal pays off with many teams. A cost tool needs owner labels first.",
                   LaggedStart(*[FadeIn(x, shift=UP * 0.1) for x in g[:3]], lag_ratio=0.8), run_time=8.0)
         self.beat("And watch where people leave the path. If many teams do, the path is wrong. That's the most useful feedback a platform team gets.",
                   FadeIn(g[3], shift=UP * 0.1), run_time=2.0)
@@ -194,7 +194,7 @@ class D67PavedPath(VoiceScene):
                      T("golden path: self-service, compliant, tested", 28, YELLOW_M),
                      T("every cost gets an owner; idle gets one too", 28, GREEN_M),
                      T("watch the cost per request, not the total", 28, TEAL_M)).arrange(DOWN, buff=0.35)
-        self.beat("So, the moral of the story. Build the path people already want to walk. A rule alone won't keep them on it. A golden path is self-service, compliant and tested. Every cost gets an owner, and idle gets one too. And watch the cost per request, not the total.",
+        self.beat("The moral of the story: build the path people want to walk. A rule alone won't keep them on it. Self-service, compliant, tested. Every cost gets an owner, idle too. And watch cost per request.",
                   LaggedStart(*[FadeIn(m, shift=UP * 0.1) for m in mor], lag_ratio=0.8), run_time=9.0)
         self.play(FadeOut(mor), run_time=0.6)
         q = VGroup(T("Your cluster bill doubled,", 30), T("and nobody knows which team caused it.", 30),
@@ -203,6 +203,6 @@ class D67PavedPath(VoiceScene):
                   LaggedStart(*[FadeIn(x, shift=UP * 0.1) for x in q], lag_ratio=0.5), run_time=3.6)
         self.wait(2.0)
         ans = chip("label every workload with its owning team", GREEN_M, 28).move_to([0, -1.5, 0])
-        self.beat("Label every workload with its owning team. Until a cost has an owner, every saving is a guess. Every empty team label is a flower bed without a gardener. Thanks for watching.",
+        self.beat("Label every workload with its owning team. Until a cost has an owner, every saving is a guess. Thanks for watching.",
                   FadeIn(ans, shift=UP * 0.1), run_time=1.6)
         self.wait(1.0)

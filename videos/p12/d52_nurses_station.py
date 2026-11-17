@@ -65,13 +65,13 @@ class D52NursesStation(VoiceScene):
         self.play(FadeOut(VGroup(mons, doc, phone, doc_l, arrows, lab12, q)), run_time=0.6)
 
         # ---------------- 2. an alerting rule: a query that runs by itself
-        self.beat("Start where we left off. Last time we wrote queries that say how busy, how broken and how slow hello-devops is. But they answer only when someone asks. And at 3 a.m., nobody asks.",
+        self.beat("Last time, our queries said how busy, how broken and how slow hello-devops is. But they answer only when asked, and at 3 a.m. nobody asks.",
                   run_time=None)
         rule = VGroup(M("alert: HelloDown", 26, GOLD_M), M('expr: up{job="hello-devops"} == 0', 26), M("for: 1m", 26, YELLOW_M),
                       M("labels: severity: page", 26, RED_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.22)
         rb = frame(rule.width + 0.7, rule.height + 0.6, GOLD_M, [0, 0, 0], fill=0.08)
         rg = VGroup(rb, rule.move_to(rb)).move_to([-2.0, 0.6, 0])
-        self.beat("So we give a query a name, and Prometheus runs it by itself, every fifteen seconds in the lab. That is an alerting rule. Here is HelloDown, from the lab.",
+        self.beat("So we give a query a name, and Prometheus runs it by itself, every fifteen seconds in the lab. That is an alerting rule.",
                   Create(rb), Write(rule[0]), Write(rule[1]), run_time=3.0)
         n1 = T("returns something only when a scrape fails", 24, GREY_B).next_to(rg, RIGHT, buff=0.4).align_to(rule[1], UP).shift(DOWN * 0.0)
         n1.next_to(rg, DOWN, buff=0.35).align_to(rg, LEFT)
@@ -84,8 +84,8 @@ class D52NursesStation(VoiceScene):
         self.play(FadeOut(VGroup(rg, n1, n2, n3)), run_time=0.5)
 
         # ---------------- 3. predict: for: 10m with one false check
-        ax = Axes(x_range=[0, 22, 2], y_range=[0, 1, 1], x_length=11.0, y_length=1.2, tips=False,
-                  axis_config={"stroke_color": GREY_B, "stroke_width": 2, "include_ticks": False}).move_to([0, 0.9, 0])
+        ax = Axes(x_range=[0, 22, 2], y_range=[0, 1, 1], x_length=10.0, y_length=1.2, tips=False,
+                  axis_config={"stroke_color": GREY_B, "stroke_width": 2, "include_ticks": False}).move_to([0.6, 0.9, 0])
         xl = VGroup(*[T(str(m), 22, GREY_B).next_to(ax.c2p(m, 0), DOWN, buff=0.15) for m in range(0, 23, 2)])
         xt = T("minutes", 22, GREY_B).next_to(ax.c2p(22, 0), DOWN, buff=0.55)
         cond = T("condition", 24, GREY_B).next_to(ax.c2p(0, 1), LEFT, buff=0.25)
@@ -118,7 +118,7 @@ class D52NursesStation(VoiceScene):
         states = T("inactive  ->  pending  ->  firing", 28, GOLD_M).move_to([0, -2.7, 0])
         self.beat("Three states: inactive, pending, firing. And that is the whole point of the wait. It filters out alerts that flip on and off.",
                   Write(states), run_time=2.4)
-        self.beat("A good bedside monitor does the same. It waits a few seconds before it beeps, so a patient who turns over in bed does not set it off.",
+        self.beat("A good bedside monitor does the same: it waits a few seconds, so a patient turning over in bed does not set it off.",
                   run_time=None)
         self.play(FadeOut(VGroup(ax, xl, xt, cond, hd, on1, off, on2, lab_s, p1, p1t, r0, p2, p2t, f1, f1t, states)), run_time=0.6)
 
@@ -150,7 +150,7 @@ class D52NursesStation(VoiceScene):
         many = VGroup(*[Dot(radius=0.07, color=RED_M) for _ in range(12)])
         def stream(n):
             return LaggedStart(*[Succession(FadeIn(d.move_to(a_in.get_start()), run_time=0.05), d.animate(run_time=0.6).move_to(am.get_center() + DOWN * 0.3), FadeOut(d, run_time=0.1)) for d in VGroup(*[Dot(radius=0.07, color=RED_M) for _ in range(n)])], lag_ratio=0.15)
-        g1 = T("grouping", 26, TEAL_M).move_to(AC + DOWN * 0.45)
+        g1 = T("grouping", 26, TEAL_M).move_to(AC + UP * 0.1)
         self.beat("One broken database can trip dozens of rules at once, and Prometheus re-sends each firing alert about once a minute. Straight to a phone, that is a flood.",
                   stream(14), run_time=3.2)
         msg = lchip("1 message", RED_M, 22).move_to(a_pg.get_center() + UP * 0.45)
@@ -165,7 +165,7 @@ class D52NursesStation(VoiceScene):
         self.beat("A heart alarm goes to the doctor. A broken drip goes on the morning list.", run_time=None)
         g3 = T("inhibition", 26, TEAL_M).next_to(g2, DOWN, buff=0.15)
         g4 = T("silences", 26, TEAL_M).next_to(g3, DOWN, buff=0.15)
-        self.beat("Third, inhibition. While a page fires for a job, the lab mutes the ticket alerts for that same job. Small alarms stay quiet while a team is already at the bed.",
+        self.beat("Third, inhibition. While a page fires for a job, the lab mutes that job's ticket alerts. Small alarms stay quiet while a team is at the bed.",
                   FadeIn(g3), run_time=2.2)
         self.beat("And fourth, silences. A mute you set for a while, with an author and a comment, for a planned procedure.", FadeIn(g4), run_time=1.8)
 
@@ -184,7 +184,7 @@ class D52NursesStation(VoiceScene):
         self.beat("Ten seconds later, the webhook in the lab prints one line. Only the page arrived.",
                   travel(a_pg, RED_M, 0.8), FadeIn(line, shift=UP * 0.1), run_time=2.2)
         sup = T("suppressed", 24, BLUE_M).next_to(tk, DOWN, buff=0.2)
-        self.beat("The ticket was muted by inhibition. The team is already at the bed.", Indicate(g3, color=TEAL_M), FadeIn(sup), sa.animate.set_opacity(0.4), run_time=2.0)
+        self.beat("The ticket was muted by inhibition.", Indicate(g3, color=TEAL_M), FadeIn(sup), sa.animate.set_opacity(0.4), run_time=2.0)
         self.wait(0.3)
         self.play(FadeOut(VGroup(out, fa, sa, line, sup)), run_time=0.5)
 
@@ -208,9 +208,9 @@ class D52NursesStation(VoiceScene):
         self.play(FadeOut(VGroup(t1, t2, stories, rr)), run_time=0.5)
         k1 = T("On Kubernetes, a ServiceMonitor says what to scrape.", 28).move_to([0, 2.0, 0])
         k2 = M("release: monitoring", 28, RED_M).next_to(k1, DOWN, buff=0.4)
-        self.beat("One more silent trap, for later on Kubernetes. There, a small object called a ServiceMonitor tells Prometheus what to scrape.",
+        self.beat("One more silent trap, on Kubernetes. There, an object called a ServiceMonitor tells Prometheus what to scrape.",
                   FadeIn(k1), run_time=2.0)
-        self.beat("But the lab's Prometheus only reads the ones that carry a label: release, monitoring. Leave it out, and what happens? Pause and guess.",
+        self.beat("The lab's Prometheus reads only those with the label release, monitoring. Leave it out. What happens? Pause and guess.",
                   FadeIn(k2), run_time=2.0)
         self.wait(2.0)
         k3 = T("nothing fails: no error, no event, and your app never shows up", 26, RED_M).next_to(k2, DOWN, buff=0.4)
@@ -228,7 +228,7 @@ class D52NursesStation(VoiceScene):
         gt = T("Before you merge a new alert", 32, GOLD_M).next_to(g, UP, buff=0.45).align_to(g, LEFT)
         self.beat("Before you merge a new alert, ask five questions. Does it fire on a symptom users feel? Is its wait long enough to skip blips?",
                   Write(gt), FadeIn(g[0], shift=RIGHT * 0.1), FadeIn(g[1], shift=RIGHT * 0.1), run_time=3.0)
-        self.beat("Does it use rate, never I rate, so one quiet scrape does not reset it? Does its text say what is wrong, with a link to a runbook, the short page of first things to check?",
+        self.beat("Does it use rate, never I rate? Does its text say what is wrong, and link to a runbook, a short page of first steps?",
                   FadeIn(g[2], shift=RIGHT * 0.1), FadeIn(g[3], shift=RIGHT * 0.1), run_time=3.0)
         self.beat("And would the person paged know what to do next?", FadeIn(g[4], shift=RIGHT * 0.1), run_time=1.4)
         self.play(FadeOut(VGroup(g, gt)), run_time=0.5)
@@ -241,7 +241,7 @@ class D52NursesStation(VoiceScene):
                      T("one false check sends the wait back to zero", 28, YELLOW_M),
                      T("the station groups, routes, mutes and silences", 28, TEAL_M),
                      T("test alarms before they matter", 28, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to(DOWN * 0.1)
-        self.beat("A rule is a query with a name and a wait. One false check sends the wait back to zero. The station groups, routes, mutes and silences. And you test the alarms before they matter.",
+        self.beat("A rule is a query with a name and a wait, and one false check resets the wait. The station groups, routes, mutes and silences. And you test the alarms before they matter.",
                   LaggedStart(*[FadeIn(r, shift=RIGHT * 0.1) for r in rec], lag_ratio=0.7), run_time=7.0)
         self.play(FadeOut(VGroup(moral, rec)), run_time=0.5)
         c1 = T("Quick check: fifty pods fail at the same moment,", 30).move_to(UP * 0.7)

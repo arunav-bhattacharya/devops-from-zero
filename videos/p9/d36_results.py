@@ -130,7 +130,7 @@ class D36Results(VoiceScene):
         plist = panel(tasks, GOLD_M, buff=0.35).move_to([-3.5, 0.0, 0])
         plt = T("playbook", 26, GOLD_M).next_to(plist, UP, buff=0.2)
         self.beat("Ansible, the tool that sets up the inside of servers, works exactly like the second list. A playbook is the list. Each line is a task, and each task names a module, a small program that does one job.",
-                  ReplacementTransform(lst, plist), ReplacementTransform(lt, plt), Succession(Wait(3.0), LaggedStart(*[ReplacementTransform(r, t) for r, t in zip(results, tasks)], lag_ratio=0.4)), run_time=6.0)
+                  Succession(Wait(2.4), AnimationGroup(FadeTransform(lst, plist), FadeTransform(lt, plt))), run_time=6.0)
         srv = RoundedRectangle(corner_radius=0.15, width=4.0, height=3.4, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.06), 1).move_to([3.9, 0.0, 0])
         sl = T("a fresh server", 26, TEAL_M).next_to(srv, UP, buff=0.2)
         st = VGroup(T("jq: missing", 26, GREY_B), T("/etc/motd: old text", 26, GREY_B), T("nginx: stopped", 26, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.55).move_to(srv)

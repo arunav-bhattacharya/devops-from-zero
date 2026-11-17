@@ -1,5 +1,14 @@
 import sys, pathlib; sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from fg import *
+import fg as _fg
+
+
+def box(*a, **k):  # keep the label drawn above its own filled outline, even when the outline is animated
+    b = _fg.box(*a, **k); b[1].set_z_index(1); return b
+
+
+def chip(*a, **k):
+    c = _fg.chip(*a, **k); c[1].set_z_index(1); return c
 
 SAY.extend([(r"\bztunnel\b", "zee tunnel"), (r"\beBPF\b", "e B P F"), (r"\bcilium-envoy\b", "cilium envoy"),
             (r"\b1\.46 ms\b", "1.46 milliseconds"), (r"\b2\.09 ms\b", "2.09 milliseconds"), (r"\b0\.6 ms\b", "0.6 milliseconds"),

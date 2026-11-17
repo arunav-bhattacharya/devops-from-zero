@@ -60,7 +60,7 @@ class D45TwoRoads(VoiceScene):
 
         # same thing in our lab
         yl = VGroup(*[M(n, 26, TEAL_M).move_to(b) for n, b in zip(("dev/", "staging/", "prod/"), blabs)])
-        self.steps("Our app is in the same spot. hello-devops now has more than ten YAML files, the plain text files that describe its objects. Run it for dev, staging and prod, and you have three copies of the folder.",
+        self.steps("Our app is in the same spot. hello-devops has over ten YAML files, plain text files describing its objects. Dev, staging and prod make three copies.",
                    (1.0, FadeOut(qs)), (2.6, Wait(2.6)), (1.0, *[Transform(b, y) for b, y in zip(blabs, yl)]))
         dif = VGroup(*[card([(f"image tag: {t}", GREY_B), (f"replicas: {r}", GREY_B), (f"greeting: {g}", GREY_B)], GREY_B, size=20).move_to([x, -1.0, 0])
                        for t, r, g, x in (("1.1.0", "1", "dev", BX[0]), ("1.0.0", "2", "staging", BX[1]), ("1.0.0", "4", "prod", BX[2]))])
@@ -73,7 +73,7 @@ class D45TwoRoads(VoiceScene):
                   FadeIn(fix), Succession(Wait(1.2), FadeIn(old)), run_time=2.2)
         self.beat("Copy and paste is a wonderful invention. It makes three things that agree today, and disagree forever after.",
                   run_time=None)
-        self.beat("What we'd really like is to write the recipe once, and say only what's different, per branch. There are two popular ways to do that, and they come from opposite directions.",
+        self.beat("What we want is to write the recipe once, and say only what differs per branch. There are two popular ways.",
                   run_time=None)
         self.play(FadeOut(VGroup(cps, blabs, pdb, fix, old)), run_time=0.6)
 
@@ -97,7 +97,7 @@ class D45TwoRoads(VoiceScene):
         self.beat("Fill the blanks, and out comes plain YAML. Two replicas, and hello from Helm on kind, in quotes.",
                   GrowArrow(fa), FadeIn(out), FadeIn(ol), run_time=2.0)
         hn = VGroup(T("Helm", 34, BLUE_M), T("a tool that installs packaged apps", 24, GREY_B)).arrange(DOWN, buff=0.15).move_to([0, -2.6, 0])
-        self.beat("The tool that does this is Helm, a tool that installs packaged apps, a bit like an app store for a cluster. Its package is called a chart: a folder with the templates and a default values file.",
+        self.beat("The tool is Helm, which installs packaged apps, a bit like an app store for a cluster. Its package is a chart: templates plus default values.",
                   Transform(h1, T("Helm: templating", 30, BLUE_M).move_to(h1)), FadeIn(hn), run_time=2.4)
         cmd = M("helm template hello chart/hello-devops", 24, GREY_B).move_to([0, -2.6, 0])
         self.beat("And helm template fills every blank and prints the result, without touching the cluster. Look before you install.",
@@ -125,7 +125,7 @@ class D45TwoRoads(VoiceScene):
         echo = ArcBetweenPoints(r1.get_bottom() + DOWN * 0.05, r4.get_bottom() + DOWN * 0.05, angle=PI / 3, color=GREEN_M, stroke_width=2.5)
         self.steps("A brand new revision 4, with the same content as revision 1. Revisions 2 and 3 stay right where they are.",
                    (0.9, Create(links[2]), FadeIn(r4)), (1.2, Create(echo)), (1.6, Indicate(r2[0], color=BLUE_M), Indicate(r3[0], color=RED_M)))
-        self.beat("Helm keeps its logbook in pen, not pencil. History is never rewritten. It stores each revision in the cluster itself, so every laptop sees the same story.",
+        self.beat("Helm keeps its logbook in pen, not pencil. History is never rewritten.",
                   rb.animate.set_opacity(0.4), run_time=1.4)
         self.play(FadeOut(VGroup(r1, r2, r3, r4, links, echo, rb)), run_time=0.6)
 
@@ -134,11 +134,11 @@ class D45TwoRoads(VoiceScene):
         prodf = card([("prod.yaml", YELLOW_M), ("replicaCount: 5", WHITE)], YELLOW_M, size=24).move_to([-4.3, -0.3, 0])
         inst = M("helm install web ./chart -f prod.yaml", 24, GREY_B).move_to([1.8, 1.5, 0])
         res1 = M("replicas: 5", 28, GREEN_M).move_to([1.8, 0.7, 0])
-        self.beat("Now a trap that catches nearly everyone once. The chart's defaults say two replicas. You install with a prod file that says five. Five replicas run. So far so good.",
+        self.beat("Now a trap that catches nearly everyone. Defaults say two replicas. You install with a prod file that says five. Five run. So far so good.",
                   FadeIn(dflt), Succession(Wait(2.6), FadeIn(prodf)), Succession(Wait(4.0), AnimationGroup(FadeIn(inst), FadeIn(res1))), run_time=5.6)
         upg = M("helm upgrade web ./chart --set image.tag=1.2.0", 24, GREY_B).move_to([1.8, -1.0, 0])
         fit(upg, 8.6)
-        self.beat("Later you upgrade, and pass only one new setting: the image tag, 1.2.0. Helm has the whole logbook. Surely it remembers your prod file. How many replicas now? Pause and guess.",
+        self.beat("Later you upgrade, passing only a new image tag. Surely Helm remembers your prod file. How many replicas now? Pause and guess.",
                   FadeIn(upg), run_time=1.6)
         self.wait(2.0)
         res2 = M("replicas: 2", 28, RED_M).move_to([1.8, -1.8, 0])
@@ -146,9 +146,9 @@ class D45TwoRoads(VoiceScene):
                    (0.8, FadeIn(res2)), (0.8, Wiggle(res2)), (0.6, prodf.animate.set_opacity(0.25)))
         why = T("pass any values on upgrade: chart defaults + only what you pass now", 24, YELLOW_M).move_to([0, -3.0, 0])
         fit(why, 12.6)
-        self.beat("Here's the rule behind it. If you pass any values on an upgrade, Helm starts from the chart's defaults, plus only the values you pass now. The settings from install time quietly disappear.",
+        self.beat("The rule: pass any values on an upgrade, and Helm starts from the chart's defaults plus only what you pass now. Install-time settings quietly vanish.",
                   FadeIn(why, shift=UP * 0.1), Indicate(dflt[1][1], color=BLUE_M), run_time=3.0)
-        self.beat("So keep your settings in a values file, and pass it with dash f, every time. And helm get values shows what a release uses right now.",
+        self.beat("So keep settings in a values file, and pass it with dash f every time.",
                   Transform(why, T("keep settings in a values file; pass it with -f every time", 26, YELLOW_M).move_to(why)), run_time=2.0)
         self.play(FadeOut(VGroup(dflt, prodf, inst, res1, upg, res2, why, h1)), run_time=0.6)
 
@@ -158,7 +158,7 @@ class D45TwoRoads(VoiceScene):
                      ("GREETING: Hello from Kubernetes!", WHITE)], GREEN_M, w=5.6, size=24).move_to([-3.2, 0.2, 0])
         self.beat("The second way starts from the other end. Keep the recipe as plain, valid YAML, with no blanks at all. That's the base, the master recipe.",
                   FadeIn(h2), FadeIn(base), run_time=2.2)
-        self.beat("You've used it already. kubectl apply dash k on the k8s folder. Every file in it still reads and applies on its own.",
+        self.beat("You've used it already, with kubectl apply dash k.",
                   Indicate(base[1][0], color=GREEN_M), run_time=1.6)
         notes = VGroup(sticky("namespace: hello-prod"), sticky("replicas: 4"), sticky("+ pdb.yaml", GOLD_M), sticky("GREETING: Hello from prod!"))
         for n, y in zip(notes, (1.35, 0.55, -0.25, -1.05)):
@@ -186,11 +186,11 @@ class D45TwoRoads(VoiceScene):
         self.beat("Lay down the dev notes instead. Namespace hello-dev, one replica, a newer image, 1.1.0, and hello from dev.",
                   Transform(ovl, T("overlays/dev", 26, BLUE_M).move_to(ovl)), Transform(cmdk, M("kubectl kustomize overlays/dev", 24, GREY_B).move_to(cmdk)),
                   LaggedStart(*[FadeIn(n, shift=LEFT * 0.2) for n in dnotes], lag_ratio=0.3), run_time=3.0)
-        self.beat("One base, two small overlays. Applied, dev and prod run side by side, each in its own namespace. And the tool is built into kubectl. Its name is Kustomize.",
+        self.beat("One base, two small overlays, running side by side. The tool is built into kubectl, and it's called Kustomize.",
                   Transform(h2, T("Kustomize: patching", 30, GREEN_M).move_to(h2)), run_time=2.0)
         # where the overlay must not live
         cyc = VGroup(M("k8s/overlays/prod  ->  ../../", 24, RED_M), M("error: ... cycle detected", 24, RED_M)).arrange(DOWN, buff=0.15).move_to([0, -3.0, 0])
-        self.beat("One trap here too. Put the overlay inside its own base folder, which looks natural, and Kustomize refuses: cycle detected. The base would contain the overlay. So overlays sit next to k8s, never inside it.",
+        self.beat("One trap: put an overlay inside its own base folder, and Kustomize refuses. Cycle detected. Overlays sit next to k8s, never inside it.",
                   FadeOut(cmdk), FadeIn(cyc), run_time=2.0)
         self.play(FadeOut(VGroup(base, dnotes, ovl, cyc, h2)), run_time=0.6)
 
@@ -213,15 +213,15 @@ class D45TwoRoads(VoiceScene):
         for i, r in enumerate(rows):
             y = 0.2 - 0.75 * i
             r[0].move_to([-5.9, y, 0], aligned_edge=LEFT); r[1].move_to([1.0, y, 0], aligned_edge=LEFT)
-        self.beat("So which one? It depends mostly on whose software it is. Someone else's software, like Envoy Gateway, ships as a Helm chart, so use Helm.",
+        self.beat("So which one? Mostly, whose software is it? Someone else's, like Envoy Gateway, ships as a Helm chart.",
                   FadeIn(rows[0]), run_time=1.6)
-        self.beat("Your own app, with a few differences per environment? Either works, and Kustomize keeps every file as plain YAML that anyone can read.",
+        self.beat("Your own app, a few differences? Either works, and Kustomize stays plain YAML.",
                   FadeIn(rows[1]), run_time=1.6)
-        self.beat("Your own app, installed by many teams with many settings? Helm, because values give each team one clear place to set things.",
+        self.beat("Many teams, many settings? Helm's values give each team one clear place.",
                   FadeIn(rows[2]), run_time=1.6)
         lims = VGroup(T("values.yaml repeats the whole Deployment: gone too far", 24, RED_M),
                       T("an overlay changes half the base: fix the base", 24, RED_M)).arrange(DOWN, buff=0.25).move_to([0, -2.75, 0])
-        self.beat("And each has a limit. A values file that repeats the whole Deployment has gone too far. And an overlay that changes half the base means the base is wrong, and should change instead.",
+        self.beat("And each has a limit. A values file that repeats the whole Deployment has gone too far. An overlay that changes half the base means the base is wrong.",
                   FadeIn(lims[0]), Succession(Wait(3.0), FadeIn(lims[1])), run_time=4.4)
         self.play(FadeOut(VGroup(hb, kb, py, api, ar, rows, lims)), run_time=0.6)
 
@@ -231,8 +231,8 @@ class D45TwoRoads(VoiceScene):
                      T("pass your values file on every upgrade", 28, YELLOW_M),
                      T("Kustomize: a master recipe with sticky notes", 28, GREEN_M),
                      T("the cluster only ever sees plain YAML", 28, GREY_B)).arrange(DOWN, buff=0.35)
-        self.beat("So, the moral of the story. Photocopies drift. Write the recipe once, and say only what differs. Helm gives you a recipe card with blanks, and a logbook in pen. Pass your values file on every upgrade. Kustomize gives you a master recipe with sticky notes. And the cluster only ever sees plain YAML.",
-                  LaggedStart(*[FadeIn(m, shift=UP * 0.1) for m in mor], lag_ratio=0.8), run_time=10.0)
+        self.beat("The moral of the story: photocopies drift. Write it once, say only what differs. Helm is a recipe card with blanks and a logbook in pen; pass your values on every upgrade. Kustomize is a master recipe with sticky notes. The cluster only sees plain YAML.",
+                  LaggedStart(*[FadeIn(m, shift=UP * 0.1) for m in mor], lag_ratio=0.8), run_time=8.0)
         self.play(FadeOut(mor), run_time=0.6)
         q = VGroup(T("Prod needs a bigger memory limit on the web container.", 30), T("Nothing else changes.", 30),
                    T("What do you add to the prod overlay?", 30, YELLOW_M)).arrange(DOWN, buff=0.3).move_to([0, 0.8, 0])
@@ -240,6 +240,6 @@ class D45TwoRoads(VoiceScene):
                   LaggedStart(*[FadeIn(x, shift=UP * 0.1) for x in q], lag_ratio=0.5), run_time=4.0)
         self.wait(2.0)
         ans = chip("a patch with only that container's resources", GREEN_M, 28).move_to([0, -1.5, 0])
-        self.beat("A small patch that names the Deployment and the web container, and lists only the changed fields. Not a copy of the whole file. That's a sticky note, not a photocopy. Thanks for watching.",
+        self.beat("A small patch naming the Deployment and the web container, with only the changed fields. A sticky note, not a photocopy. Thanks for watching.",
                   FadeIn(ans, shift=UP * 0.1), run_time=1.6)
         self.wait(1.0)
