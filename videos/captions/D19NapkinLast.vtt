@@ -1,0 +1,353 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.476
+Picture packing your lunch every morning from a written list.
+
+2
+00:00:06.476 --> 00:00:09.015
+Cook the rice, which takes forty minutes.
+
+3
+00:00:09.015 --> 00:00:09.881
+Add the curry.
+
+4
+00:00:09.881 --> 00:00:10.748
+Pack a napkin.
+
+5
+00:00:10.967 --> 00:00:14.619
+One morning you want a blue napkin instead of a white one.
+
+6
+00:00:14.619 --> 00:00:16.697
+And your list has a strange rule.
+
+7
+00:00:16.697 --> 00:00:20.160
+Change any step, and you must redo every step after it.
+
+8
+00:00:20.667 --> 00:00:23.410
+Fine, as long as the napkin line comes last.
+
+9
+00:00:23.410 --> 00:00:29.021
+But if it came first, you would cook the rice again, forty minutes, just to swap a napkin.
+
+10
+00:00:29.233 --> 00:00:31.409
+Nobody would write a list like that.
+
+11
+00:00:31.409 --> 00:00:34.068
+And yet, in software, we do it all the time.
+
+12
+00:00:35.000 --> 00:00:38.913
+Docker's recipe for an image is a file called a Dockerfile.
+
+13
+00:00:38.913 --> 00:00:47.600
+It is read from the top, one instruction per line, and each line that changes files becomes a layer, like the tiers from last time.
+
+14
+00:00:47.833 --> 00:00:49.960
+Start from a Python base image.
+
+15
+00:00:49.960 --> 00:00:51.880
+Work in a folder called app.
+
+16
+00:00:51.880 --> 00:00:54.898
+Copy in every file of our app, hello-devops.
+
+17
+00:00:54.898 --> 00:00:57.024
+Then pip installs its packages.
+
+18
+00:00:57.024 --> 00:00:58.533
+That is the slow step.
+
+19
+00:00:58.733 --> 00:01:00.874
+The first build runs every step.
+
+20
+00:01:00.874 --> 00:01:03.952
+The pip install alone takes about ten seconds.
+
+21
+00:01:04.167 --> 00:01:07.589
+Docker keeps every layer it builds, in a build cache.
+
+22
+00:01:07.589 --> 00:01:12.820
+Next time, it reuses a step if that step, and everything before it, is unchanged.
+
+23
+00:01:13.433 --> 00:01:17.364
+Now you change one comment in app.py, and build again.
+
+24
+00:01:17.364 --> 00:01:18.966
+Which steps run again?
+
+25
+00:01:18.966 --> 00:01:20.131
+Pause and guess.
+
+26
+00:01:22.333 --> 00:01:23.982
+The first two are reused.
+
+27
+00:01:23.982 --> 00:01:27.938
+But COPY dot dot copied every file, and one of them changed.
+
+28
+00:01:27.938 --> 00:01:29.323
+So that layer is new.
+
+29
+00:01:29.323 --> 00:01:34.136
+And every layer after it is rebuilt too, including the whole pip install.
+
+30
+00:01:34.367 --> 00:01:36.964
+Ten seconds of installing, for a comment.
+
+31
+00:01:36.964 --> 00:01:39.372
+That is the blue napkin, packed first.
+
+32
+00:01:39.600 --> 00:01:40.950
+Is Docker being lazy?
+
+33
+00:01:40.950 --> 00:01:42.621
+Let's be fair to the rule.
+
+34
+00:01:42.621 --> 00:01:47.764
+Each layer holds the changes one step made, on top of the exact layers below it.
+
+35
+00:01:47.764 --> 00:01:55.349
+If a lower layer changed, Docker cannot know whether pip install would give the same result, without running it again.
+
+36
+00:01:55.967 --> 00:01:59.567
+So we keep the same lines, and change only the order.
+
+37
+00:01:59.567 --> 00:02:02.081
+Copy the list of packages on its own.
+
+38
+00:02:02.081 --> 00:02:02.964
+Install them.
+
+39
+00:02:02.964 --> 00:02:04.527
+And copy the code last.
+
+40
+00:02:04.733 --> 00:02:07.317
+Edit the same comment, and build again.
+
+41
+00:02:07.317 --> 00:02:10.100
+The three steps above the code say cached.
+
+42
+00:02:10.100 --> 00:02:14.737
+Only the last small layer runs, and the whole build takes 0.3 seconds.
+
+43
+00:02:14.967 --> 00:02:20.623
+Roughly thirty times faster than a fresh install, and we did not write a single new line.
+
+44
+00:02:20.623 --> 00:02:22.212
+We just moved the napkin.
+
+45
+00:02:22.433 --> 00:02:23.859
+So here is the rule.
+
+46
+00:02:23.859 --> 00:02:26.283
+Put what changes least at the top.
+
+47
+00:02:26.283 --> 00:02:27.637
+Copy the code last.
+
+48
+00:02:27.867 --> 00:02:30.659
+One honest limit: what counts as changed.
+
+49
+00:02:30.659 --> 00:02:34.882
+COPY checks the contents of files, not when they were touched.
+
+50
+00:02:34.882 --> 00:02:37.266
+RUN only compares the command text.
+
+51
+00:02:37.266 --> 00:02:42.443
+So RUN apt-get update stays cached for months, even when new packages exist.
+
+52
+00:02:43.267 --> 00:02:46.927
+One more line in the recipe decides how the box stops.
+
+53
+00:02:46.927 --> 00:02:54.112
+When you run docker stop, Docker sends a polite message, SIGTERM, to the container's first process, PID 1.
+
+54
+00:02:54.112 --> 00:02:55.875
+Then it waits ten seconds.
+
+55
+00:02:55.875 --> 00:03:00.552
+If the app is still running, it sends SIGKILL, which ends it at once.
+
+56
+00:03:00.767 --> 00:03:03.486
+Here is CMD written plainly, as words.
+
+57
+00:03:03.486 --> 00:03:08.280
+Docker runs it through a shell, a program that reads command lines.
+
+58
+00:03:08.280 --> 00:03:15.507
+So the shell, sh, becomes PID 1, and gunicorn, the web server that runs hello-devops, sits behind it.
+
+59
+00:03:15.733 --> 00:03:16.893
+Pause and guess.
+
+60
+00:03:16.893 --> 00:03:19.139
+How long does docker stop take?
+
+61
+00:03:21.367 --> 00:03:23.434
+The message arrives at the door.
+
+62
+00:03:23.434 --> 00:03:26.276
+The shell takes it, and does not pass it on.
+
+63
+00:03:26.276 --> 00:03:28.149
+gunicorn never hears a thing.
+
+64
+00:03:28.367 --> 00:03:33.008
+So Docker waits out the full ten seconds, and then kills it.
+
+65
+00:03:33.008 --> 00:03:36.721
+We measured it: 10.2 seconds, and exit code 137.
+
+66
+00:03:36.933 --> 00:03:40.380
+A shell that keeps your mail and never forwards it.
+
+67
+00:03:40.380 --> 00:03:43.624
+So the point is: the app itself has to be PID 1.
+
+68
+00:03:44.133 --> 00:03:47.730
+Now write CMD as a list in square brackets.
+
+69
+00:03:47.730 --> 00:03:49.821
+That is called exec form.
+
+70
+00:03:49.821 --> 00:03:53.668
+No shell in between: gunicorn itself is PID 1.
+
+71
+00:03:53.900 --> 00:03:55.407
+docker stop again.
+
+72
+00:03:55.407 --> 00:04:00.095
+gunicorn gets the message, finishes politely, and exits.
+
+73
+00:04:00.095 --> 00:04:02.773
+0.6 seconds, and exit code zero.
+
+74
+00:04:03.000 --> 00:04:04.272
+One honest catch.
+
+75
+00:04:04.272 --> 00:04:06.592
+Exec form is only half the fix.
+
+76
+00:04:06.592 --> 00:04:09.585
+The app must also handle SIGTERM itself.
+
+77
+00:04:09.585 --> 00:04:10.632
+gunicorn does.
+
+78
+00:04:10.632 --> 00:04:18.713
+A bare Python script does not, and as PID 1 it waited out the full ten seconds in our test, just like sleep.
+
+79
+00:04:19.533 --> 00:04:21.271
+So the moral of the story.
+
+80
+00:04:21.271 --> 00:04:26.817
+Put the slow, stable steps first and the code last, so an edit rebuilds in a blink.
+
+81
+00:04:26.817 --> 00:04:32.631
+And write CMD as a list, so the app itself hears the polite message, and stops in time.
+
+82
+00:04:32.833 --> 00:04:33.795
+Quick check.
+
+83
+00:04:33.795 --> 00:04:38.120
+A Dockerfile copies every file, then runs pip install.
+
+84
+00:04:38.120 --> 00:04:39.402
+You edit app.py.
+
+85
+00:04:39.402 --> 00:04:40.924
+Does pip run again?
+
+86
+00:04:43.133 --> 00:04:43.444
+Yes.
+
+87
+00:04:43.444 --> 00:04:47.011
+A changed layer rebuilds every layer after it.
+
+88
+00:04:47.011 --> 00:04:49.105
+Move the napkin to the end.

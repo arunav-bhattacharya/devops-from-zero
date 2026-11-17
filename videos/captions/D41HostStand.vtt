@@ -1,0 +1,353 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:07.765
+A friend loves your restaurant, so they ask one waiter for a direct phone number.
+
+2
+00:00:07.765 --> 00:00:08.945
+On Monday it works.
+
+3
+00:00:08.945 --> 00:00:11.306
+On Wednesday the waiter changes shift.
+
+4
+00:00:11.306 --> 00:00:14.536
+On Friday your friend calls, and a stranger answers.
+
+5
+00:00:14.733 --> 00:00:20.649
+The restaurant's own number would have worked every time, because it always reaches whoever is on the floor.
+
+6
+00:00:21.400 --> 00:00:23.179
+Pods have the same problem.
+
+7
+00:00:23.179 --> 00:00:28.120
+Every Pod gets its own IP address, the number that names it on the network.
+
+8
+00:00:28.120 --> 00:00:30.295
+Here are three hello-devops Pods.
+
+9
+00:00:30.467 --> 00:00:34.909
+You copy one address from kubectl get pods into a settings file.
+
+10
+00:00:34.909 --> 00:00:37.200
+It works today, so it feels safe.
+
+11
+00:00:37.200 --> 00:00:38.380
+That is the trap.
+
+12
+00:00:38.533 --> 00:00:40.591
+Then a rollout replaces that Pod.
+
+13
+00:00:40.591 --> 00:00:45.331
+The new Pod gets a new address, and your settings file now points at nobody.
+
+14
+00:00:45.467 --> 00:00:49.205
+A Pod address in a settings file is the waiter's direct number.
+
+15
+00:00:49.205 --> 00:00:51.816
+What we want is the restaurant's own number.
+
+16
+00:00:52.533 --> 00:00:55.828
+Guests at a busy restaurant never hunt for one waiter.
+
+17
+00:00:55.828 --> 00:01:01.869
+They go to the host stand at the door, and the host sends them to a waiter who is on duty and free.
+
+18
+00:01:02.067 --> 00:01:04.930
+In Kubernetes, the host stand is a Service.
+
+19
+00:01:04.930 --> 00:01:09.324
+It gives a changing group of Pods one fixed address, and one name.
+
+20
+00:01:09.324 --> 00:01:11.388
+Here, hello-devops, on port 80.
+
+21
+00:01:11.533 --> 00:01:14.304
+That fixed address is called the ClusterIP.
+
+22
+00:01:14.304 --> 00:01:16.624
+It stays put while Pods come and go.
+
+23
+00:01:16.800 --> 00:01:20.244
+How does the Service know which waiters are its own?
+
+24
+00:01:20.244 --> 00:01:22.363
+Not by name, since names change.
+
+25
+00:01:22.363 --> 00:01:25.277
+By a label, a key and value tag on each Pod.
+
+26
+00:01:25.277 --> 00:01:28.389
+Take every ready Pod labeled app: hello-devops.
+
+27
+00:01:29.133 --> 00:01:30.726
+Now the host's clipboard.
+
+28
+00:01:30.726 --> 00:01:39.707
+A controller watches the Pods and keeps a list, called an EndpointSlice: the address and port of every matching Pod, and whether it is ready.
+
+29
+00:01:39.867 --> 00:01:41.110
+Notice the port.
+
+30
+00:01:41.110 --> 00:01:43.985
+Visitors call the Service on port 80.
+
+31
+00:01:43.985 --> 00:01:47.481
+The app inside each Pod listens on port 8000.
+
+32
+00:01:47.667 --> 00:01:56.461
+And on every node, a program called kube-proxy reads both, and writes traffic rules into Linux, the operating system on the node.
+
+33
+00:01:56.461 --> 00:01:59.733
+Traffic for the ClusterIP goes to one ready Pod.
+
+34
+00:01:59.933 --> 00:02:02.467
+So where does the host stand, exactly?
+
+35
+00:02:02.467 --> 00:02:03.468
+Here is a test.
+
+36
+00:02:03.468 --> 00:02:08.469
+You ping the ClusterIP, the command that checks whether an address answers.
+
+37
+00:02:08.469 --> 00:02:09.603
+What answers you?
+
+38
+00:02:12.333 --> 00:02:12.907
+Nothing.
+
+39
+00:02:12.907 --> 00:02:15.707
+The ClusterIP lives on no network card.
+
+40
+00:02:15.707 --> 00:02:17.860
+It exists only as those rules.
+
+41
+00:02:17.860 --> 00:02:22.094
+Here our picture bends: there is no host standing anywhere.
+
+42
+00:02:22.094 --> 00:02:25.252
+Just very good signs, painted at every door.
+
+43
+00:02:25.800 --> 00:02:27.168
+Now follow one call.
+
+44
+00:02:27.168 --> 00:02:30.997
+A Pod sends a request to the Service's address, port 80.
+
+45
+00:02:31.133 --> 00:02:36.753
+The rules on the caller's own node catch it, and pick one ready Pod from the clipboard.
+
+46
+00:02:36.753 --> 00:02:39.467
+The packet goes to that Pod, on port 8000.
+
+47
+00:02:39.667 --> 00:02:41.412
+Only ready Pods get visitors.
+
+48
+00:02:41.412 --> 00:02:44.302
+Say this Pod starts failing its readiness check.
+
+49
+00:02:44.302 --> 00:02:49.479
+It keeps running, but the controller marks its entry not ready, and the rules skip it.
+
+50
+00:02:50.467 --> 00:02:52.937
+Scale to five, and two new Pods appear.
+
+51
+00:02:52.937 --> 00:02:57.306
+As soon as they are ready, the controller adds them to the clipboard.
+
+52
+00:02:57.306 --> 00:03:01.169
+kubectl shows the first three addresses, and counts the rest.
+
+53
+00:03:01.169 --> 00:03:02.056
+Plus two more.
+
+54
+00:03:02.200 --> 00:03:03.838
+The floor changed, twice.
+
+55
+00:03:03.838 --> 00:03:07.312
+The Service's name and address did not change at all.
+
+56
+00:03:08.067 --> 00:03:11.108
+Now break it on purpose, the way the lab does.
+
+57
+00:03:11.108 --> 00:03:13.422
+Change the selector to hello-devop.
+
+58
+00:03:13.422 --> 00:03:14.679
+One letter missing.
+
+59
+00:03:14.867 --> 00:03:18.656
+No Pod carries that label, so the clipboard is empty.
+
+60
+00:03:18.656 --> 00:03:23.447
+The Service still exists, and kubectl get svc looks perfectly fine.
+
+61
+00:03:23.447 --> 00:03:25.020
+It just leads nowhere.
+
+62
+00:03:25.200 --> 00:03:28.822
+A call arrives, and there is nobody to send it to.
+
+63
+00:03:28.822 --> 00:03:29.184
+Well.
+
+64
+00:03:29.184 --> 00:03:33.241
+That is a very polite host stand, with nobody behind it.
+
+65
+00:03:33.400 --> 00:03:34.715
+So here is the rule.
+
+66
+00:03:34.715 --> 00:03:39.579
+When a Service fails, read its EndpointSlice before you blame the network.
+
+67
+00:03:39.733 --> 00:03:43.597
+No addresses there means a selector or a readiness problem.
+
+68
+00:03:43.597 --> 00:03:47.133
+Addresses that refuse connections mean a port problem.
+
+69
+00:03:47.133 --> 00:03:50.015
+Either way, it is rarely the network itself.
+
+70
+00:03:51.133 --> 00:03:55.215
+The Service also has a name in the cluster's phone book, CoreDNS.
+
+71
+00:03:55.215 --> 00:04:00.427
+Its full name is the Service, then the namespace, hello, then the cluster's ending.
+
+72
+00:04:00.600 --> 00:04:03.587
+From the same namespace, the short name is enough.
+
+73
+00:04:03.587 --> 00:04:06.096
+From another namespace, add the namespace.
+
+74
+00:04:06.800 --> 00:04:08.392
+One limit to keep in mind.
+
+75
+00:04:08.392 --> 00:04:11.394
+The pick happens per connection, not per request.
+
+76
+00:04:11.394 --> 00:04:17.273
+The kernel picks a Pod on a connection's first packet, and keeps it until the connection closes.
+
+77
+00:04:17.467 --> 00:04:25.915
+So a client that keeps one connection open, like HTTP keep-alive or gRPC, can talk to the same Pod for a long time.
+
+78
+00:04:25.915 --> 00:04:30.323
+A curl loop opens a new connection each time, so it spreads.
+
+79
+00:04:31.267 --> 00:04:32.679
+The moral of the story.
+
+80
+00:04:32.679 --> 00:04:35.074
+Pods change their numbers all the time.
+
+81
+00:04:35.074 --> 00:04:37.715
+The Service keeps one name and one address.
+
+82
+00:04:37.715 --> 00:04:41.768
+And its clipboard, the EndpointSlice, says who is ready right now.
+
+83
+00:04:41.933 --> 00:04:43.066
+One quick check.
+
+84
+00:04:43.066 --> 00:04:47.948
+curl gets no answer, and the EndpointSlice lists no addresses at all.
+
+85
+00:04:47.948 --> 00:04:49.505
+Is the network broken?
+
+86
+00:04:52.200 --> 00:04:53.077
+Almost never.
+
+87
+00:04:53.077 --> 00:04:55.842
+An empty list means no ready Pod matches.
+
+88
+00:04:55.842 --> 00:05:00.092
+Check the selector against the Pod labels, and check readiness.

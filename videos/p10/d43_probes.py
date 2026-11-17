@@ -119,7 +119,7 @@ class D43Probes(VoiceScene):
         self.beat("One question isn't enough. A good manager asks three, and each answer has its own action.",
                   FadeIn(heads), run_time=1.4)
         figs = VGroup(*[waiter(TEAL_M, 0.75).move_to([-5.6, y, 0]) for y in Y])
-        quest = VGroup(*[T(q, 24).move_to([-1.85, y, 0]) for q, y in zip(
+        quest = VGroup(*[T(q, 24).move_to([-1.6, y, 0]) for q, y in zip(
             ("\"Have you finished starting?\"", "\"Are you stuck?\"", "\"Can you take tables right now?\""), Y)])
 
         def action(lines, c, y):
@@ -131,7 +131,7 @@ class D43Probes(VoiceScene):
         acts = VGroup(action(["others wait", "never passes: restart"], COL[0], Y[0]),
                       action(["restart container", "go home, fresh one in"], COL[1], Y[1]),
                       action(["no new visitors", "keeps running"], COL[2], Y[2]))
-        arrs = VGroup(*[Arrow([0.75, y, 0], [2.7, y, 0], buff=0.05, stroke_width=3, color=c, max_tip_length_to_length_ratio=0.12) for y, c in zip(Y, COL)])
+        arrs = VGroup(*[Arrow([1.2, y, 0], [2.75, y, 0], buff=0.05, stroke_width=3, color=c, max_tip_length_to_length_ratio=0.12) for y, c in zip(Y, COL)])
         apron = T("still tying the apron", 20, GREY_B).next_to(figs[0], RIGHT, buff=0.2).shift(DOWN * 0.45)
         self.beat("First, to a new waiter still tying an apron: have you finished starting?",
                   FadeIn(figs[0]), FadeIn(quest[0], shift=RIGHT * 0.1), run_time=1.8)
@@ -178,13 +178,13 @@ class D43Probes(VoiceScene):
                   GrowFromCenter(lv_dots[0]), GrowFromCenter(lv_dots[1]), run_time=1.6)
         self.wait(2.0)
         lv_lab = M("10 s x 3 = about 30 s", 24, RED_M).move_to([X0 + 40 * SC, TY[1] + 0.5, 0])
-        rst = chip("restart", RED_M, 22).next_to(lv_dots[4], RIGHT, buff=0.3)
+        rst = chip("restart", RED_M, 22).next_to(lv_lab, RIGHT, buff=0.3)
         self.steps("About thirty seconds. Miss, miss, miss, and it's replaced.",
                    (0.9, Wait(0.9)), (0.4, GrowFromCenter(lv_dots[2])), (0.4, GrowFromCenter(lv_dots[3])), (0.4, GrowFromCenter(lv_dots[4])),
                    (0.6, FadeIn(lv_lab), FadeIn(rst)))
         rd_dots = VGroup(*[dot(GREEN_M if k == 0 else RED_M).move_to([X0 + 5 * (k + 1) * SC, TY[2], 0]) for k in range(3)])
         rd_lab = M("5 s x 2 = about 10 s", 24, BLUE_M).move_to([X0 + 30 * SC, TY[2] + 0.5, 0])
-        nov = chip("no visitors", BLUE_M, 22).next_to(rd_dots[2], RIGHT, buff=0.3)
+        nov = chip("no visitors", BLUE_M, 22).next_to(rd_lab, RIGHT, buff=0.3)
         self.beat("Readiness checks every five seconds, and acts after two misses. So a Pod stops getting visitors within about ten seconds.",
                   LaggedStart(*[GrowFromCenter(d) for d in rd_dots], lag_ratio=0.4), Succession(Wait(1.4), AnimationGroup(FadeIn(rd_lab), FadeIn(nov))), run_time=3.0)
 
@@ -200,20 +200,20 @@ class D43Probes(VoiceScene):
         self.beat("Now a tempting idea. If checking is good, more checking is better. So let's make /healthz check Redis too.",
                   FadeIn(redis), LaggedStart(*[GrowFromCenter(p) for p in pods], lag_ratio=0.2), FadeIn(plab), Create(wires), run_time=2.6)
         self.beat("Liveness now asks about Redis as well. Sounds responsible, right?", FadeIn(bad, shift=UP * 0.1), run_time=1.2)
-        rx = tick(False, 0.3).move_to(redis)
+        rx = tick(False, 0.3).next_to(redis, RIGHT, buff=0.3)
         self.beat("Picture Redis going down, for just one minute.",
                   Create(rx), wires.animate.set_color(RED_M), run_time=1.4)
         xs = VGroup(*[tick(False, 0.25).move_to(p) for p in pods])
         self.steps("Every hello-devops Pod fails liveness at about the same time. And the kubelet restarts all of them.",
                    (1.6, LaggedStart(*[Create(x) for x in xs], lag_ratio=0.2)), (1.4, Wait(1.4)),
                    (1.0, FadeOut(xs), *[p.animate.scale(0.5).set_opacity(0.15) for p in pods]))
-        casc = T("a small outage becomes a full one", 28, RED_M).move_to([0, -3.3, 0])
+        casc = T("a small outage becomes a full one", 28, RED_M).move_to([0, -3.2, 0])
         self.steps("But restarts can't fix Redis. And while they happen, no Pod can serve anything at all. A small outage just became a full one.",
                    (1.6, *[p.animate.scale(2.0).set_opacity(1) for p in pods]), (0.6, Wait(0.6)),
                    (0.8, LaggedStart(*[Create(x) for x in xs], lag_ratio=0.2)), (1.6, Wait(1.6)), (0.8, FadeIn(casc, shift=UP * 0.1)))
         self.beat("It's the manager who hears the card network is down for the whole street, and sends every waiter home. Well... nobody's card reader is a problem now.",
                   run_time=None)
-        self.beat("So the point is: a restart only fixes trouble inside the container. The docs warn this leads to cascading failures, one failure setting off the next.",
+        self.beat("So the point is: a restart only fixes trouble inside the container. The docs warn this can lead to cascading failures, one failure setting off the next.",
                   Indicate(casc, color=RED_M), run_time=2.0)
         self.play(FadeOut(VGroup(xs, casc, bad)), run_time=0.5)
         rule = VGroup(T("Liveness asks about the container alone.", 30, YELLOW_M), T("Leave the database out of it.", 30, YELLOW_M)).arrange(DOWN, buff=0.2)
@@ -225,7 +225,7 @@ class D43Probes(VoiceScene):
         good = M("readiness: /readyz checks Redis", 26, BLUE_M).move_to([0, -2.6, 0])
         self.beat("Checks on other services belong in readiness, because failing it only pauses visitors.",
                   FadeOut(rule), FadeIn(good, shift=UP * 0.1), run_time=1.6)
-        cmd = M("kubectl scale deployment redis -n hello --replicas=0", 22, WHITE).move_to([0, 3.4, 0])
+        cmd = M("kubectl scale deployment redis -n hello --replicas=0", 22, WHITE).move_to([0, 3.15, 0])
         fit(cmd, 12.6)
         self.beat("Let's try it the way the lab does. Scale Redis to zero. Pause and guess: what happens to READY, and what happens to RESTARTS?",
                   FadeOut(redis), FadeOut(rx), FadeOut(wires), FadeIn(cmd), run_time=2.4)
@@ -257,7 +257,7 @@ class D43Probes(VoiceScene):
         self.play(FadeOut(VGroup(flow, farr)), run_time=0.5)
 
         # ---------- 8. guardrail
-        lim = T("if every Pod fails readiness at once: no ready Pods, users get errors", 26, RED_M).move_to([0, -0.9, 0])
+        lim = T("every Pod fails readiness at once: no ready Pods, users get errors", 26, RED_M).move_to([0, -0.9, 0])
         fit(lim, 12.4)
         zero = VGroup(*[M("0/1", 24, BLUE_M).move_to(r[0]) for r in rows])
         self.beat("One honest limit. If every Pod fails readiness at once, the Service has no ready Pods left, and users get errors.",

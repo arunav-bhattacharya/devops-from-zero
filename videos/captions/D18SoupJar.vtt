@@ -1,0 +1,349 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.772
+Picture a stacked lunchbox, the kind with tiers that click together.
+
+2
+00:00:06.772 --> 00:00:09.647
+In the bottom tier, you put a heavy jar of soup.
+
+3
+00:00:09.867 --> 00:00:11.477
+Then you change your mind.
+
+4
+00:00:11.477 --> 00:00:15.192
+So you add a tier on top, with a sticker that says: no soup.
+
+5
+00:00:15.400 --> 00:00:17.822
+Your friend lifts the box and frowns.
+
+6
+00:00:17.822 --> 00:00:19.787
+It is just as heavy as before.
+
+7
+00:00:20.000 --> 00:00:21.082
+Silly with soup.
+
+8
+00:00:21.082 --> 00:00:25.882
+But software images work exactly this way, and smart people get caught.
+
+9
+00:00:25.882 --> 00:00:27.302
+So, today's question.
+
+10
+00:00:27.302 --> 00:00:30.480
+If I delete a file, does the image get smaller?
+
+11
+00:00:31.300 --> 00:00:35.380
+Last time, we treated an image as one sealed box.
+
+12
+00:00:35.380 --> 00:00:41.374
+Take python 3.14 slim, a base image with Debian Linux and Python inside.
+
+13
+00:00:41.374 --> 00:00:44.205
+It unpacks to about 135 megabytes.
+
+14
+00:00:44.433 --> 00:00:50.743
+If it really were one big archive, every small change to your app would mean shipping all of it again.
+
+15
+00:00:50.743 --> 00:00:53.897
+And ten Python images would store Python ten times.
+
+16
+00:00:54.100 --> 00:00:57.243
+Wouldn't it be nice to ship and store only what changed?
+
+17
+00:00:57.467 --> 00:01:00.856
+So an image is really a stack of tiers, called layers.
+
+18
+00:01:00.856 --> 00:01:05.062
+Each layer is a set of file changes, compared with the layer below.
+
+19
+00:01:05.062 --> 00:01:10.649
+For this image: Debian files at the bottom, then the Python build, then two small layers.
+
+20
+00:01:10.867 --> 00:01:15.643
+Images are built from a Dockerfile, a recipe with one step per line.
+
+21
+00:01:15.643 --> 00:01:20.068
+A step that changes files, like RUN or COPY, makes a new layer.
+
+22
+00:01:20.068 --> 00:01:25.265
+A step that only changes settings, like CMD or ENV, makes no layer at all.
+
+23
+00:01:25.967 --> 00:01:31.769
+Every layer is named by its fingerprint, a sha256 digest computed from its bytes.
+
+24
+00:01:31.769 --> 00:01:35.638
+The same content gets the same name, on every machine.
+
+25
+00:01:35.638 --> 00:01:38.360
+Change one byte, and the name changes.
+
+26
+00:01:38.867 --> 00:01:45.977
+So now build two images, both starting from python 3.14 slim, each adding one small file.
+
+27
+00:01:46.200 --> 00:01:49.446
+Docker lists each one at about 178 megabytes.
+
+28
+00:01:49.446 --> 00:01:53.342
+But the bottom four layers have the same fingerprints.
+
+29
+00:01:53.342 --> 00:01:55.073
+So they are stored once.
+
+30
+00:01:55.300 --> 00:01:59.157
+Only 16.84 kilobytes of each image are its own.
+
+31
+00:01:59.157 --> 00:02:02.193
+The other 178.3 megabytes are shared.
+
+32
+00:02:02.193 --> 00:02:05.475
+Pulls and pushes skip shared layers too.
+
+33
+00:02:05.700 --> 00:02:08.097
+Real lunchboxes cannot share a tier.
+
+34
+00:02:08.097 --> 00:02:11.559
+Images can, because the name comes from the content.
+
+35
+00:02:12.267 --> 00:02:14.466
+Every layer so far is read-only.
+
+36
+00:02:14.466 --> 00:02:20.856
+When a container starts, Docker adds one thin writable tier on top, for that container alone.
+
+37
+00:02:21.067 --> 00:02:24.901
+The container sees all the tiers merged into one folder tree.
+
+38
+00:02:24.901 --> 00:02:29.741
+To read a file, it looks from the top down, and uses the first copy it finds.
+
+39
+00:02:30.467 --> 00:02:33.643
+Now the app changes a file that came from the image.
+
+40
+00:02:33.643 --> 00:02:39.873
+The first write copies the whole file up into the container's tier, and later writes change that copy.
+
+41
+00:02:39.873 --> 00:02:41.644
+That is called copy-on-write.
+
+42
+00:02:41.867 --> 00:02:44.129
+The original below never changes.
+
+43
+00:02:44.129 --> 00:02:46.872
+From above, the copy on top simply wins.
+
+44
+00:02:48.100 --> 00:02:49.141
+Now the soup.
+
+45
+00:02:49.141 --> 00:02:52.182
+Start from Alpine, a tiny Linux image.
+
+46
+00:02:52.182 --> 00:02:55.384
+One RUN step creates a 50 megabyte file.
+
+47
+00:02:55.384 --> 00:02:57.705
+The next RUN step deletes it.
+
+48
+00:02:57.933 --> 00:02:59.192
+The file is gone.
+
+49
+00:02:59.192 --> 00:03:02.080
+Nobody inside the container can see it.
+
+50
+00:03:02.080 --> 00:03:03.858
+So how big is the image?
+
+51
+00:03:03.858 --> 00:03:05.043
+Pause and guess.
+
+52
+00:03:07.267 --> 00:03:10.380
+Remember the rule: a layer can only add changes.
+
+53
+00:03:10.380 --> 00:03:15.829
+So the delete step adds a tiny marker, called a whiteout, that hides the file below.
+
+54
+00:03:15.829 --> 00:03:19.916
+The 50 megabytes stay in their layer, and ship with every pull.
+
+55
+00:03:20.133 --> 00:03:26.113
+Compare the same work done in one RUN step, creating and deleting joined with and and.
+
+56
+00:03:26.333 --> 00:03:27.254
+Weigh both.
+
+57
+00:03:27.254 --> 00:03:30.185
+The two-step image: 53.8 megabytes.
+
+58
+00:03:30.185 --> 00:03:32.195
+The one-step image: 3.8.
+
+59
+00:03:32.195 --> 00:03:37.219
+About fourteen times bigger, for a file nobody can even see.
+
+60
+00:03:37.433 --> 00:03:39.061
+The sticker weighs nothing.
+
+61
+00:03:39.061 --> 00:03:41.351
+The soup still weighs fifty megabytes.
+
+62
+00:03:41.867 --> 00:03:43.238
+So here is the rule.
+
+63
+00:03:43.238 --> 00:03:46.323
+A delete in a later step only hides the file.
+
+64
+00:03:46.323 --> 00:03:48.105
+Clean up in the same step.
+
+65
+00:03:48.105 --> 00:03:53.179
+Or, as we will see later, copy only the results into a fresh, clean stage.
+
+66
+00:03:53.400 --> 00:03:56.559
+A tool called dive makes the waste visible.
+
+67
+00:03:56.559 --> 00:03:59.056
+It walks the image layer by layer.
+
+68
+00:03:59.056 --> 00:04:05.667
+For the two-step image it said: efficiency 14 percent, 50 megabytes wasted in big dot bin.
+
+69
+00:04:05.667 --> 00:04:06.035
+Fail.
+
+70
+00:04:06.867 --> 00:04:07.520
+Why care?
+
+71
+00:04:07.520 --> 00:04:10.860
+Every deploy and every CI run pulls the image.
+
+72
+00:04:10.860 --> 00:04:13.111
+It takes disk on every machine.
+
+73
+00:04:13.111 --> 00:04:16.813
+And every extra package is one more thing to patch.
+
+74
+00:04:17.033 --> 00:04:19.617
+And the writable tier has its own limits.
+
+75
+00:04:19.617 --> 00:04:23.902
+Copying a big file up is slow, and the tier dies with the container.
+
+76
+00:04:23.902 --> 00:04:28.061
+That is why databases keep their files somewhere else, in volumes.
+
+77
+00:04:28.767 --> 00:04:30.571
+So, the moral of the story.
+
+78
+00:04:30.571 --> 00:04:34.782
+An image is a stack of read-only layers, shared by fingerprint.
+
+79
+00:04:34.782 --> 00:04:37.589
+A container adds one writable tier on top.
+
+80
+00:04:37.589 --> 00:04:41.465
+And a delete in a later layer is a sticker, not a removal.
+
+81
+00:04:42.067 --> 00:04:42.887
+Quick check.
+
+82
+00:04:42.887 --> 00:04:46.922
+One step downloads a big file, and a later step deletes it.
+
+83
+00:04:46.922 --> 00:04:48.359
+Did the image shrink?
+
+84
+00:04:50.567 --> 00:04:50.779
+No.
+
+85
+00:04:50.779 --> 00:04:53.182
+The bytes stay in the lower layer.
+
+86
+00:04:53.182 --> 00:04:55.091
+The delete only hides them.
+
+87
+00:04:55.091 --> 00:04:56.929
+Clean up in the same step.

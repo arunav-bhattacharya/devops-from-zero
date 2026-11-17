@@ -151,9 +151,8 @@ class D28PrepList(VoiceScene):
                       M('}', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-1.6, -1.3, 0])
         fix_indent(code, 22)
         shn = T("(print texts shortened)", 20, GREY_B).next_to(code, DOWN, buff=0.15).align_to(code, LEFT)
-        self.add(shn)
         self.beat("Here's a test from the lesson. Four print lines: one in settings, one at the top of the build script, one inside the hello task's setup block, and one inside doLast.",
-                  FadeIn(code), run_time=2.4)
+                  FadeIn(code), FadeIn(shn), run_time=2.4)
         q4 = T("./gradlew hello: which lines print, in what order?", 26, YELLOW_M).move_to([3.6, -0.3, 0])
         q4 = fit(q4, 5.6)
         self.beat("You run the hello task. Pause and guess: which lines print, and in what order?", FadeIn(q4), run_time=1.4)

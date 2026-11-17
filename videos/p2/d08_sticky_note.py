@@ -10,11 +10,11 @@ SAY.extend([
 ])
 
 PHOTO, NOTE, HEADC, DESK, TRAY, CAB = GREY_B, YELLOW_M, BLUE_M, GOLD_M, TEAL_M, PURPLE_M
-ROW_X = -1.75
+ROW_X = -1.0
 ROWS = {"6e176d6": 2.15, "d6aad6e": 1.2, "c711550": 0.25, "09e16be": -0.7, "16cc719": -1.65}
 MSG = {"6e176d6": "Say that prices include VAT", "d6aad6e": "Group thousands in prices",
        "c711550": "Explain how to run the calculator", "09e16be": "Raise the tax rate to 25%", "16cc719": "Add a discount function"}
-NOTE_X, HEAD_X = 3.45, 5.45
+NOTE_X, HEAD_X = 4.1, 5.9
 
 
 def row(h):
@@ -31,8 +31,8 @@ def sticky(text, color=NOTE):
     return VGroup(r, t.move_to(r), fold)
 
 
-def place(box, color, title, sub, x):
-    r = RoundedRectangle(corner_radius=0.15, width=3.5, height=2.4, stroke_color=color, stroke_width=3).set_fill(interpolate_color(ManimColor("#000000"), ManimColor(color), 0.10), 1)
+def place(box, color, title, sub, x, w=3.5):
+    r = RoundedRectangle(corner_radius=0.15, width=w, height=2.4, stroke_color=color, stroke_width=3).set_fill(interpolate_color(ManimColor("#000000"), ManimColor(color), 0.10), 1)
     r.move_to(np.array([x, 0.3, 0]))
     t = T(title, 30, color).next_to(r, UP, buff=0.25)
     s = T(sub, 26, GREY_B).next_to(r, DOWN, buff=0.3)
@@ -103,8 +103,10 @@ class D08StickyNote(VoiceScene):
                   Succession(Wait(2.6), *[travel(a, YELLOW_M, 0.5) for a in pars]), run_time=5.0)
         note = sticky("main").move_to(np.array([NOTE_X, ROWS["d6aad6e"], 0]))
         nlink = always_redraw(lambda: Arrow(note.get_left(), np.array([rows["d6aad6e"][0].get_right()[0], note.get_center()[1], 0]), buff=0.08, stroke_width=3, color=NOTE, max_tip_length_to_length_ratio=0.3))
+        nl0 = nlink.copy().clear_updaters()
         self.beat("Now, which photo is the newest on the main line of work? Git keeps that answer on a sticky note. The note is called main, and it holds one name, d6aad6e. That note is the whole branch.",
-                  Succession(Wait(4.0), AnimationGroup(FadeIn(note, shift=LEFT * 0.3), GrowArrow(nlink.copy()))), run_time=6.0)
+                  Succession(Wait(4.0), AnimationGroup(FadeIn(note, shift=LEFT * 0.3), GrowArrow(nl0))), run_time=6.0)
+        self.remove(nl0)
         self.add(nlink)
         head = chip("HEAD", HEADC, 26, mono=True).move_to(np.array([HEAD_X, ROWS["d6aad6e"], 0]))
         hlink = always_redraw(lambda: Arrow(head.get_left(), note.get_right(), buff=0.08, stroke_width=3, color=HEADC, max_tip_length_to_length_ratio=0.3))
@@ -188,6 +190,7 @@ class D08StickyNote(VoiceScene):
         fix = M("$ git reset --hard 'HEAD@{1}'", 24, GREEN_M).move_to(rcmd2)
         self.beat("Or move main itself back to where it was one step ago, with git reset --hard 'HEAD@{1}'. HEAD@{1} means where HEAD was before the last move.",
                   FadeOut(VGroup(rescue, rlink)), ReplacementTransform(rcmd2, fix), run_time=2.0)
+        self.remove(rescue, rlink)
         out2 = M("HEAD is now at 6e176d6 Say that prices include VAT", 22, GREY_B).next_to(fix, DOWN, buff=0.18)
         self.beat("HEAD is now at 6e176d6. The note slides back up, and both photos are on the main line again.",
                   FadeIn(out2), Succession(Wait(1.6), pg.animate(run_time=1.6).shift(UP * (ROWS["6e176d6"] - ROWS["c711550"])), gone.animate(run_time=0.6).set_opacity(1)), run_time=5.0)
@@ -200,7 +203,7 @@ class D08StickyNote(VoiceScene):
         # ---------- 9. the limit: the desk
         nlink.clear_updaters(); hlink.clear_updaters(); here.clear_updaters()
         self.play(FadeOut(VGroup(main_pic, note, head, here, rule)), FadeOut(nlink), FadeOut(hlink), run_time=0.7)
-        desk, ds = place(None, DESK, "desk", "working tree", -3.2)
+        desk, ds = place(None, DESK, "desk", "working tree", -3.2, w=4.4)
         cab2, cs2 = place(None, CAB, "cabinet", "repository (.git)", 3.2)
         ph = VGroup(*[RoundedRectangle(corner_radius=0.06, width=1.0, height=0.75, stroke_color=PHOTO, stroke_width=2.5).set_fill("#151515", 1) for _ in range(3)])
         ph.arrange(RIGHT, buff=0.15).move_to(cab2[0])

@@ -1,11 +1,11 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:04.786
+00:00:02.700 --> 00:00:04.753
 Our helper has a new morning job.
 
 2
-00:00:04.786 --> 00:00:08.955
+00:00:04.753 --> 00:00:08.921
 Phone the supplier, and ask which of yesterday's orders went wrong.
 
 3
@@ -17,417 +17,417 @@ Most days, that takes a minute.
 Question out, answer back, done.
 
 5
-00:00:13.933 --> 00:00:18.100
+00:00:13.967 --> 00:00:18.133
 One morning, the supplier picks up, says nothing, and never hangs up.
 
 6
-00:00:18.267 --> 00:00:21.511
+00:00:18.333 --> 00:00:21.578
 The helper was told to call and wait for the answer.
 
 7
-00:00:21.511 --> 00:00:26.128
+00:00:21.578 --> 00:00:26.195
 So it stands there with the phone at its ear, until you come back at noon.
 
 8
-00:00:26.128 --> 00:00:26.752
+00:00:26.195 --> 00:00:26.819
 No report.
 
 9
-00:00:26.752 --> 00:00:28.000
+00:00:26.819 --> 00:00:28.067
 And no error either.
 
 10
-00:00:28.133 --> 00:00:31.422
+00:00:28.267 --> 00:00:31.556
 A call that never ends does not look like a failure.
 
 11
-00:00:31.422 --> 00:00:32.624
+00:00:31.556 --> 00:00:32.757
 It just looks slow.
 
 12
-00:00:32.624 --> 00:00:34.332
+00:00:32.757 --> 00:00:34.465
 So two questions for today.
 
 13
-00:00:34.332 --> 00:00:36.229
+00:00:34.465 --> 00:00:36.363
 How long should a script wait?
 
 14
-00:00:36.229 --> 00:00:39.708
+00:00:36.363 --> 00:00:39.841
 And how do you test the bad days, without the internet?
 
 15
-00:00:40.400 --> 00:00:47.570
+00:00:40.567 --> 00:00:47.737
 In computer terms, the supplier is a web service such as GitHub, where code and its automatic checks live.
 
 16
-00:00:47.570 --> 00:00:50.547
+00:00:47.737 --> 00:00:50.713
 It opens a door for programs, called an API.
 
 17
-00:00:50.733 --> 00:00:54.473
+00:00:50.933 --> 00:00:54.673
 The helper's question is a request, sent to a web address.
 
 18
-00:00:54.667 --> 00:01:03.847
+00:00:54.900 --> 00:01:04.080
 The answer comes back with a status code, like 200 for fine, or 404 for not found, and a body, often JSON text.
 
 19
-00:01:04.400 --> 00:01:08.311
+00:01:04.700 --> 00:01:08.611
 In Python, the requests library makes that call in one line.
 
 20
-00:01:08.467 --> 00:01:09.982
+00:01:08.833 --> 00:01:10.349
 Now the silent morning.
 
 21
-00:01:09.982 --> 00:01:13.805
+00:01:10.349 --> 00:01:14.172
 The server accepts the connection, and then never answers.
 
 22
-00:01:13.805 --> 00:01:15.716
+00:01:14.172 --> 00:01:16.083
 How long does this line wait?
 
 23
-00:01:15.716 --> 00:01:16.771
+00:01:16.083 --> 00:01:17.137
 Pause and guess.
 
 24
-00:01:18.933 --> 00:01:19.516
+00:01:19.367 --> 00:01:19.949
 Forever.
 
 25
-00:01:19.516 --> 00:01:21.846
+00:01:19.949 --> 00:01:22.279
 requests has no default timeout.
 
 26
-00:01:21.846 --> 00:01:25.268
+00:01:22.279 --> 00:01:25.701
 As long as the connection stays open, it waits.
 
 27
-00:01:25.467 --> 00:01:30.487
+00:01:25.933 --> 00:01:30.953
 It is the most patient library you will ever meet, and that is exactly the problem.
 
 28
-00:01:30.667 --> 00:01:32.606
+00:01:31.167 --> 00:01:33.106
 So we always pass a timeout.
 
 29
-00:01:32.606 --> 00:01:39.811
+00:01:33.106 --> 00:01:40.311
 This one waits up to 3.05 seconds to connect, then up to 10 seconds of silence while the answer arrives.
 
 30
-00:01:40.000 --> 00:01:43.460
+00:01:40.533 --> 00:01:43.993
 After that, the helper hangs up and reports an error.
 
 31
-00:01:43.460 --> 00:01:45.027
+00:01:43.993 --> 00:01:45.560
 Loud, early, and honest.
 
 32
-00:01:45.200 --> 00:01:46.397
+00:01:45.767 --> 00:01:46.964
 Here is the rule.
 
 33
-00:01:46.397 --> 00:01:50.201
+00:01:46.964 --> 00:01:50.767
 A call without a timeout is a promise to wait forever.
 
 34
-00:01:50.201 --> 00:01:51.257
+00:01:50.767 --> 00:01:51.824
 Always set one.
 
 35
-00:01:52.000 --> 00:01:53.515
+00:01:52.633 --> 00:01:54.148
 Next, the bad answers.
 
 36
-00:01:53.515 --> 00:01:57.784
+00:01:54.148 --> 00:01:58.417
 You might think: easy, if anything goes wrong, just call back.
 
 37
-00:01:57.784 --> 00:01:59.849
+00:01:58.417 --> 00:02:00.483
 Retry everything, three times.
 
 38
-00:02:00.000 --> 00:02:02.783
+00:02:00.700 --> 00:02:03.483
 Let's be fair and try it on three bad days.
 
 39
-00:02:02.783 --> 00:02:03.884
+00:02:03.483 --> 00:02:04.584
 The line is busy.
 
 40
-00:02:03.884 --> 00:02:05.955
+00:02:04.584 --> 00:02:06.655
 The supplier says no such order.
 
 41
-00:02:05.955 --> 00:02:09.968
+00:02:06.655 --> 00:02:10.668
 Or your key card, the token that proves who you are, is wrong.
 
 42
-00:02:10.133 --> 00:02:10.858
+00:02:10.900 --> 00:02:11.625
 Busy line?
 
 43
-00:02:10.858 --> 00:02:13.394
+00:02:11.625 --> 00:02:14.161
 Calling back later can really help.
 
 44
-00:02:13.394 --> 00:02:15.423
+00:02:14.161 --> 00:02:16.189
 Next time, someone picks up.
 
 45
-00:02:15.600 --> 00:02:16.597
+00:02:16.400 --> 00:02:17.397
 No such order?
 
 46
-00:02:16.597 --> 00:02:19.732
+00:02:17.397 --> 00:02:20.532
 Call back, and you hear no such order again.
 
 47
-00:02:19.732 --> 00:02:20.444
+00:02:20.532 --> 00:02:21.244
 And again.
 
 48
-00:02:20.444 --> 00:02:22.368
+00:02:21.244 --> 00:02:23.168
 The answer will not change.
 
 49
-00:02:22.533 --> 00:02:24.055
+00:02:23.400 --> 00:02:24.922
 Same for a bad key card.
 
 50
-00:02:24.055 --> 00:02:28.051
+00:02:24.922 --> 00:02:28.917
 The supplier will not suddenly like your card on the third try.
 
 51
-00:02:28.200 --> 00:02:33.637
+00:02:29.133 --> 00:02:34.570
 So the lab retries only when asking again can help.
 
 52
-00:02:33.637 --> 00:02:36.089
+00:02:34.570 --> 00:02:37.022
 429, too many requests.
 
 53
-00:02:36.089 --> 00:02:38.541
+00:02:37.022 --> 00:02:39.474
 A 500, 502, 503 or 504.
 
 54
-00:02:38.541 --> 00:02:41.099
+00:02:39.474 --> 00:02:42.032
 Or a dropped connection.
 
 55
-00:02:41.099 --> 00:02:44.191
+00:02:42.032 --> 00:02:45.124
 Never a 401, and never a 404.
 
 56
-00:02:44.333 --> 00:02:47.122
+00:02:45.333 --> 00:02:48.122
 And only for GET, the method for reading.
 
 57
-00:02:47.122 --> 00:02:48.958
+00:02:48.122 --> 00:02:49.958
 A repeated GET is harmless.
 
 58
-00:02:48.958 --> 00:02:51.543
+00:02:49.958 --> 00:02:52.543
 A repeated POST may start two deploys.
 
 59
-00:02:52.267 --> 00:02:58.217
+00:02:53.267 --> 00:02:59.217
 If the line stays busy, the helper waits a little longer each time, so the server can recover.
 
 60
-00:02:58.217 --> 00:03:02.648
+00:02:59.217 --> 00:03:03.648
 With a backoff factor of 1, that is zero, then two, then four seconds.
 
 61
-00:03:03.333 --> 00:03:04.311
+00:03:04.367 --> 00:03:05.344
 So far so good.
 
 62
-00:03:04.311 --> 00:03:06.526
+00:03:05.344 --> 00:03:07.560
 But how do you test the busy line?
 
 63
-00:03:06.526 --> 00:03:11.609
+00:03:07.560 --> 00:03:12.643
 You cannot ask GitHub to be busy on Tuesday at ten so the helper can practise.
 
 64
-00:03:11.800 --> 00:03:20.041
+00:03:12.867 --> 00:03:21.108
 And tests that call the real service are slow, they fail now and then for reasons outside your code, and they need secrets in CI.
 
 65
-00:03:20.600 --> 00:03:22.594
+00:03:21.733 --> 00:03:23.728
 So, a friend plays the supplier.
 
 66
-00:03:22.594 --> 00:03:26.459
+00:03:23.728 --> 00:03:27.592
 The friend answers the phone and says whatever you wrote down.
 
 67
-00:03:26.600 --> 00:03:28.291
+00:03:27.800 --> 00:03:29.491
 Notice what did not change.
 
 68
-00:03:28.291 --> 00:03:30.921
+00:03:29.491 --> 00:03:32.121
 The helper and its checklist are the same.
 
 69
-00:03:30.921 --> 00:03:33.425
+00:03:32.121 --> 00:03:34.625
 Only the far end of the line is pretend.
 
 70
-00:03:33.600 --> 00:03:36.968
+00:03:34.833 --> 00:03:38.202
 In Python, that friend is a library called responses.
 
 71
-00:03:36.968 --> 00:03:40.845
+00:03:38.202 --> 00:03:42.079
 It steps in exactly where requests hands data to the network.
 
 72
-00:03:41.000 --> 00:03:44.402
+00:03:42.300 --> 00:03:45.702
 The test writes the answers down in order.
 
 73
-00:03:44.402 --> 00:03:46.347
+00:03:45.702 --> 00:03:47.647
 A 502 first, then a 200.
 
 74
-00:03:46.533 --> 00:03:49.428
+00:03:47.867 --> 00:03:50.761
 Now we run the real code against the friend.
 
 75
-00:03:49.428 --> 00:03:50.941
+00:03:50.761 --> 00:03:52.274
 What will the test see?
 
 76
-00:03:50.941 --> 00:03:51.993
+00:03:52.274 --> 00:03:53.327
 Pause and guess.
 
 77
-00:03:54.133 --> 00:03:55.502
+00:03:55.533 --> 00:03:56.902
 First call: 502.
 
 78
-00:03:55.502 --> 00:03:58.753
+00:03:56.902 --> 00:04:00.153
 The line is busy, so Retry calls back.
 
 79
-00:03:58.753 --> 00:04:00.208
+00:04:00.153 --> 00:04:01.608
 Second call: 200.
 
 80
-00:04:00.208 --> 00:04:04.315
+00:04:01.608 --> 00:04:05.715
 The run passes, and that proves the retry works.
 
 81
-00:04:04.467 --> 00:04:09.401
+00:04:05.933 --> 00:04:10.868
 The test passes backoff=0, so it does not even sleep between the calls.
 
 82
-00:04:09.600 --> 00:04:15.024
+00:04:11.100 --> 00:04:16.524
 And if the helper dials a number you never wrote down, the friend raises ConnectionError.
 
 83
-00:04:15.024 --> 00:04:18.253
+00:04:16.524 --> 00:04:19.753
 So a test cannot reach the real internet by accident.
 
 84
-00:04:18.800 --> 00:04:20.921
+00:04:20.367 --> 00:04:22.488
 A stand-in like this has a name.
 
 85
-00:04:20.921 --> 00:04:22.247
+00:04:22.488 --> 00:04:23.813
 It is called a mock.
 
 86
-00:04:22.247 --> 00:04:28.676
+00:04:23.813 --> 00:04:30.243
 The lab's eight GitHub tests use one, and they run in about a tenth of a second, with no network.
 
 87
-00:04:29.267 --> 00:04:31.632
+00:04:30.867 --> 00:04:33.232
 Amazon's cloud gets a friend too.
 
 88
-00:04:31.632 --> 00:04:42.955
+00:04:33.232 --> 00:04:44.555
 Inside a test, moto catches each request just before it would be sent, and answers from a fake AWS that lives only in memory, and starts empty for every test.
 
 89
-00:04:43.133 --> 00:04:45.218
+00:04:44.767 --> 00:04:46.852
 But a friend is not the supplier.
 
 90
-00:04:45.218 --> 00:04:50.589
+00:04:46.852 --> 00:04:52.222
 moto does not check permissions, the rules for who may do what, unless you ask it to.
 
 91
-00:04:50.589 --> 00:04:54.759
+00:04:52.222 --> 00:04:56.392
 So a test can pass while the real account would say access denied.
 
 92
-00:04:54.933 --> 00:04:56.564
+00:04:56.600 --> 00:04:58.231
 So here is the guardrail.
 
 93
-00:04:56.564 --> 00:04:59.631
+00:04:58.231 --> 00:05:01.298
 A fake proves your logic, not your permissions.
 
 94
-00:04:59.631 --> 00:05:03.807
+00:05:01.298 --> 00:05:05.473
 Run a new check once against a real account before you trust it.
 
 95
-00:05:04.000 --> 00:05:06.143
+00:05:05.700 --> 00:05:07.843
 One more rule from the moto docs.
 
 96
-00:05:06.143 --> 00:05:09.000
+00:05:07.843 --> 00:05:10.700
 Start the mock before you create any client.
 
 97
-00:05:09.000 --> 00:05:11.337
+00:05:10.700 --> 00:05:13.037
 A client made earlier is not mocked.
 
 98
-00:05:12.067 --> 00:05:13.905
+00:05:13.767 --> 00:05:15.605
 So, the helper's new habits.
 
 99
-00:05:13.905 --> 00:05:14.955
+00:05:15.605 --> 00:05:16.655
 Hang up in time.
 
 100
-00:05:14.955 --> 00:05:17.056
+00:05:16.655 --> 00:05:18.756
 Call back only when it can help.
 
 101
-00:05:17.056 --> 00:05:20.797
+00:05:18.756 --> 00:05:22.497
 And rehearse with a friend, then try the real thing once.
 
 102
-00:05:21.333 --> 00:05:23.341
+00:05:23.100 --> 00:05:25.108
 Quick check before you go.
 
 103
-00:05:23.341 --> 00:05:24.885
+00:05:25.108 --> 00:05:26.652
 The answer is a 401.
 
 104
-00:05:24.885 --> 00:05:26.430
+00:05:26.652 --> 00:05:28.197
 Your token is wrong.
 
 105
-00:05:26.430 --> 00:05:28.592
+00:05:28.197 --> 00:05:30.359
 Should the helper call back?
 
 106
-00:05:30.733 --> 00:05:30.986
+00:05:32.567 --> 00:05:32.819
 No.
 
 107
-00:05:30.986 --> 00:05:33.256
+00:05:32.819 --> 00:05:35.089
 The answer will not change.
 
 108
-00:05:33.256 --> 00:05:35.105
+00:05:35.089 --> 00:05:36.939
 Fix the token instead.

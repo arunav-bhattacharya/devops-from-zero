@@ -9,5 +9,16 @@
    "poster_at": 142.0,
    "replaces": "d55-inverted-index"
   }
+ ],
+ "d56": [
+  {
+   "slug": "d56-node-clerks",
+   "title": "One log collector per node, and a stamp on every line: the DaemonSet and the Kubernetes filter",
+   "after": 1,
+   "file": "p14/d56_clerks.py",
+   "scene": "D56Clerks",
+   "poster_at": 290.0,
+   "replaces": "d56-efk-node"
+  }
  ]
 }

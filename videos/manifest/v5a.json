@@ -1,0 +1,13 @@
+{
+ "d01": [
+  {
+   "slug": "d01-road",
+   "title": "One change down the road: where each step catches its own mistake",
+   "after": 1,
+   "file": "p0/d01_road.py",
+   "scene": "D01Road",
+   "poster_at": 313.0,
+   "replaces": "d01-map"
+  }
+ ]
+}

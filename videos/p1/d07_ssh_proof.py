@@ -150,6 +150,7 @@ class D07SshProof(VoiceScene):
                   FadeIn(tg, shift=UP * 0.15), run_time=1.6)
         self.beat("A padlock can't open anything. It can only check the key that opens it. A public key works the same way. It can check, but it can never log in.",
                   Succession(Wiggle(thief, run_time=1.5), Wait(2.7), FadeOut(tg, run_time=0.8)), run_time=5.0)
+        self.remove(tg, thief, thief_l)
 
         # ---------- 4. the obvious fix, broken on purpose
         self.play(FadeOut(gen), run_time=0.4)
@@ -238,7 +239,7 @@ class D07SshProof(VoiceScene):
                   Succession(Wait(3.4), Indicate(stored[1], color=GREEN_M), Create(ok1)), run_time=5.2)
         self.play(FadeOut(VGroup(fp2, ok1)), run_time=0.4)
         bad = pchip("SHA256:Zp1x...7Hc0", RED_M).move_to(np.array([RX, 1.0, 0]))
-        x2 = tick(False, 0.3).move_to(np.array([-1.3, WIRE_Y + 0.75, 0]))
+        x2 = tick(False, 0.3).move_to(np.array([-1.85, WIRE_Y + 0.75, 0]))
         refuse = T("ssh refuses to connect", 28, RED_M).move_to(UP * 2.95)
         self.beat("If that fingerprint ever changes, ssh refuses to connect, because someone may be pretending to be your server.",
                   Succession(FadeIn(bad, shift=DOWN * 0.1, run_time=0.5), Wait(0.1), bad.animate(run_time=1.4).move_to(np.array([0.4, WIRE_Y + 0.75, 0])), Create(x2), FadeIn(refuse), Indicate(stored[1], color=YELLOW_M)),

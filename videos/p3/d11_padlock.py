@@ -137,6 +137,7 @@ class D11Padlock(VoiceScene):
         self.beat("And it sends a signature that only the matching private key can make. That's the same proof your SSH key gave in Day 7.",
                   Succession(FadeIn(sig, run_time=0.5), Wait(1.5), sig.animate(run_time=2.4).move_to(LAP + DOWN * 1.5)), run_time=5.0)
         self.play(FadeOut(VGroup(sig, fake)), run_time=0.5)
+        self.remove(sig, fake)
 
         # ---------- 6. the chain up to a root you already trust
         world = VGroup(lap, srv, hops, links)

@@ -66,7 +66,7 @@ class D67PavedPath(VoiceScene):
         # ---------- 2. what one app needs, times forty
         need = VGroup(*[chip(t, TEAL_M, 22) for t in ("Dockerfile", "2 workflows, pinned", "Kubernetes YAML", "Argo CD Application",
                                                        "ServiceMonitor", "dashboard", "log shipping", "tracing", "policies", "secrets")])
-        need.arrange_in_grid(rows=5, cols=2, buff=(0.4, 0.25)).move_to([-3.4, 0.0, 0])
+        need.arrange_in_grid(rows=5, cols=2, buff=(0.4, 0.25)).move_to([-3.25, 0.0, 0])
         nl = T("hello-devops needs:", 28, TEAL_M).next_to(need, UP, buff=0.3)
         self.beat("List what hello-devops needs by now. A Dockerfile and workflows, Kubernetes YAML and Argo CD, metrics, dashboards, logs, tracing, policies and secrets.",
                   FadeIn(nl), LaggedStart(*[FadeIn(n, shift=UP * 0.1) for n in need], lag_ratio=0.35), run_time=9.0)
@@ -84,14 +84,14 @@ class D67PavedPath(VoiceScene):
         mand[1].move_to(mand[0])
         self.beat("The tempting fix is the sign: a mandatory standard. Teams use it because a manager said so, and look for ways around it.",
                   FadeIn(mand, shift=UP * 0.1), run_time=2.0)
-        portal = box("a shiny portal", BLUE_M, w=3.4, size=26).move_to([-3.4, -2.6, 0])
+        portal = box("a shiny portal", BLUE_M, w=3.4, size=26).move_to([-3.25, -0.6, 0])
         self.beat("Or buy a developer portal, a website listing every service. Picture one that, six months later, few teams use. Pause and guess: why?",
-                  FadeIn(portal), run_time=2.4)
+                  FadeOut(need), FadeOut(nl), Succession(Wait(0.6), FadeIn(portal)), run_time=2.4)
         self.wait(2.0)
-        empty = T("little real self-service behind it", 24, BLUE_M).next_to(portal, UP, buff=0.2)
+        empty = T("little real self-service behind it", 24, BLUE_M).next_to(portal, DOWN, buff=0.3)
         self.beat("Usually because there was little real self-service behind it. A beautiful map of paths that don't exist. Nobody walks a map.",
                   FadeIn(empty), run_time=2.0)
-        self.play(FadeOut(VGroup(need, nl, teams, tl, mand, portal, empty)), run_time=0.6)
+        self.play(FadeOut(VGroup(teams, tl, mand, portal, empty)), run_time=0.6)
 
         # ---------- 3. name it: platform engineering and the golden path
         pe = T("platform engineering", 34, GOLD_M).move_to([0, 2.8, 0])
@@ -102,7 +102,7 @@ class D67PavedPath(VoiceScene):
         ss = T("self-service: get it yourself, now", 26, GREEN_M).move_to([3.0, 0.2, 0])
         self.beat("Self-service means you get what you need yourself, at once. No ticket, no waiting a week for another team.",
                   FadeIn(tick_), Succession(Wait(1.6), AnimationGroup(FadeIn(ss), tick_.animate.set_opacity(0.3))), run_time=3.0)
-        gp = box("golden path: \"create a new service\"", YELLOW_M, w=7.2, size=28).move_to([0, -1.3, 0])
+        gp = box("golden path: \"create a new service\"", YELLOW_M, w=8.0, size=28).move_to([0, -1.3, 0])
         gpp = VGroup(chip("compliant: security built in", YELLOW_M, 22), chip("tested: kept working", YELLOW_M, 22)).arrange(RIGHT, buff=0.5).next_to(gp, DOWN, buff=0.35)
         self.beat("Its main product is the golden path, a ready-made way to do a common job, like create a new service. Two promises: compliant, with security built in, and tested, kept working.",
                   FadeIn(gp), Succession(Wait(5.0), LaggedStart(*[FadeIn(g) for g in gpp], lag_ratio=0.6)), run_time=8.0)
@@ -117,7 +117,7 @@ class D67PavedPath(VoiceScene):
                   FadeIn(t1[0]), FadeIn(t1[1][0]), Succession(Wait(2.6), AnimationGroup(FadeIn(t1[1][1]), FadeIn(t1[1][2]))), run_time=5.6)
         t2 = term([("$ gh repo create <your-github-user>/payments-api --template ... --clone", GREY_B),
                    ("$ grep -rl hello-devops ... | xargs sed -i '' 's/hello-devops/payments-api/g'", GREY_B),
-                   ("$ grep -rl hello-devops --exclude-dir=.git . | wc -l", GREY_B), ("0", GREEN_M)], w=12.6).move_to([0, 0.0, 0])
+                   ("$ grep -rl hello-devops --exclude-dir=.git . | wc -l", GREY_B), ("0", GREEN_M)], w=13.0).move_to([0, 0.0, 0])
         self.beat("Now play the new team. Create payments-api from the template, replace the old name everywhere, and check none is left. Zero.",
                   FadeIn(t2[0]), LaggedStart(*[FadeIn(l) for l in t2[1]], lag_ratio=0.5), run_time=4.0)
         self.beat("Run the same checks as the original. Pause and guess: all green?", run_time=None)
@@ -143,7 +143,7 @@ class D67PavedPath(VoiceScene):
         NX, NW, NH = -4.4, 8.8, 1.0
         nodeb = Rectangle(width=NW, height=NH, stroke_color=WHITE, stroke_width=3).move_to([NX + NW / 2, -0.9, 0])
         nl2 = T("one node: its full price", 24, GREY_B).next_to(nodeb, UP, buff=0.15).align_to(nodeb, LEFT)
-        parts = (("team: web", 0.35, BLUE_M), ("team: data", 0.25, PURPLE_M), ("team: pay", 0.15, GOLD_M))
+        parts = (("team: web", 0.30, BLUE_M), ("team: data", 0.25, PURPLE_M), ("team: pay", 0.20, GOLD_M))
         segs = VGroup(); x = NX
         for lab, f, c in parts:
             r = Rectangle(width=NW * f - 0.04, height=NH - 0.1, stroke_width=0).set_fill(tint(c, 0.55), 1).move_to([x + NW * f / 2, -0.9, 0])

@@ -1,0 +1,13 @@
+{
+ "d38": [
+  {
+   "slug": "d38-wish-loop",
+   "title": "Who starts it again at 3 a.m.? A written wish and a loop that never goes home",
+   "after": 1,
+   "file": "p10/d38_wish_loop.py",
+   "scene": "D38WishLoop",
+   "poster_at": 200.0,
+   "replaces": "d38-reconcile"
+  }
+ ]
+}

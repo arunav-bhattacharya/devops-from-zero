@@ -68,15 +68,15 @@ class D48SignedCard(VoiceScene):
         # ---------------- 2. two environments from shared files
         CC = np.array([3.5, 0.3, 0])
         clu = frame(5.2, 5.0, PURPLE_M, CC, fill=0.04)
-        clu_t = T("cluster", 26, PURPLE_M).move_to(clu.get_top() + DOWN * 0.38)
+        clu_t = T("cluster", 26, PURPLE_M).next_to(clu, UP, buff=0.12)
         dev = frame(4.4, 2.0, BLUE_M, CC + UP * 0.95, fill=0.10, sw=2.5)
         dev_t = M("hello-dev", 22, BLUE_M).move_to(dev.get_corner(UL) + RIGHT * 0.85 + DOWN * 0.3)
         prod = frame(4.4, 2.0, GOLD_M, CC + DOWN * 1.35, fill=0.10, sw=2.5)
         prod_t = M("hello-prod", 22, GOLD_M).move_to(prod.get_corner(UL) + RIGHT * 0.95 + DOWN * 0.3)
         dpods = VGroup(pod(BLUE_M)).move_to(dev.get_center() + DOWN * 0.25 + LEFT * 1.2)
         dsay = T("Hello from dev!", 24, BLUE_M).next_to(dpods, RIGHT, buff=0.4)
-        ppods = VGroup(*[pod(GOLD_M) for _ in range(4)]).arrange(RIGHT, buff=0.25).move_to(prod.get_center() + DOWN * 0.25 + LEFT * 0.6)
-        pmem = T("more memory", 22, GOLD_M).next_to(ppods, RIGHT, buff=0.3)
+        ppods = VGroup(*[pod(GOLD_M) for _ in range(4)]).arrange(RIGHT, buff=0.25).move_to(prod.get_center() + DOWN * 0.25 + LEFT * 0.85)
+        pmem = T("more memory", 22, GOLD_M).next_to(ppods, RIGHT, buff=0.25)
         self.beat("Software teams keep the same pair of rooms. Each running copy of the app, with one purpose, is called an environment.",
                   Create(clu), Write(clu_t), run_time=1.6)
         self.beat("Dev is the test kitchen, where new versions land first. In the lab it runs one copy, and answers Hello from dev.",
@@ -85,7 +85,7 @@ class D48SignedCard(VoiceScene):
                   Create(prod), Write(prod_t), LaggedStart(*[GrowFromCenter(p) for p in ppods], lag_ratio=0.15), FadeIn(pmem), run_time=2.0)
         GC = np.array([-3.7, 0.3, 0])
         git = frame(5.0, 5.0, TEAL_M, GC, fill=0.05)
-        git_t = T("git repo (the board)", 26, TEAL_M).move_to(git.get_top() + DOWN * 0.38)
+        git_t = T("git repo (the board)", 26, TEAL_M).next_to(git, UP, buff=0.12)
         base = mbox("k8s/  shared files", TEAL_M, size=22, w=3.6, h=0.7).move_to(GC + UP * 1.35)
         od = mbox("overlays/dev", BLUE_M, size=22, w=3.6, h=0.7).move_to(GC + DOWN * 0.05)
         op = mbox("overlays/prod", GOLD_M, size=22, w=3.6, h=0.7).move_to(GC + DOWN * 1.35)
@@ -174,7 +174,7 @@ class D48SignedCard(VoiceScene):
         sign = lchip("reviewed, merged: prod to 1.2.0", GREEN_M, 22).move_to(pr2)
         ptag2 = M('newTag: "1.2.0"', 22, GOLD_M).move_to(ptag)
         self.beat("Step four. A second pull request sets prod to the same 1.2.0. Someone reviews and merges it: the head chef's signature on the card.",
-                  FadeOut(pr1), FadeIn(pr2), Succession(Wait(1.0), AnimationGroup(ReplacementTransform(ptag, ptag2), ReplacementTransform(pr2, sign))), run_time=3.4)
+                  Succession(AnimationGroup(FadeOut(pr1), FadeIn(pr2)), Wait(1.0), AnimationGroup(ReplacementTransform(ptag, ptag2), ReplacementTransform(pr2, sign))), run_time=3.4)
         ptag = ptag2
         self.beat("Argo CD sees the change, and deploys prod.",
                   travel(ap, GOLD_M, 0.9), LaggedStart(*[p.animate.set_fill(dark(GREEN_M, 0.4)) for p in ppods], lag_ratio=0.2), run_time=1.8)
@@ -218,22 +218,22 @@ class D48SignedCard(VoiceScene):
         self.play(FadeOut(VGroup(clu, clu_t, dev, dev_t, prod, prod_t, dpods, dsay, ppods, pmem, ad, ap, good)), run_time=0.6)
 
         gitg = VGroup(git, git_t, base, od, op, dtag, ptag)
-        self.play(gitg.animate.scale(0.8).move_to([-4.3, 0.4, 0]), run_time=0.6)
+        self.play(FadeOut(gitg), run_time=0.6)
 
         # ---------------- 8. guardrails
         g = VGroup(T("prod moves only by a reviewed pull request", 28),
                    T("never latest: a version, or better, a digest", 28),
                    T("Image Updater may write dev's tags; it commits with no review", 28),
                    T("no password on the board: only locked secrets, or pointers", 28)).arrange(DOWN, aligned_edge=LEFT, buff=0.32)
-        g.move_to([1.5, 0.3, 0]); fit(g, 7.6)
-        gt = T("Guardrails", 30, GOLD_M).next_to(g, UP, buff=0.4).align_to(g, LEFT)
+        g.move_to([0, -0.2, 0]); fit(g, 12.4)
+        gt = T("Guardrails", 32, GOLD_M).next_to(g, UP, buff=0.45).align_to(g, LEFT)
         self.beat("A few guardrails. Prod moves only by a reviewed pull request.", Write(gt), FadeIn(g[0], shift=RIGHT * 0.1), run_time=1.6)
         self.beat("Never latest. Use a version, or better, a digest.", FadeIn(g[1], shift=RIGHT * 0.1), run_time=1.2)
         self.beat("An add-on, Argo CD Image Updater, can write new tags for you, but it commits with no signature. My advice: dev at most, and keep prod on pull requests.",
                   FadeIn(g[2], shift=RIGHT * 0.1), run_time=1.6)
         self.beat("And nobody writes the safe's code on the board. A password in git is no longer a secret, so commit only locked secrets, or pointers to them.",
                   FadeIn(g[3], shift=RIGHT * 0.1), run_time=1.6)
-        self.play(FadeOut(VGroup(g, gt, gitg)), run_time=0.6)
+        self.play(FadeOut(VGroup(g, gt)), run_time=0.6)
 
         # ---------------- 9. moral, recap, check
         moral = T("Build once. Move the same image, with a signed card.", 36, YELLOW_M).move_to(UP * 2.4)

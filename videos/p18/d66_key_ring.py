@@ -100,7 +100,7 @@ class D66KeyRing(VoiceScene):
         a_hk = Arrow(host.get_right() + UP * 0.15, kapi.get_left() + UP * 0.15, buff=0.12, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.06)
         a_kh = Arrow(kapi.get_left() + DOWN * 0.15, host.get_right() + DOWN * 0.15, buff=0.12, stroke_width=3, color=GREEN_M, max_tip_length_to_length_ratio=0.06)
         appr = chip("approve?", GREEN_M, 22).next_to(host, UP, buff=0.15)
-        cred = chip("with your credentials", GOLD_M, 22).next_to(a_hk, DOWN, buff=0.2).shift(DOWN * 0.45)
+        cred = chip("your credentials", GOLD_M, 22).next_to(a_hk, UP, buff=0.15)
         self.steps("The host spots the tool call, asks for your approval if needed, and runs the tool, with the credentials you configured.",
                    (0.8, FadeIn(appr, shift=DOWN * 0.1)), (1.0, Wait(1.0)), (0.8, GrowArrow(a_hk), FadeIn(cred)), (1.0, travel(a_hk, GOLD_M, 1.0)))
         res, b4, b5, b6 = block("result", GREEN_M, 3), block("call", BLUE_M, 4), block("result", GREEN_M, 5), block("answer", YELLOW_M, 6)
@@ -141,7 +141,7 @@ class D66KeyRing(VoiceScene):
         # ---------- 4. break the tempting model: prompts and flags
         model.move_to([-4.6, 2.3, 0]); host.move_to([0, 2.3, 0]); kapi.move_to([4.6, 2.3, 0])
         self.play(FadeIn(VGroup(model, host, kapi)), run_time=0.5)
-        pr = chip("system prompt: \"never change anything\"", BLUE_M, 24).move_to([-3.0, 0.9, 0])
+        pr = chip("system prompt: \"never change anything\"", BLUE_M, 24).move_to([-2.8, 0.9, 0])
         ro = chip("read_only = true", GOLD_M, 24, mono=True).move_to([3.0, 0.9, 0])
         self.beat("So how do we keep it safe? The tempting answer: tell the model never to change anything, and switch the server to read-only. Let's test both.",
                   FadeIn(pr), Succession(Wait(3.0), FadeIn(ro)), run_time=4.4)
@@ -198,10 +198,10 @@ class D66KeyRing(VoiceScene):
         tl2 = T("the lethal trifecta", 30, RED_M).move_to([0, -0.2, 0])
         self.beat("Simon Willison calls the dangerous mix the lethal trifecta: private data, untrusted content, and a way to send data out.",
                   Create(tri), LaggedStart(*[FadeIn(l) for l in legs], lag_ratio=0.6), Succession(Wait(3.4), FadeIn(tl2)), run_time=6.0)
-        ex = VGroup(T("May 2025, a GitHub MCP server demo:", 22, GREY_B), T("a public issue, private repos, a public pull request", 22, GREY_B)).arrange(DOWN, buff=0.1).move_to([0, -3.1, 0])
+        ex = VGroup(T("May 2025, a GitHub MCP server demo:", 22, GREY_B), T("a public issue, private repos, a public pull request", 22, GREY_B)).arrange(DOWN, buff=0.1).move_to([0, -3.0, 0])
         self.beat("In May 2025, Invariant Labs showed it: an order hidden in a public issue, a token that read private repos, and a public pull request.",
                   FadeIn(ex), run_time=2.4)
-        self.steps("Remove any one leg, and that attack stops. Usually the easiest leg to remove is the key.",
+        self.steps("Remove any one leg, and that attack stops. Here, a token that can't read private repos takes away the first leg.",
                    (1.6, legs[0].animate.set_opacity(0.2), tri.animate.set_stroke(opacity=0.3)), (1.0, Indicate(tl2, color=GREY_B)))
         self.play(FadeOut(VGroup(tri, legs, tl2, ex)), run_time=0.6)
 

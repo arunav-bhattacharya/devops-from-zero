@@ -1,0 +1,425 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.248
+Picture a busy Friday night in a restaurant.
+
+2
+00:00:05.248 --> 00:00:08.665
+The manager's clipboard says four waiters are on the floor.
+
+3
+00:00:08.900 --> 00:00:09.931
+And that's true.
+
+4
+00:00:09.931 --> 00:00:10.961
+But look closer.
+
+5
+00:00:10.961 --> 00:00:15.277
+One of them has stood frozen at the coffee machine for ten minutes.
+
+6
+00:00:15.517 --> 00:00:19.321
+Another can't take orders, because their card reader is broken.
+
+7
+00:00:19.567 --> 00:00:22.467
+The count is right, and guests are still waiting.
+
+8
+00:00:22.467 --> 00:00:25.191
+Being on the floor is not the same as working.
+
+9
+00:00:25.433 --> 00:00:27.704
+Now the same scene in Kubernetes.
+
+10
+00:00:27.704 --> 00:00:29.975
+It tells you your Pod is Running.
+
+11
+00:00:29.975 --> 00:00:31.214
+So your app works.
+
+12
+00:00:31.214 --> 00:00:31.627
+Right?
+
+13
+00:00:31.627 --> 00:00:33.829
+Let's see if that's really true.
+
+14
+00:00:34.067 --> 00:00:37.081
+Kubernetes already handles one kind of trouble.
+
+15
+00:00:37.081 --> 00:00:40.480
+When a container's process exits, it starts it again.
+
+16
+00:00:40.717 --> 00:00:42.675
+But our two waiters didn't crash.
+
+17
+00:00:42.675 --> 00:00:45.701
+From the outside, they look just like healthy ones.
+
+18
+00:00:45.950 --> 00:00:50.879
+Our lab app, hello-devops, keeps its visit count in Redis, a small database.
+
+19
+00:00:50.879 --> 00:00:53.019
+A stuck app is the frozen waiter.
+
+20
+00:00:53.019 --> 00:00:57.234
+An app that's up but can't reach Redis is the broken card reader.
+
+21
+00:00:57.483 --> 00:01:00.498
+Honestly, Running should have been called: has a pulse.
+
+22
+00:01:00.733 --> 00:01:03.004
+It only tells you the process exists.
+
+23
+00:01:03.004 --> 00:01:04.907
+That's the clipboard's mistake.
+
+24
+00:01:05.150 --> 00:01:11.834
+Wouldn't it be nice if the manager walked the floor, and actually asked each waiter a question, every so often?
+
+25
+00:01:13.683 --> 00:01:15.482
+Walk over, ask, listen.
+
+26
+00:01:17.533 --> 00:01:18.564
+Let's map that.
+
+27
+00:01:18.564 --> 00:01:22.686
+The manager is the kubelet, the helper program on each node.
+
+28
+00:01:22.686 --> 00:01:24.679
+The waiter is your container.
+
+29
+00:01:24.917 --> 00:01:28.097
+The question is a probe: a small check on a timer.
+
+30
+00:01:28.097 --> 00:01:32.930
+In the lab, the kubelet asks the container for a web address, like /healthz.
+
+31
+00:01:33.167 --> 00:01:38.978
+The answer is a status code, the number a web server sends back.
+
+32
+00:01:38.978 --> 00:01:40.885
+200 to 399 is a pass.
+
+33
+00:01:40.885 --> 00:01:43.064
+503 means not available.
+
+34
+00:01:43.900 --> 00:01:45.618
+One question isn't enough.
+
+35
+00:01:45.618 --> 00:01:49.716
+A good manager asks three, and each answer has its own action.
+
+36
+00:01:49.950 --> 00:01:54.309
+First, to a new waiter still tying an apron: have you finished starting?
+
+37
+00:01:54.550 --> 00:02:00.393
+Until it's yes, the other questions wait, so a slow start isn't mistaken for a stuck one.
+
+38
+00:02:00.393 --> 00:02:02.691
+If yes never comes, it's restarted.
+
+39
+00:02:02.933 --> 00:02:06.332
+Second, to everyone, every so often: are you stuck?
+
+40
+00:02:06.567 --> 00:02:11.331
+After enough no's in a row, the waiter goes home and a fresh one comes in.
+
+41
+00:02:11.331 --> 00:02:12.425
+That's a restart.
+
+42
+00:02:12.667 --> 00:02:15.148
+Third: can you take tables right now?
+
+43
+00:02:15.383 --> 00:02:18.607
+While it's no, no new tables go to that waiter.
+
+44
+00:02:18.607 --> 00:02:20.047
+But nobody goes home.
+
+45
+00:02:20.283 --> 00:02:24.919
+Now the names: the startup probe, the liveness probe, and the readiness probe.
+
+46
+00:02:25.167 --> 00:02:30.336
+Three questions, three actions: wait, restart, or stop sending visitors.
+
+47
+00:02:30.583 --> 00:02:33.088
+Our app has two addresses for this.
+
+48
+00:02:33.088 --> 00:02:36.309
+/healthz answers while the process can serve.
+
+49
+00:02:36.309 --> 00:02:40.459
+/readyz also checks Redis, and returns 503 when it's down.
+
+50
+00:02:41.900 --> 00:02:43.664
+How fast does each one act?
+
+51
+00:02:43.664 --> 00:02:47.453
+Multiply how often it checks by how many misses it allows.
+
+52
+00:02:47.453 --> 00:02:54.443
+The lab's startup probe checks every two seconds, and allows thirty failures: up to sixty seconds to start.
+
+53
+00:02:54.683 --> 00:02:55.352
+Your turn.
+
+54
+00:02:55.352 --> 00:03:00.167
+Liveness checks every ten seconds, and acts after three misses in a row.
+
+55
+00:03:00.167 --> 00:03:03.176
+How long does a stuck container keep its job?
+
+56
+00:03:03.176 --> 00:03:04.246
+Pause and guess.
+
+57
+00:03:06.483 --> 00:03:07.934
+About thirty seconds.
+
+58
+00:03:07.934 --> 00:03:10.422
+Miss, miss, miss, and it's replaced.
+
+59
+00:03:10.667 --> 00:03:14.582
+Readiness checks every five seconds, and acts after two misses.
+
+60
+00:03:14.582 --> 00:03:18.125
+So a Pod stops getting visitors within about ten seconds.
+
+61
+00:03:18.967 --> 00:03:20.287
+Now a tempting idea.
+
+62
+00:03:20.287 --> 00:03:23.259
+If checking is good, more checking is better.
+
+63
+00:03:23.259 --> 00:03:25.835
+So let's make /healthz check Redis too.
+
+64
+00:03:26.083 --> 00:03:28.650
+Liveness now asks about Redis as well.
+
+65
+00:03:28.650 --> 00:03:30.406
+Sounds responsible, right?
+
+66
+00:03:30.650 --> 00:03:33.558
+Picture Redis going down, for just one minute.
+
+67
+00:03:33.800 --> 00:03:37.765
+Every hello-devops Pod fails liveness at about the same time.
+
+68
+00:03:37.765 --> 00:03:40.171
+And the kubelet restarts all of them.
+
+69
+00:03:40.417 --> 00:03:42.242
+But restarts can't fix Redis.
+
+70
+00:03:42.242 --> 00:03:45.767
+And while they happen, no Pod can serve anything at all.
+
+71
+00:03:45.767 --> 00:03:48.159
+A small outage just became a full one.
+
+72
+00:03:48.400 --> 00:03:55.045
+It's the manager who hears the card network is down for the whole street, and sends every waiter home.
+
+73
+00:03:55.045 --> 00:03:55.502
+Well...
+
+74
+00:03:55.502 --> 00:03:57.977
+nobody's card reader is a problem now.
+
+75
+00:03:58.217 --> 00:04:02.586
+So the point is: a restart only fixes trouble inside the container.
+
+76
+00:04:02.586 --> 00:04:08.065
+The docs warn this can lead to cascading failures, one failure setting off the next.
+
+77
+00:04:08.800 --> 00:04:11.454
+Liveness asks about the container alone.
+
+78
+00:04:11.454 --> 00:04:13.379
+Leave the database out of it.
+
+79
+00:04:13.617 --> 00:04:19.085
+Checks on other services belong in readiness, because failing it only pauses visitors.
+
+80
+00:04:19.333 --> 00:04:21.556
+Let's try it the way the lab does.
+
+81
+00:04:21.556 --> 00:04:22.864
+Scale Redis to zero.
+
+82
+00:04:22.864 --> 00:04:27.375
+Pause and guess: what happens to READY, and what happens to RESTARTS?
+
+83
+00:04:29.617 --> 00:04:31.481
+READY drops to zero of one.
+
+84
+00:04:31.481 --> 00:04:33.276
+STATUS still says Running.
+
+85
+00:04:33.276 --> 00:04:35.141
+And RESTARTS stays at zero.
+
+86
+00:04:35.383 --> 00:04:37.475
+That quiet gap is the whole point.
+
+87
+00:04:37.475 --> 00:04:39.320
+The waiters stay on the floor.
+
+88
+00:04:39.320 --> 00:04:41.227
+They just don't get new tables.
+
+89
+00:04:41.467 --> 00:04:45.420
+The failed check marks the Pod not ready, and the Service skips it.
+
+90
+00:04:45.667 --> 00:04:50.304
+Scale Redis back to one, and the Pods become ready again, on their own.
+
+91
+00:04:50.304 --> 00:04:51.611
+Nobody touched them.
+
+92
+00:04:52.350 --> 00:04:53.515
+One honest limit.
+
+93
+00:04:53.515 --> 00:05:00.022
+If every Pod fails readiness at once, the Service has no ready Pods left, and users get errors.
+
+94
+00:05:00.267 --> 00:05:05.927
+So the lab's readiness probe isn't too strict: a two second timeout, and two failures.
+
+95
+00:05:06.767 --> 00:05:11.189
+The moral of the story: being present is not the same as working.
+
+96
+00:05:11.189 --> 00:05:12.142
+Startup waits.
+
+97
+00:05:12.142 --> 00:05:13.775
+Liveness sends you home.
+
+98
+00:05:13.775 --> 00:05:15.544
+Readiness steps you aside.
+
+99
+00:05:15.544 --> 00:05:18.469
+And liveness never asks about the database.
+
+100
+00:05:19.317 --> 00:05:21.321
+One quick check before you go.
+
+101
+00:05:21.321 --> 00:05:27.133
+An app needs ninety seconds to start, and liveness kills it at thirty, again and again.
+
+102
+00:05:27.133 --> 00:05:28.536
+Which probe fixes it?
+
+103
+00:05:28.536 --> 00:05:29.605
+Pause and think.
+
+104
+00:05:31.850 --> 00:05:35.195
+A startup probe that allows more than ninety seconds.
+
+105
+00:05:35.195 --> 00:05:38.288
+It holds liveness back until the app has started.
+
+106
+00:05:38.288 --> 00:05:39.550
+Thanks for watching.

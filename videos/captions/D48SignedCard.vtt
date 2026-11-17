@@ -1,0 +1,405 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.513
+Picture the restaurant from last time, now with a second room.
+
+2
+00:00:06.513 --> 00:00:09.744
+Next door, the owner has opened a small test kitchen.
+
+3
+00:00:09.933 --> 00:00:13.245
+New dishes are tried there on a few regulars first.
+
+4
+00:00:13.245 --> 00:00:15.323
+On Tuesday, a new soup is a hit.
+
+5
+00:00:15.467 --> 00:00:18.809
+On Friday, the main kitchen cooks it from memory.
+
+6
+00:00:18.809 --> 00:00:20.104
+A little more salt.
+
+7
+00:00:20.104 --> 00:00:21.332
+A different stock.
+
+8
+00:00:21.467 --> 00:00:23.927
+The regulars ask why it tastes wrong.
+
+9
+00:00:23.927 --> 00:00:26.719
+An easy trap: it feels like the same soup.
+
+10
+00:00:26.719 --> 00:00:28.847
+Same name, same pot, same cooks.
+
+11
+00:00:29.533 --> 00:00:30.966
+So here is our question.
+
+12
+00:00:30.966 --> 00:00:35.563
+How does a dish move from one room to the other, without changing on the way?
+
+13
+00:00:36.933 --> 00:00:39.564
+Software teams keep the same pair of rooms.
+
+14
+00:00:39.564 --> 00:00:44.029
+Each running copy of the app, with one purpose, is called an environment.
+
+15
+00:00:44.200 --> 00:00:47.875
+Dev is the test kitchen, where new versions land first.
+
+16
+00:00:47.875 --> 00:00:51.616
+In the lab it runs one copy, and answers Hello from dev.
+
+17
+00:00:51.800 --> 00:00:54.922
+Prod is the main room, the copy your users see.
+
+18
+00:00:54.922 --> 00:00:57.445
+It runs four copies, with more memory.
+
+19
+00:00:57.600 --> 00:00:59.749
+Both rooms run from one board.
+
+20
+00:00:59.749 --> 00:01:07.128
+Shared files sit in one folder, and each environment gets an overlay: a folder of small changes on top.
+
+21
+00:01:07.800 --> 00:01:10.646
+Each overlay also names the version to run.
+
+22
+00:01:10.646 --> 00:01:14.220
+An image is your app, packed with everything it needs.
+
+23
+00:01:14.220 --> 00:01:16.140
+Its tag is the version label.
+
+24
+00:01:16.333 --> 00:01:22.228
+Argo CD, the manager from last time, deploys each overlay to its own namespace.
+
+25
+00:01:22.933 --> 00:01:26.109
+Argo CD needs one Application per environment.
+
+26
+00:01:26.109 --> 00:01:29.354
+You could copy the file and change three lines.
+
+27
+00:01:29.354 --> 00:01:31.977
+That works, until someone forgets one.
+
+28
+00:01:32.133 --> 00:01:35.177
+An ApplicationSet writes those copies for you.
+
+29
+00:01:35.177 --> 00:01:39.080
+It has a template: an ordinary Application with gaps in it.
+
+30
+00:01:39.267 --> 00:01:41.185
+And a list of words for the gaps.
+
+31
+00:01:41.185 --> 00:01:44.848
+In the restaurant, a blank board, filled in once for each room.
+
+32
+00:01:45.000 --> 00:01:50.233
+Apply it, and two Applications appear: hello-devops-dev, and hello-devops-prod.
+
+33
+00:01:50.400 --> 00:01:55.292
+Delete the ApplicationSet, and its apps go too, with everything they deployed.
+
+34
+00:01:56.200 --> 00:01:58.071
+Now the real question.
+
+35
+00:01:58.071 --> 00:02:00.708
+Version 1.2.0 runs well in dev.
+
+36
+00:02:00.708 --> 00:02:03.004
+How do you move it to prod?
+
+37
+00:02:03.600 --> 00:02:04.570
+Four answers.
+
+38
+00:02:04.570 --> 00:02:06.584
+Rebuild the image for prod.
+
+39
+00:02:06.584 --> 00:02:08.076
+Change prod by hand.
+
+40
+00:02:08.076 --> 00:02:12.104
+Copy the tag into the prod folder with a pull request.
+
+41
+00:02:12.104 --> 00:02:13.148
+Or click Sync.
+
+42
+00:02:16.267 --> 00:02:17.860
+Let's be fair to each one.
+
+43
+00:02:17.860 --> 00:02:22.211
+A rebuild sounds harmless, but it can produce a slightly different app.
+
+44
+00:02:22.211 --> 00:02:23.988
+A new soup, with an old name.
+
+45
+00:02:24.133 --> 00:02:28.897
+A hand edit with kubectl skips the board, so Argo CD undoes it.
+
+46
+00:02:29.067 --> 00:02:31.890
+And Sync only applies what git already says.
+
+47
+00:02:31.890 --> 00:02:34.200
+Git still says the old tag for prod.
+
+48
+00:02:34.400 --> 00:02:36.271
+That leaves the pull request.
+
+49
+00:02:36.271 --> 00:02:38.851
+Promotion is a small text change in git.
+
+50
+00:02:39.600 --> 00:02:42.316
+Let's replay the whole journey, from the start.
+
+51
+00:02:42.467 --> 00:02:43.345
+Step one.
+
+52
+00:02:43.345 --> 00:02:48.709
+CI builds the image once, when you push the tag v1.2.0.
+
+53
+00:02:48.867 --> 00:02:49.680
+Step two.
+
+54
+00:02:49.680 --> 00:02:53.749
+A pull request sets the dev overlay to 1.2.0.
+
+55
+00:02:53.749 --> 00:02:57.185
+You merge it, and Argo CD deploys dev.
+
+56
+00:02:57.333 --> 00:02:58.101
+Step three.
+
+57
+00:02:58.101 --> 00:03:01.592
+You test dev, the way the regulars taste the soup.
+
+58
+00:03:01.733 --> 00:03:02.494
+Step four.
+
+59
+00:03:02.494 --> 00:03:06.297
+A second pull request sets prod to the same 1.2.0.
+
+60
+00:03:06.297 --> 00:03:11.545
+Someone reviews and merges it: the head chef's signature on the card.
+
+61
+00:03:11.733 --> 00:03:15.047
+Argo CD sees the change, and deploys prod.
+
+62
+00:03:15.200 --> 00:03:17.154
+Notice what never happened.
+
+63
+00:03:17.154 --> 00:03:19.180
+The image was never rebuilt.
+
+64
+00:03:19.180 --> 00:03:22.002
+Prod runs the exact bytes that dev ran.
+
+65
+00:03:22.002 --> 00:03:23.739
+Build once, deploy many.
+
+66
+00:03:23.933 --> 00:03:26.022
+And you get a clean undo for free.
+
+67
+00:03:26.022 --> 00:03:30.752
+Press Revert on the merged pull request, and a new one puts the old tag back.
+
+68
+00:03:31.267 --> 00:03:32.106
+So the rule.
+
+69
+00:03:32.106 --> 00:03:35.396
+A rebuilt image is a new soup with an old name.
+
+70
+00:03:35.396 --> 00:03:37.985
+Build once, and move that same image.
+
+71
+00:03:39.067 --> 00:03:42.735
+This only works if a tag always means the same image.
+
+72
+00:03:42.735 --> 00:03:43.981
+So let's break it.
+
+73
+00:03:43.981 --> 00:03:45.849
+Set prod to the tag latest.
+
+74
+00:03:46.000 --> 00:03:48.588
+On Monday, latest points at one image.
+
+75
+00:03:48.733 --> 00:03:51.044
+On Wednesday, it points at another.
+
+76
+00:03:51.044 --> 00:03:54.016
+Git did not change at all, but what runs did.
+
+77
+00:03:54.200 --> 00:03:57.532
+Ordering latest is like ordering the chef's surprise.
+
+78
+00:03:57.532 --> 00:03:59.293
+Lovely at a birthday dinner.
+
+79
+00:03:59.293 --> 00:04:01.431
+Not for the main room on a Friday.
+
+80
+00:04:01.600 --> 00:04:08.604
+So the point is: with latest, git no longer tells you what runs, and a revert cannot bring the old version back.
+
+81
+00:04:08.800 --> 00:04:10.849
+A version like 1.2.0 is good.
+
+82
+00:04:10.849 --> 00:04:19.117
+A digest is stronger: a fingerprint worked out from the image's contents, so nobody can move it to a different image.
+
+83
+00:04:20.733 --> 00:04:21.976
+A few guardrails.
+
+84
+00:04:21.976 --> 00:04:25.120
+Prod moves only by a reviewed pull request.
+
+85
+00:04:25.267 --> 00:04:26.310
+Never latest.
+
+86
+00:04:26.310 --> 00:04:29.120
+Use a version, or better, a digest.
+
+87
+00:04:29.267 --> 00:04:36.112
+An add-on, Argo CD Image Updater, can write new tags for you, but it commits with no signature.
+
+88
+00:04:36.112 --> 00:04:40.075
+My advice: dev at most, and keep prod on pull requests.
+
+89
+00:04:40.267 --> 00:04:43.315
+And nobody writes the safe's code on the board.
+
+90
+00:04:43.315 --> 00:04:49.283
+A password in git is no longer a secret, so commit only locked secrets, or pointers to them.
+
+91
+00:04:50.067 --> 00:04:51.742
+So the moral of the story.
+
+92
+00:04:51.742 --> 00:04:55.349
+Build once, and move the same image, with a signed card.
+
+93
+00:04:55.533 --> 00:04:58.441
+Dev is the test kitchen, prod the main room.
+
+94
+00:04:58.441 --> 00:05:00.819
+One blank board, filled in per room.
+
+95
+00:05:00.819 --> 00:05:02.802
+A dish moves as a signed card.
+
+96
+00:05:02.802 --> 00:05:06.568
+And a rebuild, or latest, is a new soup with an old name.
+
+97
+00:05:07.267 --> 00:05:08.301
+A quick check.
+
+98
+00:05:08.301 --> 00:05:13.102
+You add a third entry, env staging, to the ApplicationSet's list.
+
+99
+00:05:13.102 --> 00:05:14.284
+What do you get?
+
+100
+00:05:17.400 --> 00:05:20.814
+A third Application, written from the same template.
+
+101
+00:05:20.814 --> 00:05:23.835
+Nobody copied a file, so nobody forgot a line.

@@ -1,349 +1,349 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:05.153
+00:00:02.700 --> 00:00:05.119
 A Pod can hold more than one container.
 
 2
-00:00:05.153 --> 00:00:07.262
+00:00:05.119 --> 00:00:07.228
 So when it starts, who goes first?
 
 3
-00:00:07.262 --> 00:00:10.177
+00:00:07.228 --> 00:00:10.144
 And what happens if one of them never finishes?
 
 4
-00:00:10.333 --> 00:00:13.325
+00:00:10.367 --> 00:00:13.359
 Before we answer, picture a waiter with a tray.
 
 5
-00:00:13.325 --> 00:00:19.819
+00:00:13.359 --> 00:00:19.852
 The tray may hold a main dish and a side, but they always travel together, and land on the same table.
 
 6
-00:00:20.000 --> 00:00:21.357
+00:00:20.067 --> 00:00:21.424
 A Pod is that tray.
 
 7
-00:00:21.357 --> 00:00:26.285
+00:00:21.424 --> 00:00:26.352
 One or more containers, which Kubernetes places together on one node.
 
 8
-00:00:27.067 --> 00:00:28.611
+00:00:27.167 --> 00:00:28.711
 They share three things.
 
 9
-00:00:28.611 --> 00:00:32.085
+00:00:28.711 --> 00:00:32.185
 One IP address, so they reach each other on localhost.
 
 10
-00:00:32.085 --> 00:00:35.752
+00:00:32.185 --> 00:00:35.852
 Folders called volumes, that they can all read and write.
 
 11
-00:00:35.752 --> 00:00:40.448
+00:00:35.852 --> 00:00:40.548
 And one life: they start on the same node, and they are removed together.
 
 12
-00:00:40.600 --> 00:00:42.638
+00:00:40.767 --> 00:00:42.804
 Most Pods hold just one container.
 
 13
-00:00:42.638 --> 00:00:48.571
+00:00:42.804 --> 00:00:48.737
 But the tray matters for helpers that only work right next to the app, because they need its files.
 
 14
-00:00:49.467 --> 00:00:52.093
+00:00:49.667 --> 00:00:52.293
 Here is the example Pod from the lab.
 
 15
-00:00:52.093 --> 00:00:54.294
+00:00:52.293 --> 00:00:54.494
 Its app is nginx, a web server.
 
 16
-00:00:54.294 --> 00:00:58.767
+00:00:54.494 --> 00:00:58.967
 It serves one web page, and writes every visit into a log file.
 
 17
-00:00:58.933 --> 00:01:00.307
+00:00:59.200 --> 00:01:00.574
 It needs two helpers.
 
 18
-00:01:00.307 --> 00:01:05.149
+00:01:00.574 --> 00:01:05.416
 One writes the page into a shared folder called work, before nginx starts.
 
 19
-00:01:05.149 --> 00:01:09.599
+00:01:05.416 --> 00:01:09.865
 The other reads each new line of the log, from a folder called logs.
 
 20
-00:01:09.733 --> 00:01:15.748
+00:01:10.067 --> 00:01:16.082
 Now the trouble with the old way, where a helper was just a second, ordinary container.
 
 21
-00:01:15.748 --> 00:01:18.237
+00:01:16.082 --> 00:01:18.571
 Each dot is one log line from nginx.
 
 22
-00:01:18.400 --> 00:01:21.665
+00:01:18.800 --> 00:01:22.065
 A log shipper that started late missed the first lines.
 
 23
-00:01:21.665 --> 00:01:24.157
+00:01:22.065 --> 00:01:24.557
 One that stopped early lost the last ones.
 
 24
-00:01:24.157 --> 00:01:29.321
+00:01:24.557 --> 00:01:29.721
 Like a runner who shows up after the first plates went cold, and leaves before dessert.
 
 25
-00:01:30.067 --> 00:01:33.027
+00:01:30.533 --> 00:01:33.494
 A real kitchen has two kinds of helper for this.
 
 26
-00:01:33.027 --> 00:01:38.763
+00:01:33.494 --> 00:01:39.229
 Before the cook starts, a prep cook chops the onions and lays out the plates, then goes home.
 
 27
-00:01:38.933 --> 00:01:44.551
+00:01:39.433 --> 00:01:45.051
 A runner arrives early, stays all evening, and leaves only after the last dish is out.
 
 28
-00:01:44.733 --> 00:01:46.143
+00:01:45.267 --> 00:01:46.676
 Kubernetes has both.
 
 29
-00:01:46.143 --> 00:01:48.609
+00:01:46.676 --> 00:01:49.142
 The prep cook is an init container.
 
 30
-00:01:48.609 --> 00:01:50.300
+00:01:49.142 --> 00:01:50.833
 The runner is a sidecar.
 
 31
-00:01:51.067 --> 00:01:53.338
+00:01:51.633 --> 00:01:53.905
 First the rule for init containers.
 
 32
-00:01:53.338 --> 00:01:55.934
+00:01:53.905 --> 00:01:56.501
 They run first, one at a time, in order.
 
 33
-00:01:55.934 --> 00:02:01.256
+00:01:56.501 --> 00:02:01.823
 Each must exit with code 0, which means all went well, before the next one starts.
 
 34
-00:02:01.256 --> 00:02:03.723
+00:02:01.823 --> 00:02:04.289
 Only then do the app containers start.
 
 35
-00:02:04.400 --> 00:02:06.323
+00:02:05.000 --> 00:02:06.923
 Now look at the manifest.
 
 36
-00:02:06.323 --> 00:02:10.169
+00:02:06.923 --> 00:02:10.769
 Under initContainers: write-page, then log-tailer.
 
 37
-00:02:10.169 --> 00:02:12.015
+00:02:10.769 --> 00:02:12.615
 Under containers: nginx.
 
 38
-00:02:12.200 --> 00:02:15.184
+00:02:12.833 --> 00:02:15.818
 But a log reader follows the log forever.
 
 39
-00:02:15.184 --> 00:02:16.276
+00:02:15.818 --> 00:02:16.909
 It never exits.
 
 40
-00:02:16.276 --> 00:02:20.352
+00:02:16.909 --> 00:02:20.985
 By the rule we just learned, nginx waits for it to exit.
 
 41
-00:02:20.352 --> 00:02:22.317
+00:02:20.985 --> 00:02:22.951
 So does nginx wait forever?
 
 42
-00:02:25.000 --> 00:02:27.417
+00:02:25.667 --> 00:02:28.084
 If the rule were the whole story, yes.
 
 43
-00:02:27.417 --> 00:02:29.897
+00:02:28.084 --> 00:02:30.564
 Our dish would never leave the kitchen.
 
 44
-00:02:29.897 --> 00:02:32.060
+00:02:30.564 --> 00:02:32.727
 But log-tailer has one extra line.
 
 45
-00:02:32.733 --> 00:02:34.320
+00:02:33.433 --> 00:02:35.020
 restartPolicy: Always.
 
 46
-00:02:34.320 --> 00:02:38.357
+00:02:35.020 --> 00:02:39.057
 For an init container, that one line makes it a sidecar.
 
 47
-00:02:38.533 --> 00:02:41.265
+00:02:39.267 --> 00:02:41.998
 For a sidecar, Kubernetes does four things.
 
 48
-00:02:41.265 --> 00:02:43.996
+00:02:41.998 --> 00:02:44.730
 It starts it in init order, before the app.
 
 49
-00:02:43.996 --> 00:02:48.379
+00:02:44.730 --> 00:02:49.113
 It moves on as soon as it is running, without waiting for it to exit.
 
 50
-00:02:48.379 --> 00:02:50.221
+00:02:49.113 --> 00:02:50.955
 It restarts it if it crashes.
 
 51
-00:02:50.221 --> 00:02:53.969
+00:02:50.955 --> 00:02:54.703
 And it stops it only after the app containers have stopped.
 
 52
-00:02:55.200 --> 00:02:58.446
+00:02:56.033 --> 00:02:59.279
 Let us watch it start, the way the lesson does.
 
 53
-00:02:58.446 --> 00:03:01.760
+00:02:59.279 --> 00:03:02.594
 At first nothing runs, and STATUS says Init:0/2.
 
 54
-00:03:01.760 --> 00:03:04.799
+00:03:02.594 --> 00:03:05.632
 The first of two init containers is running.
 
 55
-00:03:04.933 --> 00:03:10.970
+00:03:05.833 --> 00:03:11.870
 write-page writes index.html into the work folder, and exits with code 0.
 
 56
-00:03:10.970 --> 00:03:12.955
+00:03:11.870 --> 00:03:13.855
 The prep cook goes home.
 
 57
-00:03:12.955 --> 00:03:15.023
+00:03:13.855 --> 00:03:15.923
 STATUS moves to Init:1/2.
 
 58
-00:03:15.200 --> 00:03:16.934
+00:03:16.133 --> 00:03:17.867
 Next, the sidecar starts.
 
 59
-00:03:16.934 --> 00:03:23.384
+00:03:17.867 --> 00:03:24.317
 As soon as it is running, it counts as ready, one of two, while nginx is still being created.
 
 60
-00:03:23.533 --> 00:03:24.808
+00:03:24.533 --> 00:03:25.808
 Then nginx starts.
 
 61
-00:03:24.808 --> 00:03:29.269
+00:03:25.808 --> 00:03:30.269
 READY becomes two of two, because READY counts the sidecar too.
 
 62
-00:03:29.269 --> 00:03:31.322
+00:03:30.269 --> 00:03:32.322
 The prep cook is not counted.
 
 63
-00:03:31.322 --> 00:03:32.243
+00:03:32.322 --> 00:03:33.243
 He went home.
 
 64
-00:03:32.400 --> 00:03:37.164
+00:03:33.467 --> 00:03:38.231
 Now ask nginx for its page, from inside the Pod, on localhost.
 
 65
-00:03:37.333 --> 00:03:39.162
+00:03:38.433 --> 00:03:40.262
 hello from the init container.
 
 66
-00:03:39.162 --> 00:03:42.942
+00:03:40.262 --> 00:03:44.042
 The prep cook has gone home, but the onions are still chopped.
 
 67
-00:03:42.942 --> 00:03:49.343
+00:03:44.042 --> 00:03:50.443
 The page lives in the work folder, and the folder belongs to the Pod, not to the container that wrote it.
 
 68
-00:03:49.533 --> 00:03:53.956
+00:03:50.667 --> 00:03:55.089
 Ask for a page that does not exist too, then read the sidecar's logs.
 
 69
-00:03:53.956 --> 00:03:58.699
+00:03:55.089 --> 00:03:59.832
 nginx wrote both visits into the logs folder, and the runner printed them.
 
 70
-00:03:59.400 --> 00:04:01.872
+00:04:00.533 --> 00:04:03.005
 And the old problem with the log lines?
 
 71
-00:04:01.872 --> 00:04:06.688
+00:04:03.005 --> 00:04:07.822
 The sidecar starts before the app, and stops only after the app has stopped.
 
 72
-00:04:06.688 --> 00:04:08.209
+00:04:07.822 --> 00:04:09.343
 So every line gets read.
 
 73
-00:04:09.400 --> 00:04:11.879
+00:04:10.567 --> 00:04:13.046
 So should everything go on one tray?
 
 74
-00:04:11.879 --> 00:04:12.086
+00:04:13.046 --> 00:04:13.252
 No.
 
 75
-00:04:12.086 --> 00:04:16.631
+00:04:13.252 --> 00:04:17.797
 Share a Pod only when you must share a node, an address, or files.
 
 76
-00:04:16.800 --> 00:04:23.200
+00:04:18.000 --> 00:04:24.400
 An app and its database belong in separate Pods, so you can scale and replace each one on its own.
 
 77
-00:04:23.200 --> 00:04:24.963
+00:04:24.400 --> 00:04:26.163
 A tray, not a moving truck.
 
 78
-00:04:25.733 --> 00:04:27.180
+00:04:26.967 --> 00:04:28.413
 The moral of the story.
 
 79
-00:04:27.180 --> 00:04:30.577
+00:04:28.413 --> 00:04:31.810
 Prep cooks first, one at a time, and each must finish.
 
 80
-00:04:30.577 --> 00:04:33.156
+00:04:31.810 --> 00:04:34.390
 The runner next, and it stays to the end.
 
 81
-00:04:33.156 --> 00:04:34.037
+00:04:34.390 --> 00:04:35.270
 Then the dish.
 
 82
-00:04:34.037 --> 00:04:37.308
+00:04:35.270 --> 00:04:38.541
 And all of them share the Pod's address and folders.
 
 83
-00:04:37.467 --> 00:04:38.566
+00:04:38.767 --> 00:04:39.866
 One quick check.
 
 84
-00:04:38.566 --> 00:04:43.171
+00:04:39.866 --> 00:04:44.471
 A Pod like ours shows READY one of two, and STATUS PodInitializing.
 
 85
-00:04:43.171 --> 00:04:44.889
+00:04:44.471 --> 00:04:46.189
 Who is running right now?
 
 86
-00:04:47.600 --> 00:04:48.432
+00:04:48.900 --> 00:04:49.732
 The sidecar.
 
 87
-00:04:48.432 --> 00:04:53.011
+00:04:49.732 --> 00:04:54.311
 write-page has already finished, and nginx is still being created.

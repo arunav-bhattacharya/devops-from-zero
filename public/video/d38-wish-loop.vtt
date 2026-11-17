@@ -1,0 +1,397 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.098
+Here is a question every new team asks sooner or later.
+
+2
+00:00:06.098 --> 00:00:08.631
+Your app crashes at three in the morning.
+
+3
+00:00:08.631 --> 00:00:09.867
+Who starts it again?
+
+4
+00:00:10.100 --> 00:00:11.644
+Start with what we know.
+
+5
+00:00:11.644 --> 00:00:18.140
+With docker run, the command that starts one container, you give an order, and Docker carries it out.
+
+6
+00:00:18.140 --> 00:00:18.461
+Once.
+
+7
+00:00:18.667 --> 00:00:20.752
+An hour later the container dies.
+
+8
+00:00:20.752 --> 00:00:24.291
+And nothing happens, because Docker already did its job.
+
+9
+00:00:24.500 --> 00:00:29.199
+docker run is a waiter who serves your dish and then goes home for the night.
+
+10
+00:00:29.199 --> 00:00:31.457
+Drop your fork, and nobody is coming.
+
+11
+00:00:31.457 --> 00:00:36.339
+So the point is this: an order is carried out once, and then nobody is watching.
+
+12
+00:00:37.167 --> 00:00:38.316
+The obvious fix?
+
+13
+00:00:38.316 --> 00:00:41.692
+Write a little script that checks every minute.
+
+14
+00:00:41.692 --> 00:00:44.278
+If the app is not running, start it.
+
+15
+00:00:44.278 --> 00:00:45.140
+Three lines.
+
+16
+00:00:45.140 --> 00:00:45.499
+Done.
+
+17
+00:00:45.700 --> 00:00:49.657
+Then a server dies, and the script must move work somewhere else.
+
+18
+00:00:49.657 --> 00:00:55.441
+Then it must spread copies, add copies when visitors double, and swap versions without a pause.
+
+19
+00:00:55.667 --> 00:01:01.292
+Soon the little script is a large system of its own, and somebody has to run it and fix it.
+
+20
+00:01:01.292 --> 00:01:03.765
+Your three lines now need a night shift.
+
+21
+00:01:05.167 --> 00:01:06.959
+So let us say the wish out loud.
+
+22
+00:01:06.959 --> 00:01:11.943
+Wouldn't it be nice to write down what we want, just once, and have someone keep it true?
+
+23
+00:01:12.867 --> 00:01:15.940
+Our restaurant has a manager who does exactly that.
+
+24
+00:01:15.940 --> 00:01:18.832
+She holds a list of what each table should have.
+
+25
+00:01:19.033 --> 00:01:21.664
+Three tables, and each one should have a waiter.
+
+26
+00:01:21.867 --> 00:01:23.359
+She walks the floor.
+
+27
+00:01:23.359 --> 00:01:25.746
+She counts what is really there.
+
+28
+00:01:25.746 --> 00:01:26.939
+One, two, three.
+
+29
+00:01:26.939 --> 00:01:27.611
+All good.
+
+30
+00:01:27.833 --> 00:01:30.507
+Then the waiter at table two calls in sick.
+
+31
+00:01:30.733 --> 00:01:35.341
+On her next pass she reads the list, counts two, and sends for one more.
+
+32
+00:01:35.341 --> 00:01:38.284
+Nobody told her what to do about sick waiters.
+
+33
+00:01:38.284 --> 00:01:39.564
+A gap is just a gap.
+
+34
+00:01:41.167 --> 00:01:42.070
+Let us map it.
+
+35
+00:01:42.070 --> 00:01:45.424
+The list is your desired state: what you wrote down.
+
+36
+00:01:45.424 --> 00:01:49.294
+What she counts is the actual state: what is really running.
+
+37
+00:01:49.294 --> 00:01:52.841
+And the manager is a small program called a controller.
+
+38
+00:01:54.467 --> 00:01:55.658
+Now Kubernetes.
+
+39
+00:01:55.658 --> 00:02:01.455
+You write down one wish: run three copies of hello-devops, version 1.0.0.
+
+40
+00:02:01.455 --> 00:02:06.220
+Kubernetes stores it as an object, a record in its database.
+
+41
+00:02:06.433 --> 00:02:10.003
+On the other side, the nodes report what is really running.
+
+42
+00:02:10.233 --> 00:02:14.187
+And in between, the controller runs the manager's walk, forever.
+
+43
+00:02:14.400 --> 00:02:16.056
+Read the desired state.
+
+44
+00:02:16.056 --> 00:02:17.856
+Observe the actual state.
+
+45
+00:02:17.856 --> 00:02:20.880
+If the two differ, act to make them match.
+
+46
+00:02:20.880 --> 00:02:21.744
+Then repeat.
+
+47
+00:02:21.967 --> 00:02:24.684
+Now someone deletes one copy by mistake.
+
+48
+00:02:24.684 --> 00:02:27.129
+Nobody wrote any code for this case.
+
+49
+00:02:27.129 --> 00:02:28.216
+So what happens?
+
+50
+00:02:30.933 --> 00:02:35.100
+On its next pass, the loop reads three wanted, and counts two running.
+
+51
+00:02:35.333 --> 00:02:36.835
+So it starts one more.
+
+52
+00:02:36.835 --> 00:02:39.770
+Just like the manager sending for a waiter.
+
+53
+00:02:39.770 --> 00:02:42.500
+A deleted copy is one more gap to close.
+
+54
+00:02:43.133 --> 00:02:44.490
+Now the tempting move.
+
+55
+00:02:44.490 --> 00:02:49.856
+You want one copy gone, so you go straight to the node and stop the container yourself.
+
+56
+00:02:49.856 --> 00:02:51.644
+You are the boss here, right?
+
+57
+00:02:52.667 --> 00:02:54.039
+Watch the loop.
+
+58
+00:02:54.039 --> 00:02:56.417
+Three wanted, two running.
+
+59
+00:02:56.417 --> 00:02:56.783
+Act.
+
+60
+00:02:57.000 --> 00:02:57.369
+Well.
+
+61
+00:02:57.369 --> 00:02:58.181
+It is back.
+
+62
+00:02:58.181 --> 00:03:00.616
+Kubernetes is not being stubborn.
+
+63
+00:03:00.616 --> 00:03:05.560
+It is loyal to the list, not to whoever touched the container last.
+
+64
+00:03:05.767 --> 00:03:07.569
+So the point really is this.
+
+65
+00:03:07.569 --> 00:03:10.467
+A change made behind its back does not stick.
+
+66
+00:03:10.467 --> 00:03:12.720
+Change the wish, not the container.
+
+67
+00:03:12.933 --> 00:03:14.198
+Want five copies?
+
+68
+00:03:14.198 --> 00:03:16.057
+Do not start two by hand.
+
+69
+00:03:16.057 --> 00:03:18.735
+Edit the wish to five, and apply it.
+
+70
+00:03:18.967 --> 00:03:23.763
+The same loop sees five wanted and three running, and starts two more.
+
+71
+00:03:23.763 --> 00:03:24.723
+You said what.
+
+72
+00:03:24.723 --> 00:03:25.408
+Never how.
+
+73
+00:03:25.633 --> 00:03:26.945
+This loop has a name.
+
+74
+00:03:26.945 --> 00:03:31.940
+It is called reconciliation, which means bringing two lists back into agreement.
+
+75
+00:03:32.167 --> 00:03:34.195
+You can see it in every object.
+
+76
+00:03:34.195 --> 00:03:36.027
+The spec field is your wish.
+
+77
+00:03:36.027 --> 00:03:40.281
+Kubernetes fills in the status field, its report on what is real.
+
+78
+00:03:40.281 --> 00:03:43.095
+Controllers work to make status match spec.
+
+79
+00:03:43.300 --> 00:03:46.048
+The Kubernetes docs compare it to a thermostat.
+
+80
+00:03:46.048 --> 00:03:49.440
+You set twenty one degrees, and it keeps reading the room.
+
+81
+00:03:49.440 --> 00:03:51.896
+You never tell it to heat for ten minutes.
+
+82
+00:03:52.700 --> 00:03:56.175
+Most kinds of object have a controller, sometimes several.
+
+83
+00:03:56.175 --> 00:03:58.871
+So here is a habit for the rest of this part.
+
+84
+00:03:58.871 --> 00:04:02.107
+When you meet a new kind of object, ask two questions.
+
+85
+00:04:02.333 --> 00:04:03.892
+What does its spec ask for?
+
+86
+00:04:03.892 --> 00:04:06.144
+And which controller makes that happen?
+
+87
+00:04:06.867 --> 00:04:13.207
+And notice the difference from Terraform and Ansible, which compare code with reality only while they run.
+
+88
+00:04:13.207 --> 00:04:16.736
+This loop checks all the time, with nobody at the keyboard.
+
+89
+00:04:17.767 --> 00:04:19.563
+So, the moral of the story.
+
+90
+00:04:19.563 --> 00:04:22.490
+An order runs once, and then nobody watches.
+
+91
+00:04:22.490 --> 00:04:25.949
+A wish is kept true, by a loop that never goes home.
+
+92
+00:04:25.949 --> 00:04:27.545
+You write what you want.
+
+93
+00:04:27.545 --> 00:04:29.341
+The loop works out the how.
+
+94
+00:04:29.567 --> 00:04:31.359
+One quick check before you go.
+
+95
+00:04:31.359 --> 00:04:34.706
+The wish says three, and the nodes report three running.
+
+96
+00:04:34.706 --> 00:04:36.797
+What does the loop do on this pass?
+
+97
+00:04:39.500 --> 00:04:40.450
+Nothing at all.
+
+98
+00:04:40.450 --> 00:04:43.428
+There is no gap, so there is nothing to act on.
+
+99
+00:04:43.428 --> 00:04:45.899
+It simply looks again on the next pass.

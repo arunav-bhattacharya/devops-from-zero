@@ -93,7 +93,7 @@ class D54RecordsOffice(VoiceScene):
         clerk = Circle(radius=0.15, stroke_color=GREEN_M, stroke_width=3).set_fill(dark(GREEN_M, 0.4), 1).move_to([-1.4, -2.4, 0])
         find = T('find "allergy" for bed 4 on Monday', 24, GREEN_M).move_to([1.6, -2.7, 0])
         self.beat("To find a phrase, a clerk looks up bed four on Monday, opens just that folder, and reads.",
-                  FadeIn(find), FadeIn(clerk), Succession(Indicate(entries[0], color=GREEN_M), clerk.animate.move_to(shelf[0].get_bottom() + DOWN * 0.25),
+                  FadeIn(find), Succession(FadeIn(clerk), Indicate(entries[0], color=GREEN_M), clerk.animate.move_to(shelf[0].get_bottom() + DOWN * 0.25),
                                                           shelf[0][1].animate.set_fill(dark(GREEN_M, 0.4))), run_time=3.2)
         self.beat("The catalogue stays tiny. And the reading is quick, because the folders are few.", run_time=None)
         self.beat("That is Loki. The answer is A. It indexes only the labels.", run_time=None)

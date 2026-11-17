@@ -1,11 +1,11 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:08.163
+00:00:02.700 --> 00:00:08.129
 Say you write a small file, a manifest, that asks for two copies of nginx.
 
 2
-00:00:08.163 --> 00:00:11.024
+00:00:08.129 --> 00:00:10.991
 nginx is a web server, handy for tests.
 
 3
@@ -21,353 +21,353 @@ And in under a second, it answers.
 Created.
 
 6
-00:00:16.533 --> 00:00:18.114
+00:00:16.567 --> 00:00:18.147
 So here is the question.
 
 7
-00:00:18.114 --> 00:00:20.813
+00:00:18.147 --> 00:00:20.847
 At this very moment, is your app running?
 
 8
-00:00:23.933 --> 00:00:27.325
+00:00:23.967 --> 00:00:27.358
 It is tempting to picture kubectl as a remote control.
 
 9
-00:00:27.325 --> 00:00:33.355
+00:00:27.358 --> 00:00:33.388
 You press the button, it reaches into a machine, starts your containers, and created means done.
 
 10
-00:00:33.533 --> 00:00:34.588
+00:00:33.600 --> 00:00:34.655
 Let us check.
 
 11
-00:00:34.588 --> 00:00:37.835
+00:00:34.655 --> 00:00:37.901
 Two seconds later, ask kubectl get pods.
 
 12
-00:00:38.000 --> 00:00:39.751
+00:00:38.133 --> 00:00:39.885
 Zero of one ready.
 
 13
-00:00:39.751 --> 00:00:41.697
+00:00:39.885 --> 00:00:41.830
 Still being created.
 
 14
-00:00:41.697 --> 00:00:42.184
+00:00:41.830 --> 00:00:42.317
 Well.
 
 15
-00:00:42.184 --> 00:00:43.448
+00:00:42.317 --> 00:00:43.582
 Created, yes.
 
 16
-00:00:43.448 --> 00:00:44.519
+00:00:43.582 --> 00:00:44.652
 Cooked, no.
 
 17
-00:00:45.600 --> 00:00:47.078
+00:00:45.767 --> 00:00:47.245
 Here is a better picture.
 
 18
-00:00:47.078 --> 00:00:52.460
+00:00:47.245 --> 00:00:52.627
 In our restaurant, a waiter takes your order, pins the ticket on the rail, and says got it.
 
 19
-00:00:52.460 --> 00:00:54.826
+00:00:52.627 --> 00:00:54.992
 Got it does not mean your soup is ready.
 
 20
-00:00:54.826 --> 00:00:56.955
+00:00:54.992 --> 00:00:57.121
 It means your ticket is on the rail.
 
 21
-00:00:57.133 --> 00:00:58.871
+00:00:57.333 --> 00:00:59.071
 Kubernetes has a rail too.
 
 22
-00:00:58.871 --> 00:01:03.483
+00:00:59.071 --> 00:01:03.683
 It is the API server, the front door that every request goes through.
 
 23
-00:01:03.667 --> 00:01:08.561
+00:01:03.900 --> 00:01:08.794
 Its memory is etcd, a database that holds the whole cluster state.
 
 24
-00:01:08.561 --> 00:01:10.933
+00:01:08.794 --> 00:01:11.167
 Only the API server talks to it.
 
 25
-00:01:11.133 --> 00:01:13.111
+00:01:11.400 --> 00:01:13.377
 Around the rail stand the staff.
 
 26
-00:01:13.111 --> 00:01:19.723
+00:01:13.377 --> 00:01:19.989
 The floor manager, played here by two controllers: the Deployment controller and the ReplicaSet controller.
 
 27
-00:01:19.867 --> 00:01:23.564
+00:01:20.200 --> 00:01:23.897
 The head chef, the scheduler, who hands each dish to a station.
 
 28
-00:01:23.733 --> 00:01:28.460
+00:01:24.100 --> 00:01:28.827
 And at each station, which Kubernetes calls a node, a cook: the kubelet.
 
 29
-00:01:28.460 --> 00:01:30.692
+00:01:28.827 --> 00:01:31.059
 It never cooks with its own hands.
 
 30
-00:01:30.692 --> 00:01:35.551
+00:01:31.059 --> 00:01:35.917
 It passes the job to containerd, which pulls images and starts containers.
 
 31
-00:01:36.333 --> 00:01:38.651
+00:01:36.733 --> 00:01:39.051
 Now, the one rule of this kitchen.
 
 32
-00:01:38.651 --> 00:01:40.082
+00:01:39.051 --> 00:01:40.482
 Nobody calls anybody.
 
 33
-00:01:40.082 --> 00:01:42.604
+00:01:40.482 --> 00:01:43.004
 Every part keeps one eye on the rail.
 
 34
-00:01:42.800 --> 00:01:44.355
+00:01:43.233 --> 00:01:44.788
 That is called a watch.
 
 35
-00:01:44.355 --> 00:01:50.237
+00:01:44.788 --> 00:01:50.671
 It is one long request, and the API server streams every change down it, as it happens.
 
 36
-00:01:50.400 --> 00:01:51.051
+00:01:50.900 --> 00:01:51.551
 Step one.
 
 37
-00:01:51.051 --> 00:01:56.913
+00:01:51.551 --> 00:01:57.413
 kubectl reads its config file to find the cluster's address and your credentials.
 
 38
-00:01:56.913 --> 00:02:00.169
+00:01:57.413 --> 00:02:00.669
 Then it sends the manifest to the API server.
 
 39
-00:02:00.333 --> 00:02:00.994
+00:02:00.900 --> 00:02:01.560
 Step two.
 
 40
-00:02:00.994 --> 00:02:05.617
+00:02:01.560 --> 00:02:06.184
 The API server checks who you are, and whether you may do this.
 
 41
-00:02:05.617 --> 00:02:09.066
+00:02:06.184 --> 00:02:09.633
 It validates the object, and stores it in etcd.
 
 42
-00:02:09.066 --> 00:02:12.221
+00:02:09.633 --> 00:02:12.788
 Then it answers created, and kubectl exits.
 
 43
-00:02:12.400 --> 00:02:13.608
+00:02:13.000 --> 00:02:14.208
 Remember the guess?
 
 44
-00:02:13.608 --> 00:02:15.133
+00:02:14.208 --> 00:02:15.733
 We are only at step two.
 
 45
-00:02:15.133 --> 00:02:18.820
+00:02:15.733 --> 00:02:19.420
 The ticket is on the rail, and no cook has touched it yet.
 
 46
-00:02:19.000 --> 00:02:19.723
+00:02:19.633 --> 00:02:20.356
 Step three.
 
 47
-00:02:19.723 --> 00:02:24.191
+00:02:20.356 --> 00:02:24.824
 The Deployment controller sees the new Deployment through its watch.
 
 48
-00:02:24.191 --> 00:02:29.644
+00:02:24.824 --> 00:02:30.277
 It creates a ReplicaSet, a helper object that keeps a set number of identical Pods.
 
 49
-00:02:29.800 --> 00:02:30.479
+00:02:30.500 --> 00:02:31.179
 Step four.
 
 50
-00:02:30.479 --> 00:02:35.571
+00:02:31.179 --> 00:02:36.271
 The ReplicaSet controller sees the ReplicaSet, and creates two Pod objects.
 
 51
-00:02:35.571 --> 00:02:38.831
+00:02:36.271 --> 00:02:39.531
 A Pod wraps a container and gives it an address.
 
 52
-00:02:38.831 --> 00:02:40.664
+00:02:39.531 --> 00:02:41.364
 These two have no node yet.
 
 53
-00:02:40.800 --> 00:02:41.471
+00:02:41.567 --> 00:02:42.238
 Step five.
 
 54
-00:02:41.471 --> 00:02:44.356
+00:02:42.238 --> 00:02:45.123
 The scheduler sees two Pods without a node.
 
 55
-00:02:44.356 --> 00:02:50.932
+00:02:45.123 --> 00:02:51.699
 It filters out nodes that cannot take them, scores the rest, and writes a node name into each Pod.
 
 56
-00:02:51.067 --> 00:02:51.712
+00:02:51.900 --> 00:02:52.545
 Step six.
 
 57
-00:02:51.712 --> 00:02:55.654
+00:02:52.545 --> 00:02:56.487
 The kubelet on each chosen node sees a Pod given to it.
 
 58
-00:02:55.654 --> 00:03:00.025
+00:02:56.487 --> 00:03:00.859
 It asks containerd to pull the image and start the container.
 
 59
-00:03:00.200 --> 00:03:00.968
+00:03:01.067 --> 00:03:01.834
 Step seven.
 
 60
-00:03:00.968 --> 00:03:02.712
+00:03:01.834 --> 00:03:03.579
 The kubelet reports back.
 
 61
-00:03:02.712 --> 00:03:05.992
+00:03:03.579 --> 00:03:06.859
 The Pod is running, and here is its IP address.
 
 62
-00:03:05.992 --> 00:03:09.272
+00:03:06.859 --> 00:03:10.139
 The API server stores that in the Pod's status.
 
 63
-00:03:09.467 --> 00:03:12.505
+00:03:10.367 --> 00:03:13.405
 Seven steps, and every one went through the rail.
 
 64
-00:03:12.505 --> 00:03:14.365
+00:03:13.405 --> 00:03:15.265
 Nobody sent orders to anybody.
 
 65
-00:03:14.365 --> 00:03:16.783
+00:03:15.265 --> 00:03:17.683
 Each part acted on what it found there.
 
 66
-00:03:17.467 --> 00:03:22.201
+00:03:18.400 --> 00:03:23.134
 You might be thinking: wouldn't it be quicker if the scheduler just phoned the kubelet?
 
 67
-00:03:22.201 --> 00:03:23.779
+00:03:23.134 --> 00:03:24.713
 Let us see why the rail wins.
 
 68
-00:03:23.779 --> 00:03:25.956
+00:03:24.713 --> 00:03:26.889
 Think about the night something crashes.
 
 69
-00:03:26.133 --> 00:03:27.726
+00:03:27.100 --> 00:03:28.693
 Say the scheduler stops.
 
 70
-00:03:27.726 --> 00:03:32.504
+00:03:28.693 --> 00:03:33.471
 New Pods would wait in Pending, with no node, for as long as it is gone.
 
 71
-00:03:32.667 --> 00:03:36.357
+00:03:33.700 --> 00:03:37.390
 When it comes back, it does not need to remember where it was.
 
 72
-00:03:36.357 --> 00:03:40.107
+00:03:37.390 --> 00:03:41.140
 It reads the rail again and carries on, as if nothing happened.
 
 73
-00:03:40.107 --> 00:03:42.607
+00:03:41.140 --> 00:03:43.640
 The rail remembers, so nobody else has to.
 
 74
-00:03:42.800 --> 00:03:45.011
+00:03:43.867 --> 00:03:46.078
 And if the rail itself goes down?
 
 75
-00:03:45.011 --> 00:03:49.299
+00:03:46.078 --> 00:03:50.365
 kubectl fails, but the containers that already run keep running.
 
 76
-00:03:50.867 --> 00:03:53.768
+00:03:51.967 --> 00:03:54.868
 You do not have to take my word for any of this.
 
 77
-00:03:53.768 --> 00:04:00.053
+00:03:54.868 --> 00:04:01.153
 Each step leaves a short record called an event, and kubectl get events shows the whole chain, in order.
 
 78
-00:04:00.200 --> 00:04:04.961
+00:04:01.367 --> 00:04:06.127
 Deployment controller, ReplicaSet controller, scheduler, then the kubelet.
 
 79
-00:04:04.961 --> 00:04:06.891
+00:04:06.127 --> 00:04:08.057
 The same chain we just walked.
 
 80
-00:04:07.067 --> 00:04:11.150
+00:04:08.267 --> 00:04:12.350
 And when something is stuck, the chain simply stops at one step.
 
 81
-00:04:11.150 --> 00:04:16.509
+00:04:12.350 --> 00:04:17.709
 A Pod that fits on no node stays Pending, with no node name, and its events say why.
 
 82
-00:04:16.667 --> 00:04:24.119
+00:04:17.933 --> 00:04:25.385
 That is why, on a team, kubectl get events is often the first command anyone runs after a bad release.
 
 83
-00:04:25.000 --> 00:04:26.759
+00:04:26.300 --> 00:04:28.059
 So the moral of the story.
 
 84
-00:04:26.759 --> 00:04:29.532
+00:04:28.059 --> 00:04:30.832
 kubectl apply hangs a ticket on the rail.
 
 85
-00:04:29.532 --> 00:04:31.832
+00:04:30.832 --> 00:04:33.132
 Created means stored, not running.
 
 86
-00:04:31.832 --> 00:04:36.702
+00:04:33.132 --> 00:04:38.002
 Then everyone watches the rail and does their part, a few seconds later.
 
 87
-00:04:36.702 --> 00:04:39.881
+00:04:38.002 --> 00:04:41.181
 So after an apply, check with kubectl get pods.
 
 88
-00:04:40.067 --> 00:04:41.168
+00:04:41.400 --> 00:04:42.502
 One quick check.
 
 89
-00:04:41.168 --> 00:04:44.886
+00:04:42.502 --> 00:04:46.219
 The scheduler is down, and you apply a new Deployment.
 
 90
-00:04:44.886 --> 00:04:47.020
+00:04:46.219 --> 00:04:48.353
 Does kubectl still say created?
 
 91
-00:04:49.733 --> 00:04:50.051
+00:04:51.067 --> 00:04:51.384
 Yes.
 
 92
-00:04:50.051 --> 00:04:53.545
+00:04:51.384 --> 00:04:54.878
 Step two only needs the API server and etcd.
 
 93
-00:04:53.545 --> 00:04:57.753
+00:04:54.878 --> 00:04:59.087
 The Pods wait in Pending until the head chef is back.

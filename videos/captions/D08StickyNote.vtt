@@ -1,0 +1,401 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.089
+Picture a shared office folder, with five files in it.
+
+2
+00:00:06.267 --> 00:00:08.709
+Your manager asks a simple question.
+
+3
+00:00:08.709 --> 00:00:11.762
+Which one did we send to the shop on Tuesday?
+
+4
+00:00:11.762 --> 00:00:12.644
+Nobody knows.
+
+5
+00:00:12.800 --> 00:00:14.479
+Notice how the names go.
+
+6
+00:00:14.479 --> 00:00:17.207
+Final, then final two, then final real.
+
+7
+00:00:17.207 --> 00:00:20.564
+File names start out honest, and end up hopeful.
+
+8
+00:00:20.733 --> 00:00:22.580
+So the point really is this.
+
+9
+00:00:22.580 --> 00:00:24.560
+A name can't remember history.
+
+10
+00:00:24.560 --> 00:00:26.407
+We need something that does.
+
+11
+00:00:26.600 --> 00:00:30.959
+Git is the tool that keeps every saved version of a project for you.
+
+12
+00:00:30.959 --> 00:00:32.497
+Picture an office again.
+
+13
+00:00:32.497 --> 00:00:39.484
+A desk for the pages you're working on, a tray for the pages that are ready, and a filing cabinet behind you.
+
+14
+00:00:40.200 --> 00:00:42.799
+When a page is ready, it goes in the tray.
+
+15
+00:00:42.799 --> 00:00:49.109
+Whenever you say save, a clerk photographs everything in the tray, and files the photo in the cabinet.
+
+16
+00:00:49.267 --> 00:00:58.980
+In Git's words, the desk is the working tree, the tray is the staging area, and the cabinet is the repository, a hidden folder called .git.
+
+17
+00:00:58.980 --> 00:01:00.587
+Each photo is a commit.
+
+18
+00:01:00.733 --> 00:01:02.404
+Let's open the cabinet.
+
+19
+00:01:02.600 --> 00:01:05.918
+Each photo is a full snapshot of the project.
+
+20
+00:01:05.918 --> 00:01:11.375
+And it's named by a hash of its content, a short fingerprint like d6aad6e.
+
+21
+00:01:11.375 --> 00:01:14.545
+Same content, same name, on every computer.
+
+22
+00:01:14.733 --> 00:01:18.302
+Each photo also remembers the one before it, its parent.
+
+23
+00:01:18.302 --> 00:01:21.680
+So history is a chain, and you can walk it backwards.
+
+24
+00:01:21.867 --> 00:01:25.723
+Now, which photo is the newest on the main line of work?
+
+25
+00:01:25.723 --> 00:01:28.409
+Git keeps that answer on a sticky note.
+
+26
+00:01:28.409 --> 00:01:32.265
+The note is called main, and it holds one name, d6aad6e.
+
+27
+00:01:32.265 --> 00:01:34.331
+That note is the whole branch.
+
+28
+00:01:34.467 --> 00:01:39.395
+And HEAD is the you are here arrow, like the one on a map in a shopping centre.
+
+29
+00:01:39.395 --> 00:01:40.517
+It points at main.
+
+30
+00:01:40.667 --> 00:01:43.489
+Let's add a line to the README, and commit it.
+
+31
+00:01:43.489 --> 00:01:44.470
+Pause and guess.
+
+32
+00:01:44.470 --> 00:01:46.617
+What does Git copy when you commit?
+
+33
+00:01:48.600 --> 00:01:50.191
+Nothing gets copied.
+
+34
+00:01:50.191 --> 00:01:55.680
+Git files one new photo, 6e176d6, and moves the sticky note up to it.
+
+35
+00:01:55.680 --> 00:01:59.180
+HEAD comes along, because it points at main.
+
+36
+00:01:59.867 --> 00:02:01.076
+Now the mistake.
+
+37
+00:02:01.076 --> 00:02:04.931
+You meant to undo one commit, and keep its changes.
+
+38
+00:02:04.931 --> 00:02:08.484
+But your fingers typed git reset --hard HEAD~2.
+
+39
+00:02:08.667 --> 00:02:11.983
+Git answers, HEAD is now at c711550.
+
+40
+00:02:11.983 --> 00:02:14.931
+The note slides back two photos.
+
+41
+00:02:15.067 --> 00:02:17.929
+You run git log, and the top two are gone.
+
+42
+00:02:17.929 --> 00:02:19.496
+Your commit, and Ana's.
+
+43
+00:02:19.667 --> 00:02:26.230
+This is the moment people start typing very fast, which is exactly the wrong moment to type anything.
+
+44
+00:02:26.230 --> 00:02:29.024
+So slow down, and ask what really happened.
+
+45
+00:02:29.200 --> 00:02:30.990
+Here's the natural guess.
+
+46
+00:02:30.990 --> 00:02:36.932
+The log is the history, so if a commit is missing from the log, it must be deleted.
+
+47
+00:02:36.932 --> 00:02:38.077
+Pause and guess.
+
+48
+00:02:38.077 --> 00:02:38.507
+Is it?
+
+49
+00:02:40.667 --> 00:02:41.352
+Let's look.
+
+50
+00:02:41.352 --> 00:02:45.717
+git log starts at the sticky note, and walks back through the parents.
+
+51
+00:02:45.717 --> 00:02:47.151
+It never looks forward.
+
+52
+00:02:47.333 --> 00:02:49.727
+So the two photos are still in the cabinet.
+
+53
+00:02:49.727 --> 00:02:52.232
+The note just doesn't point at them any more.
+
+54
+00:02:52.400 --> 00:02:55.479
+We can even ask for one by name.
+
+55
+00:02:55.479 --> 00:03:00.098
+git cat-file -t 6e176d6 prints its type, commit.
+
+56
+00:03:00.098 --> 00:03:01.060
+It exists.
+
+57
+00:03:01.200 --> 00:03:03.051
+So reset deleted nothing.
+
+58
+00:03:03.051 --> 00:03:04.755
+It moved a sticky note.
+
+59
+00:03:04.933 --> 00:03:08.197
+But how do you find a photo whose name you forgot?
+
+60
+00:03:08.197 --> 00:03:09.894
+The clerk keeps a logbook.
+
+61
+00:03:09.894 --> 00:03:13.876
+Every time HEAD moves, the logbook gets a line, newest first.
+
+62
+00:03:13.876 --> 00:03:15.051
+That's git reflog.
+
+63
+00:03:15.200 --> 00:03:16.957
+Read it from the top.
+
+64
+00:03:16.957 --> 00:03:19.216
+We reset, moving to HEAD~2.
+
+65
+00:03:19.216 --> 00:03:23.818
+Before that, we committed, Say that prices include VAT.
+
+66
+00:03:23.818 --> 00:03:27.835
+There's our lost commit, one line down, 6e176d6.
+
+67
+00:03:28.800 --> 00:03:32.584
+Now that we know its name, there are two ways back.
+
+68
+00:03:32.584 --> 00:03:40.077
+The gentle one: git branch rescue 6e176d6 puts a second sticky note on that photo, and moves nothing.
+
+69
+00:03:40.267 --> 00:03:46.339
+Or move main itself back to where it was one step ago, with git reset --hard 'HEAD@{1}'.
+
+70
+00:03:46.339 --> 00:03:49.859
+HEAD@{1} means where HEAD was before the last move.
+
+71
+00:03:50.000 --> 00:03:51.869
+HEAD is now at 6e176d6.
+
+72
+00:03:51.869 --> 00:03:57.395
+The note slides back up, and both photos are on the main line again.
+
+73
+00:03:58.067 --> 00:04:00.583
+So now you know why a branch is so cheap.
+
+74
+00:04:00.583 --> 00:04:02.485
+It's a sticky note on a commit.
+
+75
+00:04:02.485 --> 00:04:05.063
+And most undo commands just move the note.
+
+76
+00:04:05.933 --> 00:04:08.947
+But every tool has a limit, and here's this one's.
+
+77
+00:04:08.947 --> 00:04:11.177
+The logbook only knows about commits.
+
+78
+00:04:11.177 --> 00:04:13.889
+Picture an edit that lived only on your desk.
+
+79
+00:04:14.067 --> 00:04:19.333
+Run git reset --hard, and the desk is wiped to match the last photo.
+
+80
+00:04:19.333 --> 00:04:22.354
+The reflog has no entry for that draft.
+
+81
+00:04:22.354 --> 00:04:24.135
+grep counts zero lines.
+
+82
+00:04:24.135 --> 00:04:24.909
+It's gone.
+
+83
+00:04:25.067 --> 00:04:27.466
+So, one habit before any hard reset.
+
+84
+00:04:27.466 --> 00:04:28.932
+Commit or stash first.
+
+85
+00:04:28.932 --> 00:04:34.198
+A commit you reset away stays recoverable for at least thirty days, by default.
+
+86
+00:04:34.198 --> 00:04:36.997
+An edit on your desk, not even one second.
+
+87
+00:04:37.133 --> 00:04:41.149
+And if you already pushed a commit, don't move a shared note at all.
+
+88
+00:04:41.149 --> 00:04:45.637
+git revert adds a new commit that undoes the old one, so history only grows.
+
+89
+00:04:47.533 --> 00:04:49.021
+The moral of the story.
+
+90
+00:04:49.021 --> 00:04:51.154
+Anything committed can come back.
+
+91
+00:04:51.154 --> 00:04:53.418
+Git rarely throws your photos away.
+
+92
+00:04:53.418 --> 00:04:56.392
+It moves notes, and it writes down every move.
+
+93
+00:04:57.133 --> 00:04:58.167
+A quick check.
+
+94
+00:04:58.167 --> 00:05:00.012
+You run git reset --hard.
+
+95
+00:05:00.012 --> 00:05:01.415
+Which one survives?
+
+96
+00:05:01.415 --> 00:05:05.991
+A commit you made an hour ago, or an edit you never committed?
+
+97
+00:05:05.991 --> 00:05:07.172
+Pause and guess.
+
+98
+00:05:09.333 --> 00:05:10.096
+The commit.
+
+99
+00:05:10.096 --> 00:05:11.898
+The reflog still lists it.
+
+100
+00:05:11.898 --> 00:05:15.156
+The edit lived only on your desk, so it's gone.

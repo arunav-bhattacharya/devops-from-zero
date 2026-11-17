@@ -161,7 +161,7 @@ class D56Clerks(VoiceScene):
         helm = T("helm install, default settings", 26, CLERK_C).move_to([-1.9, -1.65, 0])
         self.beat("We install it with Helm, the package installer for Kubernetes. The naive first try is the chart's default settings. Then we wait.",
                   FadeIn(helm), run_time=1.8)
-        ghost = DashedVMobject(RoundedRectangle(corner_radius=0.15, width=2.9, height=0.9, stroke_color=RED_M, stroke_width=2.5), num_dashes=30).move_to([4.85, -1.2, 0])
+        ghost = DashedVMobject(RoundedRectangle(corner_radius=0.15, width=3.45, height=0.9, stroke_color=RED_M, stroke_width=2.5), num_dashes=34).move_to([4.75, -1.2, 0])
         gl = M("elasticsearch-master", 22, RED_M).move_to(ghost)
         sends = [Arrow(f["ck"].get_right(), ghost.get_left(), buff=0.15, stroke_width=2.5, color=CLERK_C, max_tip_length_to_length_ratio=0.08) for f in F]
         self.beat("And nothing arrives. The default output sends to a host named elasticsearch-master, which only exists if you installed Elastic's old chart.",

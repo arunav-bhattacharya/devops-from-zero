@@ -40,10 +40,10 @@ class D49DataPlan(VoiceScene):
         self.title_card("A data plan for failure", "SLOs, error budgets and burn rates")
 
         # ---------------- 1. three lights on a dark highway
-        dash = frame(9.0, 2.6, GREY_B, [0, 0.6, 0], fill=0.05)
-        l1 = lamp(RED_M, "oil pressure low").move_to([-2.9, 0.6, 0])
+        dash = frame(11.0, 2.6, GREY_B, [0, 0.6, 0], fill=0.05)
+        l1 = lamp(RED_M, "oil pressure low").move_to([-3.6, 0.6, 0])
         l2 = lamp(BLUE_M, "washer fluid low").move_to([0, 0.6, 0])
-        l3 = lamp(GOLD_M, "service due in 500 km").move_to([2.9, 0.6, 0])
+        l3 = lamp(GOLD_M, "service due in 500 km").move_to([3.6, 0.6, 0])
         self.beat("Picture driving home late on a quiet highway. Three lights come on at once.", Create(dash), run_time=1.4)
         self.beat("Oil pressure low. Washer fluid low. A service is due in 500 km.",
                   LaggedStart(*[AnimationGroup(l[0].animate.set_fill(dark(l[0].get_stroke_color(), 0.7)), FadeIn(l[1])) for l in (l1, l2, l3)], lag_ratio=0.6), run_time=3.0)
@@ -175,17 +175,17 @@ class D49DataPlan(VoiceScene):
         self.play(FadeOut(w), run_time=0.4)
 
         # ---------------- 8. page, ticket, dashboard
-        cols = [("page", RED_M, "users hurt now, a human must act now"), ("ticket", GOLD_M, "a human, in working hours"), ("dashboard", BLUE_M, "everything else")]
+        cols = [("page", RED_M, "users hurt now"), ("ticket", GOLD_M, "working hours"), ("dashboard", BLUE_M, "everything else")]
         heads = VGroup()
         for i, (n, c, s) in enumerate(cols):
-            b = frame(3.6, 3.2, c, [-2.6 + 3.9 * i, -0.4, 0], fill=0.06)
+            b = frame(3.6, 3.7, c, [-2.6 + 3.9 * i, -0.4, 0], fill=0.06)
             t = T(n, 30, c).move_to(b.get_top() + DOWN * 0.4)
-            st = T(s, 20, GREY_B).next_to(t, DOWN, buff=0.15)
+            st = T(s, 22, GREY_B).next_to(t, DOWN, buff=0.15)
             fit(st, 3.3)
             heads.add(VGroup(b, t, st))
         heads.move_to([1.3, 0.8, 0])
         self.play(FadeOut(graph), FadeOut(form), run_time=0.5)
-        heads.move_to([0, 0.3, 0])
+        heads.move_to([0, 0.1, 0])
         self.beat("Now we can sort the lights. Every alert goes into one of three boxes. Page, ticket, or dashboard.",
                   LaggedStart(*[FadeIn(h, shift=UP * 0.1) for h in heads], lag_ratio=0.3), run_time=2.4)
         p1 = T("rate 14.4 over 1 hour", 24, RED_M).next_to(heads[0][2], DOWN, buff=0.3)

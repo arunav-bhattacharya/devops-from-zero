@@ -41,8 +41,8 @@ class D68KeeperWalk(VoiceScene):
         self.wait(0.25)
 
     def path_and_stops(self, y=0.0):
-        xs = [-6.0 + 12.0 * i / 13 for i in range(14)]
-        line = Line([-6.3, y, 0], [6.3, y, 0], stroke_width=10, color=GREY_D)
+        xs = [-5.4 + 10.8 * i / 13 for i in range(14)]
+        line = Line([-6.0, y, 0], [6.0, y, 0], stroke_width=10, color=GREY_D)
         stops = VGroup(*[Circle(radius=0.2, stroke_color=GREY_B, stroke_width=2.5).set_fill(BLACK, 1).move_to([x, y, 0]) for x in xs])
         nums = VGroup(*[T(str(i + 1), 20, GREY_B).move_to(s) for i, s in enumerate(stops)])
         labs = VGroup(*[T(n, 20, GREY_B).next_to(s, UP if i % 2 == 0 else DOWN, buff=0.3) for i, (n, s) in enumerate(zip(STAGES, stops))])
@@ -80,17 +80,16 @@ class D68KeeperWalk(VoiceScene):
         opt = T("optional", 20, GOLD_M).next_to(labs[11], DOWN, buff=0.08)
         self.beat("Stage twelve, Dynatrace, is optional. Do it last, so its trial clock starts when everything else already works.",
                   FadeIn(opt), Indicate(labs[11], color=GOLD_M), run_time=2.0)
-        rules = VGroup(T("go in order", 26), T("done = its check passes, not \"looks fine\"", 26, YELLOW_M), T("commit after each stage", 26)).arrange(RIGHT, buff=0.6).move_to([0, -3.2, 0])
-        fit(rules, 12.6)
+        rules = VGroup(T("go in order", 26), T("done = its check passes, not \"looks fine\"", 26, YELLOW_M), T("commit after each stage", 26)).arrange(DOWN, buff=0.15).move_to([1.0, -2.65, 0])
         self.beat("Three rules. Go in order. A stage is done when its check passes, not when it looks fine. And commit after each stage.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rules], lag_ratio=0.9), run_time=6.0)
         walk = VGroup(line, stops, nums, labs, opt, keeper)
-        self.play(FadeOut(rules), walk.animate.scale(0.8).move_to([0, 2.4, 0]), run_time=0.8)
+        self.play(FadeOut(rules), walk.animate.scale(0.8).move_to([0, 2.3, 0]), run_time=0.8)
 
         # ---------- 3. what makes a check worth trusting
         weak = VGroup(T("weak", 26, RED_M), T("\"Argo CD works\"", 28)).arrange(DOWN, buff=0.2).move_to([-3.6, -0.2, 0])
-        strong = VGroup(T("strong", 26, GREEN_M), T("after a merge, with no kubectl,", 24), M("kubectl -n argocd get application hello-devops", 20, GREY_B),
-                        T("reports Synced and Healthy", 24)).arrange(DOWN, buff=0.15).move_to([2.9, -0.4, 0])
+        strong = VGroup(T("strong", 26, GREEN_M), T("after a merge, with no kubectl,", 24), M("kubectl -n argocd get application hello-devops", 22, GREY_B),
+                        T("reports Synced and Healthy", 24)).arrange(DOWN, buff=0.15).move_to([2.5, -0.4, 0])
         self.beat("But what counts as a check? Take stage seven, GitOps. Here are two ways to write its check.",
                   FadeIn(weak), FadeIn(strong), run_time=2.0)
         self.beat("Pause and guess: which one could ever fail?", run_time=None)
@@ -109,12 +108,13 @@ class D68KeeperWalk(VoiceScene):
         # ---------- 4. show: a checklist line becomes a check
         t1 = term([("$ docker run --rm --entrypoint id hello-devops:1.2.0 -u", GREY_B), ("10001", YELLOW_M),
                    ("$ got=$(curl -s localhost:8000/ | jq -r .version)", GREY_B),
-                   ('$ if [[ "$got" == "1.2.0" ]]; then echo "PASS  app reports 1.2.0"; else echo "FAIL ..."; fi', GREY_B),
+                   ('$ if [[ "$got" == "1.2.0" ]]; then echo "PASS  app reports 1.2.0";', GREY_B),
+                   ('  else echo "FAIL  app reports \'$got\'"; fi', GREY_B),
                    ("PASS  app reports 1.2.0", GREEN_M)], w=12.6).move_to([0, -0.4, 0])
         self.steps("Let's turn one line of the checklist into such a check. Stage two: the image runs as a non-root user, and reports its version. Ask the image itself, not your memory of the Dockerfile. User 10001.",
                    (1.0, Indicate(labs[1], color=WHITE)), (2.8, Wait(2.8)), (0.8, FadeIn(t1[0]), FadeIn(t1[1][0])), (1.2, Wait(1.2)), (0.6, FadeIn(t1[1][1])))
         self.beat("Then make it binary. This little if prints PASS or FAIL. Every line of the lab's capstone check script follows the same pattern.",
-                  FadeIn(t1[1][2]), FadeIn(t1[1][3]), Succession(Wait(2.2), FadeIn(t1[1][4])), run_time=3.6)
+                  FadeIn(t1[1][2]), FadeIn(t1[1][3]), FadeIn(t1[1][4]), Succession(Wait(2.2), FadeIn(t1[1][5])), run_time=3.6)
         self.play(FadeOut(t1), run_time=0.5)
         t2 = term([("$ security/capstone-check.sh        (trimmed)", GREY_B),
                    ("FAIL  Deployment hello-devops is not ready", RED_M),
@@ -154,7 +154,7 @@ class D68KeeperWalk(VoiceScene):
         self.play(FadeOut(x6), stops[5].animate.set_stroke(GREEN_M).set_fill(tint(GREEN_M, 0.4), 1), run_time=0.6)
 
         # ---------- 6. a game day: the bucket in the drain
-        self.play(walk.animate.scale(0.8).move_to([0, 2.4, 0]), run_time=0.8)
+        self.play(walk.animate.scale(0.8).move_to([0, 2.3, 0]), run_time=0.8)
         gd = T("game day: break it on purpose", 30, BLUE_M).move_to([0, 0.5, 0])
         self.beat("Checks prove the path works when things go right. A game day finds out what happens when they go wrong. You break something on purpose, like pouring a bucket into the drain before the first storm.",
                   FadeIn(gd), run_time=2.4)

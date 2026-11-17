@@ -111,21 +111,20 @@ class D18SoupJar(VoiceScene):
         eye = Arrow([X - 2.8, 2.7, 0], [X - 2.8, -2.2, 0], buff=0, stroke_width=3, color=WHITE, max_tip_length_to_length_ratio=0.05)
         self.steps("The container sees all the tiers merged into one folder tree. To read a file, it looks from the top down, and uses the first copy it finds.",
                    (0.6, FadeIn(view[1])), (1.6, Wait(1.6)), (1.4, GrowArrow(eye)))
-        cfg = T("a file", 24, BLUE_M).move_to(L2).shift(RIGHT * 1.3)
-        L2t = L2[1]
-        self.play(L2t.animate.shift(LEFT * 0.6), FadeIn(cfg), run_time=0.5)
-        cfg_up = T("its copy", 24, GOLD_M).move_to(ctr).shift(RIGHT * 1.3)
+        cfg = T("a file", 26, BLUE_M).next_to(L2, RIGHT, buff=0.3)
+        self.play(FadeOut(ro), FadeIn(cfg), run_time=0.5)
+        cfg_up = T("its copy", 26, GOLD_M).next_to(ctr, RIGHT, buff=0.3)
         self.steps("Now the app changes a file that came from the image. The first write copies the whole file up into the container's tier, and later writes change that copy. That is called copy-on-write.",
-                   (2.4, Wait(2.4)), (1.2, TransformFromCopy(cfg, cfg_up), ctl.animate.shift(LEFT * 0.7)), (2.4, Wait(2.4)), (0.6, Indicate(cfg_up, color=GOLD_M)))
+                   (2.4, Wait(2.4)), (1.2, TransformFromCopy(cfg, cfg_up)), (2.4, Wait(2.4)), (0.6, Indicate(cfg_up, color=GOLD_M)))
         self.beat("The original below never changes. From above, the copy on top simply wins.",
                   cfg.animate.set_opacity(0.4), run_time=1.0)
-        self.play(FadeOut(VGroup(cfg, cfg_up, eye, view[1], ro)), L2t.animate.shift(RIGHT * 0.6), ctl.animate.shift(RIGHT * 0.7), run_time=0.5)
-        self.play(FadeOut(VGroup(ctr, ctl, base)), run_time=0.5)
+        self.play(FadeOut(VGroup(cfg, cfg_up, eye, view[1])), run_time=0.5)
+        self.play(FadeOut(VGroup(ctr, ctl, base, lab)), run_time=0.5)
 
         # 6. predict: create in one step, delete in the next
-        A1 = tier("alpine:3.22", BLUE_M, w=4.0).move_to([-3.4, -1.9, 0])
-        A2 = tier("RUN: make /big.bin  50 MB", GOLD_M, w=4.0, size=24).next_to(A1, UP, buff=0.08)
-        A3 = tier("RUN: rm /big.bin", PURPLE_M, w=4.0, size=24).next_to(A2, UP, buff=0.08)
+        A1 = tier("alpine:3.22", BLUE_M, w=4.6).move_to([-3.4, -1.9, 0])
+        A2 = tier("RUN: make /big.bin  50 MB", GOLD_M, w=4.6, size=24).next_to(A1, UP, buff=0.08)
+        A3 = tier("RUN: rm /big.bin", PURPLE_M, w=4.6, size=24).next_to(A2, UP, buff=0.08)
         two = VGroup(A1, A2, A3)
         tl = T("two steps", 28).next_to(two, UP, buff=0.3)
         self.steps("Now the soup. Start from Alpine, a tiny Linux image. One RUN step creates a 50 megabyte file. The next RUN step deletes it.",
@@ -135,8 +134,8 @@ class D18SoupJar(VoiceScene):
         wo = T("whiteout", 26, PURPLE_M).next_to(A3, RIGHT, buff=0.3)
         self.steps("Remember the rule: a layer can only add changes. So the delete step adds a tiny marker, called a whiteout, that hides the file below. The 50 megabytes stay in their layer, and ship with every pull.",
                    (2.6, Wait(2.6)), (0.6, FadeIn(wo)), (3.0, Wait(3.0)), (0.8, Indicate(A2[0], color=GOLD_M)))
-        B1 = tier("alpine:3.22", BLUE_M, w=4.0).move_to([3.4, -1.9, 0])
-        B2 = tier("RUN: make && rm", GREEN_M, w=4.0, size=24).next_to(B1, UP, buff=0.08)
+        B1 = tier("alpine:3.22", BLUE_M, w=4.6).move_to([3.4, -1.9, 0])
+        B2 = tier("RUN: make && rm", GREEN_M, w=4.6, size=24).next_to(B1, UP, buff=0.08)
         onel2 = T("one step", 28).next_to(VGroup(B1, B2), UP, buff=0.3).align_to(tl, UP)
         self.steps("Compare the same work done in one RUN step, creating and deleting joined with and and.",
                    (0.8, FadeIn(B1), FadeIn(B2, shift=DOWN * 0.2), FadeIn(onel2)), (0.4, wo.animate.set_opacity(0.0)))
@@ -177,8 +176,7 @@ class D18SoupJar(VoiceScene):
         self.steps("So, the moral of the story. An image is a stack of read-only layers, shared by fingerprint. A container adds one writable tier on top. And a delete in a later layer is a sticker, not a removal.",
                    (0.6, FadeIn(mor[0], shift=UP * 0.1)), (1.2, Wait(1.2)), (0.6, FadeIn(mor[1], shift=UP * 0.1)), (0.8, Wait(0.8)), (0.6, FadeIn(mor[2], shift=UP * 0.1)), (1.4, Wait(1.4)), (0.6, FadeIn(mor[3], shift=UP * 0.1)))
         self.play(FadeOut(mor), run_time=0.4)
-        quiz = T("Quick check: one step downloads a file, a later step deletes it. Did the image shrink?", 26, YELLOW_M).move_to([0, 0.6, 0])
-        fit(quiz, 12.4)
+        quiz = VGroup(T("Quick check: one step downloads a file,", 28, YELLOW_M), T("a later step deletes it. Did the image shrink?", 28, YELLOW_M)).arrange(DOWN, buff=0.12).move_to([0, 0.6, 0])
         self.beat("Quick check. One step downloads a big file, and a later step deletes it. Did the image shrink?", FadeIn(quiz, shift=UP * 0.1), run_time=1.2)
         self.wait(2.0)
         ans = T("No. The bytes stay below; the delete only hides them.", 28, GREEN_M).next_to(quiz, DOWN, buff=0.35)

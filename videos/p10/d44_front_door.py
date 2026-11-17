@@ -51,7 +51,7 @@ class D44FrontDoor(VoiceScene):
         wall_bot = Line([-1.2, -0.7, 0], [-1.2, -3.3, 0], stroke_width=4, color=GREY_B)
         dlab = T("street door", 24, GREY_B).move_to([-1.2, -0.1, 0]).rotate(PI / 2).shift(LEFT * 0.35)
         names = ("noodles", "tacos", "curry", "pizza", "our kitchen")
-        KY = (2.6, 1.3, 0.0, -1.3, -2.6)
+        KY = (2.7, 1.4, 0.1, -1.2, -2.5)
         kit = VGroup(*[box(n, TEAL_M if i == 4 else GREY_B, w=2.8, h=0.8, size=26).move_to([4.4, y, 0]) for i, (n, y) in enumerate(zip(names, KY))])
         self.beat("Picture our restaurant moving into a food hall. Five kitchens now share one street door.",
                   Create(wall_top), Create(wall_bot), FadeIn(dlab), LaggedStart(*[FadeIn(k, shift=LEFT * 0.2) for k in kit], lag_ratio=0.2), run_time=2.6)
@@ -66,7 +66,7 @@ class D44FrontDoor(VoiceScene):
         g1 = guests[1]
         self.play(g1.animate.move_to([-0.6, -0.1, 0]), run_time=0.6)
         self.play(g1.animate.move_to(kit[4].get_left() + LEFT * 0.3), run_time=0.6)
-        tast = T("1 table in 10: tasting menu", 24, YELLOW_M).move_to([4.4, -3.35, 0])
+        tast = T("1 table in 10: tasting menu", 24, YELLOW_M).move_to([4.4, -3.25, 0])
         self.beat("On test nights, the host sends one table in ten to the new tasting menu. We'll come back to that.",
                   FadeIn(tast, shift=UP * 0.1), run_time=1.6)
         self.beat("So here's the question. Our app already has a Service with an address. Why need anything more to let visitors in?",
@@ -92,7 +92,7 @@ class D44FrontDoor(VoiceScene):
         # a LoadBalancer Service: a door with no host
         door = RoundedRectangle(corner_radius=0.1, width=1.6, height=2.2, stroke_color=GREY_B, stroke_width=3).set_fill(tint(GREY_B, 0.1), 1).move_to([-0.6, 0.3, 0])
         doorl = M("LoadBalancer", 24, GREY_B).next_to(door, UP, buff=0.2)
-        env = envelope("GET shop.example.com/api").move_to([-4.6, 0.3, 0])
+        env = envelope("GET shop.example.com/api").move_to([-4.3, 0.3, 0])
         hdr = M("x-canary: always", 22, GREY_B).next_to(env, DOWN, buff=0.15)
         self.beat("A Service of type LoadBalancer does give you an address. But it's a door with no host.",
                   FadeIn(door), FadeIn(doorl), FadeIn(env), FadeIn(hdr), run_time=2.0)
@@ -110,12 +110,12 @@ class D44FrontDoor(VoiceScene):
         pl = T("reads web requests: layer 7", 24, GOLD_M).next_to(prox, DOWN, buff=0.25)
         self.beat("A program that does that is a proxy. It sits in front of your apps and passes each request on, reading it at layer 7.",
                   FadeIn(prox), Succession(Wait(3.2), FadeIn(pl)), run_time=4.2)
-        book = RoundedRectangle(corner_radius=0.08, width=3.0, height=2.4, stroke_color=BLUE_M, stroke_width=3).set_fill(tint(BLUE_M, 0.1), 1).move_to([-4.6, 0.3, 0])
+        book = RoundedRectangle(corner_radius=0.08, width=2.8, height=2.4, stroke_color=BLUE_M, stroke_width=3).set_fill(tint(BLUE_M, 0.1), 1).move_to([-4.5, 0.3, 0])
         bt = VGroup(M("Ingress", 26, BLUE_M), T("hosts, paths, TLS", 24)).arrange(DOWN, buff=0.25).move_to(book)
         self.beat("A host needs a book of rules. Kubernetes' older one is Ingress: host names, paths, TLS.",
                   FadeIn(book), FadeIn(bt), run_time=2.0)
         notes = VGroup(T("rewrite?", 20, RED_M), T("timeouts!", 20, RED_M), T("canary=10", 20, RED_M), T("see p.4", 20, RED_M))
-        for n, p in zip(notes, ([-6.55, 1.2, 0], [-6.5, 0.1, 0], [-6.5, -1.0, 0], [-3.4, -1.25, 0])):
+        for n, p in zip(notes, ([-5.4, 1.8, 0], [-3.7, 1.8, 0], [-5.4, -1.25, 0], [-3.7, -1.25, 0])):
             n.move_to(p).rotate(0.15)
         self.beat("Everything else went into margin notes, each controller with its own shorthand.",
                   LaggedStart(*[FadeIn(n, scale=0.8) for n in notes], lag_ratio=0.4), run_time=2.8)
@@ -127,13 +127,13 @@ class D44FrontDoor(VoiceScene):
 
         # ---------- 4. the Gateway API: one object per role
         OY = 2.55
-        gc = obj("GatewayClass", "who staffs the door", BLUE_M).move_to([-4.4, OY, 0])
-        gw = obj("Gateway", "the street door", BLUE_M).move_to([-0.6, OY, 0])
-        hr = obj("HTTPRoute", "a kitchen's line in the book", BLUE_M, w=3.5).move_to([3.4, OY, 0])
+        gc = obj("GatewayClass", "who staffs the door", BLUE_M, w=3.3).move_to([-4.4, OY, 0])
+        gw = obj("Gateway", "the street door", BLUE_M, w=3.3).move_to([-0.6, OY, 0])
+        hr = obj("HTTPRoute", "each kitchen's line", BLUE_M, w=3.5).move_to([3.4, OY, 0])
         self.beat("The newer set of objects is the Gateway API. It splits the job by who owns what, just like the food hall.",
                   prox.animate.move_to([-0.6, -1.3, 0]), FadeOut(pl), app.animate.move_to([4.2, -1.3, 0]), run_time=1.6)
-        own = VGroup(T("platform team, once per cluster", 20, GREY_B).next_to(gc, DOWN, buff=0.15),
-                     T("listeners: HTTP on port 80", 20, GREY_B).next_to(gw, DOWN, buff=0.15),
+        own = VGroup(T("platform team, once", 20, GREY_B).next_to(gc, DOWN, buff=0.15),
+                     T("listener: HTTP, port 80", 20, GREY_B).next_to(gw, DOWN, buff=0.15),
                      T("app teams", 20, GREY_B).next_to(hr, DOWN, buff=0.15))
         self.beat("A GatewayClass says which controller handles the door. That's the company that staffs the entrance. The platform team creates it once per cluster.",
                   FadeIn(gc), FadeIn(own[0]), run_time=2.0)
@@ -239,7 +239,7 @@ class D44FrontDoor(VoiceScene):
         self.play(FadeOut(VGroup(tester, ex, ca, cc)), run_time=0.5)
 
         # ---------- 7. guardrails: TLS at the door, and where to look first
-        lock = chip("HTTPS listener: tls.mode Terminate", GREEN_M, 22, mono=True).move_to([-3.8, 0.55, 0])
+        lock = chip("HTTPS listener: tls.mode Terminate", GREEN_M, 22, mono=True).move_to([-3.3, 0.55, 0])
         self.beat("Two habits. First, set TLS once, on the Gateway: an HTTPS listener with mode Terminate decrypts at the proxy, with a certificate from a Secret.",
                   FadeOut(ctl), FadeIn(lock, shift=DOWN * 0.1), run_time=2.2)
         plain = T("last hop: unencrypted", 22, RED_M).move_to([1.7, -2.05, 0])

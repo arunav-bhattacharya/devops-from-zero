@@ -1,0 +1,417 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:06.358
+Here is a question people are often too polite to ask.
+
+2
+00:00:06.358 --> 00:00:09.610
+Surely the job is done when the code is written.
+
+3
+00:00:09.610 --> 00:00:10.016
+Right?
+
+4
+00:00:10.233 --> 00:00:12.331
+Let's answer that one in a kitchen.
+
+5
+00:00:12.533 --> 00:00:15.468
+Picture yourself baking bread in your home kitchen.
+
+6
+00:00:15.468 --> 00:00:16.792
+The neighbours love it.
+
+7
+00:00:17.000 --> 00:00:22.169
+Then the café down the street asks for forty loaves, every morning, starting Monday.
+
+8
+00:00:22.400 --> 00:00:25.255
+Baking one good loaf was never the hard part.
+
+9
+00:00:25.255 --> 00:00:30.776
+The hard part is forty good loaves, every morning, while you keep improving the recipe.
+
+10
+00:00:31.000 --> 00:00:32.969
+And nobody gets a burnt one.
+
+11
+00:00:33.700 --> 00:00:35.798
+Software has the same problem.
+
+12
+00:00:35.798 --> 00:00:41.671
+A program helps nobody until it runs for real people, every day, after every change.
+
+13
+00:00:43.100 --> 00:00:46.755
+Now you bake, and your cousin drives the loaves to the café.
+
+14
+00:00:46.967 --> 00:00:49.664
+One Friday, the café calls at seven.
+
+15
+00:00:49.664 --> 00:00:51.012
+The bread is flat.
+
+16
+00:00:51.233 --> 00:00:52.799
+Only you know the recipe.
+
+17
+00:00:52.799 --> 00:00:56.495
+So you blame the hot van, and your cousin blames the dough.
+
+18
+00:00:56.700 --> 00:00:57.617
+And the café?
+
+19
+00:00:57.617 --> 00:00:58.675
+Still no bread.
+
+20
+00:00:58.675 --> 00:01:02.203
+The only thing that arrived on time was the blame.
+
+21
+00:01:02.433 --> 00:01:06.771
+So the point is: with a wall in the middle, nobody owns the whole road.
+
+22
+00:01:07.000 --> 00:01:10.055
+Software teams were split the same way for years.
+
+23
+00:01:10.055 --> 00:01:13.733
+Developers wrote the code, the instructions for a computer.
+
+24
+00:01:13.967 --> 00:01:20.437
+Operations ran it on servers, computers that stay on day and night and answer other computers.
+
+25
+00:01:20.667 --> 00:01:24.478
+At two in the morning the app broke, and operations got the call.
+
+26
+00:01:24.478 --> 00:01:26.824
+But only developers understood the code.
+
+27
+00:01:27.033 --> 00:01:32.117
+So releases, batches of changes for users, became rare, huge and dreaded.
+
+28
+00:01:32.333 --> 00:01:37.289
+Wouldn't it be nice if the person who knows the recipe also heard about the flat bread?
+
+29
+00:01:37.500 --> 00:01:38.816
+That wish has a name.
+
+30
+00:01:38.816 --> 00:01:44.767
+DevOps: a way of working where the people who build software also share the work of running it.
+
+31
+00:01:45.000 --> 00:01:49.780
+You share one goal, good bread at seven, and take turns on the early call.
+
+32
+00:01:49.780 --> 00:01:51.072
+That's on-call duty.
+
+33
+00:01:51.300 --> 00:01:57.743
+You make small changes, taste every batch, and buy the timer and mixer that make those habits cheap.
+
+34
+00:01:57.743 --> 00:01:59.612
+Culture, practices and tools.
+
+35
+00:01:59.833 --> 00:02:01.527
+Notice the order, though.
+
+36
+00:02:01.527 --> 00:02:04.711
+A shiny new mixer never got two people talking.
+
+37
+00:02:04.933 --> 00:02:06.868
+Tools make good habits cheap.
+
+38
+00:02:06.868 --> 00:02:08.403
+They don't create them.
+
+39
+00:02:09.333 --> 00:02:11.578
+Now follow one change down the road.
+
+40
+00:02:11.578 --> 00:02:13.635
+Say you decide to use less sugar.
+
+41
+00:02:13.867 --> 00:02:17.726
+You write it on the recipe card, bake a test batch and taste it.
+
+42
+00:02:17.726 --> 00:02:20.259
+Then the bag, the van, and the café shelf.
+
+43
+00:02:20.467 --> 00:02:22.292
+Now picture a busy Tuesday.
+
+44
+00:02:22.292 --> 00:02:25.131
+You skip the tasting, to save ten minutes.
+
+45
+00:02:25.333 --> 00:02:29.884
+On Friday, an unhappy café owner tells you the bread tastes of nothing.
+
+46
+00:02:30.100 --> 00:02:32.216
+The mistake was made on Tuesday.
+
+47
+00:02:32.216 --> 00:02:35.191
+You paid for it on Friday, far down the road.
+
+48
+00:02:35.400 --> 00:02:37.111
+Hold on to that distance.
+
+49
+00:02:37.111 --> 00:02:39.232
+It is the whole story of today.
+
+50
+00:02:40.133 --> 00:02:47.521
+Software takes the same road, called the pipeline: fixed steps, run by machines, from your laptop to real users.
+
+51
+00:02:47.733 --> 00:02:48.095
+Code.
+
+52
+00:02:48.095 --> 00:02:53.955
+You change code, and commit it to git, a tool that saves snapshots of your files.
+
+53
+00:02:54.167 --> 00:02:54.585
+Build.
+
+54
+00:02:54.585 --> 00:02:58.276
+A machine turns the code into something that can run.
+
+55
+00:02:58.500 --> 00:02:58.840
+Test.
+
+56
+00:02:58.840 --> 00:03:03.399
+Small programs check that the change works, and broke nothing else.
+
+57
+00:03:03.600 --> 00:03:04.166
+Package.
+
+58
+00:03:04.166 --> 00:03:09.117
+The app and everything it needs go into one bundle, a container image.
+
+59
+00:03:09.333 --> 00:03:09.898
+Release.
+
+60
+00:03:09.898 --> 00:03:14.488
+It gets a version number, and goes to a shared store, a registry.
+
+61
+00:03:14.700 --> 00:03:15.226
+Deploy.
+
+62
+00:03:15.226 --> 00:03:19.129
+The new version replaces the old one on the servers.
+
+63
+00:03:19.333 --> 00:03:19.627
+Run.
+
+64
+00:03:19.627 --> 00:03:24.040
+Software keeps the app alive, and restarts it if it crashes.
+
+65
+00:03:24.267 --> 00:03:24.858
+Observe.
+
+66
+00:03:24.858 --> 00:03:28.483
+Graphs, logs and alerts show how the app behaves.
+
+67
+00:03:28.700 --> 00:03:29.319
+Feedback.
+
+68
+00:03:29.319 --> 00:03:31.935
+What you learn shapes the next change.
+
+69
+00:03:32.167 --> 00:03:33.773
+And the loop starts again.
+
+70
+00:03:34.000 --> 00:03:42.113
+The bakery, mapped: the recipe card is the code, the tasting is the test, the bag is the package, and the van is the deploy.
+
+71
+00:03:42.333 --> 00:03:45.128
+Let's send one tiny change down this road.
+
+72
+00:03:45.128 --> 00:03:51.584
+Tomorrow you create hello-devops, a tiny web app that greets every visitor and counts the visits.
+
+73
+00:03:51.800 --> 00:03:54.652
+You change its greeting from Hello, DevOps!
+
+74
+00:03:54.652 --> 00:03:56.112
+to Hi there, and push.
+
+75
+00:03:56.112 --> 00:03:59.031
+But one test still expects the old greeting.
+
+76
+00:03:59.233 --> 00:04:01.757
+Where on the road does this mistake get caught?
+
+77
+00:04:04.967 --> 00:04:07.087
+Right here, at the test step.
+
+78
+00:04:07.087 --> 00:04:08.329
+It fails at once.
+
+79
+00:04:08.533 --> 00:04:15.196
+You find out two minutes later, on your own branch, your own line of work, instead of from a user on Friday night.
+
+80
+00:04:15.400 --> 00:04:17.468
+Remember the tasting we skipped?
+
+81
+00:04:17.468 --> 00:04:21.280
+This is that tasting, done by a machine, every single time.
+
+82
+00:04:21.500 --> 00:04:26.819
+Every step catches its own kind of mistake, as close as possible to where it was made.
+
+83
+00:04:27.033 --> 00:04:30.240
+Fix the test, push again, and the change moves on.
+
+84
+00:04:30.867 --> 00:04:34.948
+Steps two to six have a name you will see everywhere: CI/CD.
+
+85
+00:04:35.167 --> 00:04:41.403
+Continuous integration: small changes, added often, each built and tested by a machine.
+
+86
+00:04:41.403 --> 00:04:46.134
+Continuous delivery: every change that passes is ready to release.
+
+87
+00:04:46.134 --> 00:04:47.496
+Part 6 builds both.
+
+88
+00:04:48.300 --> 00:04:50.710
+So, should a machine do everything?
+
+89
+00:04:50.710 --> 00:04:50.917
+No.
+
+90
+00:04:50.917 --> 00:04:53.603
+Deciding what to change takes a person.
+
+91
+00:04:53.603 --> 00:04:56.220
+Building, testing and shipping do not.
+
+92
+00:04:56.433 --> 00:05:00.131
+When a step goes the same way every time, give it to a machine.
+
+93
+00:05:00.833 --> 00:05:03.974
+So, is the job done when the code is written?
+
+94
+00:05:03.974 --> 00:05:04.184
+No.
+
+95
+00:05:04.184 --> 00:05:06.976
+Finished code is only the halfway point.
+
+96
+00:05:07.200 --> 00:05:13.372
+You are done when it runs well in production, the live system your users use, and you can see that it does.
+
+97
+00:05:13.600 --> 00:05:15.389
+One team owns the whole road.
+
+98
+00:05:15.389 --> 00:05:17.486
+Each step catches its own mistake.
+
+99
+00:05:17.486 --> 00:05:19.892
+And whatever repeats goes to a machine.
+
+100
+00:05:20.900 --> 00:05:21.815
+A quick check.
+
+101
+00:05:21.815 --> 00:05:27.961
+Your team has a script that builds and tests the app, but someone runs it by hand once a week.
+
+102
+00:05:27.961 --> 00:05:28.941
+Best next step?
+
+103
+00:05:32.167 --> 00:05:33.567
+Run it on every push.
+
+104
+00:05:33.567 --> 00:05:36.767
+Feedback in minutes beats a tasting once a week.

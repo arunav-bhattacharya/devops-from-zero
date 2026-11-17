@@ -220,8 +220,8 @@ class D40ShiftChange(Base):
         stall = T("the rollout stalls, and waits", 30, YELLOW_M).move_to([0, -3.2, 0])
         self.beat("Visitors notice very little. The rollout simply stalls. But Kubernetes does not roll back by itself. It waits.",
                   FadeIn(stall, shift=UP * 0.1), run_time=1.6)
-        dl = VGroup(T("after 600 seconds, by default:", 24, GREY_B), M("ProgressDeadlineExceeded", 22, BAD)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        dl.move_to([2.6, 2.75, 0], aligned_edge=LEFT)
+        dl = VGroup(T("after 600 s, by default:", 22, GREY_B), M("ProgressDeadlineExceeded", 22, BAD)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        dl.move_to([2.55, 2.75, 0], aligned_edge=LEFT)
         self.beat("After six hundred seconds by default, the Deployment reports ProgressDeadlineExceeded.",
                   FadeOut(rules), FadeIn(dl), run_time=1.6)
         undo = M("$ kubectl rollout undo deployment/hello-devops", 24, WHITE).move_to([0, -3.2, 0])
@@ -235,7 +235,7 @@ class D40ShiftChange(Base):
         # ---------- 6. NAME + GUARDRAIL: ready is the whole safety
         self.play(FadeOut(VGroup(undo, dl, brs)), run_time=0.7)
         name = T("rolling update", 36, YELLOW_M).move_to([3.9, 0.9, 0])
-        gl = T("replace a few Pods at a time, so the app keeps answering", 24, GREY_B).move_to([3.0, 0.2, 0])
+        gl = T("a few Pods at a time, so the app keeps answering", 24, GREY_B).move_to([3.0, 0.2, 0])
         gl.align_to(np.array([0.3, 0, 0]), LEFT)
         name.align_to(gl, LEFT)
         self.beat("What we just watched has a name: a rolling update. It replaces old Pods with new ones a few at a time, so the app keeps answering. It is the default strategy.",

@@ -59,7 +59,7 @@ class D19NapkinLast(VoiceScene):
                    (1.8, Wait(1.8)), (1.0, ReplacementTransform(lunch, flip)), (1.6, LaggedStart(*[FadeIn(r) for r in redo], lag_ratio=0.35)))
         self.beat("Nobody would write a list like that. And yet, in software, we do it all the time.",
                   Indicate(flip[1][1], color=RED_M), run_time=1.4)
-        self.play(FadeOut(VGroup(flip, redo, head)), rule.animate.scale(0.9).move_to([4.6, 2.6, 0]), run_time=0.7)
+        self.play(FadeOut(VGroup(flip, redo, head)), rule.animate.move_to([4.5, 2.75, 0]), run_time=0.7)
 
         # 2. map onto a Dockerfile
         df = VGroup(row("FROM python:3.14-slim", BLUE_M), row("WORKDIR /app", BLUE_M), row("COPY . .", PURPLE_M), row("RUN pip install -r requirements.txt", GOLD_M))
@@ -168,7 +168,7 @@ class D19NapkinLast(VoiceScene):
                    (0.3, FadeIn(env2)), (1.0, env2.animate.move_to(gu2)), (0.3, FadeOut(env2, scale=0.5)), (0.6, tt.animate.set_value(0.6)), (0.6, FadeOut(gu2), FadeOut(g1)), (0.6, FadeIn(ec2)))
 
         # guardrail: exec form is half the fix
-        half = VGroup(T("exec form is only half the fix:", 26, GOLD_M), T("the app must handle SIGTERM itself", 26, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([-4.0, -0.7, 0])
+        half = VGroup(T("exec form is only half the fix:", 26, GOLD_M), T("the app must handle SIGTERM itself", 26, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([-6.3, -0.7, 0], aligned_edge=LEFT)
         self.steps("One honest catch. Exec form is only half the fix. The app must also handle SIGTERM itself. gunicorn does. A bare Python script does not, and as PID 1 it waited out the full ten seconds in our test, just like sleep.",
                    (0.8, FadeIn(half, shift=UP * 0.1)))
         timer.clear_updaters()
@@ -178,8 +178,7 @@ class D19NapkinLast(VoiceScene):
         mor = VGroup(T("slow, stable steps first; the code last", 28, GOLD_M), T("CMD as a list, so the app is PID 1", 28, GREEN_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.25).move_to([0, 1.2, 0])
         self.steps("So the moral of the story. Put the slow, stable steps first and the code last, so an edit rebuilds in a blink. And write CMD as a list, so the app itself hears the polite message, and stops in time.",
                    (0.8, FadeIn(mor[0], shift=UP * 0.1)), (3.4, Wait(3.4)), (0.8, FadeIn(mor[1], shift=UP * 0.1)))
-        quiz = T("Quick check: COPY . . comes before pip install. You edit app.py. Does pip run again?", 26, YELLOW_M).move_to([0, -0.9, 0])
-        fit(quiz, 12.4)
+        quiz = VGroup(T("Quick check: COPY . . comes before pip install.", 28, YELLOW_M), T("You edit app.py. Does pip run again?", 28, YELLOW_M)).arrange(DOWN, buff=0.12).move_to([0, -0.9, 0])
         self.beat("Quick check. A Dockerfile copies every file, then runs pip install. You edit app.py. Does pip run again?",
                   FadeIn(quiz, shift=UP * 0.1), run_time=1.4)
         self.wait(2.0)

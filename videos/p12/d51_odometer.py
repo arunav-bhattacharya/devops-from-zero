@@ -117,8 +117,8 @@ class D51Odometer(VoiceScene):
         win = Rectangle(width=ax.c2p(10, 0)[0] - ax.c2p(0, 0)[0], height=3.6, stroke_color=BLUE_M, stroke_width=3).set_fill(BLUE_M, 0.12)
         win.move_to(ax.c2p(40, 200))
         self.beat("Slide a ten second window along the readings. It usually holds only one.",
-                  FadeIn(win), win.animate.move_to(ax.c2p(42, 200)), run_time=1.8)
-        self.play(win.animate.move_to(ax.c2p(23, 200)), run_time=1.0)
+                  Succession(FadeIn(win), win.animate.move_to(ax.c2p(42, 200))), run_time=1.8)
+        self.play(win.animate.move_to(ax.c2p(31, 200)), run_time=1.0)
         self.beat("One reading, nothing to subtract. So the series quietly drops out of the result. No error, no zero. Nothing at all.",
                   opts[3].animate.set_color(GREEN_M), Indicate(dots[1], color=BLUE_M), run_time=2.4)
         self.beat("Well, that is a query that looks right and answers with silence.", run_time=None)

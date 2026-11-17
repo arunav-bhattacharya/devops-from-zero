@@ -106,7 +106,7 @@ class D64SafeOrder(VoiceScene):
         cookl = T("the cook", 24, TEAL_M).next_to(cook, RIGHT, buff=0.3)
         self.beat("Now back to the jam shop. A new helper may not open the safe in the office. Fair enough. But the helper may send the cook an order.",
                   FadeIn(cook), FadeIn(cookl), run_time=2.6)
-        order = slip("bring me what's in the safe").move_to([-5.0, 2.0, 0])
+        order = slip("bring me what's in the safe").move_to([-4.3, 2.2, 0])
         self.beat("And the order says: bring me what's in the safe.", FadeIn(order, shift=DOWN * 0.15), run_time=1.6)
         ok = tick(True, 0.2).next_to(desk, UP, buff=0.2)
         self.steps("The front desk checks one thing: may this helper send orders to the kitchen? Yes. The cook, trusting the order, opens the safe and brings it out.",

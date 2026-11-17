@@ -80,40 +80,40 @@ class D45TwoRoads(VoiceScene):
         # ---------- 2. road one: a recipe card with blanks (Helm)
         h1 = T("a recipe card with blanks", 30, BLUE_M).move_to([0, 3.2, 0])
         tpl = card([("replicas: {{ .Values.replicaCount }}", WHITE), ("GREETING: {{ .Values.greeting | quote }}", WHITE)], BLUE_M, size=24).move_to([-2.6, 1.6, 0])
-        tl = T("template", 24, BLUE_M).next_to(tpl, LEFT, buff=0.3)
+        tl = T("template", 24, BLUE_M).next_to(tpl, UP, buff=0.15, aligned_edge=LEFT)
         self.beat("The first way is a recipe card with blanks for the amounts. You write the YAML once, and leave blanks in it.",
                   FadeIn(h1), FadeIn(tpl), FadeIn(tl), run_time=2.0)
         self.beat("This blank reads the replica count from the values. This one reads the greeting, and the pipe wraps it in quotes.",
                   Indicate(tpl[1][0], color=BLUE_M), Succession(Wait(2.2), Indicate(tpl[1][1], color=BLUE_M)), run_time=3.6)
-        vals = card([("values.yaml", BLUE_M), ("replicaCount: 2", WHITE), ('greeting: "Hello from Helm!"', WHITE)], BLUE_M, size=22).move_to([-4.0, -0.8, 0])
+        vals = card([("values.yaml", BLUE_M), ("replicaCount: 2", WHITE), ('greeting: "Hello from Helm!"', WHITE)], BLUE_M, size=22).move_to([-3.8, -0.8, 0])
         kvals = card([("kind-values.yaml", YELLOW_M), ('greeting: "Hello from Helm on kind!"', YELLOW_M)], YELLOW_M, size=22).move_to([-1.0, -2.35, 0])
         self.beat("The chart comes with default settings, the values that fill the blanks. Two replicas. Hello from Helm.",
                   FadeIn(vals), run_time=1.6)
         self.beat("Each branch adds its own values file on top. The lab's file for kind changes only the greeting. When two files set the same key, the later one wins.",
                   FadeIn(kvals, shift=UP * 0.1), Succession(Wait(3.4), Indicate(vals[1][2], color=GREY_B)), run_time=4.4)
-        out = card([("replicas: 2", WHITE), ('GREETING: "Hello from Helm on kind!"', WHITE)], GREY_B, size=22).move_to([3.7, 0.5, 0])
+        out = card([("replicas: 2", WHITE), ('GREETING: "Hello from Helm on kind!"', WHITE)], GREY_B, size=22).move_to([3.1, -0.9, 0])
         ol = T("plain YAML", 24, GREY_B).next_to(out, UP, buff=0.2)
-        fa = Arrow([0.4, 0.5, 0], out.get_left(), buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.15)
+        fa = Arrow([1.6, 1.4, 0], ol.get_top() + UP * 0.05, buff=0.1, stroke_width=3, color=GREY_B, max_tip_length_to_length_ratio=0.15)
         self.beat("Fill the blanks, and out comes plain YAML. Two replicas, and hello from Helm on kind, in quotes.",
                   GrowArrow(fa), FadeIn(out), FadeIn(ol), run_time=2.0)
         hn = VGroup(T("Helm", 34, BLUE_M), T("a tool that installs packaged apps", 24, GREY_B)).arrange(DOWN, buff=0.15).move_to([0, -2.6, 0])
         self.beat("The tool is Helm, which installs packaged apps, a bit like an app store for a cluster. Its package is a chart: templates plus default values.",
-                  Transform(h1, T("Helm: templating", 30, BLUE_M).move_to(h1)), FadeIn(hn), run_time=2.4)
+                  Transform(h1, T("Helm: templating", 30, BLUE_M).move_to(h1)), FadeOut(vals), FadeOut(kvals), Succession(Wait(0.6), FadeIn(hn)), run_time=2.4)
         cmd = M("helm template hello chart/hello-devops", 24, GREY_B).move_to([0, -2.6, 0])
         self.beat("And helm template fills every blank and prints the result, without touching the cluster. Look before you install.",
                   FadeOut(hn), FadeIn(cmd), run_time=1.6)
-        self.play(FadeOut(VGroup(tpl, tl, vals, kvals, out, ol, fa, cmd)), run_time=0.6)
+        self.play(FadeOut(VGroup(tpl, tl, out, ol, fa, cmd)), run_time=0.6)
 
         # ---------- 3. releases and revisions: a logbook in pen
         RX = [-4.8 + 2.4 * i for i in range(5)]
         RY = 0.8
 
         def rev(n, label, c):
-            r = RoundedRectangle(corner_radius=0.12, width=2.0, height=1.15, stroke_color=c, stroke_width=3).set_fill(tint(c), 1)
+            r = RoundedRectangle(corner_radius=0.12, width=2.2, height=1.15, stroke_color=c, stroke_width=3).set_fill(tint(c), 1)
             g = VGroup(M(f"rev {n}", 24, c), T(label, 20, GREY_B)).arrange(DOWN, buff=0.12).move_to(r)
             return VGroup(r, g).move_to([RX[n - 1], RY, 0])
         r1, r2, r3 = rev(1, "install", BLUE_M), rev(2, "upgrade", BLUE_M), rev(3, "upgrade: bad", RED_M)
-        links = VGroup(*[Line([RX[i] + 1.0, RY, 0], [RX[i + 1] - 1.0, RY, 0], stroke_width=2, color=GREY_D) for i in range(3)])
+        links = VGroup(*[Line([RX[i] + 1.1, RY, 0], [RX[i + 1] - 1.1, RY, 0], stroke_width=2, color=GREY_D) for i in range(3)])
         self.beat("When you install a chart, Helm creates a release, one named copy of it. And every install, upgrade or rollback adds a numbered revision, like lines in a logbook.",
                   FadeIn(r1), Succession(Wait(2.0), AnimationGroup(Create(links[0]), FadeIn(r2))), Succession(Wait(3.4), AnimationGroup(Create(links[1]), FadeIn(r3))), run_time=5.0)
         rb = M("helm rollback shop 1", 26, YELLOW_M).move_to([0, -1.2, 0])
@@ -155,7 +155,7 @@ class D45TwoRoads(VoiceScene):
         # ---------- 5. road two: a master recipe with sticky notes (Kustomize)
         h2 = T("a master recipe with sticky notes", 30, GREEN_M).move_to([0, 3.2, 0])
         base = card([("k8s/  (the base)", GREEN_M), ("namespace: hello", WHITE), ("replicas: 3", WHITE), ("image: hello-devops:1.0.0", WHITE),
-                     ("GREETING: Hello from Kubernetes!", WHITE)], GREEN_M, w=5.6, size=24).move_to([-3.2, 0.2, 0])
+                     ("GREETING: Hello from Kubernetes!", WHITE)], GREEN_M, w=6.4, size=24).move_to([-3.1, 0.2, 0])
         self.beat("The second way starts from the other end. Keep the recipe as plain, valid YAML, with no blanks at all. That's the base, the master recipe.",
                   FadeIn(h2), FadeIn(base), run_time=2.2)
         self.beat("You've used it already, with kubectl apply dash k.",

@@ -135,6 +135,7 @@ class D10ReadSticker(VoiceScene):
                   Create(x1), book[0].animate.set_stroke(RED_M), run_time=1.6)
         self.beat("So restarting Redis would change nothing. Redis never even heard a knock.",
                   Succession(Wiggle(fix, run_time=1.4), Wait(0.6), FadeOut(fix, run_time=0.6)), run_time=3.0)
+        self.remove(fix)
         st1 = sticker("no such street", "Name or service not known").scale(0.85).move_to(LEFT * 4.6 + UP * 2.05)
         self.beat("That's the no such street sticker. The house can be in perfect shape. The postman still can't find the street.",
                   FadeIn(st1, shift=DOWN * 0.15), run_time=1.6)

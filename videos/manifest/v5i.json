@@ -1,3 +1,4 @@
 {
- "d15": [{"slug": "d15-helper-report", "title": "Done or failed? How a script reports back on stdout, stderr and its exit code", "after": 5, "file": "p4/d15_helper_report.py", "scene": "D15HelperReport", "poster_at": 290.0, "replaces": "d15-script-io"}]
+ "d15": [{"slug": "d15-helper-report", "title": "Done or failed? How a script reports back on stdout, stderr and its exit code", "after": 5, "file": "p4/d15_helper_report.py", "scene": "D15HelperReport", "poster_at": 290.0, "replaces": "d15-script-io"}],
+ "d16": [{"slug": "d16-silent-phone", "title": "The silent phone: timeouts, polite retries, and testing with a stand-in", "after": 5, "file": "p4/d16_silent_phone.py", "scene": "D16SilentPhone", "poster_at": 300.0, "replaces": "d16-fake-far-end"}]
 }

@@ -135,7 +135,7 @@ class D57Tracking(VoiceScene):
         self.beat("The database write is short. The fraud check is long. And the card partner sits inside it.",
                   FadeIn(rlab[1]), GrowFromEdge(spans[1], LEFT), Succession(Wait(1.4), AnimationGroup(FadeIn(rlab[2]), GrowFromEdge(spans[2], LEFT))),
                   Succession(Wait(2.8), AnimationGroup(FadeIn(rlab[3]), GrowFromEdge(spans[3], LEFT))), run_time=4.2)
-        illu = T("illustrative timings", 22, GREY_B).move_to([4.6, 0.85, 0])
+        illu = T("illustrative timings", 22, GREY_B).move_to([5.1, 1.15, 0])
         self.play(FadeIn(illu), run_time=0.4)
         pq = T("Which step is slow?", 30, ASK_C).move_to([1.6, 1.15, 0])
         self.beat("Drawn like this, one row per span, the picture is called a waterfall. So, which step is slow? Pause and guess.",
@@ -176,7 +176,7 @@ class D57Tracking(VoiceScene):
         hl = [T("version", 22, GREY_B), T("trace ID, 32 hex characters", 22, ID_C), T("parent span ID, 16 hex", 22, PAR_C), T("sampled", 22, GREEN_M)]
         for t, m in zip(hl, hdr[1:]):
             t.next_to(m, DOWN, buff=0.18)
-        hl[3].shift(RIGHT * 0.25)
+        hl[3].next_to(hdr[4], DOWN, buff=0.55)
         self.beat("A version. The trace ID, the same for the whole request. The parent span ID, the caller's current span. And a flag: 01 means the caller is recording this trace.",
                   FadeIn(hl[0]), Succession(Wait(0.8), FadeIn(hl[1])), Succession(Wait(3.0), FadeIn(hl[2])), Succession(Wait(5.0), FadeIn(hl[3])), run_time=7.0)
         hop = VGroup(T("each hop:", 26, GREY_B), T("same trace ID,", 26, ID_C), T("new parent", 26, PAR_C)).arrange(RIGHT, buff=0.25).move_to([0, -1.0, 0])

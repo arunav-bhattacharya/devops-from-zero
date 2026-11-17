@@ -62,14 +62,14 @@ class D46Method(VoiceScene):
         self.play(FadeOut(VGroup(mgr, guest, ch, soup, qm, nxt)), run_time=0.6)
 
         # ---------- 2. why guessing is worse in Kubernetes
-        pod = RoundedRectangle(corner_radius=0.15, width=3.0, height=2.6, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.1), 1).move_to([-3.6, 0.2, 0])
+        pod = RoundedRectangle(corner_radius=0.15, width=4.6, height=2.6, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.1), 1).move_to([-3.7, 0.2, 0])
         pl = M("broken Pod", 24, TEAL_M).next_to(pod, UP, buff=0.15)
         clues = VGroup(chip("crashed container's logs", GREY_B, 22), chip("its last state", GREY_B, 22), chip("newest events", GREY_B, 22)).arrange(DOWN, buff=0.25).move_to(pod)
         self.beat("Kubernetes makes guessing worse. A broken Pod is full of clues. The crashed container's logs. Its last state. The newest events.",
                   FadeIn(pod), FadeIn(pl), LaggedStart(*[FadeIn(c) for c in clues], lag_ratio=0.5), run_time=3.6)
         dl = M("kubectl delete pod ...", 24, RED_M).move_to([2.6, 1.2, 0])
         self.steps("Now restart or delete it, to see if it helps. Kubernetes happily starts a fresh one. And the clues go with the old one.",
-                   (1.2, FadeIn(dl)), (1.4, Wait(1.4)), (1.2, clues.animate.shift(DOWN * 0.6).set_opacity(0)), (1.0, Indicate(pod, color=TEAL_M)))
+                   (1.2, FadeIn(dl)), (1.4, Wait(1.4)), (1.2, clues.animate.shift(DOWN * 0.6).set_opacity(0)), (1.0, Indicate(pl, color=TEAL_M)))
         self.remove(clues)
         rule = VGroup(T("Read the evidence before you change anything.", 30, YELLOW_M), T("A restart deletes clues.", 30, YELLOW_M)).arrange(DOWN, buff=0.2).move_to([0, -2.6, 0])
         self.beat("So here's the rule. Read the evidence before you change anything. A restart deletes clues.",
@@ -105,7 +105,7 @@ class D46Method(VoiceScene):
                   LaggedStart(*[GrowFromCenter(m) for m in many], lag_ratio=0.15), run_time=2.0)
         self.play(FadeOut(many), run_time=0.4)
         ladder = VGroup(route, svc, pd, node, ups, n1, n2, n3, n4, rest)
-        self.play(ladder.animate.scale(0.62).move_to([-3.9, 0.6, 0]), run_time=1.0)
+        self.play(ladder.animate.scale(0.58).move_to([-3.25, 0.6, 0]), run_time=1.0)
         cmds = VGroup(M("1  kubectl get", 24), M("2  kubectl describe", 24), M("3  kubectl logs --previous", 24),
                       M("4  kubectl get events", 24), M("5  exec, port-forward, debug", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.3).move_to([3.2, 0.6, 0])
         notes = VGroup(T("STATUS, READY, RESTARTS", 20, GREY_B), T("Events at the bottom first", 20, GREY_B), T("the one that crashed", 20, GREY_B),
@@ -117,9 +117,10 @@ class D46Method(VoiceScene):
                   LaggedStart(*[FadeIn(c, shift=LEFT * 0.15) for c in cmds_g], lag_ratio=0.6), run_time=9.0)
 
         # ---------- 4. two families of states
-        self.play(FadeOut(cmds_g), run_time=0.5)
-        hA = T("never started", 28, GOLD_M).move_to([0.5, 2.7, 0])
-        hB = T("started, then failed", 28, RED_M).move_to([4.6, 2.7, 0])
+        ladder_keep = ladder.copy()
+        self.play(FadeOut(cmds_g), FadeOut(ladder), run_time=0.6)
+        hA = T("never started", 28, GOLD_M).move_to([-2.6, 2.7, 0])
+        hB = T("started, then failed", 28, RED_M).move_to([3.0, 2.7, 0])
         sA = VGroup(*[M(s, 22, WHITE) for s in ("Pending", "ContainerCreating", "ImagePullBackOff", "CreateContainerConfigError")]).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
         sA.next_to(hA, DOWN, buff=0.4)
         sB = VGroup(*[M(s, 22, WHITE) for s in ("CrashLoopBackOff", "OOMKilled", "Running, 0/1 ready")]).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
@@ -138,35 +139,34 @@ class D46Method(VoiceScene):
         aB = chip("kubectl logs --previous", RED_M, 22, mono=True).move_to(q)
         self.beat("In the previous container's log. Plain logs shows the fresh container, which may have printed nothing yet. Dash dash previous shows the one that crashed: the note left by the cook who just went home.",
                   Transform(q, aB), run_time=1.6)
-        bo = T("\"BackOff\" = waits longer between tries. Never the cause.", 24, GREY_B).move_to([2.6, -3.2, 0])
+        bo = T("\"BackOff\" = waits longer between tries. Never the cause.", 24, GREY_B).move_to([0, -3.2, 0])
         self.beat("And BackOff only means the kubelet waits longer between tries. It's never the cause.",
                   FadeIn(bo, shift=UP * 0.1), run_time=2.0)
         self.play(FadeOut(VGroup(hA, hB, sA, sB, evA, q, bo)), run_time=0.6)
 
         # ---------- 5. a real case: one letter too many
-        self.play(ladder.animate.scale(0.75).move_to([-5.0, 2.0, 0]).set_opacity(0.5), run_time=0.8)
-        case = T("someone changed REDIS_HOST in the ConfigMap, then restarted the Deployment", 22, GREY_B).move_to([1.3, 3.3, 0])
-        fit(case, 8.6)
+        case = T("one setting changed, then a restart", 26, GREY_B).move_to([0, 3.3, 0])
         t1 = term([("$ kubectl get pods -n hello -l app=hello-devops", GREY_B),
                    ("NAME                           READY  STATUS   RESTARTS", GREY_B),
                    ("hello-devops-5d8f7c6b9-4kq2w   0/1    Running  0", YELLOW_M),
                    ("hello-devops-6c9f8b7d4-2qkzt   1/1    Running  0", WHITE),
                    ("hello-devops-6c9f8b7d4-8hx7m   1/1    Running  0", WHITE),
-                   ("hello-devops-6c9f8b7d4-tr5vn   1/1    Running  0", WHITE)], w=9.6).move_to([1.3, 1.1, 0])
+                   ("hello-devops-6c9f8b7d4-tr5vn   1/1    Running  0", WHITE)], w=9.6).move_to([0, 1.1, 0])
         self.beat("Let's run the method on a real mistake. Someone changed one setting for the app, and restarted it. Now the rollout never finishes.",
                   FadeIn(case), run_time=1.6)
         self.beat("Step one, get. One new Pod is Running, but zero of one ready. The three old Pods keep serving, so users see nothing wrong yet.",
                   FadeIn(t1), Succession(Wait(2.0), Indicate(t1[1][2], color=YELLOW_M)), run_time=3.6)
         self.beat("The app counts visits in Redis. So the tempting move is obvious. Restart Redis! Let's not. Let's read first.",
                   run_time=None)
-        t2 = term([("$ kubectl events -n hello --for pod/hello-devops-5d8f7c6b9-4kq2w --types=Warning", GREY_B),
-                   ("Warning  Unhealthy  Readiness probe failed: HTTP probe failed with statuscode: 503", RED_M),
+        t2 = term([("$ kubectl events -n hello --types=Warning \\", GREY_B),
+                   ("    --for pod/hello-devops-5d8f7c6b9-4kq2w", GREY_B),
+                   ("Unhealthy  Readiness probe failed: HTTP probe failed with statuscode: 503", RED_M),
                    ("$ kubectl get pods -n hello -l app=redis", GREY_B),
-                   ("redis-7c6d9f5b8d-q2l8v   1/1   Running   0", GREEN_M)], w=12.6).move_to([0, -1.6, 0])
+                   ("redis-7c6d9f5b8d-q2l8v   1/1   Running   0", GREEN_M)], w=12.6).move_to([0, -1.85, 0])
         self.beat("Step two, the events. Readiness fails with 503, and the app returns 503 when it can't reach Redis. But Redis itself is Running and ready.",
-                  FadeIn(t2[0]), LaggedStart(*[FadeIn(l) for l in t2[1]], lag_ratio=0.6), run_time=4.0)
+                  FadeIn(t2[0]), LaggedStart(*[FadeIn(l) for l in t2[1]], lag_ratio=0.5), run_time=4.0)
         self.beat("So restarting Redis would have changed nothing, and taught us nothing. The problem is between the two.",
-                  Indicate(t2[1][3], color=GREEN_M), run_time=1.8)
+                  Indicate(t2[1][4], color=GREEN_M), run_time=1.8)
         self.play(FadeOut(VGroup(t1, t2)), run_time=0.5)
         t3 = term([("$ kubectl exec hello-devops-5d8f7c6b9-4kq2w -n hello -- printenv REDIS_HOST", GREY_B),
                    ("rediss", YELLOW_M),
@@ -179,17 +179,18 @@ class D46Method(VoiceScene):
         helper = person(GREEN_M, 0.7).move_to([5.6, -1.4, 0])
         self.beat("So we send a helper with a toolbox. kubectl debug adds a temporary container to the running Pod, with an image you choose, like busybox.",
                   FadeIn(helper, shift=LEFT * 0.3), run_time=1.8)
-        t4 = term([("$ kubectl debug -it hello-devops-5d8f7c6b9-4kq2w -n hello --image=busybox:1.37 --target=web", GREY_B),
+        t4 = term([("$ kubectl debug -it hello-devops-5d8f7c6b9-4kq2w -n hello \\", GREY_B),
+                   ("    --image=busybox:1.37 --target=web", GREY_B),
                    ("/ # nslookup rediss.hello.svc.cluster.local", GREY_B),
                    ("** server can't find rediss.hello.svc.cluster.local: NXDOMAIN", RED_M),
                    ("/ # nslookup redis.hello.svc.cluster.local", GREY_B),
                    ("Name:    redis.hello.svc.cluster.local   Address: 10.96.84.21", GREEN_M)], w=11.0).move_to([-0.6, -1.7, 0])
         self.beat("It shares the Pod's network, so its answers are the app's answers. Pause and guess: does the name rediss exist?",
-                  FadeIn(t4[0]), FadeIn(t4[1][0]), FadeIn(t4[1][1]), run_time=2.0)
+                  FadeIn(t4[0]), FadeIn(t4[1][0]), FadeIn(t4[1][1]), FadeIn(t4[1][2]), run_time=2.0)
         self.wait(2.0)
         self.beat("NXDOMAIN. No such name. And the correct name, redis with one S, resolves to the Redis Service's address.",
-                  FadeIn(t4[1][2]), Succession(Wait(1.6), AnimationGroup(FadeIn(t4[1][3]), FadeIn(t4[1][4]))), run_time=3.4)
-        found = chip("cause: a typo in the ConfigMap", YELLOW_M, 26).move_to([1.3, 3.3, 0])
+                  FadeIn(t4[1][3]), Succession(Wait(1.6), AnimationGroup(FadeIn(t4[1][4]), FadeIn(t4[1][5]))), run_time=3.4)
+        found = chip("cause: a typo in the ConfigMap", YELLOW_M, 26).move_to([0, 3.3, 0])
         self.beat("That's the proof. A typo in the ConfigMap, one letter too many. Redis and the network are fine. One change fixes it, and we know exactly why.",
                   Transform(case, found), run_time=1.8)
         self.beat("That helper is called an ephemeral container: short-lived, never restarted, gone with the Pod.",
@@ -197,10 +198,11 @@ class D46Method(VoiceScene):
         self.play(FadeOut(VGroup(t3, t4, helper, case)), run_time=0.6)
 
         # ---------- 6. guardrails
-        self.play(ladder.animate.set_opacity(1).scale(1 / 0.75 / 0.62).move_to([-2.8, 0.3, 0]), run_time=1.0)
-        g1 = VGroup(T("change one thing at a time", 28, YELLOW_M), T("then watch what happens", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.8, 1.8, 0])
-        g2 = VGroup(M("Forbidden", 28, RED_M), T("a locked door, not a broken one", 24, GREY_B), M("kubectl auth can-i", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.8, 0.0, 0])
-        g3 = VGroup(T("bugs in your own code", 28, PURPLE_M), T("need the app's logs, metrics, traces", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.8, -2.0, 0])
+        ladder = ladder_keep.scale(0.62 / 0.58).move_to([-3.0, 0.3, 0])
+        self.play(FadeIn(ladder), run_time=0.8)
+        g1 = VGroup(T("change one thing at a time", 28, YELLOW_M), T("then watch what happens", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.7, 1.8, 0])
+        g2 = VGroup(M("Forbidden", 28, RED_M), T("a locked door, not a broken one", 24, GREY_B), M("kubectl auth can-i", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.7, 0.0, 0])
+        g3 = VGroup(T("bugs in your own code", 28, PURPLE_M), T("need app logs, metrics, traces", 24, GREY_B)).arrange(DOWN, buff=0.12).move_to([3.7, -2.0, 0])
         self.beat("A few guardrails. First, change one thing at a time, and watch what happens. That's the opposite of our manager.",
                   FadeIn(g1), run_time=1.8)
         self.beat("Second, Forbidden is not a bug. Your key just doesn't open that door. Ask with kubectl auth can-i.",
