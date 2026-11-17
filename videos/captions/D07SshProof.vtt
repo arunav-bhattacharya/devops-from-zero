@@ -1,0 +1,381 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:06.281
+Here is a question that a lot of people are too shy to ask.
+
+2
+00:00:06.467 --> 00:00:10.992
+To log in to a server with SSH keys, you hand out your public key.
+
+3
+00:00:10.992 --> 00:00:13.392
+And public means anyone may see it.
+
+4
+00:00:13.533 --> 00:00:17.640
+So what stops a stranger from copying it, and logging in as you?
+
+5
+00:00:17.640 --> 00:00:19.244
+Hold on to that question.
+
+6
+00:00:19.244 --> 00:00:21.105
+We will answer it on the way.
+
+7
+00:00:21.867 --> 00:00:24.389
+Let's start with what you already know.
+
+8
+00:00:24.389 --> 00:00:29.176
+SSH gives you a shell on a far away machine, over an encrypted connection.
+
+9
+00:00:29.333 --> 00:00:40.284
+Running ssh ubuntu@192.168.64.5 logs you in as ubuntu, on the machine at that address.
+
+10
+00:00:40.467 --> 00:00:45.778
+With a password, you type the secret, and the secret itself travels to the server.
+
+11
+00:00:45.778 --> 00:00:46.944
+Every single time.
+
+12
+00:00:47.133 --> 00:00:50.041
+And people guess passwords, and reuse them.
+
+13
+00:00:50.041 --> 00:00:54.165
+Use the same one in five places, and one leak opens all five.
+
+14
+00:00:54.333 --> 00:01:00.633
+A password is like a house key that you hand to the front door every morning, and trust the door to give it back.
+
+15
+00:01:00.800 --> 00:01:02.787
+So the real problem is simple.
+
+16
+00:01:02.787 --> 00:01:05.635
+To be useful, a password has to leave home.
+
+17
+00:01:05.800 --> 00:01:11.247
+Wouldn't it be nice if you could prove who you are, and your secret never left your laptop at all?
+
+18
+00:01:11.933 --> 00:01:14.717
+Let's step into our office building for a moment.
+
+19
+00:01:14.717 --> 00:01:17.557
+You need to work in another building, across town.
+
+20
+00:01:17.733 --> 00:01:18.840
+Here is the trick.
+
+21
+00:01:18.840 --> 00:01:22.467
+You own a padlock that you are happy to hand out to anyone.
+
+22
+00:01:22.467 --> 00:01:25.540
+And you own one key, the only thing that opens it.
+
+23
+00:01:25.733 --> 00:01:29.240
+You give the other building's guard a copy of your padlock.
+
+24
+00:01:29.240 --> 00:01:33.341
+He hangs it on his board, next to the padlocks of everyone he trusts.
+
+25
+00:01:33.533 --> 00:01:35.524
+The key never leaves your desk.
+
+26
+00:01:36.067 --> 00:01:37.305
+Now let's map it.
+
+27
+00:01:37.305 --> 00:01:39.344
+The key is your private key.
+
+28
+00:01:39.533 --> 00:01:41.652
+The padlock is your public key.
+
+29
+00:01:41.800 --> 00:01:46.290
+And the guard's board is a file on the server, called authorized_keys.
+
+30
+00:01:46.290 --> 00:01:47.829
+One public key per line.
+
+31
+00:01:48.000 --> 00:01:52.646
+You make the pair with one command, ssh-keygen.
+
+32
+00:01:52.646 --> 00:02:01.048
+It writes two files, id_ed25519, the private key, and id_ed25519.pub, the public one.
+
+33
+00:02:01.200 --> 00:02:02.948
+So, back to our question.
+
+34
+00:02:02.948 --> 00:02:07.144
+A stranger who copies your public key gets, well, a padlock.
+
+35
+00:02:07.333 --> 00:02:09.264
+A padlock can't open anything.
+
+36
+00:02:09.264 --> 00:02:11.837
+It can only check the key that opens it.
+
+37
+00:02:11.837 --> 00:02:13.896
+A public key works the same way.
+
+38
+00:02:13.896 --> 00:02:16.341
+It can check, but it can never log in.
+
+39
+00:02:16.933 --> 00:02:19.831
+But how does the guard know that you hold the key?
+
+40
+00:02:19.831 --> 00:02:23.133
+The obvious answer: walk the key over and show it to him.
+
+41
+00:02:23.333 --> 00:02:23.666
+Well.
+
+42
+00:02:23.666 --> 00:02:28.522
+Now your secret has left home, which is the one thing we wanted to avoid.
+
+43
+00:02:28.522 --> 00:02:31.183
+That's just a password with extra steps.
+
+44
+00:02:31.333 --> 00:02:34.007
+So here is where the padlock story stops.
+
+45
+00:02:34.007 --> 00:02:37.789
+On the real wire, nothing gets locked, and no key travels.
+
+46
+00:02:37.933 --> 00:02:43.849
+When you connect, there is a small piece of data that belongs to this one connection, and to no other.
+
+47
+00:02:44.000 --> 00:02:46.547
+Your laptop has three things to work with.
+
+48
+00:02:46.547 --> 00:02:49.398
+The private key, the public key, and that data.
+
+49
+00:02:49.398 --> 00:02:52.127
+Which one crosses the wire to prove it's you?
+
+50
+00:02:52.267 --> 00:02:53.553
+Pause and guess.
+
+51
+00:02:55.733 --> 00:02:56.652
+None of them.
+
+52
+00:02:56.652 --> 00:03:00.824
+Your ssh takes the data, and signs it with the private key.
+
+53
+00:03:01.000 --> 00:03:03.332
+Out comes something new, a signature.
+
+54
+00:03:03.467 --> 00:03:05.948
+And only the signature crosses the wire.
+
+55
+00:03:06.533 --> 00:03:10.295
+The server checks it with your public key, from authorized_keys.
+
+56
+00:03:10.467 --> 00:03:11.340
+It fits.
+
+57
+00:03:11.340 --> 00:03:12.869
+So you are in.
+
+58
+00:03:13.067 --> 00:03:16.273
+And the private key itself never left your laptop.
+
+59
+00:03:16.867 --> 00:03:20.659
+What if someone records that signature, and tries it tomorrow?
+
+60
+00:03:20.659 --> 00:03:21.637
+Pause and guess.
+
+61
+00:03:23.600 --> 00:03:28.473
+Tomorrow's connection has different data, so yesterday's signature fits nothing.
+
+62
+00:03:28.473 --> 00:03:31.336
+It's about as useful as yesterday's bus ticket.
+
+63
+00:03:31.533 --> 00:03:35.124
+A signature proves it's you once, for one connection only.
+
+64
+00:03:35.667 --> 00:03:37.515
+Trust also runs the other way.
+
+65
+00:03:37.515 --> 00:03:41.952
+What if the building you walk into is a fake, set up to look like yours?
+
+66
+00:03:42.133 --> 00:03:46.279
+Every server has a fingerprint, a short code that identifies it.
+
+67
+00:03:46.467 --> 00:03:53.684
+The first time you connect, ssh shows you that fingerprint, and asks if you are sure you want to continue connecting.
+
+68
+00:03:53.867 --> 00:03:59.226
+Say yes, and ssh writes it down in a file on your laptop, called known_hosts.
+
+69
+00:03:59.226 --> 00:04:01.453
+Your notebook of familiar faces.
+
+70
+00:04:02.000 --> 00:04:07.426
+Next time, ssh compares the server's fingerprint with the one in the notebook.
+
+71
+00:04:07.426 --> 00:04:09.373
+Same face, so it carries on.
+
+72
+00:04:09.933 --> 00:04:17.449
+If that fingerprint ever changes, ssh refuses to connect, because someone may be pretending to be your server.
+
+73
+00:04:17.600 --> 00:04:24.282
+ssh is the friend who says, that's not our usual doorman, and won't go in, however nice the uniform.
+
+74
+00:04:24.282 --> 00:04:28.024
+So a refusal is a warning to read, not a hurdle to jump.
+
+75
+00:04:28.733 --> 00:04:30.691
+Three habits keep this safe.
+
+76
+00:04:30.691 --> 00:04:30.971
+One.
+
+77
+00:04:30.971 --> 00:04:33.838
+Never copy the private key anywhere else.
+
+78
+00:04:33.838 --> 00:04:35.587
+It works like a password.
+
+79
+00:04:35.733 --> 00:04:36.029
+Two.
+
+80
+00:04:36.029 --> 00:04:38.834
+Set a passphrase when ssh-keygen asks.
+
+81
+00:04:38.834 --> 00:04:44.223
+It encrypts the private key file, so a stolen copy is useless without it.
+
+82
+00:04:44.400 --> 00:04:44.937
+Three.
+
+83
+00:04:44.937 --> 00:04:52.627
+ls -l shows the private key with mode 600, for you alone, and the public key with 644.
+
+84
+00:04:53.533 --> 00:04:55.842
+So here is the moral of the story.
+
+85
+00:04:55.842 --> 00:04:58.965
+The secret stays home, and only proof travels.
+
+86
+00:04:59.133 --> 00:05:01.043
+The padlock goes everywhere.
+
+87
+00:05:01.043 --> 00:05:02.476
+The key goes nowhere.
+
+88
+00:05:02.476 --> 00:05:04.726
+Every login is a fresh signature.
+
+89
+00:05:04.726 --> 00:05:07.864
+And known_hosts remembers the faces you trust.
+
+90
+00:05:08.600 --> 00:05:10.380
+A quick check before you go.
+
+91
+00:05:10.380 --> 00:05:13.240
+A new teammate needs to log in to the server.
+
+92
+00:05:13.240 --> 00:05:16.036
+What do they send you, and where does it go?
+
+93
+00:05:16.036 --> 00:05:17.053
+Pause and guess.
+
+94
+00:05:19.200 --> 00:05:22.801
+Their public key, as one more line in authorized_keys.
+
+95
+00:05:22.801 --> 00:05:25.869
+Their private key stays home, on their laptop.
