@@ -83,8 +83,8 @@ class D68KeeperWalk(VoiceScene):
         rules = VGroup(T("go in order", 26), T("done = its check passes, not \"looks fine\"", 26, YELLOW_M), T("commit after each stage", 26)).arrange(DOWN, buff=0.15).move_to([1.0, -2.65, 0])
         self.beat("Three rules. Go in order. A stage is done when its check passes, not when it looks fine. And commit after each stage.",
                   LaggedStart(*[FadeIn(r, shift=UP * 0.1) for r in rules], lag_ratio=0.9), run_time=6.0)
-        walk = VGroup(line, stops, nums, labs, opt, keeper)
-        self.play(FadeOut(rules), walk.animate.scale(0.8).move_to([0, 2.3, 0]), run_time=0.8)
+        walk = VGroup(line, stops, nums, labs, opt)
+        self.play(FadeOut(rules), FadeOut(keeper), walk.animate.shift(UP * 3.1), run_time=0.8)
 
         # ---------- 3. what makes a check worth trusting
         weak = VGroup(T("weak", 26, RED_M), T("\"Argo CD works\"", 28)).arrange(DOWN, buff=0.2).move_to([-3.6, -0.2, 0])
@@ -137,7 +137,7 @@ class D68KeeperWalk(VoiceScene):
         self.play(FadeOut(VGroup(t2, q2)), run_time=0.5)
 
         # ---------- 5. break the shortcut: only check today's stage
-        self.play(walk.animate.scale(1 / 0.8).move_to([0, 0.2, 0]), run_time=0.8)
+        self.play(walk.animate.shift(DOWN * 3.0), run_time=0.8)
         for i in range(8):
             stops[i].set_stroke(GREEN_M).set_fill(tint(GREEN_M, 0.4), 1)
         self.beat("Now a tempting shortcut. Say stages one to eight are green. You've just finished stage nine. Why not run only the check for the stage you just did? It's faster.",
@@ -154,7 +154,7 @@ class D68KeeperWalk(VoiceScene):
         self.play(FadeOut(x6), stops[5].animate.set_stroke(GREEN_M).set_fill(tint(GREEN_M, 0.4), 1), run_time=0.6)
 
         # ---------- 6. a game day: the bucket in the drain
-        self.play(walk.animate.scale(0.8).move_to([0, 2.3, 0]), run_time=0.8)
+        self.play(walk.animate.shift(UP * 3.0), run_time=0.8)
         gd = T("game day: break it on purpose", 30, BLUE_M).move_to([0, 0.5, 0])
         self.beat("Checks prove the path works when things go right. A game day finds out what happens when they go wrong. You break something on purpose, like pouring a bucket into the drain before the first storm.",
                   FadeIn(gd), run_time=2.4)
