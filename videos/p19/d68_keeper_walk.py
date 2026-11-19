@@ -101,8 +101,9 @@ class D68KeeperWalk(VoiceScene):
                   FadeIn(rule, shift=UP * 0.1), run_time=1.6)
         props = VGroup(chip("observable: looks at the running system", TEAL_M, 24), chip("binary: PASS or FAIL, no judgment", TEAL_M, 24),
                        chip("runnable: one command, repeat any time", TEAL_M, 24)).arrange(DOWN, buff=0.3, aligned_edge=LEFT).move_to([0, -0.6, 0])
+        self.play(FadeOut(VGroup(weak, strong, rule)), run_time=0.5)
         self.beat("A good check is observable: it looks at the running system. Binary: pass or fail. And runnable: one command you can repeat.",
-                  FadeOut(VGroup(weak, strong, rule)), LaggedStart(*[FadeIn(p, shift=UP * 0.1) for p in props], lag_ratio=0.9), run_time=9.0)
+                  LaggedStart(*[FadeIn(p, shift=UP * 0.1) for p in props], lag_ratio=0.9), run_time=9.0)
         self.play(FadeOut(props), run_time=0.5)
 
         # ---------- 4. show: a checklist line becomes a check

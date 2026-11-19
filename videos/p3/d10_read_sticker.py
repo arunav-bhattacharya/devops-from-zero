@@ -81,10 +81,10 @@ class D10ReadSticker(VoiceScene):
         # step 1: the name
         book = box("DNS: the phone book", DNSC, w=3.6, h=1.0).move_to(BOOK_P)
         n1 = T("1  name", 26, DNSC).next_to(book, RIGHT, buff=0.35)
-        ask = arrow(app[0].get_top() + RIGHT * 0.3, book[0].get_bottom() + LEFT * 0.9, DNSC)
+        ask = arrow(app[0].get_top() + RIGHT * 0.3, book[0].get_left() + DOWN * 0.2, DNSC)
         self.beat("Step one, the name. Machines connect to addresses, not names. So the app first asks DNS, the phone book of the network. What's the address of cache?",
                   FadeIn(book), FadeIn(n1), Succession(Wait(5.0), GrowArrow(ask), travel(ask, DNSC, 0.8)), run_time=8.0)
-        addr = chip("cache = 172.20.0.2", DNSC, 24, mono=True).next_to(book, DOWN, buff=0.3)
+        addr = chip("cache = 172.20.0.2", DNSC, 24, mono=True).next_to(book, DOWN, buff=0.15)
         self.beat("The answer comes back. 172.20.0.2. The name has become a street address.",
                   FadeIn(addr, shift=DOWN * 0.15), run_time=1.6)
         self.beat("Out on the internet, that question can pass through a whole chain of servers, and each one keeps the answer for a while. That while is called its TTL.",
@@ -102,7 +102,7 @@ class D10ReadSticker(VoiceScene):
         self.beat("Step three, the door. One machine runs many programs, so a port picks the program, like an apartment number. Redis listens behind door 6379.",
                   FadeIn(n3), Succession(Wait(3.6), FadeIn(d2)), Succession(Wait(6.4), Indicate(d1[2], color=DOOR, scale_factor=1.3)), run_time=8.0)
         self.play(FadeOut(env), run_time=0.3)
-        hs_y = [ROAD_Y + 0.75, ROAD_Y + 0.2, ROAD_Y - 0.35]
+        hs_y = [ROAD_Y + 0.5, ROAD_Y + 0.05, ROAD_Y - 0.4]
         L, R = app[0].get_right()[0] + 0.15, mach.get_left()[0] - 0.15
         syn = Arrow([L, hs_y[0], 0], [R, hs_y[0], 0], buff=0, stroke_width=3, color=GOLD_M, max_tip_length_to_length_ratio=0.04)
         sa = Arrow([R, hs_y[1], 0], [L, hs_y[1], 0], buff=0, stroke_width=3, color=DOOR, max_tip_length_to_length_ratio=0.04)
@@ -131,19 +131,18 @@ class D10ReadSticker(VoiceScene):
         self.beat("Pause and guess. Which step broke? The name, the address, or the door?",
                   Indicate(n1, color=DNSC), Indicate(n2, color=WHITE), Indicate(n3, color=DOOR), run_time=2.0, after=2.2)
         x1 = tick(False, 0.35).next_to(n1, RIGHT, buff=0.25)
+        red_ol = book[0].copy().set_fill(opacity=0).set_stroke(RED_M, 4)
         self.beat("The name. getaddrinfo is the function programs call to look up a name, and it failed before a single packet left the app.",
-                  Create(x1), book[0].animate.set_stroke(RED_M), run_time=1.6)
-        self.add(book[1])
+                  Create(x1), Create(red_ol), run_time=1.6)
         self.beat("So restarting Redis would change nothing. Redis never even heard a knock.",
                   Succession(Wiggle(fix, run_time=1.4), Wait(0.6), FadeOut(fix, run_time=0.6)), run_time=3.0)
         self.remove(fix)
-        st1 = sticker("no such street", "Name or service not known", w=4.0).scale(0.75).move_to([-5.0, -2.75, 0])
+        st1 = sticker("no such street", "", w=3.1).scale(0.85).move_to([-5.0, -2.75, 0])
         self.beat("That's the no such street sticker. The house can be in perfect shape. The postman still can't find the street.",
                   FadeIn(st1, shift=DOWN * 0.15), run_time=1.6)
         fixc = M("$ docker network connect shopnet client", 22, GREEN_M).move_to(e1)
         self.beat("In the lab, the cause was simple. The client container sat on Docker's default network, so its phone book had never heard of cache. Connect it to shopnet, and the name resolves to 172.20.0.2.",
-                  ReplacementTransform(e1, fixc), Succession(Wait(6.4), AnimationGroup(FadeOut(x1), book[0].animate.set_stroke(DNSC), FadeIn(addr))), run_time=10.0)
-        self.add(book[1])
+                  ReplacementTransform(e1, fixc), Succession(Wait(6.4), AnimationGroup(FadeOut(x1), FadeOut(red_ol), FadeIn(addr))), run_time=10.0)
         self.beat("So fix the step the sticker names, not the one you happen to be looking at.", Indicate(st1[1], color=BLACK), run_time=1.6)
 
         # ---------- 4. refused: nobody at this apartment
@@ -157,7 +156,7 @@ class D10ReadSticker(VoiceScene):
         rl = M("reset", 22, RED_M).next_to(rst, DOWN, buff=0.05)
         self.beat("The machine is there, so it answers the SYN at once, with a reset. Connection refused. Nothing listens on that port.",
                   GrowArrow(rst), FadeIn(rl), run_time=1.4)
-        st2 = sticker("nobody at this apartment", "Connection refused", w=4.0).scale(0.75).move_to([4.75, -2.75, 0])
+        st2 = sticker("nobody at this apartment", "", w=3.6).scale(0.85).move_to([4.75, -2.75, 0])
         self.beat("Nobody at this apartment. The app is down, on another port, or bound to 127.0.0.1, so it only answers knocks from inside its own machine.",
                   FadeIn(st2, shift=UP * 0.15), run_time=1.6)
         self.play(FadeOut(VGroup(knock, kl, rst, rl)), run_time=0.4)
@@ -167,29 +166,29 @@ class D10ReadSticker(VoiceScene):
         self.beat("And the parcel that never comes back? That's a timeout. Nothing answers at all. A firewall dropped the packets, or the address is wrong, or unreachable.",
                   ReplacementTransform(e2, e3), run_time=1.6)
         self.beat("Pause and guess. Which sticker arrives faster, refused, or timed out?",
-                  Indicate(st2[2], color=BLACK), Indicate(e3, color=RED_M), run_time=1.6, after=2.2)
+                  Indicate(st2[1], color=BLACK), Indicate(e3, color=RED_M), run_time=1.6, after=2.2)
         tl = NumberLine(x_range=[0, 8, 1], length=5.5, include_numbers=False, color=GREY_B).move_to([-3.25, -1.75, 0])
         tlab = T("time", 24, GREY_B).next_to(tl, RIGHT, buff=0.2)
         r_mark = VGroup(Dot(tl.n2p(0.08), color=DOOR), T("refused: about a millisecond", 24, DOOR)).arrange(UP, buff=0.15)
-        r_mark[0].move_to(tl.n2p(0.08)); r_mark[1].next_to(r_mark[0], UP, buff=0.2).align_to(tl, LEFT)
+        r_mark[0].move_to(tl.n2p(0.08)); r_mark[1].next_to(tl, DOWN, buff=0.2).align_to(tl, LEFT)
         self.beat("Refused comes back in about a millisecond.",
                   Create(tl), FadeIn(tlab), FadeIn(r_mark), run_time=1.6)
         tries = VGroup(*[Dot(tl.n2p(x), color=GOLD_M) for x in (0.08, 1.0, 3.0, 7.0)])
         tryl = T("SYN, SYN again, and again...", 24, GOLD_M).next_to(tl, DOWN, buff=0.3).align_to(tl, LEFT)
         self.beat("On a timeout, your machine resends the SYN a few times, waiting longer each time, before it gives up. So even the waiting is a clue.",
                   Succession(*[FadeIn(d, scale=0.5, run_time=0.9) for d in tries]), run_time=4.4)
-        st3 = sticker("never came back", "timed out", GREY_B, w=3.6).scale(0.75).move_to([-1.75, -2.75, 0])
+        st3 = sticker("never came back", "", GREY_B, w=3.1).scale(0.85).move_to([-1.75, -2.75, 0])
         self.play(FadeOut(VGroup(tl, tlab, r_mark, tries)), FadeIn(st3, shift=DOWN * 0.15), run_time=0.8)
 
         # ---------- 6. reset or empty reply
         e4 = M("Connection reset by peer   /   Empty reply from server", 22, RED_M).move_to(UP * 3.15)
         desk = Rectangle(width=0.5, height=0.9, stroke_color=GOLD_M, stroke_width=3).set_fill(tint(GOLD_M, 0.2), 1).move_to(mach.get_left() + RIGHT * 0.45 + DOWN * 0.35)
-        dl = T("forwarder", 22, GOLD_M).next_to(desk, DOWN, buff=0.12)
+        dl = T("forwarder", 22, GOLD_M).next_to(desk, LEFT, buff=0.3).shift(DOWN * 0.45)
         self.beat("One more sticker. Connection reset, or an empty reply. Something accepted the parcel at the front desk, then shut the door.",
                   ReplacementTransform(e3, e4), FadeIn(desk), FadeIn(dl), run_time=2.0)
         self.beat("Proxies, and Docker's port forwarder, do this when the app behind them is unreachable. For example, an app inside a container that's bound to 127.0.0.1.",
                   Indicate(dl, color=GOLD_M), Succession(Wait(4.0), Indicate(d1[2], color=RED_M, scale_factor=1.3)), run_time=6.0)
-        st4 = sticker("taken in, door shut", "Connection reset", BLUE_M, w=3.6).scale(0.75).move_to([1.5, -2.75, 0])
+        st4 = sticker("taken in, door shut", "", BLUE_M, w=3.1).scale(0.85).move_to([1.5, -2.75, 0])
         self.play(FadeIn(st4, shift=UP * 0.15), run_time=0.6)
         rule = T("Read the error before you fix anything.", 30, YELLOW_M).move_to(UP * 3.15)
         self.beat("So here is the rule. Read the error before you fix anything. Each one names a different step.",

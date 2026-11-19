@@ -1,441 +1,441 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:06.580
+00:00:02.700 --> 00:00:06.547
 Picture a parcel that comes back to your door, with a sticker on it.
 
 2
-00:00:06.733 --> 00:00:08.937
+00:00:06.767 --> 00:00:08.970
 One sticker says, no such street.
 
 3
-00:00:08.937 --> 00:00:11.541
+00:00:08.970 --> 00:00:11.574
 Another says, nobody at this apartment.
 
 4
-00:00:11.541 --> 00:00:14.412
+00:00:11.574 --> 00:00:14.445
 And a third parcel never comes back at all.
 
 5
-00:00:14.600 --> 00:00:19.145
+00:00:14.667 --> 00:00:19.211
 Each sticker points to a different mistake, and each needs a different fix.
 
 6
-00:00:19.145 --> 00:00:20.902
+00:00:19.211 --> 00:00:20.969
 Computers leave stickers too.
 
 7
-00:00:20.902 --> 00:00:22.599
+00:00:20.969 --> 00:00:22.665
 We call them error messages.
 
 8
-00:00:22.733 --> 00:00:23.731
+00:00:22.867 --> 00:00:23.864
 Here's the trap.
 
 9
-00:00:23.731 --> 00:00:26.224
+00:00:23.864 --> 00:00:26.357
 Every failure feels like the same thing.
 
 10
-00:00:26.224 --> 00:00:27.283
+00:00:26.357 --> 00:00:27.417
 It can't connect.
 
 11
-00:00:27.283 --> 00:00:32.083
+00:00:27.417 --> 00:00:32.216
 So people restart things at random, when the sticker already said what broke.
 
 12
-00:00:32.267 --> 00:00:36.603
+00:00:32.433 --> 00:00:36.770
 Restarting at random is the network version of shaking a vending machine.
 
 13
-00:00:36.603 --> 00:00:39.098
+00:00:36.770 --> 00:00:39.264
 Sometimes it works, and you learn nothing.
 
 14
-00:00:39.098 --> 00:00:41.652
+00:00:39.264 --> 00:00:41.819
 So let's learn to read the sticker instead.
 
 15
-00:00:42.400 --> 00:00:44.144
+00:00:42.633 --> 00:00:44.378
 Here's our running case.
 
 16
-00:00:44.144 --> 00:00:51.121
+00:00:44.378 --> 00:00:51.354
 hello-devops, the course's tiny web app, keeps its visit count in a small database called Redis.
 
 17
-00:00:51.121 --> 00:00:54.900
+00:00:51.354 --> 00:00:55.133
 Redis runs in a container named cache, on port 6379.
 
 18
-00:00:55.067 --> 00:00:58.053
+00:00:55.367 --> 00:00:58.353
 And a colleague says, the app can't reach cache.
 
 19
-00:00:58.053 --> 00:01:02.781
+00:00:58.353 --> 00:01:03.081
 Before we read any error, let's follow one message that works, step by step.
 
 20
-00:01:03.333 --> 00:01:04.628
+00:01:03.700 --> 00:01:04.995
 Step one, the name.
 
 21
-00:01:04.628 --> 00:01:07.423
+00:01:04.995 --> 00:01:07.789
 Machines connect to addresses, not names.
 
 22
-00:01:07.423 --> 00:01:11.308
+00:01:07.789 --> 00:01:11.674
 So the app first asks DNS, the phone book of the network.
 
 23
-00:01:11.308 --> 00:01:13.216
+00:01:11.674 --> 00:01:13.583
 What's the address of cache?
 
 24
-00:01:13.400 --> 00:01:15.693
+00:01:13.800 --> 00:01:16.093
 The answer comes back.
 
 25
-00:01:15.693 --> 00:01:16.839
+00:01:16.093 --> 00:01:17.239
 172.20.0.2.
 
 26
-00:01:16.839 --> 00:01:20.695
+00:01:17.239 --> 00:01:21.095
 The name has become a street address.
 
 27
-00:01:20.867 --> 00:01:28.248
+00:01:21.300 --> 00:01:28.681
 Out on the internet, that question can pass through a whole chain of servers, and each one keeps the answer for a while.
 
 28
-00:01:28.248 --> 00:01:30.032
+00:01:28.681 --> 00:01:30.465
 That while is called its TTL.
 
 29
-00:01:30.200 --> 00:01:32.465
+00:01:30.667 --> 00:01:32.932
 Step two, the address.
 
 30
-00:01:32.465 --> 00:01:37.509
+00:01:32.932 --> 00:01:37.976
 The message travels to the machine at 172.20.0.2.
 
 31
-00:01:37.667 --> 00:01:39.234
+00:01:38.200 --> 00:01:39.768
 Step three, the door.
 
 32
-00:01:39.234 --> 00:01:45.655
+00:01:39.768 --> 00:01:46.188
 One machine runs many programs, so a port picks the program, like an apartment number.
 
 33
-00:01:45.655 --> 00:01:47.969
+00:01:46.188 --> 00:01:48.503
 Redis listens behind door 6379.
 
 34
-00:01:48.467 --> 00:01:55.379
+00:01:49.033 --> 00:01:55.946
 Before any data moves, TCP, the registered mail of the network, does a three-step handshake.
 
 35
-00:01:55.379 --> 00:01:55.680
+00:01:55.946 --> 00:01:56.246
 SYN.
 
 36
-00:01:55.680 --> 00:01:56.807
+00:01:56.246 --> 00:01:57.373
 I want to talk.
 
 37
-00:01:57.000 --> 00:01:57.810
+00:01:57.600 --> 00:01:58.410
 SYN-ACK.
 
 38
-00:01:57.810 --> 00:01:59.531
+00:01:58.410 --> 00:02:00.131
 Fine, I hear you.
 
 39
-00:01:59.667 --> 00:02:00.004
+00:02:00.333 --> 00:02:00.671
 ACK.
 
 40
-00:02:00.004 --> 00:02:02.283
+00:02:00.671 --> 00:02:02.949
 And the connection is open.
 
 41
-00:02:02.467 --> 00:02:04.002
+00:02:03.167 --> 00:02:04.702
 Name, address, door.
 
 42
-00:02:04.002 --> 00:02:04.924
+00:02:04.702 --> 00:02:05.624
 Three steps.
 
 43
-00:02:04.924 --> 00:02:07.457
+00:02:05.624 --> 00:02:08.157
 And each one has its own sticker.
 
 44
-00:02:08.667 --> 00:02:10.157
+00:02:09.367 --> 00:02:10.857
 Back to our colleague.
 
 45
-00:02:10.157 --> 00:02:11.917
+00:02:10.857 --> 00:02:12.617
 The app can't reach cache.
 
 46
-00:02:11.917 --> 00:02:14.355
+00:02:12.617 --> 00:02:15.055
 The obvious fix is to restart Redis.
 
 47
-00:02:14.355 --> 00:02:16.523
+00:02:15.055 --> 00:02:17.223
 Before you do, read the sticker.
 
 48
-00:02:16.667 --> 00:02:17.860
+00:02:17.433 --> 00:02:18.627
 Here it is.
 
 49
-00:02:17.860 --> 00:02:27.517
+00:02:18.627 --> 00:02:28.284
 nc -zv cache 6379 says, getaddrinfo for host cache, port 6379, Name or service not known.
 
 50
-00:02:27.667 --> 00:02:28.831
+00:02:28.500 --> 00:02:29.664
 Pause and guess.
 
 51
-00:02:28.831 --> 00:02:30.068
+00:02:29.664 --> 00:02:30.901
 Which step broke?
 
 52
-00:02:30.068 --> 00:02:32.615
+00:02:30.901 --> 00:02:33.448
 The name, the address, or the door?
 
 53
-00:02:34.800 --> 00:02:35.403
+00:02:35.633 --> 00:02:36.236
 The name.
 
 54
-00:02:35.403 --> 00:02:42.835
+00:02:36.236 --> 00:02:43.668
 getaddrinfo is the function programs call to look up a name, and it failed before a single packet left the app.
 
 55
-00:02:43.000 --> 00:02:45.607
+00:02:43.900 --> 00:02:46.507
 So restarting Redis would change nothing.
 
 56
-00:02:45.607 --> 00:02:47.579
+00:02:46.507 --> 00:02:48.479
 Redis never even heard a knock.
 
 57
-00:02:47.733 --> 00:02:49.728
+00:02:48.700 --> 00:02:50.694
 That's the no such street sticker.
 
 58
-00:02:49.728 --> 00:02:51.722
+00:02:50.694 --> 00:02:52.688
 The house can be in perfect shape.
 
 59
-00:02:51.722 --> 00:02:54.068
+00:02:52.688 --> 00:02:55.035
 The postman still can't find the street.
 
 60
-00:02:54.267 --> 00:02:56.796
+00:02:55.267 --> 00:02:57.796
 In the lab, the cause was simple.
 
 61
-00:02:56.796 --> 00:03:04.229
+00:02:57.796 --> 00:03:05.229
 The client container sat on Docker's default network, so its phone book had never heard of cache.
 
 62
-00:03:04.229 --> 00:03:08.751
+00:03:05.229 --> 00:03:09.751
 Connect it to shopnet, and the name resolves to 172.20.0.2.
 
 63
-00:03:08.933 --> 00:03:13.057
+00:03:09.967 --> 00:03:14.091
 So fix the step the sticker names, not the one you happen to be looking at.
 
 64
-00:03:13.200 --> 00:03:16.858
+00:03:14.300 --> 00:03:17.958
 Now knock on a door where nobody lives.
 
 65
-00:03:16.858 --> 00:03:18.547
+00:03:17.958 --> 00:03:19.647
 nc -zv cache 6380.
 
 66
-00:03:18.733 --> 00:03:23.018
+00:03:19.867 --> 00:03:24.152
 The machine is there, so it answers the SYN at once, with a reset.
 
 67
-00:03:23.018 --> 00:03:24.252
+00:03:24.152 --> 00:03:25.385
 Connection refused.
 
 68
-00:03:24.252 --> 00:03:26.135
+00:03:25.385 --> 00:03:27.268
 Nothing listens on that port.
 
 69
-00:03:26.333 --> 00:03:28.587
+00:03:27.500 --> 00:03:29.753
 Nobody at this apartment.
 
 70
-00:03:28.587 --> 00:03:38.592
+00:03:29.753 --> 00:03:39.759
 The app is down, on another port, or bound to 127.0.0.1, so it only answers knocks from inside its own machine.
 
 71
-00:03:39.133 --> 00:03:41.513
+00:03:40.367 --> 00:03:42.747
 And the parcel that never comes back?
 
 72
-00:03:41.513 --> 00:03:42.607
+00:03:42.747 --> 00:03:43.840
 That's a timeout.
 
 73
-00:03:42.607 --> 00:03:44.086
+00:03:43.840 --> 00:03:45.319
 Nothing answers at all.
 
 74
-00:03:44.086 --> 00:03:48.717
+00:03:45.319 --> 00:03:49.951
 A firewall dropped the packets, or the address is wrong, or unreachable.
 
 75
-00:03:48.867 --> 00:03:49.999
+00:03:50.167 --> 00:03:51.299
 Pause and guess.
 
 76
-00:03:49.999 --> 00:03:53.680
+00:03:51.299 --> 00:03:54.980
 Which sticker arrives faster, refused, or timed out?
 
 77
-00:03:55.867 --> 00:03:58.647
+00:03:57.167 --> 00:03:59.947
 Refused comes back in about a millisecond.
 
 78
-00:03:58.800 --> 00:04:05.324
+00:04:00.167 --> 00:04:06.690
 On a timeout, your machine resends the SYN a few times, waiting longer each time, before it gives up.
 
 79
-00:04:05.324 --> 00:04:07.261
+00:04:06.690 --> 00:04:08.628
 So even the waiting is a clue.
 
 80
-00:04:08.200 --> 00:04:09.342
+00:04:09.633 --> 00:04:10.775
 One more sticker.
 
 81
-00:04:09.342 --> 00:04:11.760
+00:04:10.775 --> 00:04:13.193
 Connection reset, or an empty reply.
 
 82
-00:04:11.760 --> 00:04:16.327
+00:04:13.193 --> 00:04:17.760
 Something accepted the parcel at the front desk, then shut the door.
 
 83
-00:04:16.467 --> 00:04:23.509
+00:04:17.967 --> 00:04:25.009
 Proxies, and Docker's port forwarder, do this when the app behind them is unreachable.
 
 84
-00:04:23.509 --> 00:04:28.832
+00:04:25.009 --> 00:04:30.332
 For example, an app inside a container that's bound to 127.0.0.1.
 
 85
-00:04:29.600 --> 00:04:30.880
+00:04:31.133 --> 00:04:32.413
 So here is the rule.
 
 86
-00:04:30.880 --> 00:04:33.375
+00:04:32.413 --> 00:04:34.908
 Read the error before you fix anything.
 
 87
-00:04:33.375 --> 00:04:35.423
+00:04:34.908 --> 00:04:36.956
 Each one names a different step.
 
 88
-00:04:36.333 --> 00:04:38.553
+00:04:37.867 --> 00:04:40.086
 Two cautions about the toolbox.
 
 89
-00:04:38.553 --> 00:04:43.350
+00:04:40.086 --> 00:04:44.883
 ping uses a small protocol called ICMP, which many firewalls block.
 
 90
-00:04:43.350 --> 00:04:45.569
+00:04:44.883 --> 00:04:47.103
 So a failed ping proves little.
 
 91
-00:04:45.733 --> 00:04:52.563
+00:04:47.333 --> 00:04:54.163
 And dig asks DNS servers directly, and ignores /etc/hosts, a local file that beats DNS.
 
 92
-00:04:52.563 --> 00:04:54.996
+00:04:54.163 --> 00:04:56.596
 Your apps read that file first.
 
 93
-00:04:54.996 --> 00:04:59.471
+00:04:56.596 --> 00:05:01.071
 So if dig and your app disagree about a name, look there.
 
 94
-00:04:59.667 --> 00:05:02.516
+00:05:01.300 --> 00:05:04.149
 And every one of these tools has the same limit.
 
 95
-00:05:02.516 --> 00:05:05.959
+00:05:04.149 --> 00:05:07.592
 They tell you whether a message arrived, not what it said.
 
 96
-00:05:05.959 --> 00:05:07.324
+00:05:07.592 --> 00:05:08.957
 That's the next lesson.
 
 97
-00:05:08.067 --> 00:05:09.826
+00:05:09.767 --> 00:05:11.526
 So, the moral of the story.
 
 98
-00:05:09.826 --> 00:05:12.368
+00:05:11.526 --> 00:05:14.068
 An error isn't a mood, it's a location.
 
 99
-00:05:12.368 --> 00:05:14.324
+00:05:14.068 --> 00:05:16.024
 No such street means the name.
 
 100
-00:05:14.324 --> 00:05:16.084
+00:05:16.024 --> 00:05:17.784
 Nobody home means the door.
 
 101
-00:05:16.084 --> 00:05:19.082
+00:05:17.784 --> 00:05:20.782
 Silence means something dropped it on the way.
 
 102
-00:05:19.082 --> 00:05:22.080
+00:05:20.782 --> 00:05:23.780
 And a shut door means the app behind the desk.
 
 103
-00:05:22.867 --> 00:05:24.166
+00:05:24.600 --> 00:05:25.899
 A quick check.
 
 104
-00:05:24.166 --> 00:05:27.785
+00:05:25.899 --> 00:05:29.518
 nc -zv db.internal 22 succeeds at once.
 
 105
-00:05:27.785 --> 00:05:34.003
+00:05:29.518 --> 00:05:35.736
 Port 5432, the database port, waits thirty seconds, then times out.
 
 106
-00:05:34.003 --> 00:05:35.581
+00:05:35.736 --> 00:05:37.314
 Which step broke?
 
 107
-00:05:35.581 --> 00:05:37.065
+00:05:37.314 --> 00:05:38.799
 Pause and guess.
 
 108
-00:05:39.200 --> 00:05:42.967
+00:05:40.967 --> 00:05:44.734
 The name resolved, and the host answered on port 22.
 
 109
-00:05:42.967 --> 00:05:45.937
+00:05:44.734 --> 00:05:47.704
 A stopped database would be refused fast.
 
 110
-00:05:45.937 --> 00:05:50.356
+00:05:47.704 --> 00:05:52.123
 So the silence points to a firewall dropping traffic to 5432.
