@@ -64,5 +64,16 @@
    "poster_at": 275.4,
    "replaces": "d28-gradle"
   }
+ ],
+ "d29": [
+  {
+   "slug": "d29-small-print",
+   "title": "Read the small print: transitive dependencies, highest-wins, implementation and api",
+   "after": 2,
+   "file": "p7/d29_small_print.py",
+   "scene": "D29SmallPrint",
+   "poster_at": 242.2,
+   "replaces": "d29-dependencies"
+  }
  ]
 }

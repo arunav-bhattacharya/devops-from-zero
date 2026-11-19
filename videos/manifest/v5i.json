@@ -4,6 +4,7 @@
  "d17": [{"slug": "d17-lunchbox", "title": "A lunchbox, not a tiny computer: what really runs when a container runs", "after": 3, "file": "p5/d17_lunchbox.py", "scene": "D17Lunchbox", "poster_at": 255.0, "replaces": "d17-container"}],
  "d18": [{"slug": "d18-soup-jar", "title": "The soup jar under the sticker: layers, copy-on-write and why a delete never shrinks an image", "after": 3, "file": "p5/d18_soup_jar.py", "scene": "D18SoupJar", "poster_at": 262.0, "replaces": "d18-layers"}],
  "d19": [{"slug": "d19-napkin-last", "title": "Put the napkin last: the build cache, step order, and how a container stops", "after": 4, "file": "p5/d19_napkin_last.py", "scene": "D19NapkinLast", "poster_at": 258.0, "replaces": "d19-pid1"}],
+ "d20": [{"slug": "d20-back-shelf", "title": "The back shelf and the staff list: volumes that outlive containers, and names on a network you create", "after": 4, "file": "p5/d20_back_shelf.py", "scene": "D20BackShelf", "poster_at": 252.0, "replaces": "d20-networks"}],
  "d21": [{"slug": "d21-kitchen-plan", "title": "The plan on the kitchen wall: Compose, running versus ready, and down versus down -v", "after": 3, "file": "p5/d21_kitchen_plan.py", "scene": "D21KitchenPlan", "poster_at": 212.0, "replaces": "d21-compose-up"}],
  "d22": [{"slug": "d22-knife-in-box", "title": "The knife in the lunchbox: multi-stage builds, a non-root user and secrets kept out of the image", "after": 6, "file": "p5/d22_knife_in_box.py", "scene": "D22KnifeInBox", "poster_at": 278.0, "replaces": "d22-multistage"}]
 }
