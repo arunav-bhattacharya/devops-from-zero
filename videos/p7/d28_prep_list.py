@@ -41,9 +41,9 @@ class D28PrepList(VoiceScene):
         self.play(FadeOut(VGroup(c1, c2, nc, q)), run_time=0.6)
 
         # ---- 2. compiled code, then the bakery
-        src = box("Kotlin source", BLUE_M, w=3.0).move_to([-4.2, 1.2, 0])
-        cls = box("class files", TEAL_M, w=3.0).move_to([0.0, 1.2, 0])
-        jar = box("a jar", GOLD_M, w=2.4).move_to([4.2, 1.2, 0])
+        src = box("Kotlin source", BLUE_M, w=2.7).move_to([-4.9, 1.2, 0])
+        cls = box("class files", TEAL_M, w=2.5).move_to([0.0, 1.2, 0])
+        jar = box("a jar", GOLD_M, w=2.0).move_to([4.6, 1.2, 0])
         a1, a2 = edge_arrow(src, cls), edge_arrow(cls, jar)
         cl = T("compile", 24, GREY_B).next_to(a1, UP, buff=0.12)
         self.beat("First, why Kotlin needs a build at all. Python runs straight from the text you write. Kotlin source must be compiled, translated into class files a machine can run.",
@@ -108,7 +108,7 @@ class D28PrepList(VoiceScene):
         # ---- 4. fingerprints and UP-TO-DATE
         self.beat("Now the second half of the wish. Never make the sauce twice.", run_time=None)
         io = VGroup(T("inputs: source files, classpath, flags", 24, BLUE_M), T("outputs: class files", 24, BLUE_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
-        io.next_to(nodes["compileKotlin"], DOWN, buff=0.35).align_to(nodes["compileKotlin"], LEFT).shift(LEFT * 0.4)
+        io.move_to([0, -2.45, 0]).align_to(nodes["compileKotlin"], LEFT).shift(LEFT * 0.4)
         self.beat("Every task declares its inputs and its outputs. compileKotlin reads source files and the classpath, the list of jars it can see, and it writes class files.",
                   FadeIn(io), run_time=2.4)
         fp = T("before each task: hash inputs and outputs, compare with the last run", 26, GREY_B).move_to([0, -3.2, 0])
@@ -150,17 +150,18 @@ class D28PrepList(VoiceScene):
                       M('tasks.register("hello") {', 22),
                       M('    println("2b. configuration")', 22, TEAL_M),
                       M('    doLast { println("3. execution") }', 22, GOLD_M),
-                      M('}', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-1.6, -1.3, 0])
+                      M('}', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-2.6, -1.3, 0])
         fix_indent(code, 22)
         shn = T("(print texts shortened)", 20, GREY_B).next_to(code, DOWN, buff=0.15).align_to(code, LEFT)
         self.beat("Here's a test from the lesson. Four print lines: one in settings, one at the top of the build script, one inside the hello task's setup block, and one inside doLast.",
                   FadeIn(code), FadeIn(shn), run_time=2.4)
-        q4 = T("./gradlew hello: which lines print, in what order?", 26, YELLOW_M).move_to([3.6, -0.3, 0])
+        q4 = T("./gradlew hello: which lines print, in what order?", 26, YELLOW_M).move_to([3.6, -2.9, 0])
         q4 = fit(q4, 5.6)
         self.beat("You run the hello task. Pause and guess: which lines print, and in what order?", FadeIn(q4), run_time=1.4)
         self.wait(2.0)
         outl = VGroup(M("1. initialization", 22, BLUE_M), M("2. configuration", 22, TEAL_M), M("2b. configuration", 22, TEAL_M),
-                      M("> Task :hello", 22, GREY_B), M("3. execution", 22, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([4.4, -1.6, 0])
+                      M("> Task :hello", 22, GREY_B), M("3. execution", 22, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.1).move_to([0, -1.6, 0])
+        outl.align_to(np.array([1.6, 0, 0]), LEFT)
         self.beat("All four. One, two and two b print before any task starts, while the plan is being written. Only line three comes from the task itself.",
                   FadeOut(q4), LaggedStart(*[FadeIn(o, shift=UP * 0.05) for o in outl], lag_ratio=0.3), run_time=3.0)
         self.beat("A build script looks like a program that does the build. It isn't. It only describes the work. Only the code inside doLast runs when the task executes.",
