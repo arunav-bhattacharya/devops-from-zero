@@ -1,0 +1,377 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.779
+You run the tests with Gradle.
+
+2
+00:00:04.779 --> 00:00:06.096
+You change nothing.
+
+3
+00:00:06.096 --> 00:00:07.413
+You run them again.
+
+4
+00:00:07.633 --> 00:00:09.691
+Does Gradle run every test again?
+
+5
+00:00:09.691 --> 00:00:13.620
+And if it doesn't, how would it even know that nothing changed?
+
+6
+00:00:14.433 --> 00:00:16.955
+First, why Kotlin needs a build at all.
+
+7
+00:00:16.955 --> 00:00:19.864
+Python runs straight from the text you write.
+
+8
+00:00:19.864 --> 00:00:24.907
+Kotlin source must be compiled, translated into class files a machine can run.
+
+9
+00:00:25.133 --> 00:00:29.125
+Then those get packed into a jar, one zip file of compiled code.
+
+10
+00:00:29.125 --> 00:00:33.865
+Add tests and libraries, and that's a lot of steps to do in the right order.
+
+11
+00:00:33.865 --> 00:00:36.609
+That's the job of a build tool, like Gradle.
+
+12
+00:00:37.433 --> 00:00:41.940
+Now a bakery, the night before a wedding order of two hundred sandwiches.
+
+13
+00:00:41.940 --> 00:00:45.767
+A new baker takes the list, starts at the top, and works down.
+
+14
+00:00:46.000 --> 00:00:48.134
+At midnight, the bread isn't ready.
+
+15
+00:00:48.134 --> 00:00:52.157
+Nobody started the dough first, and the starter alone takes hours.
+
+16
+00:00:52.367 --> 00:00:54.251
+He followed the list perfectly.
+
+17
+00:00:54.251 --> 00:00:55.528
+That was the problem.
+
+18
+00:00:55.528 --> 00:01:00.088
+It followed the order of the menu, not the order the work has to happen in.
+
+19
+00:01:00.300 --> 00:01:03.349
+A real kitchen plans backwards from what is needed.
+
+20
+00:01:03.349 --> 00:01:07.713
+And it never makes a sauce twice when this morning's batch is still good.
+
+21
+00:01:07.713 --> 00:01:09.685
+That's exactly how Gradle thinks.
+
+22
+00:01:10.600 --> 00:01:17.839
+In Gradle, each line of the prep list is a task: a named piece of work, like compileKotlin, test, or jar.
+
+23
+00:01:18.067 --> 00:01:19.252
+You ask for build.
+
+24
+00:01:19.252 --> 00:01:22.283
+Gradle starts from there, and plans backwards.
+
+25
+00:01:22.500 --> 00:01:24.087
+Build does no work itself.
+
+26
+00:01:24.087 --> 00:01:28.785
+It groups assemble, which makes the outputs, and check, which runs the tests.
+
+27
+00:01:29.000 --> 00:01:30.674
+Assemble needs the jar.
+
+28
+00:01:30.674 --> 00:01:32.930
+The jar needs compiled classes.
+
+29
+00:01:32.930 --> 00:01:35.185
+The classes need compileKotlin.
+
+30
+00:01:35.400 --> 00:01:41.593
+And check needs test, which needs the compiled tests, which need the main code compiled first.
+
+31
+00:01:41.800 --> 00:01:45.659
+Notice compileKotlin is needed twice, but it appears once.
+
+32
+00:01:45.659 --> 00:01:49.984
+Gradle runs each task once, in an order that respects the arrows.
+
+33
+00:01:50.200 --> 00:01:53.876
+Now the cooking goes forwards, from the starter to the sandwiches.
+
+34
+00:01:54.100 --> 00:01:55.858
+This plan is the task graph.
+
+35
+00:01:55.858 --> 00:01:58.746
+Its arrows point one way, and never loop back.
+
+36
+00:01:58.746 --> 00:02:01.885
+The baker's prep list, in the right order at last.
+
+37
+00:02:02.100 --> 00:02:04.155
+Now the second half of the wish.
+
+38
+00:02:04.155 --> 00:02:05.889
+Never make the sauce twice.
+
+39
+00:02:06.100 --> 00:02:09.119
+Every task declares its inputs and its outputs.
+
+40
+00:02:09.119 --> 00:02:15.991
+compileKotlin reads source files and the classpath, the list of jars it can see, and it writes class files.
+
+41
+00:02:16.200 --> 00:02:19.210
+Before a task runs, Gradle fingerprints them.
+
+42
+00:02:19.210 --> 00:02:28.373
+It hashes their contents, where one changed byte changes the hash, and compares with the hashes it saved in the .gradle folder last time.
+
+43
+00:02:28.600 --> 00:02:31.557
+So: run the build again, changing nothing.
+
+44
+00:02:31.557 --> 00:02:32.684
+Pause and guess.
+
+45
+00:02:32.684 --> 00:02:34.444
+Which tasks do real work?
+
+46
+00:02:36.667 --> 00:02:37.490
+None of them.
+
+47
+00:02:37.490 --> 00:02:40.338
+Every task prints UP-TO-DATE, and is skipped.
+
+48
+00:02:40.338 --> 00:02:42.553
+This morning's sauce is still good.
+
+49
+00:02:43.267 --> 00:02:44.686
+Let's try to fool it.
+
+50
+00:02:44.686 --> 00:02:48.876
+touch updates a file's time, but not one byte of its contents.
+
+51
+00:02:48.876 --> 00:02:50.497
+Does Gradle fall for it?
+
+52
+00:02:50.700 --> 00:02:53.016
+All seven tasks stay up to date.
+
+53
+00:02:53.016 --> 00:02:55.983
+Gradle compares contents, not timestamps.
+
+54
+00:02:56.200 --> 00:02:58.016
+Now change one test file.
+
+55
+00:02:58.016 --> 00:02:59.904
+Watch which tasks wake up.
+
+56
+00:03:00.133 --> 00:03:02.229
+compileTestKotlin and test run.
+
+57
+00:03:02.229 --> 00:03:08.381
+compileKotlin and jar stay up to date, because their inputs are the main source files only.
+
+58
+00:03:09.300 --> 00:03:10.673
+One question is left.
+
+59
+00:03:10.673 --> 00:03:14.923
+How can Gradle know the whole graph before it runs a single task?
+
+60
+00:03:14.923 --> 00:03:16.884
+It writes the prep list first.
+
+61
+00:03:16.884 --> 00:03:18.649
+Every run has three phases.
+
+62
+00:03:18.867 --> 00:03:21.530
+Initialization reads the settings file.
+
+63
+00:03:21.530 --> 00:03:26.924
+Configuration runs the build scripts, which register tasks and build the graph.
+
+64
+00:03:26.924 --> 00:03:29.383
+Only then, execution runs the tasks.
+
+65
+00:03:29.600 --> 00:03:31.612
+Here's a test from the lesson.
+
+66
+00:03:31.612 --> 00:03:40.600
+Four print lines: one in settings, one at the top of the build script, one inside the hello task's setup block, and one inside doLast.
+
+67
+00:03:40.833 --> 00:03:42.341
+You run the hello task.
+
+68
+00:03:42.341 --> 00:03:45.881
+Pause and guess: which lines print, and in what order?
+
+69
+00:03:48.100 --> 00:03:48.699
+All four.
+
+70
+00:03:48.699 --> 00:03:54.090
+One, two and two b print before any task starts, while the plan is being written.
+
+71
+00:03:54.090 --> 00:03:56.952
+Only line three comes from the task itself.
+
+72
+00:03:57.167 --> 00:04:01.100
+A build script looks like a program that does the build.
+
+73
+00:04:01.100 --> 00:04:01.732
+It isn't.
+
+74
+00:04:01.732 --> 00:04:03.628
+It only describes the work.
+
+75
+00:04:03.628 --> 00:04:07.561
+Only the code inside doLast runs when the task executes.
+
+76
+00:04:07.767 --> 00:04:09.100
+Run it a second time.
+
+77
+00:04:09.100 --> 00:04:16.463
+The configuration cache saved the finished prep list, so phases one and two are skipped, and only line three prints.
+
+78
+00:04:17.367 --> 00:04:20.211
+A few guardrails follow straight from this picture.
+
+79
+00:04:20.433 --> 00:04:27.266
+Top-level code in a build script runs every time Gradle configures the build, even for gradlew help.
+
+80
+00:04:27.266 --> 00:04:30.751
+So keep network calls and big file reads out of it.
+
+81
+00:04:30.967 --> 00:04:36.008
+A task with no declared outputs always runs, because there's nothing to compare.
+
+82
+00:04:36.233 --> 00:04:41.924
+If you often reach for rerun tasks to force work, a task is probably missing an input.
+
+83
+00:04:41.924 --> 00:04:43.777
+Fix the build logic instead.
+
+84
+00:04:44.000 --> 00:04:47.115
+And always run ./gradlew, the Gradle Wrapper.
+
+85
+00:04:47.115 --> 00:04:53.208
+It pins the exact Gradle version, so your laptop and every CI runner build the same way.
+
+86
+00:04:54.133 --> 00:04:55.036
+So, the moral.
+
+87
+00:04:55.036 --> 00:05:03.939
+Gradle plans backwards from what you asked for, cooks forwards in dependency order, and skips every task whose fingerprints didn't change.
+
+88
+00:05:04.167 --> 00:05:07.352
+The baker who finally reads the list from the bottom.
+
+89
+00:05:07.567 --> 00:05:08.507
+Quick check.
+
+90
+00:05:08.507 --> 00:05:12.345
+A print line sits at the top of build.gradle.kts.
+
+91
+00:05:12.345 --> 00:05:14.617
+In which phase does it print?
+
+92
+00:05:14.617 --> 00:05:15.871
+Pause and think.
+
+93
+00:05:18.100 --> 00:05:19.027
+Configuration.
+
+94
+00:05:19.027 --> 00:05:22.999
+It prints while the plan is written, before any task starts.

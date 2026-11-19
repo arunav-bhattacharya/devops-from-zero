@@ -53,5 +53,16 @@
    "poster_at": 272.0,
    "replaces": "d27-release"
   }
+ ],
+ "d28": [
+  {
+   "slug": "d28-prep-list",
+   "title": "Plan backwards, never cook twice: the task graph, UP-TO-DATE and the three phases",
+   "after": 1,
+   "file": "p7/d28_prep_list.py",
+   "scene": "D28PrepList",
+   "poster_at": 275.4,
+   "replaces": "d28-gradle"
+  }
  ]
 }
