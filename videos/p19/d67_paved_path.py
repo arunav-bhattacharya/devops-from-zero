@@ -80,7 +80,7 @@ class D67PavedPath(VoiceScene):
                   *wob, run_time=3.0)
 
         # the tempting fix, and why it stalls
-        mand = VGroup(Rectangle(width=4.6, height=0.8, stroke_color=RED_M, stroke_width=3).set_fill(BLACK, 1), T("Standard pipeline: mandatory", 26, RED_M)).move_to([3.6, -2.6, 0])
+        mand = VGroup(Rectangle(width=5.6, height=0.8, stroke_color=RED_M, stroke_width=3).set_fill(BLACK, 1), T("Standard pipeline: mandatory", 26, RED_M)).move_to([3.6, -2.6, 0])
         mand[1].move_to(mand[0])
         self.beat("The tempting fix is the sign: a mandatory standard. Teams use it because a manager said so, and look for ways around it.",
                   FadeIn(mand, shift=UP * 0.1), run_time=2.0)
@@ -156,7 +156,7 @@ class D67PavedPath(VoiceScene):
         self.beat("Why requests? Because the scheduler reserves them. You pay for what you set aside, even when the CPUs sit idle.",
                   Indicate(segs[0][1], color=WHITE), run_time=1.6)
         self.beat("And the line people forget: capacity nobody requested still costs money. That's idle cost, sprinklers watering an empty field. Give it an owner too.",
-                  FadeIn(idle), FadeIn(idlel), Succession(Wait(3.0), Indicate(idlel, color=WHITE)), run_time=4.4)
+                  FadeIn(idle), FadeIn(idlel), Succession(Wait(3.0), Circumscribe(idle, color=WHITE)), run_time=4.4)
         sb = T("showback: each team sees its own share; the money stays central", 24, GREEN_M).move_to([0, -2.4, 0])
         fit(sb, 12.4)
         self.beat("Show each team its share while the money stays central. That's showback, and it comes first.",

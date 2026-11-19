@@ -1,0 +1,413 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.549
+Picture driving home late on a quiet highway.
+
+2
+00:00:05.549 --> 00:00:07.385
+Three lights come on at once.
+
+3
+00:00:07.600 --> 00:00:09.241
+Oil pressure low.
+
+4
+00:00:09.241 --> 00:00:10.881
+Washer fluid low.
+
+5
+00:00:10.881 --> 00:00:13.487
+A service is due in 500 km.
+
+6
+00:00:13.700 --> 00:00:18.379
+Only one of them means pull over now, and you have about two seconds to know which.
+
+7
+00:00:18.600 --> 00:00:21.403
+Software teams face that moment every night.
+
+8
+00:00:21.403 --> 00:00:24.715
+So which problems should wake an engineer at 3 a.m.?
+
+9
+00:00:25.433 --> 00:00:26.544
+Four candidates.
+
+10
+00:00:26.544 --> 00:00:28.280
+CPU above ninety percent.
+
+11
+00:00:28.280 --> 00:00:30.225
+A disk seventy percent full.
+
+12
+00:00:30.225 --> 00:00:32.586
+Five percent of checkouts failing.
+
+13
+00:00:32.586 --> 00:00:36.752
+And one pod, a running copy of the app, that restarted once.
+
+14
+00:00:39.867 --> 00:00:40.886
+Hold that guess.
+
+15
+00:00:40.886 --> 00:00:45.661
+To answer it properly, we first need a number that says what working means.
+
+16
+00:00:46.367 --> 00:00:49.012
+It is easy to treat every light as urgent.
+
+17
+00:00:49.012 --> 00:00:55.561
+Then, after the tenth false alarm, you ignore them all, like a driver who tapes over the warning lights.
+
+18
+00:00:55.561 --> 00:00:56.947
+That is alert fatigue.
+
+19
+00:00:57.667 --> 00:00:59.435
+Start with what users feel.
+
+20
+00:00:59.435 --> 00:01:08.539
+For hello-devops, our tiny lab app, count the good answers at slash, the ones that are not a server failure, and divide by all the answers.
+
+21
+00:01:08.767 --> 00:01:12.933
+That ratio is called an SLI, a service level indicator.
+
+22
+00:01:13.167 --> 00:01:16.895
+A not found, for a mistyped address, is the user's mistake.
+
+23
+00:01:16.895 --> 00:01:18.791
+It does not count against you.
+
+24
+00:01:19.000 --> 00:01:21.369
+Now give it a target and a window.
+
+25
+00:01:21.369 --> 00:01:24.783
+Ninety nine point nine percent, over thirty days.
+
+26
+00:01:24.783 --> 00:01:28.684
+A target like that is an SLO, a service level objective.
+
+27
+00:01:28.900 --> 00:01:30.094
+Why not a hundred?
+
+28
+00:01:30.094 --> 00:01:35.204
+Users rarely notice, because their own phone and network fail far more often.
+
+29
+00:01:35.204 --> 00:01:37.859
+And each extra nine costs far more work.
+
+30
+00:01:38.667 --> 00:01:40.513
+Here is a picture that helps.
+
+31
+00:01:40.513 --> 00:01:44.141
+Think of a phone plan with ten gigabytes of data a month.
+
+32
+00:01:44.367 --> 00:01:47.040
+You do not panic about every video you watch.
+
+33
+00:01:47.267 --> 00:01:50.476
+You panic when half the data is gone on day three.
+
+34
+00:01:50.476 --> 00:01:52.852
+It is not the amount that scares you.
+
+35
+00:01:52.852 --> 00:01:53.879
+It is the speed.
+
+36
+00:01:54.100 --> 00:01:54.573
+Map it.
+
+37
+00:01:54.573 --> 00:01:59.374
+The data allowance is the failure your target allows: the error budget.
+
+38
+00:01:59.374 --> 00:02:01.741
+The month is the thirty day window.
+
+39
+00:02:01.741 --> 00:02:04.175
+How fast it drains is the burn rate.
+
+40
+00:02:05.200 --> 00:02:06.995
+So how big is the budget?
+
+41
+00:02:06.995 --> 00:02:09.581
+A hundred percent, minus the target.
+
+42
+00:02:09.581 --> 00:02:10.873
+Point one percent.
+
+43
+00:02:11.100 --> 00:02:15.179
+Say two hundred thousand requests a day, my guess for the example.
+
+44
+00:02:15.179 --> 00:02:19.135
+Thirty days hold six million, and six thousand of them may fail.
+
+45
+00:02:19.367 --> 00:02:23.824
+If everything fails at once, that is point one percent of a month's minutes.
+
+46
+00:02:23.824 --> 00:02:26.463
+Forty three point two minutes of full outage.
+
+47
+00:02:27.267 --> 00:02:30.454
+One bad deploy breaks everything for twenty minutes.
+
+48
+00:02:30.454 --> 00:02:32.293
+How much of the month is gone?
+
+49
+00:02:35.400 --> 00:02:36.230
+Almost half.
+
+50
+00:02:36.230 --> 00:02:41.280
+Twenty out of forty three point two is forty six percent, in one evening.
+
+51
+00:02:41.500 --> 00:02:45.304
+So the point is, a rollback has to take minutes, not an hour.
+
+52
+00:02:46.033 --> 00:02:47.014
+Now the speed.
+
+53
+00:02:47.014 --> 00:02:51.636
+The burn rate is the error ratio right now, divided by the budget.
+
+54
+00:02:51.867 --> 00:02:55.265
+Here is a month, and the budget left, from full to empty.
+
+55
+00:02:55.467 --> 00:02:58.402
+Point one percent failing is burn rate one.
+
+56
+00:02:58.402 --> 00:03:00.927
+The budget lasts exactly thirty days.
+
+57
+00:03:00.927 --> 00:03:02.633
+That is the plan working.
+
+58
+00:03:02.867 --> 00:03:05.810
+Point six percent failing is burn rate six.
+
+59
+00:03:05.810 --> 00:03:08.000
+The budget is gone in five days.
+
+60
+00:03:08.233 --> 00:03:12.545
+And one point four four percent is burn rate fourteen point four.
+
+61
+00:03:12.545 --> 00:03:14.071
+Gone in about two days.
+
+62
+00:03:14.300 --> 00:03:15.151
+Same plan.
+
+63
+00:03:15.151 --> 00:03:17.108
+Only the speed changed.
+
+64
+00:03:18.033 --> 00:03:20.733
+You might be thinking: why the fancy ratio?
+
+65
+00:03:20.733 --> 00:03:23.999
+Why not just alert when more than ten requests fail?
+
+66
+00:03:24.200 --> 00:03:28.794
+Because ten failures mean nothing on a busy shop, and a lot on a quiet one.
+
+67
+00:03:28.794 --> 00:03:32.469
+Burn rate is already scaled to your traffic and your target.
+
+68
+00:03:33.100 --> 00:03:34.829
+And why fourteen point four?
+
+69
+00:03:34.829 --> 00:03:37.484
+A month has seven hundred and twenty hours.
+
+70
+00:03:37.484 --> 00:03:41.931
+At that speed, one single hour spends two percent of the month's budget.
+
+71
+00:03:43.033 --> 00:03:44.906
+Now we can sort the lights.
+
+72
+00:03:44.906 --> 00:03:47.751
+Every alert goes into one of three boxes.
+
+73
+00:03:47.751 --> 00:03:49.624
+Page, ticket, or dashboard.
+
+74
+00:03:49.833 --> 00:03:58.352
+Google's SRE Workbook suggests: page someone at burn rate fourteen point four over one hour, or six over six hours.
+
+75
+00:03:58.567 --> 00:04:03.672
+Open a ticket, a task for working hours, at burn rate one over three days.
+
+76
+00:04:03.900 --> 00:04:04.533
+Try one.
+
+77
+00:04:04.533 --> 00:04:07.775
+Two percent of requests fail for an hour.
+
+78
+00:04:07.775 --> 00:04:09.040
+Page, or ticket?
+
+79
+00:04:12.167 --> 00:04:15.719
+Two percent over point one percent is burn rate twenty.
+
+80
+00:04:15.719 --> 00:04:18.239
+Above fourteen point four, so it pages.
+
+81
+00:04:18.767 --> 00:04:20.341
+Back to our four lights.
+
+82
+00:04:20.341 --> 00:04:23.819
+Failed checkouts are something users feel, right now.
+
+83
+00:04:23.819 --> 00:04:24.803
+That is a page.
+
+84
+00:04:25.033 --> 00:04:29.180
+The other three are possible causes, which may never hurt anyone.
+
+85
+00:04:29.180 --> 00:04:33.836
+A busy server that answers every request quickly is simply doing its job.
+
+86
+00:04:34.067 --> 00:04:37.359
+So they go on a screen you look at, or on a to-do list.
+
+87
+00:04:37.567 --> 00:04:39.655
+Wake people for what users feel.
+
+88
+00:04:39.655 --> 00:04:41.612
+Put the causes on a dashboard.
+
+89
+00:04:42.833 --> 00:04:43.986
+A few guardrails.
+
+90
+00:04:43.986 --> 00:04:48.190
+A page must be urgent, real, and something a human can act on.
+
+91
+00:04:48.190 --> 00:04:51.920
+If nobody needs to act, delete it, or make it a ticket.
+
+92
+00:04:52.133 --> 00:04:55.077
+When the budget is spent, pause risky releases.
+
+93
+00:04:55.077 --> 00:04:58.397
+And a budget you never touch is speed you never used.
+
+94
+00:04:59.100 --> 00:05:00.751
+So the moral of the story.
+
+95
+00:05:00.751 --> 00:05:06.085
+Count good answers, set a target, and treat the failure it allows as your data plan.
+
+96
+00:05:06.085 --> 00:05:10.085
+What wakes people is not a failure, but the speed of the drain.
+
+97
+00:05:10.800 --> 00:05:11.701
+A quick check.
+
+98
+00:05:11.701 --> 00:05:14.726
+Point three percent of requests fail, all week.
+
+99
+00:05:14.726 --> 00:05:18.073
+What is the burn rate, and is it a page or a ticket?
+
+100
+00:05:21.200 --> 00:05:22.352
+Burn rate three.
+
+101
+00:05:22.352 --> 00:05:24.224
+The budget lasts ten days.
+
+102
+00:05:24.224 --> 00:05:28.472
+Nobody needs to wake up, but someone must fix it this week.
+
+103
+00:05:28.472 --> 00:05:29.120
+A ticket.

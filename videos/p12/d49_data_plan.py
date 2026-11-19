@@ -68,8 +68,8 @@ class D49DataPlan(VoiceScene):
         many = VGroup(*[Circle(radius=0.22, stroke_color=c, stroke_width=3).set_fill(dark(c, 0.6), opacity=1)
                         for c in [RED_M, GOLD_M, BLUE_M, RED_M, GOLD_M, RED_M, BLUE_M, GOLD_M, RED_M, BLUE_M, RED_M, GOLD_M]]).arrange_in_grid(2, 6, buff=0.4)
         many.move_to(UP * 0.8)
-        h1 = T("every light urgent", 28, RED_M).next_to(many, DOWN, buff=0.5).shift(LEFT * 2.8)
-        h2 = T("after the tenth false alarm: ignore them all", 28, GREY_B).next_to(many, DOWN, buff=0.5).shift(RIGHT * 2.2)
+        h1 = T("every light urgent", 28, RED_M).next_to(many, DOWN, buff=0.5).shift(LEFT * 3.6)
+        h2 = T("after the tenth false alarm: ignore them all", 28, GREY_B).next_to(many, DOWN, buff=0.5).shift(RIGHT * 2.0)
         tape = VGroup(*[Rectangle(width=0.62, height=0.2, stroke_width=0).set_fill(GREY_C, 1).rotate(0.4).move_to(m) for m in many])
         self.beat("It is easy to treat every light as urgent. Then, after the tenth false alarm, you ignore them all, like a driver who tapes over the warning lights. That is alert fatigue.",
                   LaggedStart(*[FadeIn(m, scale=1.3) for m in many], lag_ratio=0.08), FadeIn(h1),
@@ -203,7 +203,7 @@ class D49DataPlan(VoiceScene):
         self.play(FadeOut(bad), run_time=0.3)
 
         # pay off the opening guess
-        ga = lchip("C. 5% of checkouts failing", RED_M, 22).next_to(bchip, DOWN, buff=0.15)
+        ga = lchip("C. 5% checkouts failing", RED_M, 22).next_to(bchip, DOWN, buff=0.15)
         gb_ = lchip("B. disk 70%, slowly", GOLD_M, 22).next_to(t1, DOWN, buff=0.25)
         gc = lchip("A. CPU above 90%", BLUE_M, 22).next_to(heads[2][2], DOWN, buff=0.3)
         gd = lchip("D. one pod restart", BLUE_M, 22).next_to(gc, DOWN, buff=0.15)

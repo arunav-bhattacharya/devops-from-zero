@@ -20,5 +20,16 @@
    "poster_at": 205.0,
    "replaces": "d48-promotion"
   }
+ ],
+ "d49": [
+  {
+   "slug": "d49-data-plan",
+   "title": "A data plan for failure: SLOs, error budgets and burn rates",
+   "after": 4,
+   "file": "p12/d49_data_plan.py",
+   "scene": "D49DataPlan",
+   "poster_at": 282.0,
+   "replaces": "d49-error-budget"
+  }
  ]
 }
