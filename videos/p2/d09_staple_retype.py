@@ -140,10 +140,9 @@ class D09StapleRetype(VoiceScene):
         fname = M("price.py", 22, GREY_B).next_to(pane, UP, buff=0.12).align_to(pane, LEFT)
         cg = VGroup(pane, code.move_to(pane), fname).move_to(DOWN * 0.2)
         self.beat("The file now holds both versions, between marker lines. Your side, from HEAD, on top. Ben's side below the equals signs.",
-                  FadeIn(pane), FadeIn(fname), LaggedStart(*[FadeIn(l, shift=RIGHT * 0.1) for l in code], lag_ratio=0.35),
-                  Succession(Wait(4.6), Indicate(code[0], color=ANA), Wait(0.6), Indicate(code[4], color=BEN)), run_time=8.0)
+                  FadeIn(pane), FadeIn(fname), LaggedStart(*[FadeIn(l, shift=RIGHT * 0.1) for l in code], lag_ratio=0.35), run_time=6.0)
         self.beat("The first time, it looks as if Git broke your file. It didn't. It's asking you a question.",
-                  Wiggle(code[2]), run_time=1.4)
+                  Succession(Indicate(code[0], color=ANA, run_time=1.0), Indicate(code[4], color=BEN, run_time=1.0), Wiggle(code[2], run_time=1.4)), run_time=3.4)
         fixed = M('    return f"{CURRENCY} {total(net):,.2f}"', 24, MERGE).move_to(code).align_to(code, LEFT)
         runout = M("$ python3 price.py   ->   EUR 1,543.12", 24, MERGE).next_to(pane, DOWN, buff=0.4)
         self.beat("Here both ideas are good. So you write one line with the currency first, and the commas kept, and you delete every marker. The program prints EUR 1,543.12.",
