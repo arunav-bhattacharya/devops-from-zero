@@ -53,5 +53,16 @@
    "poster_at": 226.0,
    "replaces": "d66-agent-tools"
   }
+ ],
+ "d67": [
+  {
+   "slug": "d67-paved-path",
+   "title": "Pave where people walk: golden paths, and a name on every cost",
+   "after": 4,
+   "file": "p19/d67_paved_path.py",
+   "scene": "D67PavedPath",
+   "poster_at": 217.0,
+   "replaces": "d67-golden-path"
+  }
  ]
 }

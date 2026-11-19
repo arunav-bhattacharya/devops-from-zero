@@ -1,0 +1,369 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:05.100
+Gradle's build cache is switched on.
+
+2
+00:00:05.100 --> 00:00:06.415
+You run clean build.
+
+3
+00:00:06.415 --> 00:00:10.689
+Clean deletes the build folders first, every compiled file, gone.
+
+4
+00:00:10.867 --> 00:00:14.273
+So compileKotlin has to compile everything again.
+
+5
+00:00:14.273 --> 00:00:14.690
+Right?
+
+6
+00:00:14.690 --> 00:00:16.149
+The outputs are gone.
+
+7
+00:00:16.149 --> 00:00:19.277
+Keep your answer, we'll check it in a minute.
+
+8
+00:00:20.067 --> 00:00:22.740
+Picture our bakery on its busiest morning.
+
+9
+00:00:22.933 --> 00:00:26.631
+The oven went cold overnight, and takes forty minutes to heat.
+
+10
+00:00:26.800 --> 00:00:31.905
+The prep list is written again from scratch, though the orders are the same as yesterday.
+
+11
+00:00:32.067 --> 00:00:37.492
+Each branch makes its own croissant dough, though the main branch made the same dough an hour ago.
+
+12
+00:00:37.667 --> 00:00:42.943
+And the van carries the whole kitchen, mixer included, to deliver one box of bread.
+
+13
+00:00:43.133 --> 00:00:44.974
+None of these looks serious.
+
+14
+00:00:44.974 --> 00:00:47.933
+Each costs a few minutes, so nobody fixes it.
+
+15
+00:00:47.933 --> 00:00:49.774
+It's never one big disaster.
+
+16
+00:00:49.774 --> 00:00:52.141
+It's four small ones, holding hands.
+
+17
+00:00:53.067 --> 00:00:58.060
+Gradle has four separate ways to skip repeated work, and they're easy to mix up.
+
+18
+00:00:58.060 --> 00:01:00.120
+So let's give each one a picture.
+
+19
+00:01:00.267 --> 00:01:06.908
+Up-to-date checks, from last time, skip a task whose inputs and outputs didn't change, in the same folder.
+
+20
+00:01:06.908 --> 00:01:08.600
+The sauce still in the pot.
+
+21
+00:01:08.800 --> 00:01:17.469
+The build cache copies a task's outputs from an earlier run anywhere, even another folder or another machine, when the inputs match.
+
+22
+00:01:17.469 --> 00:01:18.520
+A shared fridge.
+
+23
+00:01:18.667 --> 00:01:23.429
+The configuration cache skips running the build scripts when they didn't change.
+
+24
+00:01:23.429 --> 00:01:24.739
+Yesterday's prep list.
+
+25
+00:01:24.933 --> 00:01:31.829
+And the daemon is a background program Gradle keeps running between builds, so Gradle itself starts fast.
+
+26
+00:01:31.829 --> 00:01:33.011
+An oven kept warm.
+
+27
+00:01:33.200 --> 00:01:36.876
+The build cache saves the most work, so let's open the fridge.
+
+28
+00:01:37.867 --> 00:01:39.807
+Take one task, compileKotlin.
+
+29
+00:01:39.807 --> 00:01:44.557
+Its inputs are the source files, the classpath, and the compiler flags.
+
+30
+00:01:44.733 --> 00:01:51.417
+Before it runs, Gradle hashes all of those inputs into one cache key, a label made of their fingerprints.
+
+31
+00:01:51.600 --> 00:01:57.217
+The fridge holds earlier outputs, each one filed under the key of the inputs that made it.
+
+32
+00:01:57.400 --> 00:02:03.184
+If the fridge already has that key, Gradle copies the outputs in and prints FROM-CACHE.
+
+33
+00:02:03.184 --> 00:02:04.048
+No compiling.
+
+34
+00:02:04.200 --> 00:02:07.096
+Notice what's not in the key: the folder path.
+
+35
+00:02:07.096 --> 00:02:11.125
+So a fresh clone, in another folder, can still find its outputs.
+
+36
+00:02:11.267 --> 00:02:12.692
+Back to our question.
+
+37
+00:02:12.692 --> 00:02:14.457
+Clean deleted the outputs.
+
+38
+00:02:14.457 --> 00:02:19.073
+Pause and guess: does compileKotlin compile, or come from the cache?
+
+39
+00:02:21.267 --> 00:02:21.959
+From cache.
+
+40
+00:02:21.959 --> 00:02:25.233
+It isn't up to date, since its outputs were deleted.
+
+41
+00:02:25.233 --> 00:02:29.387
+But its inputs didn't change, so their key is still in the fridge.
+
+42
+00:02:29.387 --> 00:02:32.472
+Gradle restores the outputs instead of compiling.
+
+43
+00:02:32.667 --> 00:02:34.209
+So that's the difference.
+
+44
+00:02:34.209 --> 00:02:36.925
+Up-to-date needs the sauce still in the pot.
+
+45
+00:02:36.925 --> 00:02:40.751
+The cache only needs the same recipe and the same ingredients.
+
+46
+00:02:41.667 --> 00:02:43.106
+The lesson tried it.
+
+47
+00:02:43.106 --> 00:02:52.752
+A fresh clone of hello-jvm, in a new folder on the same laptop, built with twenty actionable tasks: eight executed, twelve from cache.
+
+48
+00:02:52.933 --> 00:02:57.296
+Many teams also run a remote cache, a server every build can read.
+
+49
+00:02:57.296 --> 00:03:00.072
+That's the fridge shared between branches.
+
+50
+00:03:00.267 --> 00:03:05.800
+The Gradle docs recommend that CI fills it from clean builds, and laptops only read.
+
+51
+00:03:05.800 --> 00:03:09.752
+So half finished local changes never reach the shared cache.
+
+52
+00:03:09.933 --> 00:03:13.709
+Pull main in the morning, and most of it is already compiled.
+
+53
+00:03:13.709 --> 00:03:15.813
+Nobody makes the same dough twice.
+
+54
+00:03:16.733 --> 00:03:19.967
+One more way to skip work, from the Kotlin plugin.
+
+55
+00:03:19.967 --> 00:03:24.170
+Remember the two projects: app uses greeting, our little library.
+
+56
+00:03:24.170 --> 00:03:26.887
+When greeting changes, must app recompile?
+
+57
+00:03:27.067 --> 00:03:29.723
+The lesson changed greeting in three ways.
+
+58
+00:03:29.723 --> 00:03:30.924
+One: add a comment.
+
+59
+00:03:30.924 --> 00:03:32.695
+Only greeting's compile ran.
+
+60
+00:03:32.695 --> 00:03:37.312
+It produced the same class files, so everything in app stayed up to date.
+
+61
+00:03:37.467 --> 00:03:39.588
+Three: add a public function.
+
+62
+00:03:39.588 --> 00:03:41.491
+Now app's compile ran too.
+
+63
+00:03:41.667 --> 00:03:44.533
+Two: change the code inside a function.
+
+64
+00:03:44.533 --> 00:03:45.709
+Pause and guess.
+
+65
+00:03:45.709 --> 00:03:47.105
+Does app recompile?
+
+66
+00:03:49.267 --> 00:03:49.471
+No.
+
+67
+00:03:49.471 --> 00:03:51.653
+app's compile stayed up to date.
+
+68
+00:03:51.653 --> 00:03:59.697
+greeting's jar and the tests ran, but app compiles only against greeting's public signatures, and those didn't change.
+
+69
+00:03:59.867 --> 00:04:05.369
+That set of public signatures is called the ABI, the application binary interface.
+
+70
+00:04:05.369 --> 00:04:09.999
+A change behind a stable public API doesn't ripple through the build.
+
+71
+00:04:09.999 --> 00:04:12.751
+One more reason to prefer implementation.
+
+72
+00:04:13.667 --> 00:04:17.099
+Now take this to CI, where every runner starts fresh.
+
+73
+00:04:17.099 --> 00:04:23.771
+The setup-gradle action caches libraries, the wrapper's Gradle, and the local build cache between runs.
+
+74
+00:04:23.933 --> 00:04:26.640
+Two traps, because more caching sounds safer.
+
+75
+00:04:26.640 --> 00:04:29.406
+Don't add another cache for the Gradle folder.
+
+76
+00:04:29.406 --> 00:04:31.271
+It conflicts with setup-gradle.
+
+77
+00:04:31.467 --> 00:04:33.531
+And don't run clean build in CI.
+
+78
+00:04:33.531 --> 00:04:41.080
+On a fresh runner clean has nothing to delete, and on a reused machine it throws away work Gradle could have skipped.
+
+79
+00:04:41.267 --> 00:04:47.185
+If you distrust a cache hit, the real fix is a task input that's missing from the build logic.
+
+80
+00:04:47.185 --> 00:04:52.096
+And remember, for the configuration cache, a miss is only slower, never wrong.
+
+81
+00:04:53.000 --> 00:04:53.960
+So, the moral.
+
+82
+00:04:53.960 --> 00:04:56.293
+Same inputs give the same outputs.
+
+83
+00:04:56.293 --> 00:05:01.575
+Label finished work by what went into it, and anyone, anywhere, can reuse it.
+
+84
+00:05:01.733 --> 00:05:03.829
+The van with the whole kitchen in it?
+
+85
+00:05:03.829 --> 00:05:06.888
+That's packing the image, and the lesson does it next.
+
+86
+00:05:07.067 --> 00:05:07.877
+Quick check.
+
+87
+00:05:07.877 --> 00:05:12.400
+You clone the project into a brand new folder, cache on, and build.
+
+88
+00:05:12.400 --> 00:05:15.101
+Will tasks be up to date, or from cache?
+
+89
+00:05:15.101 --> 00:05:16.181
+Pause and think.
+
+90
+00:05:18.333 --> 00:05:21.643
+From cache, for every task the fridge already holds.
+
+91
+00:05:21.643 --> 00:05:24.634
+Up-to-date checks only work in the same folder.
+
+92
+00:05:24.634 --> 00:05:26.289
+The fridge works anywhere.

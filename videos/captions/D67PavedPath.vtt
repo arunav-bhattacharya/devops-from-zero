@@ -1,0 +1,381 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:07.080
+Picture a town park, a wide lawn between the houses and the station.
+
+2
+00:00:07.300 --> 00:00:08.715
+People cut across it.
+
+3
+00:00:08.715 --> 00:00:11.815
+And soon, muddy tracks run in every direction.
+
+4
+00:00:12.033 --> 00:00:14.077
+The council puts up a sign.
+
+5
+00:00:14.077 --> 00:00:15.514
+Keep off the grass.
+
+6
+00:00:15.514 --> 00:00:16.725
+Nobody reads it.
+
+7
+00:00:16.933 --> 00:00:20.331
+The next spring, a new park keeper tries something else.
+
+8
+00:00:20.331 --> 00:00:24.456
+Paved paths, exactly where the tracks were, with lights and benches.
+
+9
+00:00:24.667 --> 00:00:26.770
+Within a month, the mud is gone.
+
+10
+00:00:26.770 --> 00:00:28.413
+And nobody needed a sign.
+
+11
+00:00:28.633 --> 00:00:30.445
+Rules feel like the quick fix.
+
+12
+00:00:30.445 --> 00:00:34.249
+A path people want to walk takes longer to build, and it works.
+
+13
+00:00:34.249 --> 00:00:36.483
+So what has this to do with software?
+
+14
+00:00:37.300 --> 00:00:39.950
+List what hello-devops needs by now.
+
+15
+00:00:39.950 --> 00:00:48.343
+A Dockerfile and workflows, Kubernetes YAML and Argo CD, metrics, dashboards, logs, tracing, policies and secrets.
+
+16
+00:00:48.567 --> 00:00:50.790
+You learned all of it in this course.
+
+17
+00:00:50.790 --> 00:00:54.276
+Now picture forty product teams, each building that alone.
+
+18
+00:00:54.500 --> 00:00:59.934
+They solve the same problems forty ways, and whoever is on call learns every one.
+
+19
+00:00:59.934 --> 00:01:00.807
+Muddy tracks.
+
+20
+00:01:01.033 --> 00:01:04.330
+The tempting fix is the sign: a mandatory standard.
+
+21
+00:01:04.330 --> 00:01:08.727
+Teams use it because a manager said so, and look for ways around it.
+
+22
+00:01:08.933 --> 00:01:12.970
+Or buy a developer portal, a website listing every service.
+
+23
+00:01:12.970 --> 00:01:16.391
+Picture one that, six months later, few teams use.
+
+24
+00:01:16.391 --> 00:01:17.828
+Pause and guess: why?
+
+25
+00:01:20.033 --> 00:01:24.043
+Usually because there was little real self-service behind it.
+
+26
+00:01:24.043 --> 00:01:26.804
+A beautiful map of paths that don't exist.
+
+27
+00:01:26.804 --> 00:01:28.053
+Nobody walks a map.
+
+28
+00:01:28.867 --> 00:01:30.700
+What works is the paved path.
+
+29
+00:01:30.700 --> 00:01:34.241
+Most large companies call the work platform engineering.
+
+30
+00:01:34.241 --> 00:01:39.489
+A platform team builds self-service tools, so product teams can ship by themselves.
+
+31
+00:01:39.700 --> 00:01:43.328
+Self-service means you get what you need yourself, at once.
+
+32
+00:01:43.328 --> 00:01:46.156
+No ticket, no waiting a week for another team.
+
+33
+00:01:46.367 --> 00:01:53.069
+Its main product is the golden path, a ready-made way to do a common job, like create a new service.
+
+34
+00:01:53.069 --> 00:01:58.028
+Two promises: compliant, with security built in, and tested, kept working.
+
+35
+00:01:58.233 --> 00:01:59.183
+And the portal?
+
+36
+00:01:59.183 --> 00:02:01.209
+That's the map at the park gate.
+
+37
+00:02:01.209 --> 00:02:04.312
+Useful, but the platform is the paths themselves.
+
+38
+00:02:05.133 --> 00:02:06.133
+Let's pave one.
+
+39
+00:02:06.133 --> 00:02:08.266
+Mark hello-devops as a template.
+
+40
+00:02:08.266 --> 00:02:11.265
+Then count the files that hard-code its name.
+
+41
+00:02:11.265 --> 00:02:13.930
+Twenty-seven, in the core folders alone.
+
+42
+00:02:13.930 --> 00:02:16.729
+Each one is a line a new team must change.
+
+43
+00:02:16.933 --> 00:02:18.510
+Now play the new team.
+
+44
+00:02:18.510 --> 00:02:25.320
+Create payments-api from the template, replace the old name everywhere, and check none is left.
+
+45
+00:02:25.320 --> 00:02:25.679
+Zero.
+
+46
+00:02:25.900 --> 00:02:28.443
+Run the same checks as the original.
+
+47
+00:02:28.443 --> 00:02:30.351
+Pause and guess: all green?
+
+48
+00:02:32.567 --> 00:02:35.148
+One fails, and it's a real template bug.
+
+49
+00:02:35.148 --> 00:02:39.407
+The rename changed the chart inside its files, but not its folder.
+
+50
+00:02:39.633 --> 00:02:41.685
+Fix it, and fix the template too.
+
+51
+00:02:41.685 --> 00:02:42.493
+Eight passed.
+
+52
+00:02:42.493 --> 00:02:46.907
+That failure was a fresh muddy track, showing where a path was missing.
+
+53
+00:02:47.733 --> 00:02:50.090
+Paths carry one more thing: the bill.
+
+54
+00:02:50.090 --> 00:02:54.486
+The park pays one water bill, and nobody knows which bed drinks most.
+
+55
+00:02:54.486 --> 00:02:57.097
+A cloud bill arrives with no names on it.
+
+56
+00:02:57.300 --> 00:03:02.267
+FinOps makes that cost visible, and it starts with an owner for every cost.
+
+57
+00:03:02.267 --> 00:03:05.313
+In Kubernetes, a team label on every workload.
+
+58
+00:03:05.533 --> 00:03:13.497
+A cost tool splits each node's price between its Pods, by what they request, or use if that's more, then adds up by label.
+
+59
+00:03:13.700 --> 00:03:14.580
+Why requests?
+
+60
+00:03:14.580 --> 00:03:17.018
+Because the scheduler reserves them.
+
+61
+00:03:17.018 --> 00:03:21.080
+You pay for what you set aside, even when the CPUs sit idle.
+
+62
+00:03:21.300 --> 00:03:26.149
+And the line people forget: capacity nobody requested still costs money.
+
+63
+00:03:26.149 --> 00:03:29.719
+That's idle cost, sprinklers watering an empty field.
+
+64
+00:03:29.719 --> 00:03:31.133
+Give it an owner too.
+
+65
+00:03:31.367 --> 00:03:34.624
+Show each team its share while the money stays central.
+
+66
+00:03:34.624 --> 00:03:36.756
+That's showback, and it comes first.
+
+67
+00:03:37.567 --> 00:03:40.271
+Totals grow with the business, so try this.
+
+68
+00:03:40.271 --> 00:03:43.415
+Traffic doubles, and the bill grows forty percent.
+
+69
+00:03:43.415 --> 00:03:45.931
+Did each request get cheaper, or dearer?
+
+70
+00:03:45.931 --> 00:03:46.937
+Pause and guess.
+
+71
+00:03:49.167 --> 00:03:49.703
+Cheaper.
+
+72
+00:03:49.703 --> 00:03:54.997
+One point four times the cost, for two times the requests, is zero point seven.
+
+73
+00:03:54.997 --> 00:03:59.555
+The bill went up, and each request got about thirty percent cheaper.
+
+74
+00:03:59.767 --> 00:04:03.539
+That's a unit cost, and hello-devops already has both inputs.
+
+75
+00:04:03.539 --> 00:04:07.929
+Prometheus counts its requests, and the team label says whose they are.
+
+76
+00:04:08.733 --> 00:04:13.554
+The honest limits: each tool solves a pain you feel only at some size.
+
+77
+00:04:13.554 --> 00:04:14.174
+One team?
+
+78
+00:04:14.174 --> 00:04:16.378
+A template repository is enough.
+
+79
+00:04:16.378 --> 00:04:18.720
+A portal pays off with many teams.
+
+80
+00:04:18.720 --> 00:04:21.268
+A cost tool needs owner labels first.
+
+81
+00:04:21.500 --> 00:04:23.887
+And watch where people leave the path.
+
+82
+00:04:23.887 --> 00:04:26.148
+If many teams do, the path is wrong.
+
+83
+00:04:26.148 --> 00:04:29.477
+That's the most useful feedback a platform team gets.
+
+84
+00:04:30.300 --> 00:04:34.247
+The moral of the story: build the path people want to walk.
+
+85
+00:04:34.247 --> 00:04:36.589
+A rule alone won't keep them on it.
+
+86
+00:04:36.589 --> 00:04:38.729
+Self-service, compliant, tested.
+
+87
+00:04:38.729 --> 00:04:41.071
+Every cost gets an owner, idle too.
+
+88
+00:04:41.071 --> 00:04:42.877
+And watch cost per request.
+
+89
+00:04:43.700 --> 00:04:44.773
+One quick check.
+
+90
+00:04:44.773 --> 00:04:49.132
+Your cluster bill doubled, and nobody knows which team caused it.
+
+91
+00:04:49.132 --> 00:04:51.144
+Which FinOps step comes first?
+
+92
+00:04:51.144 --> 00:04:52.217
+Pause and think.
+
+93
+00:04:54.433 --> 00:04:57.232
+Label every workload with its owning team.
+
+94
+00:04:57.232 --> 00:05:00.630
+Until a cost has an owner, every saving is a guess.
+
+95
+00:05:00.630 --> 00:05:01.963
+Thanks for watching.

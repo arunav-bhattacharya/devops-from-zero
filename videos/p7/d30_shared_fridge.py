@@ -14,7 +14,7 @@ def card(title, sub, color, w=3.0):
     t = T(title, 26, color)
     s = T(sub, 22, GREY_B)
     g = VGroup(t, s).arrange(DOWN, buff=0.12)
-    r = RoundedRectangle(corner_radius=0.12, width=w, height=g.height + 0.45, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.08), 1)
+    r = RoundedRectangle(corner_radius=0.12, width=max(w, g.width + 0.45), height=g.height + 0.45, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.08), 1)
     return VGroup(r, g.move_to(r))
 
 
@@ -52,7 +52,7 @@ class D30SharedFridge(VoiceScene):
 
         # ---- 3. the four cures, mapped
         cs = VGroup(card("up-to-date", "the sauce still in the pot", GREEN_M), card("build cache", "a shared fridge", TEAL_M),
-                    card("config cache", "yesterday's prep list", BLUE_M), card("daemon", "an oven kept warm", GOLD_M)).arrange(RIGHT, buff=0.25).move_to([0, 2.4, 0])
+                    card("config cache", "yesterday's prep list", BLUE_M), card("daemon", "an oven kept warm", GOLD_M)).arrange_in_grid(rows=2, cols=2, buff=(0.5, 0.35)).move_to([0, 1.5, 0])
         self.beat("Gradle has four separate ways to skip repeated work, and they're easy to mix up. So let's give each one a picture.",
                   run_time=None)
         says = ["Up-to-date checks, from last time, skip a task whose inputs and outputs didn't change, in the same folder. The sauce still in the pot.",
@@ -65,12 +65,12 @@ class D30SharedFridge(VoiceScene):
         self.play(FadeOut(VGroup(cs[0], cs[2], cs[3])), cs[1].animate.move_to([0, 3.0, 0]), run_time=0.8)
 
         # ---- 4. how the fridge is labelled
-        task = mbox("compileKotlin", BLUE_M, size=24).move_to([-4.6, 0.6, 0])
-        ins = VGroup(M("source files", 22), M("classpath", 22), M("compiler flags", 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.15).next_to(task, DOWN, buff=0.35)
-        inl = T("inputs", 24, BLUE_M).next_to(ins, LEFT, buff=0.25)
+        task = mbox("compileKotlin", BLUE_M, size=24).move_to([-5.0, 0.6, 0])
+        ins = VGroup(M("source files", 22), M("classpath", 22), M("compiler flags", 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.15).next_to(task, DOWN, buff=0.35).align_to(task, LEFT)
+        inl = T("inputs", 24, BLUE_M).next_to(ins, RIGHT, buff=0.3)
         self.beat("Take one task, compileKotlin. Its inputs are the source files, the classpath, and the compiler flags.",
                   FadeIn(task), FadeIn(ins), FadeIn(inl), run_time=2.0)
-        keyb = mbox("cache key  9f3a...", YELLOW_M, size=22).move_to([0.0, 0.6, 0])
+        keyb = mbox("cache key  9f3a...", YELLOW_M, size=22).move_to([-0.4, 0.6, 0])
         ka = edge_arrow(task, keyb)
         kl = T("hash every input", 24, GREY_B).next_to(ka, UP, buff=0.1)
         self.beat("Before it runs, Gradle hashes all of those inputs into one cache key, a label made of their fingerprints.",
@@ -104,7 +104,7 @@ class D30SharedFridge(VoiceScene):
         res = M("20 actionable tasks: 8 executed, 12 from cache", 28, TEAL_M).move_to([0, 2.4, 0])
         self.beat("The lesson tried it. A fresh clone of hello-jvm, in a new folder on the same laptop, built with twenty actionable tasks: eight executed, twelve from cache.",
                   FadeIn(res), run_time=2.4)
-        ci = box("CI: clean builds", PURPLE_M, w=3.4).move_to([-4.2, -0.3, 0])
+        ci = box("CI: clean builds", PURPLE_M, w=3.2).move_to([-4.7, -0.3, 0])
         rc = box("remote cache", TEAL_M, w=3.0).move_to([0.0, -0.3, 0])
         lp = VGroup(box("laptop", WHITE, w=2.2, h=0.7, size=24), box("laptop", WHITE, w=2.2, h=0.7, size=24)).arrange(DOWN, buff=0.4).move_to([4.4, -0.3, 0])
         w = edge_arrow(ci, rc, PURPLE_M)
