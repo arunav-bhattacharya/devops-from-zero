@@ -42,5 +42,16 @@
    "poster_at": 256.0,
    "replaces": "d46-troubleshoot"
   }
+ ],
+ "d66": [
+  {
+   "slug": "d66-key-ring",
+   "title": "The keys carry the safety: how an agent runs tools, and what really limits it",
+   "after": 4,
+   "file": "p18/d66_key_ring.py",
+   "scene": "D66KeyRing",
+   "poster_at": 226.0,
+   "replaces": "d66-agent-tools"
+  }
  ]
 }

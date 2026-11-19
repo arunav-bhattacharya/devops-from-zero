@@ -1,0 +1,341 @@
+WEBVTT
+
+1
+00:00:02.733 --> 00:00:08.110
+Your build file asks for a library, commons-lang3, at version 3.17.0.
+
+2
+00:00:08.110 --> 00:00:10.213
+You wrote it down yourself.
+
+3
+00:00:10.400 --> 00:00:12.877
+So which version does your app run with?
+
+4
+00:00:12.877 --> 00:00:14.425
+Surely the one you wrote.
+
+5
+00:00:14.425 --> 00:00:15.540
+Hold that thought.
+
+6
+00:00:16.333 --> 00:00:17.636
+Picture our bakery.
+
+7
+00:00:17.636 --> 00:00:20.996
+To save time, it buys ready-made croissant dough.
+
+8
+00:00:20.996 --> 00:00:22.711
+Here's its shopping list.
+
+9
+00:00:22.867 --> 00:00:25.452
+One morning a dairy announces a recall.
+
+10
+00:00:25.452 --> 00:00:27.573
+A batch of its butter is unsafe.
+
+11
+00:00:27.733 --> 00:00:30.663
+The head baker checks the list, and relaxes.
+
+12
+00:00:30.663 --> 00:00:31.928
+Butter isn't on it.
+
+13
+00:00:32.067 --> 00:00:34.922
+Then someone reads the small print on the dough.
+
+14
+00:00:34.922 --> 00:00:37.243
+Made with butter, from that very dairy.
+
+15
+00:00:37.400 --> 00:00:38.609
+The list was honest.
+
+16
+00:00:38.609 --> 00:00:43.387
+It just showed only what the bakery bought, and nothing about what came inside.
+
+17
+00:00:44.267 --> 00:00:46.615
+Software has the same blind spot.
+
+18
+00:00:46.615 --> 00:00:49.533
+Our lab app, hello-jvm, has two projects.
+
+19
+00:00:49.533 --> 00:00:52.521
+app uses greeting, our own little library.
+
+20
+00:00:52.667 --> 00:00:56.245
+greeting uses a library from outside, commons-text.
+
+21
+00:00:56.245 --> 00:00:57.437
+That's the dough.
+
+22
+00:00:57.600 --> 00:01:04.128
+Every published library comes with a small metadata file that lists its own dependencies.
+
+23
+00:01:04.128 --> 00:01:05.302
+The small print.
+
+24
+00:01:05.302 --> 00:01:08.969
+commons-text's says: I need commons-lang3, 3.18.0.
+
+25
+00:01:09.133 --> 00:01:11.293
+That's the butter inside the dough.
+
+26
+00:01:11.293 --> 00:01:14.932
+A library you get because a library you asked for needs it.
+
+27
+00:01:14.932 --> 00:01:17.153
+It's called a transitive dependency.
+
+28
+00:01:17.333 --> 00:01:21.688
+And app itself asks for commons-lang3 3.17.0 directly.
+
+29
+00:01:21.688 --> 00:01:23.704
+The line we started with.
+
+30
+00:01:23.867 --> 00:01:28.204
+Two paths, two versions, and the kitchen stocks only one jar.
+
+31
+00:01:28.204 --> 00:01:29.341
+Pause and guess.
+
+32
+00:01:29.341 --> 00:01:30.692
+Which version runs?
+
+33
+00:01:32.867 --> 00:01:33.384
+3.18.0.
+
+34
+00:01:33.384 --> 00:01:36.490
+Your own declaration gets no extra weight.
+
+35
+00:01:36.490 --> 00:01:41.740
+When versions clash, Gradle's rule is simple: the highest version wins.
+
+36
+00:01:41.933 --> 00:01:48.639
+The dependencies report shows it with an arrow: asked for 3.17.0, got 3.18.0.
+
+37
+00:01:48.800 --> 00:01:59.239
+The bet is that the library asking for the newer version may need something only that version has, while code written for the older one usually runs on the newer too.
+
+38
+00:01:59.400 --> 00:02:02.989
+If you know Maven, the other build tool, this surprises you.
+
+39
+00:02:02.989 --> 00:02:05.920
+There, the declaration nearest your project wins.
+
+40
+00:02:06.800 --> 00:02:07.766
+So far so good.
+
+41
+00:02:07.766 --> 00:02:12.723
+Now let's look somewhere else: not where the app runs, but where it compiles.
+
+42
+00:02:12.867 --> 00:02:16.145
+A classpath is the list of jars a program can see.
+
+43
+00:02:16.145 --> 00:02:18.768
+app has one for running, with all three.
+
+44
+00:02:18.933 --> 00:02:21.715
+And it has a separate one for compiling.
+
+45
+00:02:21.715 --> 00:02:22.619
+What's on it?
+
+46
+00:02:22.619 --> 00:02:23.732
+Pause and guess.
+
+47
+00:02:25.867 --> 00:02:26.960
+Two surprises.
+
+48
+00:02:26.960 --> 00:02:28.834
+commons-text is missing.
+
+49
+00:02:28.834 --> 00:02:35.551
+And commons-lang3 is still 3.17.0 here, because each classpath is resolved on its own.
+
+50
+00:02:35.733 --> 00:02:41.372
+commons-text is missing because of one word in greeting's build file: implementation.
+
+51
+00:02:41.533 --> 00:02:43.154
+Think of a sauce you sell.
+
+52
+00:02:43.154 --> 00:02:47.204
+The stock inside is your business, and customers never handle it.
+
+53
+00:02:47.204 --> 00:02:53.436
+That's implementation: needed to compile and run greeting, but hidden from the projects that use it.
+
+54
+00:02:53.600 --> 00:03:00.020
+So if app tries to import a class from commons-text, the compiler refuses: unresolved reference.
+
+55
+00:03:00.020 --> 00:03:03.832
+The stock inside someone else's sauce isn't yours to use.
+
+56
+00:03:04.000 --> 00:03:07.570
+Now say your label reads: serve on Brand X crackers.
+
+57
+00:03:07.570 --> 00:03:12.443
+The crackers are part of what you promise, and customers need them too.
+
+58
+00:03:12.443 --> 00:03:13.198
+That's api.
+
+59
+00:03:13.198 --> 00:03:18.896
+It also puts the library on the compile classpath of every project that uses yours.
+
+60
+00:03:19.800 --> 00:03:21.983
+Three habits come out of this picture.
+
+61
+00:03:22.133 --> 00:03:22.417
+One.
+
+62
+00:03:22.417 --> 00:03:24.261
+Default to implementation.
+
+63
+00:03:24.261 --> 00:03:29.651
+Use api only when a type from that library appears in your public functions.
+
+64
+00:03:29.651 --> 00:03:35.963
+It keeps insides private, and an upgrade doesn't recompile every project that uses yours.
+
+65
+00:03:36.133 --> 00:03:36.389
+Two.
+
+66
+00:03:36.389 --> 00:03:42.664
+When a scanner reports a vulnerable version that no build file mentions, that's the butter recall.
+
+67
+00:03:42.664 --> 00:03:45.737
+dependencyInsight shows which path brings it in.
+
+68
+00:03:45.737 --> 00:03:50.923
+Then declare the fixed version yourself, and highest wins lifts every path to it.
+
+69
+00:03:51.067 --> 00:03:51.502
+Three.
+
+70
+00:03:51.502 --> 00:03:56.368
+Compiling against 3.17.0 and running on 3.18.0 is usually harmless.
+
+71
+00:03:56.368 --> 00:04:03.921
+But if a method you call changed, the code compiles fine, then fails at run time with NoSuchMethodError.
+
+72
+00:04:03.921 --> 00:04:09.077
+The lesson's deeper section shows how to make the two classpaths agree.
+
+73
+00:04:10.000 --> 00:04:10.879
+So, the moral.
+
+74
+00:04:10.879 --> 00:04:14.644
+Your build file shows what you bought, not what came inside.
+
+75
+00:04:14.644 --> 00:04:16.966
+When versions meet, the highest wins.
+
+76
+00:04:16.966 --> 00:04:20.480
+And implementation keeps your ingredients your business.
+
+77
+00:04:20.667 --> 00:04:22.927
+The version you wrote at the start?
+
+78
+00:04:22.927 --> 00:04:24.541
+A request, not a promise.
+
+79
+00:04:24.733 --> 00:04:27.446
+Quick check, with made up numbers.
+
+80
+00:04:27.446 --> 00:04:30.478
+app asks for version 2.1 of a library.
+
+81
+00:04:30.478 --> 00:04:33.429
+Another library it uses asks for 2.3.
+
+82
+00:04:33.429 --> 00:04:34.626
+Which one runs?
+
+83
+00:04:34.626 --> 00:04:35.903
+Pause and think.
+
+84
+00:04:38.067 --> 00:04:38.376
+2.3.
+
+85
+00:04:38.376 --> 00:04:42.475
+The highest version wins, no matter who asked for it.

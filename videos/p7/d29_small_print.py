@@ -15,7 +15,7 @@ def paper(lines, color=WHITE, w=3.6, size=26, title=None):
     items = VGroup(*[T(l, size) for l in lines]).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
     if title:
         items = VGroup(T(title, size, color), items).arrange(DOWN, aligned_edge=LEFT, buff=0.22)
-    r = Rectangle(width=w, height=items.height + 0.5, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.08), 1)
+    r = Rectangle(width=max(w, items.width + 0.6), height=items.height + 0.5, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.08), 1)
     return VGroup(r, items.move_to(r))
 
 
