@@ -75,5 +75,16 @@
    "poster_at": 182.0,
    "replaces": "d53-panel"
   }
+ ],
+ "d54": [
+  {
+   "slug": "d54-records-office",
+   "title": "The records office: Loki files logs by label, and LogQL reads only the folders it needs",
+   "after": 2,
+   "file": "p13/d54_records_office.py",
+   "scene": "D54RecordsOffice",
+   "poster_at": 146.0,
+   "replaces": "d54-loki-streams"
+  }
  ]
 }

@@ -56,8 +56,7 @@ class D54RecordsOffice(VoiceScene):
         nl = VGroup(*[Line(LEFT * 1.6, RIGHT * (1.6 - 0.5 * (k % 2)), stroke_color=BLUE_M, stroke_width=2) for k in range(5)]).arrange(DOWN, buff=0.28, aligned_edge=LEFT).move_to(notes)
         self.beat("Useful, but it is not the story. The story is in the nurses' notes: what the patient said, what was given, what went wrong.",
                   Create(notes), FadeIn(notes_t), LaggedStart(*[Create(l) for l in nl], lag_ratio=0.2), run_time=2.8)
-        drawer = T("each ward's drawer is emptied when the patient leaves", 24, GREY_B).next_to(notes, DOWN, buff=0.25)
-        fit(drawer, 6.0)
+        drawer = VGroup(T("each ward's drawer is emptied", 24, GREY_B), T("when the patient leaves", 24, GREY_B)).arrange(DOWN, buff=0.08).next_to(notes, DOWN, buff=0.2)
         self.beat("But each ward keeps its notes in its own drawer, and the drawer is emptied when the patient leaves.",
                   FadeIn(drawer), LaggedStart(*[l.animate.set_opacity(0.15) for l in nl], lag_ratio=0.2), run_time=2.4)
         sw = VGroup(M("docker compose logs", 26, TEAL_M), T("one machine, only while the container exists", 24, GREY_B),
@@ -81,11 +80,11 @@ class D54RecordsOffice(VoiceScene):
         self.play(FadeOut(VGroup(q, q2, opts)), run_time=0.4)
 
         # ---------------- 3. the records office, mapped
-        cat = frame(3.2, 3.6, GOLD_M, [-4.6, 0.2, 0], fill=0.08)
+        cat = frame(3.8, 3.6, GOLD_M, [-4.5, 0.2, 0], fill=0.08)
         cat_t = T("catalogue", 26, GOLD_M).move_to(cat.get_top() + DOWN * 0.35)
         entries = VGroup(*[T(t, 22) for t in ("ward A, bed 4, Monday", "ward A, bed 5, Monday", "ward B, bed 1, Monday", "ward A, bed 4, Tuesday")]).arrange(DOWN, aligned_edge=LEFT, buff=0.22)
         entries.next_to(cat_t, DOWN, buff=0.3)
-        fit(entries, 2.9)
+        fit(entries, 3.4)
         self.beat("Picture a hospital records office. It files notes by ward, bed and date, and never catalogues the words inside.",
                   Create(cat), FadeIn(cat_t), LaggedStart(*[FadeIn(e, shift=RIGHT * 0.1) for e in entries], lag_ratio=0.3), run_time=3.0)
         shelf = VGroup(*[folder(f, BLUE_M, w=1.7) for f in ("A 4 Mon", "A 5 Mon", "B 1 Mon", "A 4 Tue", "B 2 Tue", "C 3 Tue")]).arrange_in_grid(2, 3, buff=(0.35, 0.55)).move_to([2.6, 0.2, 0])
@@ -97,9 +96,9 @@ class D54RecordsOffice(VoiceScene):
                                                           shelf[0][1].animate.set_fill(dark(GREEN_M, 0.4))), run_time=3.2)
         self.beat("The catalogue stays tiny. And the reading is quick, because the folders are few.", run_time=None)
         self.beat("That is Loki. The answer is A. It indexes only the labels.", run_time=None)
-        lab = VGroup(T("a label:", 24, GOLD_M), M('service="web"', 24, GOLD_M), M('container="observability-web-1"', 22, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        lab.move_to([-4.6, 0.0, 0])
-        fit(lab, 3.0)
+        lab = VGroup(T("labels:", 24, GOLD_M), M('service="web"', 22, GOLD_M), M('container=', 22, GOLD_M), M('"observability-web-1"', 22, GOLD_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+        lab.move_to([-4.5, -0.1, 0])
+        fit(lab, 3.5)
         self.beat("Each log line carries a few labels, a name and a value, such as service is web. The catalogue holds those, and nothing else.",
                   FadeOut(entries), FadeIn(lab), run_time=2.4)
         stream = T("all lines with the same labels: one log stream, one folder", 24, BLUE_M).next_to(shelf, UP, buff=0.3)
@@ -180,7 +179,7 @@ class D54RecordsOffice(VoiceScene):
         self.play(FadeOut(VGroup(mq, tb, err, dr)), run_time=0.5)
 
         # ---------------- 7. break it: a label per visitor
-        cat = frame(3.2, 3.0, GOLD_M, [-4.6, 0.4, 0], fill=0.08)
+        cat = frame(3.9, 3.0, GOLD_M, [-4.5, 0.4, 0], fill=0.08)
         cat_t = T("catalogue", 26, GOLD_M).move_to(cat.get_top() + DOWN * 0.35)
         few = VGroup(*[M(s, 22) for s in ('service="web"', 'service="redis"', 'service="prometheus"')]).arrange(DOWN, aligned_edge=LEFT, buff=0.2).next_to(cat_t, DOWN, buff=0.3)
         self.beat("Now let's break it on purpose. Today the catalogue is tiny: a few services, a few containers.",
