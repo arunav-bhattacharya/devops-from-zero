@@ -10,7 +10,7 @@ SAY.extend([
 ME, SRV, BAD, KEY, CERT, ROOT = BLUE_M, TEAL_M, RED_M, GREEN_M, GOLD_M, PURPLE_M
 LAP = np.array([-5.2, -0.2, 0])
 SRVP = np.array([5.2, -0.2, 0])
-HOPS_X = [-1.9, 0.0, 1.9]
+HOPS_X = [-2.15, 0.0, 2.15]
 PATH_Y = -0.2
 
 
@@ -63,7 +63,7 @@ class D11Padlock(VoiceScene):
         # ---------- 2. plain HTTP is a postcard
         lap = box("your laptop", ME, w=2.6, h=1.2).move_to(LAP)
         srv = box("ticket site", SRV, w=2.6, h=1.2).move_to(SRVP)
-        hops = VGroup(*[box(n, GREY_B, w=1.6, h=0.75, size=24) for n in ("café Wi-Fi", "router", "provider")])
+        hops = VGroup(*[box(n, GREY_B, w=1.95, h=0.75, size=24) for n in ("café Wi-Fi", "router", "provider")])
         for h, x in zip(hops, HOPS_X):
             h.move_to(np.array([x, PATH_Y, 0]))
         links = VGroup(link(lap, hops[0]), link(hops[0], hops[1]), link(hops[1], hops[2]), link(hops[2], srv))
@@ -130,7 +130,7 @@ class D11Padlock(VoiceScene):
         self.beat("So the seal is only worth something if you know who holds the other end.",
                   Indicate(srv[1], color=SRV), run_time=1.4)
         cc = cert_card("certificate", ["names: tickets.example", "public key: the site's", "valid: from this date to that"], CERT)
-        cc.scale(0.75).move_to(np.array([4.55, 2.0, 0]))
+        cc.move_to(np.array([4.25, 2.05, 0]))
         self.beat("So the site sends a certificate. It's a signed statement that says: this public key belongs to these names, from this date to that date.",
                   FadeOut(VGroup(k1, k2)), FadeIn(cc, shift=DOWN * 0.2), run_time=2.4)
         sig = chip("signature", CERT, 22).move_to(SRVP + DOWN * 1.5)
@@ -141,7 +141,7 @@ class D11Padlock(VoiceScene):
 
         # ---------- 6. the chain up to a root you already trust
         world = VGroup(lap, srv, hops, links)
-        self.play(world.animate.set_opacity(0.15), cc.animate.scale(1 / 0.75).move_to(np.array([1.6, -2.3, 0])), run_time=0.8)
+        self.play(world.animate.set_opacity(0.15), cc.animate.move_to(np.array([1.6, -2.3, 0])), run_time=0.8)
         ic = cert_card("intermediate CA", ["signs servers' certificates"], CERT, w=4.6).move_to(np.array([1.6, 0.0, 0]))
         rc = cert_card("root CA", ["key kept offline"], ROOT, w=4.6).move_to(np.array([1.6, 1.95, 0]))
         a1 = arrow(cc[0].get_top(), ic[0].get_bottom(), GREY_B)

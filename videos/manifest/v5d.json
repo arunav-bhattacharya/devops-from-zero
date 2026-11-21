@@ -53,5 +53,16 @@
    "poster_at": 241.0,
    "replaces": "d64-access"
   }
+ ],
+ "d65": [
+  {
+   "slug": "d65-three-checks",
+   "title": "Neat handwriting is not a proof: the verify loop for an AI-written Deployment",
+   "after": 2,
+   "file": "p18/d65_three_checks.py",
+   "scene": "D65ThreeChecks",
+   "poster_at": 266.5,
+   "replaces": "d65-verify-loop"
+  }
  ]
 }
