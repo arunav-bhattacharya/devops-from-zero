@@ -75,5 +75,16 @@
    "poster_at": 242.2,
    "replaces": "d29-dependencies"
   }
+ ],
+ "d30": [
+  {
+   "slug": "d30-shared-fridge",
+   "title": "The shared fridge: four ways Gradle skips work, and the build cache up close",
+   "after": 1,
+   "file": "p7/d30_shared_fridge.py",
+   "scene": "D30SharedFridge",
+   "poster_at": 279.7,
+   "replaces": "d30-build-cache"
+  }
  ]
 }
