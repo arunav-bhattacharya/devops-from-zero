@@ -21,7 +21,7 @@ def tint(c, a=0.12):
 def subnet(name, cidr, color, x, y):
     r = RoundedRectangle(corner_radius=0.12, width=SUB_W, height=SUB_H, stroke_color=color, stroke_width=3).set_fill(tint(color, 0.1), 1).move_to([x, y, 0])
     n = M(name, 22, color).move_to(r.get_corner(UL) + RIGHT * 0.15 + DOWN * 0.25, aligned_edge=LEFT)
-    c = M(cidr, 22, GREY_B).move_to(r.get_corner(UR) + LEFT * 0.15 + DOWN * 0.25, aligned_edge=RIGHT)
+    c = M(cidr, 22, GREY_B).move_to(r.get_corner(UL) + RIGHT * 0.15 + DOWN * 0.58, aligned_edge=LEFT)
     return VGroup(r, n, c)
 
 
@@ -29,11 +29,11 @@ def thing(label, color, size=24):
     return chip(label, color, size)
 
 
-def rt_card(title, rows, color, w=4.3):
+def rt_card(title, rows, color, w=4.6):
     t = T(title, 26, color)
     rr = VGroup(*[VGroup(M(d, 22), T(tg, 24, c)).arrange(RIGHT, buff=0.35) for d, tg, c in rows])
     for r in rr:
-        r[1].move_to(r[0].get_right() + RIGHT * (1.75 - r[0].width + 0.35), aligned_edge=LEFT)
+        r[1].move_to(r[0].get_left() + RIGHT * 1.8, aligned_edge=LEFT)
     rr.arrange(DOWN, aligned_edge=LEFT, buff=0.22)
     box_ = RoundedRectangle(corner_radius=0.12, width=w, height=rr.height + 1.05, stroke_color=color, stroke_width=2.5).set_fill(BLACK, 1)
     t.move_to(box_.get_top() + DOWN * 0.32)
@@ -42,7 +42,17 @@ def rt_card(title, rows, color, w=4.3):
 
 
 class D12PublicRoute(VoiceScene):
+    def mdot(self, color):
+        d = Dot(color=color, radius=0.08)
+        self._mdots.append(d)
+        return d
+
+    def purge(self):
+        self.remove(*self._mdots)
+        self._mdots = []
+
     def construct(self):
+        self._mdots = []
         self.title_card("What makes a subnet public?", "a private floor, two buildings, and the doors between them")
 
         # ---------- 1. the hotel and the question
@@ -82,7 +92,7 @@ class D12PublicRoute(VoiceScene):
         net = T("the internet", 26, GREY_B).next_to(igw, UP, buff=0.18)
         self.beat("Now our question. The one called public-a. Is it public? The obvious answer is yes. It says so on the door.",
                   Indicate(subs["pa"][1], color=PUB, scale_factor=1.3), run_time=2.4)
-        rt = rt_card("public-a's route table", [("10.0.0.0/16", "local", GREY_B)], PUB).move_to([4.35, 0.6, 0])
+        rt = rt_card("public-a's route table", [("10.0.0.0/16", "local", GREY_B)], PUB).move_to([4.2, 0.6, 0])
         self.beat("Let's see if that's really true. What decides where traffic goes is the subnet's route table. Say public-a's table has just one line. 10.0.0.0/16, local. Every subnet on the floor can reach every other one.",
                   Succession(Wait(3.2), FadeIn(rt, shift=LEFT * 0.2)), run_time=9.0)
         self.beat("And that's all it has. No way in from the street, and no way out. Pause and guess. With this table, is public-a public?",
@@ -105,23 +115,21 @@ class D12PublicRoute(VoiceScene):
                   Indicate(rt[2][0][0], color=GREY_B, scale_factor=1.2), run_time=2.0)
 
         # ---------- 4. private subnets: the mail desk
-        nat_a = thing("NAT", NAT, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.25 + RIGHT * 1.05)
-        lb = thing("load balancer", LB, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.25 + LEFT * 0.6)
+        nat_a = thing("NAT", NAT, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.38 + RIGHT * 1.05)
+        lb = thing("load balancer", LB, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.38 + LEFT * 0.6)
         self.play(FadeOut(rt), run_time=0.5)
-        rtp = rt_card("private-a's route table", [("10.0.0.0/16", "local", GREY_B), ("0.0.0.0/0", "NAT gateway", NAT)], PRIV).move_to([4.35, -1.2, 0])
+        rtp = rt_card("private-a's route table", [("10.0.0.0/16", "local", GREY_B), ("0.0.0.0/0", "NAT gateway", NAT)], PRIV).move_to([4.2, -1.2, 0])
         self.beat("The private subnets get a different second line. 0.0.0.0/0 goes to a NAT gateway instead, which sits in a public subnet.",
                   FadeIn(rtp, shift=LEFT * 0.2), Succession(Wait(4.0), FadeIn(nat_a, scale=0.8)), run_time=6.4)
-        app = thing("app", APP).move_to(subs["va"][0].get_center() + DOWN * 0.2 + LEFT * 0.75)
-        db = thing("database", DB).move_to(subs["va"][0].get_center() + DOWN * 0.2 + RIGHT * 0.7)
+        app = thing("app", APP).move_to(subs["va"][0].get_center() + DOWN * 0.38 + LEFT * 0.75)
+        db = thing("database", DB).move_to(subs["va"][0].get_center() + DOWN * 0.38 + RIGHT * 0.7)
         self.beat("The usual layout puts the load balancer in a public subnet, and the app and the database in private ones.",
                   FadeIn(lb, scale=0.8), Succession(Wait(2.6), AnimationGroup(FadeIn(app, scale=0.8), FadeIn(db, scale=0.8))), run_time=4.6)
         outp = VMobject().set_points_as_corners([app.get_top(), nat_a.get_bottom() + DOWN * 0.05])
         outp2 = VMobject().set_points_as_corners([nat_a.get_top(), igw[0].get_bottom() + RIGHT * 0.6])
         self.beat("The NAT gateway is the hotel's mail desk. The app can send letters out, say to download a package, and the replies come back.",
-                  Succession(Wait(2.0), MoveAlongPath(Dot(color=NAT, radius=0.08), outp, run_time=1.0), MoveAlongPath(Dot(color=NAT, radius=0.08), outp2, run_time=1.0)), run_time=5.4)
-        for m in list(self.mobjects):
-            if isinstance(m, Dot):
-                self.remove(m)
+                  Succession(Wait(2.0), MoveAlongPath(self.mdot(NAT), outp, run_time=1.0), MoveAlongPath(self.mdot(NAT), outp2, run_time=1.0)), run_time=5.4)
+        self.purge()
         stranger = Dot(color=RED_M, radius=0.09).move_to(net.get_right() + RIGHT * 0.6)
         blocked = tick(False, 0.28).move_to(subs["va"][0].get_top() + UP * 0.05 + LEFT * 1.2)
         self.beat("But no visitor goes upstairs. Nobody outside can start a connection to the app. It has no public address, and no route in.",
@@ -145,28 +153,26 @@ class D12PublicRoute(VoiceScene):
         p2 = VMobject().set_points_as_corners([lb.get_bottom(), app.get_top()])
         p3 = VMobject().set_points_as_corners([app.get_right(), db.get_left()])
         self.beat("The load balancer accepts port 443 from anywhere.",
-                  FadeIn(sg[0]), MoveAlongPath(Dot(color=LB, radius=0.08), p1), run_time=2.0)
+                  FadeIn(sg[0]), MoveAlongPath(self.mdot(LB), p1), run_time=2.0)
         self.beat("The app accepts port 8000 only from the load balancer's group.",
-                  FadeIn(sg[1]), MoveAlongPath(Dot(color=APP, radius=0.08), p2), run_time=2.0)
+                  FadeIn(sg[1]), MoveAlongPath(self.mdot(APP), p2), run_time=2.0)
         self.beat("And the database accepts 5432 only from the app's group. Rules name groups, not addresses, so they keep working when machines come and go.",
-                  FadeIn(sg[2]), MoveAlongPath(Dot(color=DB, radius=0.08), p3), run_time=2.4)
-        for m in list(self.mobjects):
-            if isinstance(m, Dot):
-                self.remove(m)
+                  FadeIn(sg[2]), MoveAlongPath(self.mdot(DB), p3), run_time=2.4)
+        self.purge()
         self.beat("And replies need no rules at all. A security group remembers each connection, so the answer to an allowed request gets out on its own.",
                   Indicate(sgt, color=WHITE), run_time=1.6)
         self.play(FadeOut(sgg), run_time=0.5)
 
         # ---------- 6. two zones: one goes dark
-        nat_b = thing("NAT", NAT, 22).move_to(subs["pb"][0].get_center() + DOWN * 0.25 + RIGHT * 1.05)
-        app_b = thing("app", APP).move_to(subs["vb"][0].get_center() + DOWN * 0.2 + LEFT * 0.75)
-        db_b = thing("database", DB).move_to(subs["vb"][0].get_center() + DOWN * 0.2 + RIGHT * 0.7)
+        nat_b = thing("NAT", NAT, 22).move_to(subs["pb"][0].get_center() + DOWN * 0.38 + RIGHT * 1.05)
+        app_b = thing("app", APP).move_to(subs["vb"][0].get_center() + DOWN * 0.38 + LEFT * 0.75)
+        db_b = thing("database", DB).move_to(subs["vb"][0].get_center() + DOWN * 0.38 + RIGHT * 0.7)
         self.beat("Zone b gets the same set. Its own app and database, and its own NAT gateway.",
                   LaggedStart(FadeIn(nat_b), FadeIn(app_b), FadeIn(db_b), lag_ratio=0.3), run_time=2.4)
-        tables = VGroup(M("private-a  0.0.0.0/0  NAT in public-a", 22, PRIV), M("private-b  0.0.0.0/0  NAT in public-b", 22, PRIV)).arrange(DOWN, aligned_edge=LEFT, buff=0.25)
-        tables.move_to([0, 3.15, 0]).shift(RIGHT * 0.0)
-        tb = VGroup(T("each private table", 24, PRIV), tables).arrange(DOWN, buff=0.15)
-        fit(tb, 4.6).move_to([4.45, 0.9, 0])
+        tb = VGroup(T("each private table sends", 26, PRIV), T("0.0.0.0/0 to the NAT", 26, PRIV), T("in its own zone:", 26, PRIV),
+                    M("private-a: NAT in public-a", 22, PRIV), M("private-b: NAT in public-b", 22, PRIV)).arrange(DOWN, aligned_edge=LEFT, buff=0.18)
+        tb[3].shift(DOWN * 0.15); tb[4].shift(DOWN * 0.15)
+        fit(tb, 4.5).move_to([4.25, 0.6, 0])
         self.beat("And here's a small choice that matters. Each private subnet's table points to the NAT gateway in its own zone.",
                   FadeIn(tb, shift=LEFT * 0.2), run_time=2.0)
         self.beat("Pause and guess. Zone a loses power. Can the app in zone b still reach out?",
@@ -174,22 +180,21 @@ class D12PublicRoute(VoiceScene):
         za = Rectangle(width=3.8, height=4.4, stroke_width=0).set_fill(BLACK, 0.8).move_to(azs[0][0])
         darkx = tick(False, 0.6).move_to(azs[0][0])
         self.beat("Zone a goes dark. But zone b's route goes to its own NAT gateway, so zone b can still reach out, and keeps working.",
-                  FadeIn(za), Create(darkx), Succession(Wait(3.0), MoveAlongPath(Dot(color=NAT, radius=0.08), VMobject().set_points_as_corners([app_b.get_top(), nat_b.get_bottom()]), run_time=1.2)), run_time=6.0)
-        for m in list(self.mobjects):
-            if isinstance(m, Dot):
-                self.remove(m)
+                  FadeIn(za), Create(darkx), Succession(Wait(3.0), MoveAlongPath(self.mdot(NAT), VMobject().set_points_as_corners([app_b.get_top(), nat_b.get_bottom()]), run_time=1.2)), run_time=6.0)
+        self.purge()
         self.beat("One shared NAT gateway would be cheaper, and many teams accept that for test environments. They just know that zone b then depends on zone a.",
                   Indicate(nat_b[1], color=NAT), run_time=1.6)
         self.play(FadeOut(darkx), FadeOut(za), FadeOut(tb), run_time=0.7)
 
         # ---------- 7. guardrail: the rooms nobody sleeps in
         hour = VGroup(lb, nat_a, nat_b)
-        bill = VGroup(T("bills every hour, even with no traffic:", 26, RED_M), T("load balancer, two NAT gateways, any public IPv4 address", 24)).arrange(DOWN, aligned_edge=LEFT, buff=0.18)
-        fit(bill, 4.6).move_to([4.45, 0.4, 0])
+        bill = VGroup(T("bills every hour,", 26, RED_M), T("even with no traffic:", 26, RED_M), T("the load balancer", 26), T("two NAT gateways", 26),
+                      T("any public IPv4 address", 26)).arrange(DOWN, aligned_edge=LEFT, buff=0.16)
+        bill.move_to([4.2, 0.85, 0]).align_to(np.array([2.1, 0, 0]), LEFT)
         self.beat("Now remember the hotel bill. Some of these pieces bill every hour just for existing, even when no request arrives. The load balancer, the two NAT gateways, and any public IPv4 address.",
                   Succession(Wait(3.6), FadeIn(bill, shift=LEFT * 0.2), LaggedStart(*[Indicate(h[1], color=RED_M) for h in hour], lag_ratio=0.4)), run_time=10.0)
-        alert = T("A budget alert only tells you. Deleting stops the bill.", 26, YELLOW_M)
-        fit(alert, 4.6).next_to(bill, DOWN, buff=0.5)
+        alert = VGroup(T("A budget alert only tells you.", 26, YELLOW_M), T("Deleting stops the bill.", 26, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.16)
+        alert.next_to(bill, DOWN, buff=0.45, aligned_edge=LEFT)
         self.beat("Those are the rooms nobody sleeps in. A budget alert only sends you an email, it doesn't stop anything. So after a test, that list is what you delete first.",
                   FadeIn(alert, shift=UP * 0.1), run_time=2.0)
 

@@ -1,0 +1,361 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:07.402
+For a friend's wedding in another city, you book a hotel room for two nights.
+
+2
+00:00:07.402 --> 00:00:09.600
+Nobody builds a house for a weekend.
+
+3
+00:00:09.600 --> 00:00:12.043
+Renting computers that way is the cloud.
+
+4
+00:00:12.267 --> 00:00:18.154
+Today we rent a whole private floor of the hotel, and decide which rooms the street can reach.
+
+5
+00:00:18.154 --> 00:00:21.035
+And here's the question people are shy to ask.
+
+6
+00:00:21.035 --> 00:00:23.603
+If I call a network public, is it public?
+
+7
+00:00:23.603 --> 00:00:24.731
+Hold that thought.
+
+8
+00:00:25.533 --> 00:00:32.518
+PayFlow, a made-up payments company, wants its checkout to run in the cloud.
+
+9
+00:00:32.518 --> 00:00:34.081
+First, the floor.
+
+10
+00:00:34.081 --> 00:00:39.044
+A VPC is your own private network inside the provider.
+
+11
+00:00:39.044 --> 00:00:45.293
+You give it a private block, 10.0.0.0/16, which is 65,536 addresses.
+
+12
+00:00:45.500 --> 00:00:48.056
+The floor spans two availability zones.
+
+13
+00:00:48.056 --> 00:00:53.364
+In hotel terms, two separate buildings across town, each on its own power supply.
+
+14
+00:00:53.567 --> 00:00:58.646
+Then you split the block into subnets, smaller blocks of rooms.
+
+15
+00:00:58.646 --> 00:01:04.371
+In AWS, each subnet lives in exactly one zone, so we need some in both.
+
+16
+00:01:04.371 --> 00:01:11.869
+Four /24s, each with 251 usable addresses, because AWS keeps five of every subnet for itself.
+
+17
+00:01:12.100 --> 00:01:13.384
+Now our question.
+
+18
+00:01:13.384 --> 00:01:15.196
+The one called public-a.
+
+19
+00:01:15.196 --> 00:01:16.177
+Is it public?
+
+20
+00:01:16.177 --> 00:01:18.141
+The obvious answer is yes.
+
+21
+00:01:18.141 --> 00:01:19.877
+It says so on the door.
+
+22
+00:01:20.100 --> 00:01:22.643
+Let's see if that's really true.
+
+23
+00:01:22.643 --> 00:01:27.412
+What decides where traffic goes is the subnet's route table.
+
+24
+00:01:27.412 --> 00:01:30.512
+Say public-a's table has just one line.
+
+25
+00:01:30.512 --> 00:01:32.022
+10.0.0.0/16, local.
+
+26
+00:01:32.022 --> 00:01:36.155
+Every subnet on the floor can reach every other one.
+
+27
+00:01:36.367 --> 00:01:37.865
+And that's all it has.
+
+28
+00:01:37.865 --> 00:01:40.725
+No way in from the street, and no way out.
+
+29
+00:01:40.725 --> 00:01:41.814
+Pause and guess.
+
+30
+00:01:41.814 --> 00:01:44.265
+With this table, is public-a public?
+
+31
+00:01:46.433 --> 00:01:46.627
+No.
+
+32
+00:01:46.627 --> 00:01:50.443
+It's a room with a sign on the door that says, street view.
+
+33
+00:01:50.443 --> 00:01:52.512
+The sign doesn't build a window.
+
+34
+00:01:52.733 --> 00:01:54.272
+Now add one line.
+
+35
+00:01:54.272 --> 00:02:03.776
+0.0.0.0/0, which means every address, goes to the internet gateway, the floor's front door to the street.
+
+36
+00:02:04.000 --> 00:02:06.955
+That line is what makes public-a public.
+
+37
+00:02:06.955 --> 00:02:07.915
+Not its name.
+
+38
+00:02:07.915 --> 00:02:09.097
+Its route table.
+
+39
+00:02:09.300 --> 00:02:12.079
+Same question, one more time.
+
+40
+00:02:12.079 --> 00:02:16.105
+A packet for 10.0.11.5 matches both lines.
+
+41
+00:02:16.105 --> 00:02:17.543
+Which one wins?
+
+42
+00:02:17.543 --> 00:02:19.076
+Pause and guess.
+
+43
+00:02:21.267 --> 00:02:26.853
+The more specific one, 10.0.0.0/16, wins over every address.
+
+44
+00:02:26.853 --> 00:02:31.136
+So traffic between subnets stays on the floor.
+
+45
+00:02:31.867 --> 00:02:36.450
+The private subnets get a different second line.
+
+46
+00:02:36.450 --> 00:02:43.229
+0.0.0.0/0 goes to a NAT gateway instead, which sits in a public subnet.
+
+47
+00:02:43.433 --> 00:02:50.075
+The usual layout puts the load balancer in a public subnet, and the app and the database in private ones.
+
+48
+00:02:50.300 --> 00:02:53.034
+The NAT gateway is the hotel's mail desk.
+
+49
+00:02:53.034 --> 00:02:58.569
+The app can send letters out, say to download a package, and the replies come back.
+
+50
+00:02:58.800 --> 00:03:00.728
+But no visitor goes upstairs.
+
+51
+00:03:00.728 --> 00:03:03.985
+Nobody outside can start a connection to the app.
+
+52
+00:03:03.985 --> 00:03:06.777
+It has no public address, and no route in.
+
+53
+00:03:07.000 --> 00:03:10.553
+So even a wrong firewall rule can't expose it directly.
+
+54
+00:03:10.553 --> 00:03:13.072
+That's a nice property to get for free.
+
+55
+00:03:13.800 --> 00:03:16.241
+Routes decide where traffic may go.
+
+56
+00:03:16.241 --> 00:03:17.984
+Locks decide who gets in.
+
+57
+00:03:17.984 --> 00:03:23.911
+In AWS, each machine has a security group, a lock on its own door, and we chain them.
+
+58
+00:03:24.133 --> 00:03:28.257
+The load balancer accepts port 443 from anywhere.
+
+59
+00:03:28.467 --> 00:03:32.996
+The app accepts port 8000 only from the load balancer's group.
+
+60
+00:03:33.200 --> 00:03:37.435
+And the database accepts 5432 only from the app's group.
+
+61
+00:03:37.435 --> 00:03:43.560
+Rules name groups, not addresses, so they keep working when machines come and go.
+
+62
+00:03:43.767 --> 00:03:45.882
+And replies need no rules at all.
+
+63
+00:03:45.882 --> 00:03:52.292
+A security group remembers each connection, so the answer to an allowed request gets out on its own.
+
+64
+00:03:53.000 --> 00:03:54.832
+Zone b gets the same set.
+
+65
+00:03:54.832 --> 00:03:58.496
+Its own app and database, and its own NAT gateway.
+
+66
+00:03:58.700 --> 00:04:01.178
+And here's a small choice that matters.
+
+67
+00:04:01.178 --> 00:04:05.625
+Each private subnet's table points to the NAT gateway in its own zone.
+
+68
+00:04:05.833 --> 00:04:06.974
+Pause and guess.
+
+69
+00:04:06.974 --> 00:04:08.328
+Zone a loses power.
+
+70
+00:04:08.328 --> 00:04:11.037
+Can the app in zone b still reach out?
+
+71
+00:04:13.233 --> 00:04:14.460
+Zone a goes dark.
+
+72
+00:04:14.460 --> 00:04:21.460
+But zone b's route goes to its own NAT gateway, so zone b can still reach out, and keeps working.
+
+73
+00:04:21.667 --> 00:04:27.490
+One shared NAT gateway would be cheaper, and many teams accept that for test environments.
+
+74
+00:04:27.490 --> 00:04:30.725
+They just know that zone b then depends on zone a.
+
+75
+00:04:31.633 --> 00:04:33.655
+Now remember the hotel bill.
+
+76
+00:04:33.655 --> 00:04:39.792
+Some of these pieces bill every hour just for existing, even when no request arrives.
+
+77
+00:04:39.792 --> 00:04:44.773
+The load balancer, the two NAT gateways, and any public IPv4 address.
+
+78
+00:04:45.000 --> 00:04:47.352
+Those are the rooms nobody sleeps in.
+
+79
+00:04:47.352 --> 00:04:51.485
+A budget alert only sends you an email, it doesn't stop anything.
+
+80
+00:04:51.485 --> 00:04:54.791
+So after a test, that list is what you delete first.
+
+81
+00:04:55.700 --> 00:04:57.491
+So, the moral of the story.
+
+82
+00:04:57.491 --> 00:05:01.006
+The route table, not the name, makes a subnet public.
+
+83
+00:05:01.006 --> 00:05:04.388
+Every address to the internet gateway means public.
+
+84
+00:05:04.388 --> 00:05:08.036
+Every address to a NAT gateway means private, out only.
+
+85
+00:05:08.867 --> 00:05:09.841
+A quick check.
+
+86
+00:05:09.841 --> 00:05:15.824
+A subnet named private-x has a route that sends every address to the internet gateway.
+
+87
+00:05:15.824 --> 00:05:17.146
+Public, or private?
+
+88
+00:05:17.146 --> 00:05:18.259
+Pause and guess.
+
+89
+00:05:20.433 --> 00:05:20.918
+Public.
+
+90
+00:05:20.918 --> 00:05:25.076
+The route table decides, whatever the name on the door says.

@@ -157,8 +157,8 @@ class D52NursesStation(VoiceScene):
         self.beat("So the station's first job is grouping. Alerts that share the same labels become one message. Twenty beds, one power flicker.",
                   FadeIn(g1), stream(10), Succession(Wait(1.6), FadeIn(msg, shift=RIGHT * 0.2)), run_time=3.6)
         g2 = T("routing", 26, TEAL_M).next_to(g1, DOWN, buff=0.15)
-        r1 = M('severity="page"', 22, RED_M).next_to(a_pg, UP, buff=0.12).shift(LEFT * 0.0)
-        r2 = M("everything else", 22, BLUE_M).next_to(a_tk, DOWN, buff=0.12)
+        r1 = M('severity="page"', 22, RED_M).next_to(pg, UP, buff=0.12)
+        r2 = M("everything else", 22, BLUE_M).next_to(tk, DOWN, buff=0.12)
         self.play(FadeOut(msg), run_time=0.3)
         self.beat("Second, routing. Each group walks down a tree of routes, matched on labels. Severity page goes to the pager. Everything else goes to tickets.",
                   FadeIn(g2), FadeIn(r1), FadeIn(r2), Succession(Wait(1.6), AnimationGroup(travel(a_pg, RED_M, 0.7), travel(a_tk, BLUE_M, 0.7))), run_time=3.4)
@@ -196,11 +196,11 @@ class D52NursesStation(VoiceScene):
         self.play(FadeOut(main), FadeOut(VGroup(g1, g2, g3, g4)), run_time=0.5)
         t1 = VGroup(M("promtool test rules", 26, GREEN_M), T("made-up series in, the exact alerts expected out", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
         t2 = VGroup(M("amtool config routes test severity=page", 26, GREEN_M), T("prints: pager", 24, GREY_B)).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-        VGroup(t1, t2).arrange(DOWN, aligned_edge=LEFT, buff=0.5).move_to([0, 1.0, 0])
+        VGroup(t1, t2).arrange(DOWN, aligned_edge=LEFT, buff=0.5).move_to([0, 1.0, 0]).set_x(-5.0, direction=LEFT)
         self.beat("So test the alarms, the way hospitals do. promtool runs made-up series through your rules, and checks the exact alerts you expect.",
                   FadeIn(t1, shift=RIGHT * 0.1), run_time=2.2)
         stories = T("the lab tests three stories: app down, fast burn pages, slow leak opens a ticket", 24, GREY_B).next_to(t1, DOWN, buff=0.15).align_to(t1, LEFT)
-        fit(stories, 12.4)
+        fit(stories, 10.2)
         self.play(t2.animate.shift(DOWN * 0.4), FadeIn(stories), run_time=0.6)
         self.beat("And amtool tests the routing tree. Ask it where a page goes, and it should say: pager.", FadeIn(t2, shift=RIGHT * 0.1), run_time=2.0)
         rr = T("An alert you have never seen fire is only a hope.", 32, YELLOW_M).to_edge(DOWN, buff=0.7)

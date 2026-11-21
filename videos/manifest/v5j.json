@@ -42,5 +42,27 @@
    "poster_at": 175.0,
    "replaces": "d50-scrape"
   }
+ ],
+ "d51": [
+  {
+   "slug": "d51-odometer",
+   "title": "From odometer to speedometer: rate(), windows that go silent, and rate before sum",
+   "after": 2,
+   "file": "p12/d51_odometer.py",
+   "scene": "D51Odometer",
+   "poster_at": 92.0,
+   "replaces": "d51-p95-query"
+  }
+ ],
+ "d52": [
+  {
+   "slug": "d52-nurses-station",
+   "title": "The nurses' station: alert rules, the wait, and who gets woken",
+   "after": 1,
+   "file": "p12/d52_nurses_station.py",
+   "scene": "D52NursesStation",
+   "poster_at": 175.0,
+   "replaces": "d52-alert-path"
+  }
  ]
 }

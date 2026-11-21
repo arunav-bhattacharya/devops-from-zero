@@ -1,15 +1,15 @@
 WEBVTT
 
 1
-00:00:02.733 --> 00:00:04.628
+00:00:02.700 --> 00:00:04.595
 Picture a café with free Wi-Fi.
 
 2
-00:00:04.628 --> 00:00:10.373
+00:00:04.595 --> 00:00:10.339
 You buy a train ticket on your laptop, and you see the little padlock next to the web address.
 
 3
-00:00:10.373 --> 00:00:11.351
+00:00:10.339 --> 00:00:11.317
 Safe, you think.
 
 4
@@ -25,317 +25,317 @@ Safe from what?
 Hold on to that one.
 
 7
-00:00:17.467 --> 00:00:22.309
+00:00:17.500 --> 00:00:22.342
 Between your laptop and the ticket site sit a lot of machines you don't own.
 
 8
-00:00:22.309 --> 00:00:24.921
+00:00:22.342 --> 00:00:24.954
 The café's Wi-Fi, routers, your provider.
 
 9
-00:00:24.921 --> 00:00:27.151
+00:00:24.954 --> 00:00:27.184
 Each one passes your message along.
 
 10
-00:00:27.333 --> 00:00:29.724
+00:00:27.400 --> 00:00:29.790
 Plain web traffic is a postcard.
 
 11
-00:00:29.724 --> 00:00:33.085
+00:00:29.790 --> 00:00:33.152
 It's readable text, the language called HTTP.
 
 12
-00:00:33.267 --> 00:00:41.956
+00:00:33.367 --> 00:00:42.056
 So whoever runs one of those machines, or simply shares the café's open Wi-Fi, can read your password, or even change the page.
 
 13
-00:00:42.867 --> 00:00:44.905
+00:00:42.967 --> 00:00:45.005
 What we want is a sealed envelope.
 
 14
-00:00:44.905 --> 00:00:51.861
+00:00:45.005 --> 00:00:51.961
 Nobody on the way can read it, nobody can change it without being caught, and we know who opens it at the other end.
 
 15
-00:00:52.000 --> 00:00:55.407
+00:00:52.167 --> 00:00:55.574
 To seal anything, both ends need the same secret key.
 
 16
-00:00:55.407 --> 00:00:56.564
+00:00:55.574 --> 00:00:56.731
 Here's the puzzle.
 
 17
-00:00:56.564 --> 00:01:01.385
+00:00:56.731 --> 00:01:01.552
 How do two machines agree on a key, when everyone in the café is listening?
 
 18
-00:01:01.533 --> 00:01:04.422
+00:01:01.767 --> 00:01:04.655
 The obvious answer: just send the key across.
 
 19
-00:01:04.422 --> 00:01:05.963
+00:01:04.655 --> 00:01:06.196
 Let's see how that goes.
 
 20
-00:01:06.133 --> 00:01:06.474
+00:01:06.400 --> 00:01:06.740
 Well.
 
 21
-00:01:06.474 --> 00:01:11.715
+00:01:06.740 --> 00:01:11.981
 Now everyone on the way has a copy of the key, and the seal is worth nothing.
 
 22
-00:01:12.400 --> 00:01:13.556
+00:01:12.700 --> 00:01:13.856
 Here's the trick.
 
 23
-00:01:13.556 --> 00:01:17.430
+00:01:13.856 --> 00:01:17.730
 Each side picks a random secret of its own, and keeps it.
 
 24
-00:01:17.430 --> 00:01:18.585
+00:01:17.730 --> 00:01:18.885
 It never travels.
 
 25
-00:01:18.733 --> 00:01:23.197
+00:01:19.100 --> 00:01:23.563
 From its secret, each side makes a public value, and sends only that.
 
 26
-00:01:23.197 --> 00:01:26.043
+00:01:23.563 --> 00:01:26.409
 Capital A goes one way, capital B the other.
 
 27
-00:01:26.200 --> 00:01:27.878
+00:01:26.633 --> 00:01:28.312
 The café sees A and B.
 
 28
-00:01:27.878 --> 00:01:29.328
+00:01:28.312 --> 00:01:29.761
 That's all it sees.
 
 29
-00:01:29.467 --> 00:01:34.379
+00:01:29.967 --> 00:01:34.879
 Now each side combines its own secret with the other side's public value.
 
 30
-00:01:34.379 --> 00:01:36.667
+00:01:34.879 --> 00:01:37.167
 Your laptop mixes little a with B.
 
 31
-00:01:36.667 --> 00:01:38.753
+00:01:37.167 --> 00:01:39.253
 The site mixes little b with A.
 
 32
-00:01:38.753 --> 00:01:40.907
+00:01:39.253 --> 00:01:41.407
 And both arrive at the same key.
 
 33
-00:01:41.067 --> 00:01:44.319
+00:01:41.633 --> 00:01:44.885
 The public values alone are not enough to work it out.
 
 34
-00:01:44.319 --> 00:01:47.992
+00:01:44.885 --> 00:01:48.559
 It feels like a magic trick, and it's the kind that holds up.
 
 35
-00:01:48.133 --> 00:01:50.838
+00:01:48.767 --> 00:01:51.471
 From here on, the request travels sealed.
 
 36
-00:01:50.838 --> 00:01:53.608
+00:01:51.471 --> 00:01:54.241
 The café sees an envelope, not a postcard.
 
 37
-00:01:54.200 --> 00:01:54.770
+00:01:54.867 --> 00:01:55.436
 But wait.
 
 38
-00:01:54.770 --> 00:01:56.416
+00:01:55.436 --> 00:01:57.082
 A sealed envelope to whom?
 
 39
-00:01:56.416 --> 00:02:02.113
+00:01:57.082 --> 00:02:02.780
 Someone in the café could play the same trick with you, and pretend to be the ticket site.
 
 40
-00:02:02.267 --> 00:02:06.135
+00:02:03.000 --> 00:02:06.868
 So the seal is only worth something if you know who holds the other end.
 
 41
-00:02:06.333 --> 00:02:08.283
+00:02:07.100 --> 00:02:09.050
 So the site sends a certificate.
 
 42
-00:02:08.283 --> 00:02:14.560
+00:02:09.050 --> 00:02:15.327
 It's a signed statement that says: this public key belongs to these names, from this date to that date.
 
 43
-00:02:14.733 --> 00:02:19.357
+00:02:15.533 --> 00:02:20.157
 And it sends a signature that only the matching private key can make.
 
 44
-00:02:19.357 --> 00:02:22.640
+00:02:20.157 --> 00:02:23.440
 That's the same proof your SSH key gave in Day 7.
 
 45
-00:02:24.133 --> 00:02:26.158
+00:02:24.967 --> 00:02:26.991
 But who signed the certificate?
 
 46
-00:02:26.158 --> 00:02:28.117
+00:02:26.991 --> 00:02:28.951
 A certificate authority, a CA.
 
 47
-00:02:28.117 --> 00:02:36.804
+00:02:28.951 --> 00:02:37.637
 Your browser can't ask you about every site, so it trusts a few CAs to vouch for them, the way a passport office vouches for a photo.
 
 48
-00:02:37.000 --> 00:02:43.167
+00:02:37.867 --> 00:02:44.033
 Usually an intermediate CA signs the server's certificate, and a root CA signs the intermediate.
 
 49
-00:02:43.167 --> 00:02:46.379
+00:02:44.033 --> 00:02:47.245
 That lets the root keys stay offline, locked away.
 
 50
-00:02:46.533 --> 00:02:53.010
+00:02:47.467 --> 00:02:53.944
 Your operating system and browser ship with a trust store, a short list of root CAs they already trust.
 
 51
-00:02:53.010 --> 00:02:57.789
+00:02:53.944 --> 00:02:58.723
 The client follows the chain up, link by link, until it reaches one of them.
 
 52
-00:02:57.933 --> 00:03:00.184
+00:02:58.933 --> 00:03:01.184
 It matches, so the padlock appears.
 
 53
-00:03:00.184 --> 00:03:05.520
+00:03:01.184 --> 00:03:06.520
 If any link is missing, expired, or made out to another name, the connection fails.
 
 54
-00:03:05.667 --> 00:03:07.813
+00:03:06.733 --> 00:03:08.880
 You'll see that failure in the lab.
 
 55
-00:03:07.813 --> 00:03:14.252
+00:03:08.880 --> 00:03:15.319
 A certificate you make yourself for localhost is signed by itself, so curl refuses it, and it's right to.
 
 56
-00:03:14.252 --> 00:03:16.460
+00:03:15.319 --> 00:03:17.527
 It can't tell it from an attacker's.
 
 57
-00:03:16.600 --> 00:03:22.743
+00:03:17.733 --> 00:03:23.877
 With --cacert localhost.crt, you tell curl to trust exactly that one certificate.
 
 58
-00:03:22.743 --> 00:03:25.701
+00:03:23.877 --> 00:03:26.835
 It still checks the name and the dates.
 
 59
-00:03:26.667 --> 00:03:28.870
+00:03:27.867 --> 00:03:30.070
 Now back to the café question.
 
 60
-00:03:28.870 --> 00:03:32.762
+00:03:30.070 --> 00:03:33.962
 Your browser shows a padlock on paypa1-login.example.
 
 61
-00:03:32.762 --> 00:03:34.818
+00:03:33.962 --> 00:03:36.018
 Look at that name carefully.
 
 62
-00:03:34.818 --> 00:03:35.993
+00:03:36.018 --> 00:03:37.193
 Pause and guess.
 
 63
-00:03:35.993 --> 00:03:38.049
+00:03:37.193 --> 00:03:39.249
 What does the padlock prove?
 
 64
-00:03:40.200 --> 00:03:44.848
+00:03:41.433 --> 00:03:46.081
 It proves the traffic is sealed, so nobody on the way can read or change it.
 
 65
-00:03:44.848 --> 00:03:47.723
+00:03:46.081 --> 00:03:48.956
 And it proves the other end controls that name.
 
 66
-00:03:47.867 --> 00:03:48.581
+00:03:49.167 --> 00:03:49.881
 That's all.
 
 67
-00:03:48.581 --> 00:03:54.942
+00:03:49.881 --> 00:03:56.242
 Let's Encrypt, a free CA, gives a certificate to anyone who controls a domain, including this one.
 
 68
-00:03:54.942 --> 00:03:58.447
+00:03:56.242 --> 00:03:59.747
 The padlock says nothing about whether they're honest.
 
 69
-00:03:58.600 --> 00:04:03.151
+00:03:59.967 --> 00:04:04.517
 So the padlock is a very good envelope, and a terrible character reference.
 
 70
-00:04:03.933 --> 00:04:05.059
+00:04:05.333 --> 00:04:06.459
 Two more limits.
 
 71
-00:04:05.059 --> 00:04:07.028
+00:04:06.459 --> 00:04:08.428
 TLS doesn't hide everything.
 
 72
-00:04:07.028 --> 00:04:19.057
+00:04:08.428 --> 00:04:20.457
 Everyone on the path still sees the server's IP address, and usually the host name too, because the browser names the site in a field called SNI, before encryption starts.
 
 73
-00:04:19.200 --> 00:04:23.128
+00:04:20.667 --> 00:04:24.595
 And certificates expire, on purpose, sooner each year.
 
 74
-00:04:23.128 --> 00:04:28.147
+00:04:24.595 --> 00:04:29.614
 Let's Encrypt certificates last 90 days today, and 45 days from 2028.
 
 75
-00:04:28.147 --> 00:04:33.748
+00:04:29.614 --> 00:04:35.215
 Nobody should renew those by hand, so renewal must be automated, and watched.
 
 76
-00:04:34.533 --> 00:04:36.207
+00:04:36.033 --> 00:04:37.707
 So, the moral of the story.
 
 77
-00:04:36.207 --> 00:04:40.547
+00:04:37.707 --> 00:04:42.047
 TLS seals the envelope on the way, and checks who holds the other end.
 
 78
-00:04:40.547 --> 00:04:45.135
+00:04:42.047 --> 00:04:46.635
 Whether the people behind that name deserve your money is still your call.
 
 79
-00:04:45.933 --> 00:04:47.022
+00:04:47.467 --> 00:04:48.555
 A quick check.
 
 80
-00:04:47.022 --> 00:04:51.222
+00:04:48.555 --> 00:04:52.755
 You pay on tickets.example, over HTTPS, from the café.
 
 81
-00:04:51.222 --> 00:04:54.721
+00:04:52.755 --> 00:04:56.254
 What can someone on the café Wi-Fi still see?
 
 82
-00:04:54.721 --> 00:04:55.965
+00:04:56.254 --> 00:04:57.499
 Pause and guess.
 
 83
-00:04:58.133 --> 00:05:03.580
+00:04:59.667 --> 00:05:05.113
 The site's IP address, and usually its name, because SNI travels before the seal.
 
 84
-00:05:03.580 --> 00:05:06.269
+00:05:05.113 --> 00:05:07.803
 But not your password, and not the page.
 
 85
-00:05:06.269 --> 00:05:08.287
+00:05:07.803 --> 00:05:09.820
 Those are inside the envelope.

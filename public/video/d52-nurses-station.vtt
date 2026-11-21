@@ -1,0 +1,405 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:04.744
+Picture a hospital night shift.
+
+2
+00:00:04.744 --> 00:00:08.239
+Twenty bedside monitors, and one doctor with a phone.
+
+3
+00:00:08.467 --> 00:00:11.375
+The power flickers, and all twenty beep at once.
+
+4
+00:00:11.375 --> 00:00:15.797
+If each one rang her phone, she would get twenty calls about one problem.
+
+5
+00:00:16.000 --> 00:00:20.935
+Worse, a real emergency in bed twelve would be one more ring in the noise.
+
+6
+00:00:21.167 --> 00:00:23.273
+More alarms feel like more safety.
+
+7
+00:00:23.273 --> 00:00:25.441
+Each one on its own looks sensible.
+
+8
+00:00:25.441 --> 00:00:27.980
+Together, they bury the one that matters.
+
+9
+00:00:27.980 --> 00:00:30.644
+So who decides which beep reaches a person?
+
+10
+00:00:31.867 --> 00:00:37.380
+Last time, our queries said how busy, how broken and how slow hello-devops is.
+
+11
+00:00:37.380 --> 00:00:40.632
+But they answer only when asked, and at 3 a.m.
+
+12
+00:00:40.632 --> 00:00:41.480
+nobody asks.
+
+13
+00:00:41.700 --> 00:00:47.946
+So we give a query a name, and Prometheus runs it by itself, every fifteen seconds in the lab.
+
+14
+00:00:47.946 --> 00:00:49.607
+That is an alerting rule.
+
+15
+00:00:49.833 --> 00:00:51.597
+The condition: up is zero.
+
+16
+00:00:51.597 --> 00:00:54.719
+It returns something only when a scrape fails.
+
+17
+00:00:54.719 --> 00:00:57.704
+Every series it returns is one active alert.
+
+18
+00:00:57.933 --> 00:01:02.135
+for one minute: the condition must stay true for a whole minute first.
+
+19
+00:01:02.135 --> 00:01:05.797
+And a label, severity page, that the next stop will route on.
+
+20
+00:01:06.500 --> 00:01:07.321
+Now a puzzle.
+
+21
+00:01:07.321 --> 00:01:09.089
+A rule says for ten minutes.
+
+22
+00:01:09.089 --> 00:01:14.456
+The condition is true for eight minutes, false for one single check, then true again.
+
+23
+00:01:16.967 --> 00:01:18.339
+When does it fire?
+
+24
+00:01:21.467 --> 00:01:24.556
+While the condition is true, the alert is pending.
+
+25
+00:01:24.556 --> 00:01:25.853
+The clock is running.
+
+26
+00:01:26.067 --> 00:01:27.457
+Then one false check.
+
+27
+00:01:27.457 --> 00:01:31.760
+The alert goes back to inactive, and the clock goes back to zero.
+
+28
+00:01:31.760 --> 00:01:33.084
+Eight minutes, gone.
+
+29
+00:01:33.300 --> 00:01:38.282
+It starts again, and fires ten minutes after the condition became true again.
+
+30
+00:01:38.282 --> 00:01:39.446
+Not at minute ten.
+
+31
+00:01:39.446 --> 00:01:41.064
+At about minute eighteen.
+
+32
+00:01:41.267 --> 00:01:43.868
+Three states: inactive, pending, firing.
+
+33
+00:01:43.868 --> 00:01:46.469
+And that is the whole point of the wait.
+
+34
+00:01:46.469 --> 00:01:49.265
+It filters out alerts that flip on and off.
+
+35
+00:01:49.467 --> 00:01:56.833
+A good bedside monitor does the same: it waits a few seconds, so a patient turning over in bed does not set it off.
+
+36
+00:01:57.667 --> 00:01:59.344
+So the monitors can beep.
+
+37
+00:01:59.344 --> 00:02:02.564
+But Prometheus only decides that an alert fires.
+
+38
+00:02:02.564 --> 00:02:05.516
+It never sends a message to a person itself.
+
+39
+00:02:05.733 --> 00:02:09.277
+Firing alerts go to a separate service, Alertmanager.
+
+40
+00:02:09.277 --> 00:02:11.016
+It is our nurses' station.
+
+41
+00:02:11.233 --> 00:02:14.822
+And from there to receivers, the places messages land.
+
+42
+00:02:14.822 --> 00:02:17.945
+In the lab, one for pages, and one for tickets.
+
+43
+00:02:18.967 --> 00:02:26.643
+One broken database can trip dozens of rules at once, and Prometheus re-sends each firing alert about once a minute.
+
+44
+00:02:26.643 --> 00:02:29.092
+Straight to a phone, that is a flood.
+
+45
+00:02:29.300 --> 00:02:31.863
+So the station's first job is grouping.
+
+46
+00:02:31.863 --> 00:02:35.347
+Alerts that share the same labels become one message.
+
+47
+00:02:35.347 --> 00:02:37.384
+Twenty beds, one power flicker.
+
+48
+00:02:37.900 --> 00:02:38.977
+Second, routing.
+
+49
+00:02:38.977 --> 00:02:42.879
+Each group walks down a tree of routes, matched on labels.
+
+50
+00:02:42.879 --> 00:02:45.032
+Severity page goes to the pager.
+
+51
+00:02:45.032 --> 00:02:47.185
+Everything else goes to tickets.
+
+52
+00:02:47.400 --> 00:02:49.557
+A heart alarm goes to the doctor.
+
+53
+00:02:49.557 --> 00:02:52.107
+A broken drip goes on the morning list.
+
+54
+00:02:52.333 --> 00:02:53.558
+Third, inhibition.
+
+55
+00:02:53.558 --> 00:02:58.250
+While a page fires for a job, the lab mutes that job's ticket alerts.
+
+56
+00:02:58.250 --> 00:03:01.719
+Small alarms stay quiet while a team is at the bed.
+
+57
+00:03:01.933 --> 00:03:03.245
+And fourth, silences.
+
+58
+00:03:03.245 --> 00:03:08.368
+A mute you set for a while, with an author and a comment, for a planned procedure.
+
+59
+00:03:08.900 --> 00:03:10.958
+Now watch the lab's real outage.
+
+60
+00:03:10.958 --> 00:03:13.852
+Stop Redis, the small database the app needs.
+
+61
+00:03:13.852 --> 00:03:17.325
+Within a minute, both error budget alerts are pending.
+
+62
+00:03:17.533 --> 00:03:21.209
+Two minutes later, both fire, and both reach the station.
+
+63
+00:03:21.433 --> 00:03:25.279
+Ten seconds later, the webhook in the lab prints one line.
+
+64
+00:03:25.279 --> 00:03:26.737
+Only the page arrived.
+
+65
+00:03:26.967 --> 00:03:29.384
+The ticket was muted by inhibition.
+
+66
+00:03:30.400 --> 00:03:31.435
+So far so good.
+
+67
+00:03:31.435 --> 00:03:35.090
+But the station follows its rules exactly as written.
+
+68
+00:03:35.090 --> 00:03:39.849
+A wrong route sends the page nowhere, and nobody at the desk notices.
+
+69
+00:03:40.967 --> 00:03:43.642
+So test the alarms, the way hospitals do.
+
+70
+00:03:43.642 --> 00:03:49.385
+promtool runs made-up series through your rules, and checks the exact alerts you expect.
+
+71
+00:03:50.200 --> 00:03:52.407
+And amtool tests the routing tree.
+
+72
+00:03:52.407 --> 00:03:55.717
+Ask it where a page goes, and it should say: pager.
+
+73
+00:03:55.933 --> 00:03:59.134
+An alert you have never seen fire is only a hope.
+
+74
+00:03:59.134 --> 00:04:00.832
+Test it before it matters.
+
+75
+00:04:01.533 --> 00:04:04.053
+One more silent trap, on Kubernetes.
+
+76
+00:04:04.053 --> 00:04:09.163
+There, an object called a ServiceMonitor tells Prometheus what to scrape.
+
+77
+00:04:09.367 --> 00:04:14.679
+The lab's Prometheus reads only those with the label release, monitoring.
+
+78
+00:04:14.679 --> 00:04:15.624
+Leave it out.
+
+79
+00:04:15.624 --> 00:04:16.570
+What happens?
+
+80
+00:04:16.570 --> 00:04:17.735
+Pause and guess.
+
+81
+00:04:19.967 --> 00:04:20.916
+Nothing fails.
+
+82
+00:04:20.916 --> 00:04:24.647
+No error, no event, and your app simply never shows up.
+
+83
+00:04:24.647 --> 00:04:27.496
+An alarm sheet, dropped in the wrong tray.
+
+84
+00:04:27.700 --> 00:04:31.461
+So after every apply, check that the target really appears.
+
+85
+00:04:32.167 --> 00:04:35.277
+Before you merge a new alert, ask five questions.
+
+86
+00:04:35.277 --> 00:04:37.625
+Does it fire on a symptom users feel?
+
+87
+00:04:37.625 --> 00:04:40.037
+Is its wait long enough to skip blips?
+
+88
+00:04:40.267 --> 00:04:42.249
+Does it use rate, never I rate?
+
+89
+00:04:42.249 --> 00:04:47.619
+Does its text say what is wrong, and link to a runbook, a short page of first steps?
+
+90
+00:04:47.833 --> 00:04:50.635
+And would the person paged know what to do next?
+
+91
+00:04:51.367 --> 00:04:53.141
+So the moral of the story.
+
+92
+00:04:53.141 --> 00:04:55.803
+Prometheus decides that an alert fires.
+
+93
+00:04:55.803 --> 00:04:58.533
+Alertmanager decides who hears about it.
+
+94
+00:04:58.767 --> 00:05:03.659
+A rule is a query with a name and a wait, and one false check resets the wait.
+
+95
+00:05:03.659 --> 00:05:06.607
+The station groups, routes, mutes and silences.
+
+96
+00:05:06.607 --> 00:05:09.304
+And you test the alarms before they matter.
+
+97
+00:05:10.033 --> 00:05:10.922
+A quick check.
+
+98
+00:05:10.922 --> 00:05:16.256
+Fifty pods fail at the same moment, and their alerts share the same grouping labels.
+
+99
+00:05:16.256 --> 00:05:18.352
+How many messages reach a person?
+
+100
+00:05:21.467 --> 00:05:21.820
+One.
+
+101
+00:05:21.820 --> 00:05:25.085
+Fifty pods, one flicker, one message.

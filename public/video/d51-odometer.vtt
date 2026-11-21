@@ -1,0 +1,349 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.478
+Picture a car whose speedometer has broken.
+
+2
+00:00:05.478 --> 00:00:11.033
+Only the odometer still works, the counter of every kilometre the car has ever driven.
+
+3
+00:00:11.267 --> 00:00:14.242
+It reads fifty two thousand three hundred and ten.
+
+4
+00:00:14.242 --> 00:00:15.611
+Are you going too fast?
+
+5
+00:00:15.833 --> 00:00:17.478
+The number cannot tell you.
+
+6
+00:00:17.478 --> 00:00:21.863
+It is precise, and it keeps moving, and it says nothing about right now.
+
+7
+00:00:22.067 --> 00:00:23.108
+But note it now.
+
+8
+00:00:23.108 --> 00:00:24.995
+Note it again a minute later.
+
+9
+00:00:24.995 --> 00:00:27.207
+Divide the difference by the time.
+
+10
+00:00:27.433 --> 00:00:29.380
+One kilometre in one minute.
+
+11
+00:00:29.380 --> 00:00:31.118
+Sixty kilometres an hour.
+
+12
+00:00:31.118 --> 00:00:32.787
+Now you know your speed.
+
+13
+00:00:33.900 --> 00:00:36.088
+Our app's counters are odometers.
+
+14
+00:00:36.088 --> 00:00:42.852
+Ask Prometheus for the bare name, hello responses total, and you get three answers, one per label set.
+
+15
+00:00:43.067 --> 00:00:46.350
+Three hundred and three requests since the app started.
+
+16
+00:00:46.350 --> 00:00:48.797
+That says almost nothing about right now.
+
+17
+00:00:49.000 --> 00:00:51.932
+One value per series, all for the same moment.
+
+18
+00:00:51.932 --> 00:00:56.203
+It is like asking every car in a car park for its odometer reading.
+
+19
+00:00:56.833 --> 00:01:02.131
+Add a time range in square brackets, one minute, and you get every reading in that window.
+
+20
+00:01:02.333 --> 00:01:07.393
+Prometheus reads the app every fifteen seconds, so a minute holds four readings.
+
+21
+00:01:07.393 --> 00:01:11.883
+Ninety nine, one sixty seven, two thirty five, three hundred and three.
+
+22
+00:01:12.100 --> 00:01:15.499
+That is called a range vector: every reading in the window.
+
+23
+00:01:15.700 --> 00:01:17.699
+Now do what we did in the car.
+
+24
+00:01:17.699 --> 00:01:20.897
+Last minus first: two hundred and four requests.
+
+25
+00:01:21.100 --> 00:01:23.802
+Over the forty five seconds between them.
+
+26
+00:01:23.802 --> 00:01:26.438
+About four and a half requests a second.
+
+27
+00:01:26.438 --> 00:01:26.965
+A speed.
+
+28
+00:01:27.167 --> 00:01:28.728
+You never do that by hand.
+
+29
+00:01:28.728 --> 00:01:34.135
+The function rate does the subtraction and the division for you, for every series at once.
+
+30
+00:01:34.367 --> 00:01:38.789
+rate: the average growth per second of a counter, over a time range.
+
+31
+00:01:39.400 --> 00:01:40.701
+Now a small change.
+
+32
+00:01:40.701 --> 00:01:45.359
+Same scrape every fifteen seconds, but a window of only ten seconds.
+
+33
+00:01:45.359 --> 00:01:46.865
+What does this return?
+
+34
+00:01:50.467 --> 00:01:53.477
+Slide a ten second window along the readings.
+
+35
+00:01:53.477 --> 00:01:55.216
+It usually holds only one.
+
+36
+00:01:56.433 --> 00:01:58.855
+One reading, nothing to subtract.
+
+37
+00:01:58.855 --> 00:02:02.230
+So the series quietly drops out of the result.
+
+38
+00:02:02.230 --> 00:02:03.551
+No error, no zero.
+
+39
+00:02:03.551 --> 00:02:04.652
+Nothing at all.
+
+40
+00:02:04.867 --> 00:02:08.735
+Well, that is a query that looks right and answers with silence.
+
+41
+00:02:08.967 --> 00:02:10.615
+The fix is a longer window.
+
+42
+00:02:10.615 --> 00:02:13.300
+Use at least four times the scrape interval.
+
+43
+00:02:13.300 --> 00:02:15.315
+With fifteen seconds, one minute.
+
+44
+00:02:15.315 --> 00:02:19.404
+It needs two readings, and four leave enough when one scrape fails.
+
+45
+00:02:20.733 --> 00:02:22.375
+That silence has a cousin.
+
+46
+00:02:22.375 --> 00:02:26.037
+Before the app had ever failed, ask for its server errors.
+
+47
+00:02:26.267 --> 00:02:27.480
+You get nothing.
+
+48
+00:02:27.480 --> 00:02:28.162
+Not zero.
+
+49
+00:02:28.162 --> 00:02:31.727
+No series with a five hundred label exists yet.
+
+50
+00:02:31.933 --> 00:02:34.952
+And any maths with an empty side is empty too.
+
+51
+00:02:34.952 --> 00:02:38.496
+An error ratio shows nothing, where you expected zero.
+
+52
+00:02:38.700 --> 00:02:42.528
+Add or vector zero to the error part, and you get a real zero.
+
+53
+00:02:42.528 --> 00:02:48.271
+It is the difference between a chart that says no errors, and a chart with the page torn out.
+
+54
+00:02:49.300 --> 00:02:51.216
+Odometers have one more trick.
+
+55
+00:02:51.216 --> 00:02:54.664
+When the app restarts, its counter falls back to zero.
+
+56
+00:02:54.664 --> 00:02:59.453
+In one test, it went from two thousand three hundred and seventy to eleven.
+
+57
+00:02:59.667 --> 00:03:07.103
+rate reads any drop as a restart, like a mechanic who sees a lower reading and knows the odometer was replaced.
+
+58
+00:03:07.103 --> 00:03:10.453
+Those eleven count as new requests, not as a fall.
+
+59
+00:03:11.067 --> 00:03:15.831
+Now run three copies of the app, like a taxi fleet, and you want the total.
+
+60
+00:03:15.831 --> 00:03:17.165
+Two ways to write it.
+
+61
+00:03:17.165 --> 00:03:19.896
+Add the counters first, then take the rate.
+
+62
+00:03:19.896 --> 00:03:21.675
+Or take each rate, then add.
+
+63
+00:03:21.900 --> 00:03:23.930
+Let's steelman the first.
+
+64
+00:03:23.930 --> 00:03:25.067
+It looks tidy.
+
+65
+00:03:25.067 --> 00:03:26.528
+One sum, one rate.
+
+66
+00:03:26.733 --> 00:03:27.920
+One copy restarts.
+
+67
+00:03:27.920 --> 00:03:30.358
+Its counter drops, so the total dips.
+
+68
+00:03:30.358 --> 00:03:35.564
+And rate, looking at the total, mistakes that dip for a reset of the whole sum.
+
+69
+00:03:35.767 --> 00:03:38.333
+You get a spike of traffic that never happened.
+
+70
+00:03:38.567 --> 00:03:43.075
+Take each copy's rate first, where a restart is visible, and then add.
+
+71
+00:03:43.075 --> 00:03:44.169
+Steady, and true.
+
+72
+00:03:44.400 --> 00:03:45.188
+So the rule.
+
+73
+00:03:45.188 --> 00:03:48.666
+Take the rate of each series first, then add them up.
+
+74
+00:03:48.666 --> 00:03:50.372
+Never the other way round.
+
+75
+00:03:51.400 --> 00:03:53.242
+So the moral of the story.
+
+76
+00:03:53.242 --> 00:03:56.146
+A counter on its own says almost nothing.
+
+77
+00:03:56.146 --> 00:03:57.351
+Ask for its rate.
+
+78
+00:03:57.567 --> 00:04:01.154
+Odometer to speed: last minus first, over the time.
+
+79
+00:04:01.154 --> 00:04:04.531
+A window that is too short answers with silence.
+
+80
+00:04:04.531 --> 00:04:05.797
+Empty is not zero.
+
+81
+00:04:05.797 --> 00:04:07.556
+And rate first, then add.
+
+82
+00:04:08.267 --> 00:04:09.256
+A quick check.
+
+83
+00:04:09.256 --> 00:04:12.154
+Prometheus scrapes every fifteen seconds.
+
+84
+00:04:12.154 --> 00:04:14.345
+Is a thirty second window safe?
+
+85
+00:04:17.467 --> 00:04:18.143
+Too short.
+
+86
+00:04:18.143 --> 00:04:22.607
+It holds about two readings, so one failed scrape leaves only one.
+
+87
+00:04:22.607 --> 00:04:25.380
+Four times fifteen seconds is one minute.

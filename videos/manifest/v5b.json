@@ -42,5 +42,16 @@
    "poster_at": 300.8,
    "replaces": "d10-dns-tcp"
   }
+ ],
+ "d11": [
+  {
+   "slug": "d11-padlock",
+   "title": "What the padlock proves: a sealed envelope, a certificate chain, and what it cannot promise",
+   "after": 5,
+   "file": "p3/d11_padlock.py",
+   "scene": "D11Padlock",
+   "poster_at": 264.8,
+   "replaces": "d11-https"
+  }
  ]
 }
