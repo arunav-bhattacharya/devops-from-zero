@@ -20,5 +20,27 @@
    "poster_at": 116.0,
    "replaces": "d08-git-store"
   }
+ ],
+ "d09": [
+  {
+   "slug": "d09-staple-retype",
+   "title": "Merge staples, rebase retypes: the merge base, conflicts and new commit IDs",
+   "after": 3,
+   "file": "p2/d09_staple_retype.py",
+   "scene": "D09StapleRetype",
+   "poster_at": 295.0,
+   "replaces": "d09-merge-rebase"
+  }
+ ],
+ "d10": [
+  {
+   "slug": "d10-read-sticker",
+   "title": "Read the sticker: which step a connection error points to",
+   "after": 6,
+   "file": "p3/d10_read_sticker.py",
+   "scene": "D10ReadSticker",
+   "poster_at": 300.8,
+   "replaces": "d10-dns-tcp"
+  }
  ]
 }
