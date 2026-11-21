@@ -31,5 +31,16 @@
    "poster_at": 282.0,
    "replaces": "d49-error-budget"
   }
+ ],
+ "d50": [
+  {
+   "slug": "d50-nurse-chart",
+   "title": "The nurse and the chart: scrapes, time series and the label that fills the room",
+   "after": 3,
+   "file": "p12/d50_nurse_chart.py",
+   "scene": "D50NurseChart",
+   "poster_at": 175.0,
+   "replaces": "d50-scrape"
+  }
  ]
 }
