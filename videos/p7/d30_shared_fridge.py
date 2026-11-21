@@ -70,9 +70,9 @@ class D30SharedFridge(VoiceScene):
         inl = T("inputs", 24, BLUE_M).next_to(ins, RIGHT, buff=0.3)
         self.beat("Take one task, compileKotlin. Its inputs are the source files, the classpath, and the compiler flags.",
                   FadeIn(task), FadeIn(ins), FadeIn(inl), run_time=2.0)
-        keyb = mbox("cache key  9f3a...", YELLOW_M, size=22).move_to([-0.4, 0.6, 0])
+        keyb = mbox("cache key  9f3a...", YELLOW_M, size=22).move_to([0.5, 0.6, 0])
         ka = edge_arrow(task, keyb)
-        kl = T("hash every input", 24, GREY_B).next_to(ka, UP, buff=0.1)
+        kl = T("hash the inputs", 24, GREY_B).next_to(ka, UP, buff=0.15)
         self.beat("Before it runs, Gradle hashes all of those inputs into one cache key, a label made of their fingerprints.",
                   GrowArrow(ka), FadeIn(kl), FadeIn(keyb), run_time=2.0)
         fr = RoundedRectangle(corner_radius=0.15, width=3.4, height=3.4, stroke_color=TEAL_M, stroke_width=3).set_fill(tint(TEAL_M, 0.06), 1).move_to([4.5, -0.2, 0])

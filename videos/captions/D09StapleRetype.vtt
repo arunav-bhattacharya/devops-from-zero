@@ -205,225 +205,225 @@ Your side, from HEAD, on top.
 Ben's side below the equals signs.
 
 52
-00:02:45.500 --> 00:02:48.973
+00:02:45.467 --> 00:02:48.940
 The first time, it looks as if Git broke your file.
 
 53
-00:02:48.973 --> 00:02:49.654
+00:02:48.940 --> 00:02:49.621
 It didn't.
 
 54
-00:02:49.654 --> 00:02:51.493
+00:02:49.621 --> 00:02:51.460
 It's asking you a question.
 
 55
-00:02:51.700 --> 00:02:53.673
+00:02:51.667 --> 00:02:53.639
 Here both ideas are good.
 
 56
-00:02:53.673 --> 00:03:01.248
+00:02:53.639 --> 00:03:01.215
 So you write one line with the currency first, and the commas kept, and you delete every marker.
 
 57
-00:03:01.248 --> 00:03:03.773
+00:03:01.215 --> 00:03:03.740
 The program prints EUR 1,543.12.
 
 58
-00:03:04.000 --> 00:03:05.306
+00:03:03.967 --> 00:03:05.272
 One warning, though.
 
 59
-00:03:05.306 --> 00:03:09.027
+00:03:05.272 --> 00:03:08.994
 Git checks that the text merged, not that the code works.
 
 60
-00:03:09.027 --> 00:03:11.508
+00:03:08.994 --> 00:03:11.475
 So run the tests after every conflict.
 
 61
-00:03:12.733 --> 00:03:17.299
+00:03:12.700 --> 00:03:17.266
 Then git add marks the file resolved, and git commit finishes the merge.
 
 62
-00:03:17.299 --> 00:03:20.090
+00:03:17.266 --> 00:03:20.057
 Git writes a merge commit, with two parents.
 
 63
-00:03:20.090 --> 00:03:22.183
+00:03:20.057 --> 00:03:22.149
 Main's old tip, and Ben's commit.
 
 64
-00:03:22.400 --> 00:03:28.491
+00:03:22.367 --> 00:03:28.457
 In the office, it staples both drafts together, with a cover note that says, these two joined here.
 
 65
-00:03:28.491 --> 00:03:31.075
+00:03:28.457 --> 00:03:31.041
 Nothing is lost, and nothing is rewritten.
 
 66
-00:03:32.100 --> 00:03:34.425
+00:03:32.067 --> 00:03:34.391
 Now rewind, and try the other way.
 
 67
-00:03:34.425 --> 00:03:36.955
+00:03:34.391 --> 00:03:36.921
 On Ben's branch, run git rebase main.
 
 68
-00:03:36.955 --> 00:03:42.083
+00:03:36.921 --> 00:03:42.049
 Rebase retypes Ben's pages, so they start after the latest version of main.
 
 69
-00:03:42.300 --> 00:03:44.530
+00:03:42.267 --> 00:03:44.497
 Same words, fresh pages.
 
 70
-00:03:44.530 --> 00:03:46.017
+00:03:44.497 --> 00:03:45.983
 Pause and guess.
 
 71
-00:03:46.017 --> 00:03:50.384
+00:03:45.983 --> 00:03:50.351
 Does Ben's retyped commit keep its ID, d229503?
 
 72
-00:03:52.567 --> 00:03:53.172
+00:03:52.533 --> 00:03:53.138
 It can't.
 
 73
-00:03:53.172 --> 00:03:57.003
+00:03:53.138 --> 00:03:56.969
 Remember from last time, a commit's ID covers its parent.
 
 74
-00:03:57.003 --> 00:04:01.909
+00:03:56.969 --> 00:04:01.876
 The retyped commit has a new parent, so it's a new commit, with a new ID.
 
 75
-00:04:02.133 --> 00:04:05.199
+00:04:02.100 --> 00:04:05.166
 Then the currency-first note moves to the copy.
 
 76
-00:04:05.199 --> 00:04:09.439
+00:04:05.166 --> 00:04:09.405
 The old commit still exists, but no branch points at it any more.
 
 77
-00:04:09.439 --> 00:04:11.135
+00:04:09.405 --> 00:04:11.101
 The reflog still knows it.
 
 78
-00:04:11.367 --> 00:04:16.131
+00:04:11.333 --> 00:04:16.097
 The result is a straight line of history, as if Ben had started his work today.
 
 79
-00:04:16.333 --> 00:04:18.613
+00:04:16.300 --> 00:04:18.580
 Merge kept both drafts, stapled.
 
 80
-00:04:18.613 --> 00:04:20.536
+00:04:18.580 --> 00:04:20.503
 Rebase retyped one of them.
 
 81
-00:04:20.536 --> 00:04:23.457
+00:04:20.503 --> 00:04:23.424
 Both end with Ana's and Ben's changes in.
 
 82
-00:04:24.067 --> 00:04:27.407
+00:04:24.033 --> 00:04:27.374
 Now the rule that matters more than the rest.
 
 83
-00:04:27.407 --> 00:04:32.677
+00:04:27.374 --> 00:04:32.644
 Say a teammate already copied Ben's branch, with the old d229503 in it.
 
 84
-00:04:32.900 --> 00:04:35.266
+00:04:32.867 --> 00:04:35.233
 Ben rebases and shares the new copy.
 
 85
-00:04:35.266 --> 00:04:38.816
+00:04:35.233 --> 00:04:38.783
 Now the teammate holds pages the branch no longer has.
 
 86
-00:04:38.816 --> 00:04:44.995
+00:04:38.783 --> 00:04:44.961
 If they merge, their history holds each of Ben's changes twice, under the old and the new IDs.
 
 87
-00:04:45.200 --> 00:04:47.896
+00:04:45.167 --> 00:04:47.863
 Unlike a typist, Git retypes in a second.
 
 88
-00:04:47.896 --> 00:04:51.251
+00:04:47.863 --> 00:04:51.217
 That's exactly why this mistake is so easy to make.
 
 89
-00:04:51.467 --> 00:04:54.715
+00:04:51.433 --> 00:04:54.681
 So rebase your own branch before anyone builds on it.
 
 90
-00:04:54.715 --> 00:04:57.901
+00:04:54.681 --> 00:04:57.868
 Never rebase commits that other people already have.
 
 91
-00:04:58.133 --> 00:05:02.095
+00:04:58.100 --> 00:05:02.061
 And after a rebase of your own branch, a normal push is refused.
 
 92
-00:05:02.095 --> 00:05:06.056
+00:05:02.061 --> 00:05:06.023
 A plain force push overwrites the shared branch, no matter what.
 
 93
-00:05:06.056 --> 00:05:11.503
+00:05:06.023 --> 00:05:11.470
 Force with lease refuses if a teammate pushed in the meantime, so their commit survives.
 
 94
-00:05:11.503 --> 00:05:13.051
+00:05:11.470 --> 00:05:13.017
 Use the lease every time.
 
 95
-00:05:13.967 --> 00:05:15.818
+00:05:13.933 --> 00:05:15.785
 So, the moral of the story.
 
 96
-00:05:15.818 --> 00:05:16.778
+00:05:15.785 --> 00:05:16.745
 Merge staples.
 
 97
-00:05:16.778 --> 00:05:17.807
+00:05:16.745 --> 00:05:17.773
 Rebase retypes.
 
 98
-00:05:17.807 --> 00:05:20.070
+00:05:17.773 --> 00:05:20.036
 A fast-forward only moves a note.
 
 99
-00:05:20.070 --> 00:05:23.567
+00:05:20.036 --> 00:05:23.534
 A three-way merge compares both tips with the base.
 
 100
-00:05:23.567 --> 00:05:27.681
+00:05:23.534 --> 00:05:27.648
 And rebase makes new commits, so keep it to your own branch.
 
 101
-00:05:28.500 --> 00:05:29.453
+00:05:28.467 --> 00:05:29.419
 A quick check.
 
 102
-00:05:29.453 --> 00:05:32.243
+00:05:29.419 --> 00:05:32.210
 Your teammate already pulled your branch.
 
 103
-00:05:32.243 --> 00:05:33.944
+00:05:32.210 --> 00:05:33.911
 Should you rebase it now?
 
 104
-00:05:33.944 --> 00:05:35.033
+00:05:33.911 --> 00:05:35.000
 Pause and guess.
 
 105
-00:05:37.233 --> 00:05:37.455
+00:05:37.200 --> 00:05:37.422
 No.
 
 106
-00:05:37.455 --> 00:05:44.260
+00:05:37.422 --> 00:05:44.227
 Their copy holds the old pages, so a rebase would leave every change in their history twice.
 
 107
-00:05:44.260 --> 00:05:45.296
+00:05:44.227 --> 00:05:45.263
 Merge instead.

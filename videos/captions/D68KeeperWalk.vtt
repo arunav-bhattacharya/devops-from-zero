@@ -1,0 +1,385 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.494
+The new path through the park opens on Saturday.
+
+2
+00:00:05.494 --> 00:00:11.140
+On Friday evening, the keeper walks it once more, from the gate to the station, with a clipboard.
+
+3
+00:00:11.367 --> 00:00:13.356
+Does every lamp come on at dusk?
+
+4
+00:00:13.356 --> 00:00:16.215
+Does the little bridge hold a heavy bin lorry?
+
+5
+00:00:16.215 --> 00:00:19.323
+Does the drain by the pond take a bucket of water?
+
+6
+00:00:19.533 --> 00:00:22.273
+Each part passed its own test when it was built.
+
+7
+00:00:22.273 --> 00:00:25.584
+The walk is the first time they all have to work together.
+
+8
+00:00:25.800 --> 00:00:27.610
+Skipping the walk is tempting.
+
+9
+00:00:27.610 --> 00:00:31.050
+Every piece was checked, so the whole thing must be fine.
+
+10
+00:00:31.050 --> 00:00:35.697
+That's exactly how a lamp ends up wired to the same switch as the sprinklers.
+
+11
+00:00:36.500 --> 00:00:38.163
+Your capstone is that walk.
+
+12
+00:00:38.163 --> 00:00:43.767
+One small code change travels from your laptop to users, through every part of this course.
+
+13
+00:00:44.000 --> 00:00:45.952
+Fourteen stages, in order.
+
+14
+00:00:45.952 --> 00:00:52.333
+Foundations, containers, CI, and so on, all the way to security, AI and the platform.
+
+15
+00:00:52.567 --> 00:00:54.896
+Stage twelve, Dynatrace, is optional.
+
+16
+00:00:54.896 --> 00:00:59.492
+Do it last, so its trial clock starts when everything else already works.
+
+17
+00:00:59.700 --> 00:01:00.529
+Three rules.
+
+18
+00:01:00.529 --> 00:01:01.358
+Go in order.
+
+19
+00:01:01.358 --> 00:01:05.643
+A stage is done when its check passes, not when it looks fine.
+
+20
+00:01:05.643 --> 00:01:07.577
+And commit after each stage.
+
+21
+00:01:08.600 --> 00:01:10.347
+But what counts as a check?
+
+22
+00:01:10.347 --> 00:01:11.965
+Take stage seven, GitOps.
+
+23
+00:01:11.965 --> 00:01:14.359
+Here are two ways to write its check.
+
+24
+00:01:14.567 --> 00:01:17.197
+Pause and guess: which one could ever fail?
+
+25
+00:01:19.400 --> 00:01:21.425
+Argo CD works can't clearly fail.
+
+26
+00:01:21.425 --> 00:01:23.817
+You'd just shrug and say it looks fine.
+
+27
+00:01:23.817 --> 00:01:25.780
+So passing it tells you nothing.
+
+28
+00:01:25.780 --> 00:01:29.645
+The strong one looks at the running system, after a real merge.
+
+29
+00:01:29.867 --> 00:01:31.139
+So here's the rule.
+
+30
+00:01:31.139 --> 00:01:33.818
+A check that cannot fail proves nothing.
+
+31
+00:01:33.818 --> 00:01:36.095
+Make every check able to say FAIL.
+
+32
+00:01:36.800 --> 00:01:40.752
+A good check is observable: it looks at the running system.
+
+33
+00:01:40.752 --> 00:01:42.159
+Binary: pass or fail.
+
+34
+00:01:42.159 --> 00:01:44.905
+And runnable: one command you can repeat.
+
+35
+00:01:45.667 --> 00:01:49.549
+Let's turn one line of the checklist into such a check.
+
+36
+00:01:49.549 --> 00:01:54.490
+Stage two: the image runs as a non-root user, and reports its version.
+
+37
+00:01:54.490 --> 00:01:58.442
+Ask the image itself, not your memory of the Dockerfile.
+
+38
+00:01:58.442 --> 00:01:59.219
+User 10001.
+
+39
+00:01:59.433 --> 00:02:00.710
+Then make it binary.
+
+40
+00:02:00.710 --> 00:02:02.943
+This little if prints PASS or FAIL.
+
+41
+00:02:02.943 --> 00:02:07.475
+Every line of the lab's capstone check script follows the same pattern.
+
+42
+00:02:08.200 --> 00:02:11.960
+The script turns eleven of the fourteen stages into checks.
+
+43
+00:02:11.960 --> 00:02:14.956
+Run it this early, and almost everything fails.
+
+44
+00:02:14.956 --> 00:02:17.378
+One passed, eight failed, two skipped.
+
+45
+00:02:17.378 --> 00:02:18.270
+That's normal.
+
+46
+00:02:18.270 --> 00:02:20.628
+Read it as your to-do list, in order.
+
+47
+00:02:20.833 --> 00:02:23.350
+Skip means a tool or address is missing.
+
+48
+00:02:23.350 --> 00:02:27.439
+And the script exits with one on any failure, so CI could run it.
+
+49
+00:02:27.667 --> 00:02:28.483
+Quick one.
+
+50
+00:02:28.483 --> 00:02:31.422
+Argo CD fails, and Prometheus fails.
+
+51
+00:02:31.422 --> 00:02:33.299
+Which do you fix first?
+
+52
+00:02:33.299 --> 00:02:34.605
+Pause and guess.
+
+53
+00:02:36.833 --> 00:02:37.409
+Argo CD.
+
+54
+00:02:37.409 --> 00:02:39.280
+The deploy feeds the rest.
+
+55
+00:02:39.280 --> 00:02:43.598
+If the app isn't deployed, Prometheus has nothing to scrape.
+
+56
+00:02:43.598 --> 00:02:46.332
+Stages depend on the ones before them.
+
+57
+00:02:47.833 --> 00:02:49.450
+Now a tempting shortcut.
+
+58
+00:02:49.450 --> 00:02:51.740
+Say stages one to eight are green.
+
+59
+00:02:51.740 --> 00:02:53.896
+You've just finished stage nine.
+
+60
+00:02:53.896 --> 00:02:57.533
+Why not run only the check for the stage you just did?
+
+61
+00:02:57.533 --> 00:02:58.341
+It's faster.
+
+62
+00:02:58.567 --> 00:03:00.680
+Let's be fair to it, and try.
+
+63
+00:03:00.680 --> 00:03:06.363
+Say the port-forward you started for stage nine's dashboard grabbed port 8081.
+
+64
+00:03:06.363 --> 00:03:08.549
+Stage nine's own check passes.
+
+65
+00:03:08.767 --> 00:03:11.568
+Pause and guess: is everything still green?
+
+66
+00:03:13.800 --> 00:03:14.047
+No.
+
+67
+00:03:14.047 --> 00:03:19.159
+The old stage six check, the app on localhost 8081, now fails.
+
+68
+00:03:19.159 --> 00:03:22.375
+The shortcut would never have told you.
+
+69
+00:03:22.600 --> 00:03:28.454
+Later stages often break earlier ones: a new policy rejects Redis, a port gets taken.
+
+70
+00:03:28.454 --> 00:03:31.484
+So rerun the whole script after every stage.
+
+71
+00:03:31.484 --> 00:03:34.652
+The keeper tries every lamp, not just today's.
+
+72
+00:03:36.267 --> 00:03:39.052
+Checks prove the path works when things go right.
+
+73
+00:03:39.052 --> 00:03:42.065
+A game day finds out what happens when they go wrong.
+
+74
+00:03:42.065 --> 00:03:47.295
+You break something on purpose, like pouring a bucket into the drain before the first storm.
+
+75
+00:03:47.500 --> 00:03:50.453
+If you do one drill, scale Redis to zero.
+
+76
+00:03:50.453 --> 00:04:00.463
+But first, write down what you expect: 503 from the readiness check, unready Pods, an alert, error logs in Kibana, a failed span in Jaeger.
+
+77
+00:04:00.667 --> 00:04:03.212
+Afterwards, write down what really happened.
+
+78
+00:04:03.212 --> 00:04:06.798
+Wherever the two differ, your picture of the system was wrong.
+
+79
+00:04:06.798 --> 00:04:10.905
+That's the part worth writing up, and the story interviewers like most.
+
+80
+00:04:11.733 --> 00:04:12.785
+One honest limit.
+
+81
+00:04:12.785 --> 00:04:16.682
+The capstone runs on kind, the practice cluster on your laptop.
+
+82
+00:04:16.682 --> 00:04:21.322
+Real traffic, a real cloud bill and a night on call are still ahead of you.
+
+83
+00:04:21.322 --> 00:04:23.920
+That's what the next three months are for.
+
+84
+00:04:24.633 --> 00:04:28.784
+The moral of the story: walk the whole path before opening night.
+
+85
+00:04:28.784 --> 00:04:30.572
+Done means the check passes.
+
+86
+00:04:30.572 --> 00:04:33.126
+Checks are observable, binary, runnable.
+
+87
+00:04:33.126 --> 00:04:35.233
+Rerun them all after every stage.
+
+88
+00:04:35.233 --> 00:04:38.043
+And break it on purpose, expectations first.
+
+89
+00:04:38.867 --> 00:04:39.858
+One last check.
+
+90
+00:04:39.858 --> 00:04:43.822
+You want to show an interviewer that you can do DevOps work.
+
+91
+00:04:43.822 --> 00:04:46.135
+Which gives the strongest evidence?
+
+92
+00:04:46.135 --> 00:04:47.192
+Pause and think.
+
+93
+00:04:49.400 --> 00:04:52.847
+A repository where a commit becomes a checked deploy.
+
+94
+00:04:52.847 --> 00:04:56.490
+Run the capstone check now, even if most lines say FAIL.
+
+95
+00:04:56.490 --> 00:04:58.051
+That list is your route.
+
+96
+00:04:58.051 --> 00:05:00.392
+Thanks for walking the path with me.

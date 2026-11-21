@@ -64,5 +64,16 @@
    "poster_at": 217.0,
    "replaces": "d67-golden-path"
   }
+ ],
+ "d68": [
+  {
+   "slug": "d68-keeper-walk",
+   "title": "The walk before opening night: acceptance checks for your capstone",
+   "after": 3,
+   "file": "p19/d68_keeper_walk.py",
+   "scene": "D68KeeperWalk",
+   "poster_at": 160.0,
+   "replaces": "d68-capstone"
+  }
  ]
 }
