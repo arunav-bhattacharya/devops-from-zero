@@ -53,5 +53,16 @@
    "poster_at": 264.8,
    "replaces": "d11-https"
   }
+ ],
+ "d12": [
+  {
+   "slug": "d12-public-route",
+   "title": "What makes a subnet public? The route table, not the name",
+   "after": 3,
+   "file": "p3/d12_public_route.py",
+   "scene": "D12PublicRoute",
+   "poster_at": 277.8,
+   "replaces": "d12-two-zones"
+  }
  ]
 }

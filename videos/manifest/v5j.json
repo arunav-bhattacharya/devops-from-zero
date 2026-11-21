@@ -64,5 +64,16 @@
    "poster_at": 175.0,
    "replaces": "d52-alert-path"
   }
+ ],
+ "d53": [
+  {
+   "slug": "d53-readable-board",
+   "title": "A board worth reading: where Grafana's numbers live, units, red zones and the step",
+   "after": 2,
+   "file": "p13/d53_readable_board.py",
+   "scene": "D53ReadableBoard",
+   "poster_at": 182.0,
+   "replaces": "d53-panel"
+  }
  ]
 }

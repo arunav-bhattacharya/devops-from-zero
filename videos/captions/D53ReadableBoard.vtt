@@ -1,0 +1,381 @@
+WEBVTT
+
+1
+00:00:02.700 --> 00:00:05.797
+Picture a doctor called to the ward at 3 a.m.
+
+2
+00:00:05.797 --> 00:00:10.408
+On the wall hangs a board with forty numbers, in small handwriting.
+
+3
+00:00:10.633 --> 00:00:14.716
+Some temperatures in Celsius, some in Fahrenheit, nothing circled.
+
+4
+00:00:14.716 --> 00:00:17.004
+She has one minute to pick a patient.
+
+5
+00:00:17.233 --> 00:00:19.766
+Every team builds that board by accident.
+
+6
+00:00:19.766 --> 00:00:22.237
+Each number was added for a good reason.
+
+7
+00:00:22.237 --> 00:00:23.781
+Nobody planned the whole.
+
+8
+00:00:24.500 --> 00:00:30.313
+Our version of that board is a dashboard, a web page of graphs drawn by a tool called Grafana.
+
+9
+00:00:30.313 --> 00:00:32.602
+It shows seven days of request rates.
+
+10
+00:00:32.602 --> 00:00:34.333
+Where do those numbers live?
+
+11
+00:00:39.067 --> 00:00:41.100
+Let's watch a page load, and see.
+
+12
+00:00:41.733 --> 00:00:42.657
+Three players.
+
+13
+00:00:42.657 --> 00:00:48.659
+Your browser, Grafana, and Prometheus, the tool that collects and stores the app's numbers.
+
+14
+00:00:48.867 --> 00:00:57.658
+First, the browser loads the dashboard from Grafana: a file listing the panels, the boxes on the page, and each one's query.
+
+15
+00:00:57.658 --> 00:00:58.437
+No numbers.
+
+16
+00:00:58.667 --> 00:01:00.904
+Then each panel sends its query.
+
+17
+00:01:00.904 --> 00:01:03.352
+Grafana passes it on to Prometheus.
+
+18
+00:01:03.567 --> 00:01:07.179
+Prometheus answers, and the browser draws the result.
+
+19
+00:01:07.400 --> 00:01:08.753
+So the answer is B.
+
+20
+00:01:08.753 --> 00:01:14.590
+Grafana stores dashboards, users and settings, but the numbers stay in Prometheus.
+
+21
+00:01:14.590 --> 00:01:16.085
+Grafana is the board.
+
+22
+00:01:16.085 --> 00:01:19.075
+Prometheus is the patient chart behind it.
+
+23
+00:01:19.300 --> 00:01:26.645
+So Grafana cannot show what Prometheus never scraped, or what it already deleted, after seven days in the lab.
+
+24
+00:01:26.645 --> 00:01:29.383
+And every refresh runs every query again.
+
+25
+00:01:30.200 --> 00:01:33.272
+Now let's build one panel the doctor could read.
+
+26
+00:01:33.272 --> 00:01:37.175
+Start from the raw counter of hello-devops, our tiny lab app.
+
+27
+00:01:37.175 --> 00:01:39.031
+Five hundred and sixty three.
+
+28
+00:01:39.233 --> 00:01:41.912
+That is the total since the app started.
+
+29
+00:01:41.912 --> 00:01:42.916
+It only climbs.
+
+30
+00:01:43.133 --> 00:01:45.872
+Wrap it in rate, and add the paths together.
+
+31
+00:01:45.872 --> 00:01:47.925
+Now it reads four point four two.
+
+32
+00:01:48.133 --> 00:01:49.914
+Four point four two what?
+
+33
+00:01:49.914 --> 00:01:51.624
+The panel does not know.
+
+34
+00:01:51.624 --> 00:01:53.548
+Nobody reading it at 3 a.m.
+
+35
+00:01:53.548 --> 00:01:55.044
+should have to guess.
+
+36
+00:01:55.267 --> 00:01:57.007
+So set the panel's unit.
+
+37
+00:01:57.007 --> 00:01:58.820
+The data does not change.
+
+38
+00:01:58.820 --> 00:02:00.343
+Only how it is shown.
+
+39
+00:02:00.567 --> 00:02:06.133
+Prometheus stores base units: seconds, bytes, ratios between zero and one.
+
+40
+00:02:06.133 --> 00:02:08.089
+The unit makes them human.
+
+41
+00:02:08.300 --> 00:02:12.596
+So never multiply by a hundred in your query to get a percentage.
+
+42
+00:02:12.596 --> 00:02:14.777
+Keep the ratio, and set the unit.
+
+43
+00:02:15.400 --> 00:02:17.568
+Second panel, the error ratio.
+
+44
+00:02:17.568 --> 00:02:19.231
+Nothing has failed yet.
+
+45
+00:02:19.231 --> 00:02:20.749
+So what does it show?
+
+46
+00:02:20.749 --> 00:02:22.339
+You might expect zero.
+
+47
+00:02:22.567 --> 00:02:24.168
+Instead it says No data.
+
+48
+00:02:24.168 --> 00:02:29.641
+The failure series does not exist yet, and a division with an empty side is empty.
+
+49
+00:02:29.867 --> 00:02:34.588
+Add or vector zero to the error part, and the panel gets a real zero.
+
+50
+00:02:34.800 --> 00:02:38.469
+Now the red zone, like the one on a car's rev counter.
+
+51
+00:02:38.469 --> 00:02:40.915
+In Grafana it is called a threshold.
+
+52
+00:02:41.133 --> 00:02:47.604
+The lab's error ratio is green below one percent, orange from one percent, and red from five.
+
+53
+00:02:47.833 --> 00:02:54.319
+So a ratio of point zero three four seven shows as three point four seven percent, in orange.
+
+54
+00:02:54.319 --> 00:02:56.551
+Nobody has to remember anything.
+
+55
+00:02:56.767 --> 00:02:59.716
+Use color only for what someone should act on.
+
+56
+00:02:59.716 --> 00:03:03.948
+If every panel is red or green all day, people stop seeing colors.
+
+57
+00:03:04.667 --> 00:03:07.556
+One more trap, and it hides until you zoom out.
+
+58
+00:03:07.556 --> 00:03:09.708
+A graph panel asks for many points.
+
+59
+00:03:09.708 --> 00:03:15.119
+The gap between two points is called the step, and Grafana picks it from the time range.
+
+60
+00:03:15.333 --> 00:03:18.959
+Here is an hour, with a short spike of errors in the middle.
+
+61
+00:03:18.959 --> 00:03:20.531
+My spike, for the example.
+
+62
+00:03:20.733 --> 00:03:24.464
+Zoom out far, and the points land about ten minutes apart.
+
+63
+00:03:24.464 --> 00:03:28.001
+Each point runs rate with a fixed window of one minute.
+
+64
+00:03:28.001 --> 00:03:29.480
+Does the spike show up?
+
+65
+00:03:29.480 --> 00:03:30.509
+Pause and guess.
+
+66
+00:03:32.733 --> 00:03:33.860
+It falls in a gap.
+
+67
+00:03:33.860 --> 00:03:38.677
+Each window sees one minute out of every ten, and the graph says all is well.
+
+68
+00:03:38.900 --> 00:03:42.299
+Grafana's helper, rate interval, grows with the step.
+
+69
+00:03:42.299 --> 00:03:46.915
+It takes the step plus one scrape, or four scrapes, whichever is larger.
+
+70
+00:03:46.915 --> 00:03:49.352
+Now every window touches the next one.
+
+71
+00:03:49.567 --> 00:03:51.963
+And the window that covers the spike sees it.
+
+72
+00:03:52.167 --> 00:03:56.172
+A fixed range that looks fine zoomed in goes blind zoomed out.
+
+73
+00:03:56.172 --> 00:03:58.239
+Use rate interval in every rate.
+
+74
+00:03:59.067 --> 00:04:00.192
+A few guardrails.
+
+75
+00:04:00.192 --> 00:04:02.377
+Pick the chart from the question.
+
+76
+00:04:02.377 --> 00:04:06.084
+A line for how it changes, one big number for right now.
+
+77
+00:04:06.300 --> 00:04:10.315
+For a stat, use Last star, the last value that is not empty.
+
+78
+00:04:10.315 --> 00:04:13.460
+A mean of seven days hides a ten minute outage.
+
+79
+00:04:13.667 --> 00:04:18.412
+Lay the page out for the tired reader: is it broken, since when, and where.
+
+80
+00:04:18.412 --> 00:04:21.829
+Four numbers on top, the same signals over time below.
+
+81
+00:04:22.033 --> 00:04:25.145
+And every dashboard is a JSON file underneath.
+
+82
+00:04:25.145 --> 00:04:29.407
+Keep it in git, so nobody's late night edit quietly changes it.
+
+83
+00:04:30.133 --> 00:04:32.224
+So the moral of the story.
+
+84
+00:04:32.224 --> 00:04:33.350
+Grafana draws.
+
+85
+00:04:33.350 --> 00:04:35.039
+Prometheus remembers.
+
+86
+00:04:35.267 --> 00:04:38.640
+Every panel asks Prometheus again, on every load.
+
+87
+00:04:38.640 --> 00:04:41.600
+Units and red zones make a number readable.
+
+88
+00:04:41.600 --> 00:04:42.977
+No data is not zero.
+
+89
+00:04:42.977 --> 00:04:45.661
+And the window must grow with the step.
+
+90
+00:04:46.367 --> 00:04:47.283
+A quick check.
+
+91
+00:04:47.283 --> 00:04:50.558
+The lab's Prometheus keeps samples for seven days.
+
+92
+00:04:50.558 --> 00:04:52.391
+You open a thirty day graph.
+
+93
+00:04:52.391 --> 00:04:55.076
+What do the first twenty three days show?
+
+94
+00:04:58.200 --> 00:04:58.775
+Nothing.
+
+95
+00:04:58.775 --> 00:05:04.315
+Those samples are gone from Prometheus, and Grafana keeps no copy of its own.

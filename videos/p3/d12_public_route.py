@@ -29,15 +29,15 @@ def thing(label, color, size=24):
     return chip(label, color, size)
 
 
-def rt_card(title, rows, color, w=4.6):
+def rt_card(title, rows, color, w=4.8):
     t = T(title, 26, color)
     rr = VGroup(*[VGroup(M(d, 22), T(tg, 24, c)).arrange(RIGHT, buff=0.35) for d, tg, c in rows])
     for r in rr:
-        r[1].move_to(r[0].get_left() + RIGHT * 1.8, aligned_edge=LEFT)
+        r[1].move_to(r[0].get_left() + RIGHT * 1.95, aligned_edge=LEFT)
     rr.arrange(DOWN, aligned_edge=LEFT, buff=0.22)
     box_ = RoundedRectangle(corner_radius=0.12, width=w, height=rr.height + 1.05, stroke_color=color, stroke_width=2.5).set_fill(BLACK, 1)
     t.move_to(box_.get_top() + DOWN * 0.32)
-    rr.next_to(t, DOWN, buff=0.22).align_to(box_, LEFT).shift(RIGHT * 0.25)
+    rr.next_to(t, DOWN, buff=0.22).align_to(box_, LEFT).shift(RIGHT * 0.2)
     return VGroup(box_, t, rr)
 
 
@@ -92,7 +92,7 @@ class D12PublicRoute(VoiceScene):
         net = T("the internet", 26, GREY_B).next_to(igw, UP, buff=0.18)
         self.beat("Now our question. The one called public-a. Is it public? The obvious answer is yes. It says so on the door.",
                   Indicate(subs["pa"][1], color=PUB, scale_factor=1.3), run_time=2.4)
-        rt = rt_card("public-a's route table", [("10.0.0.0/16", "local", GREY_B)], PUB).move_to([4.2, 0.6, 0])
+        rt = rt_card("public-a's route table", [("10.0.0.0/16", "local", GREY_B)], PUB).move_to([4.12, 0.6, 0])
         self.beat("Let's see if that's really true. What decides where traffic goes is the subnet's route table. Say public-a's table has just one line. 10.0.0.0/16, local. Every subnet on the floor can reach every other one.",
                   Succession(Wait(3.2), FadeIn(rt, shift=LEFT * 0.2)), run_time=9.0)
         self.beat("And that's all it has. No way in from the street, and no way out. Pause and guess. With this table, is public-a public?",
@@ -118,7 +118,7 @@ class D12PublicRoute(VoiceScene):
         nat_a = thing("NAT", NAT, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.38 + RIGHT * 1.05)
         lb = thing("load balancer", LB, 22).move_to(subs["pa"][0].get_center() + DOWN * 0.38 + LEFT * 0.6)
         self.play(FadeOut(rt), run_time=0.5)
-        rtp = rt_card("private-a's route table", [("10.0.0.0/16", "local", GREY_B), ("0.0.0.0/0", "NAT gateway", NAT)], PRIV).move_to([4.2, -1.2, 0])
+        rtp = rt_card("private-a's route table", [("10.0.0.0/16", "local", GREY_B), ("0.0.0.0/0", "NAT gateway", NAT)], PRIV).move_to([4.12, -1.2, 0])
         self.beat("The private subnets get a different second line. 0.0.0.0/0 goes to a NAT gateway instead, which sits in a public subnet.",
                   FadeIn(rtp, shift=LEFT * 0.2), Succession(Wait(4.0), FadeIn(nat_a, scale=0.8)), run_time=6.4)
         app = thing("app", APP).move_to(subs["va"][0].get_center() + DOWN * 0.38 + LEFT * 0.75)
@@ -131,9 +131,9 @@ class D12PublicRoute(VoiceScene):
                   Succession(Wait(2.0), MoveAlongPath(self.mdot(NAT), outp, run_time=1.0), MoveAlongPath(self.mdot(NAT), outp2, run_time=1.0)), run_time=5.4)
         self.purge()
         stranger = Dot(color=RED_M, radius=0.09).move_to(net.get_right() + RIGHT * 0.6)
-        blocked = tick(False, 0.28).move_to(subs["va"][0].get_top() + UP * 0.05 + LEFT * 1.2)
+        blocked = tick(False, 0.28).move_to(subs["va"][0].get_top() + UP * 0.05 + RIGHT * 1.0)
         self.beat("But no visitor goes upstairs. Nobody outside can start a connection to the app. It has no public address, and no route in.",
-                  Succession(FadeIn(stranger, run_time=0.4), stranger.animate(run_time=1.6).move_to(subs["va"][0].get_top() + UP * 0.25 + LEFT * 1.2)), Succession(Wait(2.0), Create(blocked)), run_time=5.0)
+                  Succession(FadeIn(stranger, run_time=0.4), stranger.animate(run_time=1.6).move_to(subs["va"][0].get_top() + UP * 0.25 + RIGHT * 1.0)), Succession(Wait(2.0), Create(blocked)), run_time=5.0)
         self.beat("So even a wrong firewall rule can't expose it directly. That's a nice property to get for free.",
                   FadeOut(stranger), FadeOut(blocked), run_time=1.6)
 

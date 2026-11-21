@@ -113,7 +113,7 @@ class D53ReadableBoard(VoiceScene):
         self.beat("Now let's build one panel the doctor could read. Start from the raw counter of hello-devops, our tiny lab app. Five hundred and sixty three.",
                   Create(pan), FadeIn(pan_t), Write(qq), FadeIn(big), run_time=2.6)
         self.beat("That is the total since the app started. It only climbs.", Indicate(big, color=WHITE), run_time=1.8)
-        qq2 = M('sum by (status) (rate(hello_responses_total[1m]))', 24, YELLOW_M).move_to(qq)
+        qq2 = VGroup(M('sum by (status)', 24, YELLOW_M), M('(rate(hello_responses_total[1m]))', 24, YELLOW_M)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to(qq)
         fit(qq2, 6.6)
         big2 = T("4.42", 72).move_to(big)
         self.beat("Wrap it in rate, and add the paths together. Now it reads four point four two.", ReplacementTransform(qq, qq2), ReplacementTransform(big, big2), run_time=2.0)
@@ -133,8 +133,7 @@ class D53ReadableBoard(VoiceScene):
         # ---------------- 5. the error ratio: no data, then thresholds
         pan2_t = T("Error ratio", 26, BLUE_M).move_to(pan_t)
         nd = T("No data", 56, GREY_B).move_to(big)
-        eq = M('sum(rate(...{status=~"5.."}[1m])) / sum(rate(...[1m]))', 22).move_to([-2.6, 1.8, 0])
-        fit(eq, 6.6)
+        eq = VGroup(M('sum(rate(...{status=~"5.."}[1m]))', 22), M('/ sum(rate(...[1m]))', 22)).arrange(DOWN, aligned_edge=LEFT, buff=0.12).move_to([-2.6, 1.9, 0])
         self.beat("Second panel, the error ratio. Nothing has failed yet. So what does it show? You might expect zero.",
                   ReplacementTransform(pan_t, pan2_t), ReplacementTransform(big, nd), FadeIn(eq), run_time=2.4)
         pan_t = pan2_t
