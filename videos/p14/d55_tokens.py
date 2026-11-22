@@ -163,7 +163,7 @@ class D55Tokens(VoiceScene):
         pos = {}
         for k, t in enumerate(TOK):
             col, row = (0, k) if k < 5 else (1, k - 5)
-            pos[t] = np.array([0.95 + col * 2.95, 2.25 - row * 0.62, 0])
+            pos[t] = np.array([0.95 + col * 2.95, 2.25 - row * 0.72, 0])
         rows = {}
         s1 = "Payment FAILED for order 42: card declined"
         w1 = word_parts(n1[1][1], s1)

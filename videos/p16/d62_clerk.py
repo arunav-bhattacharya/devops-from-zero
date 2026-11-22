@@ -52,8 +52,12 @@ class D62Clerk(VoiceScene):
         self.play(FadeOut(lab), run_time=0.3)
 
     def qline(self, s, k, c=Q_C):
-        ind = (len(s) - len(s.lstrip(" "))) * 0.174
-        return M(s.lstrip(" "), 24, c).move_to([-6.3 + ind, 3.05 - k * 0.42, 0], aligned_edge=LEFT)
+        body = s.lstrip(" ")
+        line = M(body, 24, c).move_to([-6.3, 3.05 - k * 0.42, 0], aligned_edge=LEFT)
+        if body != s:  # continuation line: start exactly under the word after "| "
+            ref = M("| " + body[0], 24).move_to([-6.3, 0, 0], aligned_edge=LEFT)
+            line.shift(RIGHT * (ref[1].get_left()[0] - line[0].get_left()[0]))
+        return line
 
     def construct(self):
         self.title_card("Zero rows is not proof", "how a DQL query really runs")
@@ -108,7 +112,7 @@ class D62Clerk(VoiceScene):
                   Indicate(q[1], color=Q_C), run_time=2.4)
 
         # summarize
-        sm = [self.qline("| summarize requests = count(),", 1), self.qline("    errors = countIf(status >= 500),", 2), self.qline("    avg_ms = avg(ms), by: {path}", 3)]
+        sm = [self.qline("| summarize requests = count(),", 1), self.qline("  errors = countIf(status >= 500),", 2), self.qline("  avg_ms = avg(ms), by: {path}", 3)]
         self.beat("Now swap the filter for a summarize. It groups the records by path and makes one row per group.",
                   FadeOut(q[1]), *[rs[i].animate.set_opacity(1) for i in range(6)], LaggedStart(*[FadeIn(l) for l in sm], lag_ratio=0.3), run_time=3.0)
         grp = {"/": [0, 1, 2, 3], "/healthz": [4], "/readyz": [5]}
@@ -128,7 +132,7 @@ class D62Clerk(VoiceScene):
         self.beat("Two details carry over to every query. Each result gets its name with a single equals sign. And the by list sits in curly braces.",
                   Create(names), Succession(Wait(2.4), Create(braces)), run_time=3.6)
         self.play(FadeOut(names), FadeOut(braces), run_time=0.3)
-        fa = [self.qline("| fieldsAdd error_pct =", 4), self.qline("    errors * 100.0 / requests", 5), self.qline("| sort error_pct desc", 6)]
+        fa = [self.qline("| fieldsAdd error_pct =", 4), self.qline("  errors * 100.0 / requests", 5), self.qline("| sort error_pct desc", 6)]
         hd3, rs3 = table(["path", "requests", "errors", "avg_ms", "error_pct"], [("/readyz", 1, 1, 1001, 100), ("/", 4, 1, 100, 25), ("/healthz", 1, 0, 2, 0)], x0=-5.6, colw=[2.0, 2.2, 1.9, 1.9, 2.0])
         self.beat("Add a computed column, the error percentage, and sort by its name. The worst path rises to the top: slash readyz, one hundred percent.",
                   LaggedStart(*[FadeIn(l) for l in fa], lag_ratio=0.3), FadeOut(qn),

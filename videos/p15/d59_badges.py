@@ -103,6 +103,7 @@ class D59Badges(VoiceScene):
         mgr.move_to([0, 2.55, 0])
         C = podbox("client", "hello-mesh", -4.3, -0.1)
         H = podbox("hello-devops", "hello-mesh", 4.3, -0.1)
+        C["ns"].align_to(C["r"], LEFT); H["ns"].align_to(H["r"], LEFT)  # keep the space under Envoy free for callers
         self.beat("Now the real building. Istio's control plane, a program called istiod, is the badge office. Here are two Pods in the namespace hello-mesh: a small client, and hello-devops.",
                   FadeIn(mgr), Succession(Wait(2.6), AnimationGroup(*[FadeIn(grp(g)) for g in (C, H)])), run_time=5.0)
         self.beat("Each Pod has an Envoy sidecar next to the app. The sidecar is the door reader.",
@@ -152,19 +153,19 @@ class D59Badges(VoiceScene):
         self.play(FadeOut(VGroup(hsl, who)), run_time=0.4)
 
         # ---------- 6. PERMISSIVE, STRICT, and the Monday mistake
-        O = podbox("outside", "outside", -4.0, -2.55, sidecar=False, c=OUT_C, h=1.4)
-        VGroup(O["lab"], O["ns"]).arrange(DOWN, aligned_edge=LEFT, buff=0.1).next_to(O["r"], RIGHT, buff=0.2)
+        O = podbox("outside", "outside", 4.3, -2.95, sidecar=False, c=OUT_C, h=1.3)
+        VGroup(O["lab"], O["ns"]).arrange(DOWN, aligned_edge=RIGHT, buff=0.1).next_to(O["r"], LEFT, buff=0.2)
         self.beat("But not every caller lives in the mesh. Here's a Pod in another namespace, called outside. It has no sidecar, so no badge.",
                   FadeIn(grp(O)), run_time=2.2)
-        mode = VGroup(T("PeerAuthentication:", 26, GREY_B), T("PERMISSIVE", 26, ASK_C)).arrange(RIGHT, buff=0.25).move_to([3.6, -2.3, 0])
-        plain = Arrow(O["app"].get_top() + RIGHT * 0.9 + UP * 0.25, H["px"].get_bottom() + LEFT * 0.1, buff=0.12, stroke_width=3, color=OUT_C, max_tip_length_to_length_ratio=0.06)
+        mode = VGroup(T("PeerAuthentication:", 26, GREY_B), T("PERMISSIVE", 26, ASK_C)).arrange(RIGHT, buff=0.25).move_to([-3.4, -2.3, 0])
+        plain = Arrow([H["px"].get_x(), O["r"].get_top()[1], 0], H["px"].get_bottom(), buff=0.12, stroke_width=3, color=OUT_C)
         self.beat("Istio's default is PERMISSIVE. Each door accepts badges, and plain text too. So the outside Pod's call still works.",
                   FadeIn(mode), GrowArrow(plain), Succession(Wait(1.8), travel(plain, OUT_C, 1.0)), run_time=4.0)
         self.beat("Now our strict Monday. We apply a PeerAuthentication that says STRICT: mutual TLS only. What happens to the outside Pod's next call? Pause and guess.",
                   Transform(mode[1], T("STRICT", 26, BAD_C).move_to(mode[1], aligned_edge=LEFT)), run_time=3.0)
-        self.pause([3.6, -3.05, 0])
-        cut = tick(False, 0.25).move_to(plain.point_from_proportion(0.6))
-        e56 = VGroup(T("curl exit code", 24, BAD_C), M("56", 26, BAD_C)).arrange(RIGHT, buff=0.15).move_to([0.6, -0.9, 0])
+        self.pause([-3.4, -3.05, 0])
+        cut = tick(False, 0.25).move_to(plain.point_from_proportion(0.5))
+        e56 = VGroup(T("curl exit code", 24, BAD_C), M("56", 26, BAD_C)).arrange(RIGHT, buff=0.15).move_to([-3.4, -3.0, 0])
         self.beat("Refused. curl exits with code 56. The connection was cut before any HTTP answer arrived.",
                   travel(plain, OUT_C, 0.8), Succession(Wait(0.8), AnimationGroup(Create(cut), FadeIn(e56))), run_time=3.0)
         self.beat("Well. That looks exactly like a network fault, which is why it's so confusing at work. The cleaner is on the pavement, and the door reader has no idea a cleaner was ever expected.",
@@ -175,12 +176,12 @@ class D59Badges(VoiceScene):
         self.play(FadeOut(VGroup(rule, e56, cut, plain, mode, grp(O))), run_time=0.6)
 
         # ---------- 7. AuthorizationPolicy: the friendly ALLOW
-        mon = podbox("prometheus", "monitoring", -4.0, -2.45, sidecar=True, c=PURPLE_M, h=1.6)
-        VGroup(mon["lab"], mon["ns"]).arrange(DOWN, aligned_edge=LEFT, buff=0.1).next_to(mon["r"], RIGHT, buff=0.2)
+        mon = podbox("prometheus", "monitoring", 4.3, -2.85, sidecar=True, c=PURPLE_M, h=1.5)
+        VGroup(mon["lab"], mon["ns"]).arrange(DOWN, aligned_edge=RIGHT, buff=0.1).next_to(mon["r"], LEFT, buff=0.2)
         mb = badge_at(badge("prometheus", PURPLE_M), mon)
         self.beat("Badges are verified now, so we can decide who may open which door. That's an AuthorizationPolicy. A workload with no policy lets everyone in. Say a second caller, a monitoring Pod, also visits hello-devops.",
                   FadeIn(grp(mon)), FadeIn(mb), run_time=4.0)
-        ma = Arrow(mon["px"].get_top(), H["px"].get_bottom() + RIGHT * 0.1, buff=0.12, stroke_width=3, color=PURPLE_M, max_tip_length_to_length_ratio=0.06)
+        ma = Arrow(mon["px"].get_top(), H["px"].get_bottom(), buff=0.12, stroke_width=3, color=PURPLE_M)
         ca = Arrow(C["px"].get_right(), H["px"].get_left(), buff=0.15, stroke_width=3, color=BADGE_C, max_tip_length_to_length_ratio=0.04)
         self.play(FadeOut(hs1), FadeOut(hs2), run_time=0.3)
         self.beat("Both calls work.",
@@ -190,8 +191,8 @@ class D59Badges(VoiceScene):
         self.beat("Now a team adds one friendly rule for hello-devops: ALLOW the client, for GET requests. They only meant to let the client in. What happens to the monitoring Pod? Pause and guess.",
                   FadeIn(pol, shift=DOWN * 0.1), run_time=3.0)
         self.pause([0.2, 1.45, 0])
-        x2 = tick(False, 0.22).move_to(ma.point_from_proportion(0.7))
-        r403 = M("403 RBAC: access denied", 24, BAD_C).move_to([3.7, -2.6, 0])
+        x2 = tick(False, 0.22).move_to(ma.point_from_proportion(0.5))
+        r403 = M("403 RBAC: access denied", 24, BAD_C).move_to([-3.4, -2.6, 0])
         self.beat("Locked out. Once any ALLOW policy selects a workload, every request no ALLOW rule matches gets 403, access denied.",
                   travel(ma, PURPLE_M, 0.8), Succession(Wait(0.8), AnimationGroup(Create(x2), FadeIn(r403))), travel(ca, BADGE_C, 0.8), run_time=3.4)
         rule2 = T("An ALLOW policy is also a deny for everyone it does not name.", 28, ASK_C).move_to([0, 1.5, 0])
