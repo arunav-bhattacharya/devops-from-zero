@@ -223,9 +223,9 @@ class D08StickyNote(VoiceScene):
         self.beat("And if you already pushed a commit, don't move a shared note at all. git revert adds a new commit that undoes the old one, so history only grows.",
                   FadeOut(lim), FadeOut(VGroup(desk, ds, draft, xd)), Succession(Wait(1.4), Write(rv)), run_time=4.0)
         extra = RoundedRectangle(corner_radius=0.06, width=1.0, height=0.75, stroke_color=TEAL_M, stroke_width=2.5).set_fill("#0b1714", 1)
-        row = VGroup(*[p.copy() for p in ph], extra).arrange(RIGHT, buff=0.12)
-        row.scale_to_fit_width(cab2[0].width - 0.4).move_to(cab2[0])  # four photos, all inside the cabinet
-        self.play(*[Transform(ph[i], row[i]) for i in range(3)], run_time=0.5)
+        four = VGroup(*[p.copy() for p in ph], extra).arrange(RIGHT, buff=0.12)
+        four.scale_to_fit_width(cab2[0].width - 0.4).move_to(cab2[0])  # four photos, all inside the cabinet
+        self.play(*[Transform(ph[i], four[i]) for i in range(3)], run_time=0.5)
         self.play(FadeIn(extra, shift=LEFT * 0.2), run_time=0.6)
 
         # ---------- 10. moral and check
